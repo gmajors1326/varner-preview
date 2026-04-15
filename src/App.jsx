@@ -88,6 +88,7 @@ const App = () => {
     { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg' },
     { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg' },
     { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', condition: 'Used', price: '16500', status: 'In Stock', image: '/mahindra.jpg' },
+    { id: '5', stock: '77300', year: '2023', make: 'Mahindra', model: 'eMax 20S', condition: 'Used', price: '14000', status: 'Sold', image: '/left.jpg' },
   ]);
 
   const usersList = [
@@ -333,8 +334,16 @@ const App = () => {
                           </td>
                           <td className="px-6 py-5 font-black text-base text-slate-900 tracking-tighter">${parseInt(item.price).toLocaleString()}</td>
                           <td className="px-6 py-5">
-                             <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-sm"></div>
+                             <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
+                               item.status === 'In Stock' ? 'text-green-500 bg-green-50 border-green-100' :
+                               item.status === 'Pending Sale' ? 'text-amber-500 bg-amber-50 border-amber-100' :
+                               'text-slate-400 bg-slate-50 border-slate-200'
+                             }`}>
+                               <div className={`w-1.5 h-1.5 rounded-full shadow-sm ${
+                                 item.status === 'In Stock' ? 'bg-green-500 animate-pulse' :
+                                 item.status === 'Pending Sale' ? 'bg-amber-500 animate-pulse' :
+                                 'bg-slate-400'
+                               }`}></div>
                                {item.status}
                              </span>
                           </td>
