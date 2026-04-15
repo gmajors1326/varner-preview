@@ -45,6 +45,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showFBPreview, setShowFBPreview] = useState(false);
   const [showAiVision, setShowAiVision] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const defaultEmptyUnit = {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
@@ -153,6 +154,42 @@ const App = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc] font-sans text-slate-900 overflow-hidden selection:bg-red-100">
+      {/* MOBILE SIDEBAR OVERLAY */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
+          <aside className="fixed inset-y-0 left-0 w-72 bg-slate-950 text-white p-6 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-600 p-2 rounded-xl shadow-lg border border-red-500/30 text-white">
+                  <Box size={22} />
+                </div>
+                <div>
+                  <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
+                  <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+                </div>
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2">
+                <X size={24} />
+              </button>
+            </div>
+
+            <nav className="space-y-2 flex-1">
+              <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab === 'all-inventory'} onClick={() => { setActiveTab('all-inventory'); setIsMobileMenuOpen(false); }} badge={inventoryList.length} />
+              <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<Truck size={20}/>} label="Field Service" active={activeTab === 'service'} onClick={() => { setActiveTab('service'); setIsMobileMenuOpen(false); }} badge="3 Active" />
+              <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab === 'marketplace'} onClick={() => { setActiveTab('marketplace'); setIsMobileMenuOpen(false); }} badge="Live" />
+              <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab === 'mobile'} onClick={() => { setActiveTab('mobile'); setIsMobileMenuOpen(false); }} />
+            </nav>
+
+            <div className="mt-auto pt-4 border-t border-slate-800">
+              <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* SIDEBAR - RESTORED TO PERFECT SIZING */}
       <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
         <div className="flex items-center gap-3 mb-8 border-b border-slate-800 pb-6">
@@ -182,9 +219,17 @@ const App = () => {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden text-slate-900">
         <header className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shadow-sm z-10">
-          <div className="flex flex-col">
-            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">System Modules</h2>
-            <h3 className="text-xl font-black text-slate-950 tracking-tight leading-none uppercase">{getHeaderTitle()}</h3>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            <div className="flex flex-col">
+              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">System Modules</h2>
+              <h3 className="text-xl font-black text-slate-950 tracking-tight leading-none uppercase">{getHeaderTitle()}</h3>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {activeTab === 'inventory' && unitData.title && (
