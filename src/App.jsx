@@ -73,8 +73,8 @@ const App = () => {
     sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>",
     images: [
       '/left-front-1-700x460.jpg',
-      '/Mahindra-2638-Loader-Lifestyle-1.jpg',
-      '/Right-rear.jpg'
+      '/mahindra-2638-loader-lifestyle-1.jpg',
+      '/right-rear.jpg'
     ],
     implementImages: [
       '/5686621-0-24649441.jpg',
@@ -118,7 +118,7 @@ const App = () => {
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/Mahindra-2638-Loader-Lifestyle-1.jpg', '/Right-rear.jpg'] : [],
+      images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/mahindra-2638-loader-lifestyle-1.jpg', '/right-rear.jpg'] : [],
       implementImages: item.id === '1' ? ['/5686621-0-24649441.jpg', '/6529491-0-31556071.jpg', '/9.jpg'] : []
     });
     setActiveTab('inventory');
@@ -1029,7 +1029,7 @@ const AiVisionModal = ({ onClose, onApply }) => {
             <div className="w-full max-w-md space-y-10 text-center">
               <div className="relative aspect-video bg-slate-950 rounded-[2rem] overflow-hidden shadow-2xl">
                 <img 
-                  src="/Mahindra-2638-Loader-Lifestyle-1.jpg" 
+                  src="/mahindra-2638-loader-lifestyle-1.jpg" 
                   className="w-full h-full object-cover opacity-60" 
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
