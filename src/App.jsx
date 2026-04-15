@@ -379,13 +379,16 @@ const App = () => {
                             className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl p-4.5 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
                             placeholder="SCAN OR TYPE SERIAL..."
                           />
-                          <button onClick={handleScanVin} className="bg-amber-50 text-slate-900 px-8 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
-                            <div className="absolute -top-2 -right-2 z-10">
-                              <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
-                            </div>
-                            {isScanning ? <Loader2 size={18} className="animate-spin text-red-600" /> : <Camera size={18} className="text-red-600 group-hover:scale-110 transition-transform" />}
-                            {isScanning ? 'READING...' : 'SCAN'}
-                          </button>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase pr-1">AI VISION ENABLED</span>
+                            <button onClick={handleScanVin} className="bg-amber-50 text-slate-900 px-8 py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
+                              <div className="absolute -top-2 -right-2 z-10">
+                                <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
+                              </div>
+                              {isScanning ? <Loader2 size={18} className="animate-spin text-red-600" /> : <Camera size={18} className="text-red-600 group-hover:scale-110 transition-transform" />}
+                              {isScanning ? 'READING...' : 'SCAN'}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
