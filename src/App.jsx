@@ -209,10 +209,9 @@ const App = () => {
             {/* --- DASHBOARD TAB --- */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
                   <MetricCard icon={<Users size={24}/>} label="Digital Leads" value="87" subtext="45% call rate" color="red" />
-                  <MetricCard icon={<DollarSign size={24}/>} label="Stock Value" value="$2.4M" subtext="Portfolio Total" color="green" />
                   <MetricCard icon={<Activity size={24}/>} label="Service Queue" value="14" subtext="3 High Priority" color="amber" />
                 </div>
 
