@@ -42,7 +42,7 @@ const App = () => {
   const [syncEnabled, setSyncEnabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [activeTab, setActiveTab] = useState('all-inventory');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [showFBPreview, setShowFBPreview] = useState(false);
   const [showAiVision, setShowAiVision] = useState(false);
 
