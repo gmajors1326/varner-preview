@@ -50,7 +50,7 @@ const App = () => {
   const defaultEmptyUnit = {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
     stockStatus: "Draft", category: "Compact Tractors", color: "", meter: "", meterType: "Hours",
-    intakeDate: "", description: "", images: [],
+    intakeDate: "", description: "", images: [], implementImages: [],
     sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>"
   };
 
@@ -75,7 +75,8 @@ const App = () => {
       '/left-front-1-700x460.jpg',
       '/Mahindra-2638-Loader-Lifestyle-1.jpg',
       '/Right-rear.jpg'
-    ]
+    ],
+    implementImages: []
   });
 
   const [inventoryList] = useState([
@@ -113,7 +114,8 @@ const App = () => {
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/Mahindra-2638-Loader-Lifestyle-1.jpg', '/Right-rear.jpg'] : []
+      images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/Mahindra-2638-Loader-Lifestyle-1.jpg', '/Right-rear.jpg'] : [],
+      implementImages: []
     });
     setActiveTab('inventory');
   };
@@ -406,37 +408,23 @@ const App = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* MAIN EQUIPMENT MEDIA */}
+                  <MediaSection 
+                    title="High-Resolution Media" 
+                    images={unitData.images} 
+                    onAdd={() => {}} 
+                  />
 
-                  {/* MEDIA GALLERY */}
-                  <div className="bg-white rounded-[2rem] p-10 shadow-xl border border-slate-200/60">
-                    <div className="flex justify-between items-center mb-10">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
-                        <ImageIcon size={14} className="text-red-600" /> High-Resolution Media
-                      </h3>
-                      <span className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase italic px-4 py-2 rounded-full border border-slate-100 tracking-widest shadow-sm">
-                        Auto-Optimized
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                      {unitData.images && unitData.images.map((img, i) => (
-                        <div key={i} className="aspect-[4/3] bg-slate-50 rounded-[1.5rem] overflow-hidden relative shadow-md group cursor-pointer border-2 border-transparent hover:border-red-500 transition-all">
-                          <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={`Unit ${i+1}`} />
-                          {i === 0 && (
-                            <div className="absolute bottom-3 left-3 bg-red-600 text-white text-[8px] font-black px-3 py-1.5 rounded uppercase tracking-widest shadow-xl font-black">
-                              MASTER PHOTO
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      <div className="aspect-[4/3] border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50/20 transition-all cursor-pointer bg-white group">
-                        <div className="bg-white p-3 rounded-full shadow-lg mb-2 border border-slate-50 group-hover:scale-110 transition-transform">
-                          <Plus size={28} />
-                        </div>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Add Units</span>
-                      </div>
-                    </div>
-                  </div>
+                  {/* IMPLEMENTS / ATTACHMENTS MEDIA */}
+                  <MediaSection 
+                    title="Implements / Attachments Media" 
+                    images={unitData.implementImages} 
+                    onAdd={() => {}} 
+                    badge="Add-on Products"
+                  />
                 </div>
+
 
                 {/* RIGHT COLUMN - MARKETPLACE WIDGET */}
                 <div className="space-y-8">
@@ -671,6 +659,37 @@ const SelectField = ({ label, options, value, onChange }) => (
         {options.map((o, i) => <option key={i} value={o}>{o}</option>)}
       </select>
       <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={20} className="rotate-90" /></div>
+    </div>
+  </div>
+);
+
+const MediaSection = ({ title, images, onAdd, badge = "Auto-Optimized" }) => (
+  <div className="bg-white rounded-[2rem] p-10 shadow-xl border border-slate-200/60">
+    <div className="flex justify-between items-center mb-10">
+      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
+        <ImageIcon size={14} className="text-red-600" /> {title}
+      </h3>
+      <span className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase italic px-4 py-2 rounded-full border border-slate-100 tracking-widest shadow-sm">
+        {badge}
+      </span>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+      {images && images.map((img, i) => (
+        <div key={i} className="aspect-[4/3] bg-slate-50 rounded-[1.5rem] overflow-hidden relative shadow-md group cursor-pointer border-2 border-transparent hover:border-red-500 transition-all">
+          <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={`Image ${i+1}`} />
+          {i === 0 && title.includes("High-Resolution") && (
+            <div className="absolute bottom-3 left-3 bg-red-600 text-white text-[8px] font-black px-3 py-1.5 rounded uppercase tracking-widest shadow-xl font-black">
+              MASTER PHOTO
+            </div>
+          )}
+        </div>
+      ))}
+      <div onClick={onAdd} className="aspect-[4/3] border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50/20 transition-all cursor-pointer bg-white group">
+        <div className="bg-white p-3 rounded-full shadow-lg mb-2 border border-slate-50 group-hover:scale-110 transition-transform">
+          <Plus size={28} />
+        </div>
+        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Add Images</span>
+      </div>
     </div>
   </div>
 );
