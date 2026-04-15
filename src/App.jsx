@@ -418,9 +418,9 @@ const App = () => {
                       {/* ENLARGED VIEW MARKETPLACE PREVIEW BUTTON */}
                       <button 
                         onClick={() => setShowFBPreview(true)} 
-                        className="w-full bg-slate-950 text-white py-5.5 rounded-[1.5rem] font-black text-[12px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all active:scale-95 shadow-2xl shadow-slate-300 mt-2 leading-none border-b-4 border-slate-800"
+                        className="w-full bg-slate-950 text-white py-7 rounded-[1.5rem] font-black text-[14px] uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-black transition-all active:scale-95 shadow-2xl shadow-slate-300 mt-2 leading-none border-b-4 border-slate-800"
                       >
-                        View Marketplace Preview <ArrowUpRight size={18} className="text-blue-400" />
+                        View Marketplace Preview <ArrowUpRight size={20} className="text-blue-400" />
                       </button>
                     </div>
                   </div>
