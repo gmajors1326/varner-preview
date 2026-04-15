@@ -42,7 +42,7 @@ const App = () => {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
     stockStatus: "Draft", category: "Compact Tractors", color: "", meter: "", meterType: "Hours",
     intakeDate: "", description: "", images: [],
-    sellerInfo: "Call or stop by to see it in person.\\nVarner Equipment\\n1375 Hwy 50\\nDelta, CO 81416\\n(970) 874-0612"
+    sellerInfo: "Call or stop by to see it in person.\nVarner Equipment\n1375 Hwy 50\nDelta, CO 81416\n(970) 874-0612"
   };
 
   const [unitData, setUnitData] = useState({
@@ -61,7 +61,7 @@ const App = () => {
     meterType: "Hours",
     intakeDate: "2026-03-15",
     description: "2024 Mahindra 2638 HST equipped with front end loader and industrial tires. Excellent condition, ready for the yard.",
-    sellerInfo: "Call or stop by to see it in person.\\nVarner Equipment\\n1375 Hwy 50\\nDelta, CO 81416\\n(970) 874-0612",
+    sellerInfo: "Call or stop by to see it in person.\nVarner Equipment\n1375 Hwy 50\nDelta, CO 81416\n(970) 874-0612",
     images: ['https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400']
   });
 
@@ -95,10 +95,10 @@ const App = () => {
   const handleEditUnit = (item) => {
     setUnitData({
       ...defaultEmptyUnit,
-      title: `${item.year} \${item.make} \${item.model}`,
+      title: `${item.year} ${item.make} ${item.model}`,
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
-      condition: item.condition, price: item.price, vin: `VIN-\${item.stock}-XX`, stockStatus: item.status,
-      description: `\${item.year} \${item.make} \${item.model}. Ready for immediate delivery.`,
+      condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
+      description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
       images: item.id === '1' ? ['https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'] : []
     });
     setActiveTab('inventory');
@@ -241,7 +241,7 @@ const App = () => {
                           <td className="px-6 py-5 text-center">
                              <span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span>
                           </td>
-                          <td className="px-6 py-5 font-black text-base text-slate-900 tracking-tighter">\${parseInt(item.price).toLocaleString()}</td>
+                          <td className="px-6 py-5 font-black text-base text-slate-900 tracking-tighter">${parseInt(item.price).toLocaleString()}</td>
                           <td className="px-6 py-5 text-right">
                              <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-50 px-3 py-1 rounded-full border border-green-100">
                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-sm"></div>
@@ -334,7 +334,7 @@ const App = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                       {unitData.images && unitData.images.map((img, i) => (
                         <div key={i} className="aspect-[4/3] bg-slate-50 rounded-[1.5rem] overflow-hidden relative shadow-md group cursor-pointer border-2 border-transparent hover:border-red-500 transition-all">
-                          <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={`Unit \${i+1}`} />
+                          <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={`Unit ${i+1}`} />
                           {i === 0 && (
                             <div className="absolute bottom-3 left-3 bg-red-600 text-white text-[8px] font-black px-3 py-1.5 rounded uppercase tracking-widest shadow-xl font-black">
                               MASTER PHOTO
@@ -363,8 +363,8 @@ const App = () => {
                           <p className="text-[8px] text-slate-500 uppercase font-black tracking-widest leading-none">Auto-Sync Active</p>
                         </div>
                       </div>
-                      <button onClick={() => setSyncEnabled(!syncEnabled)} className={`w-14 h-7 rounded-full relative transition-all duration-300 \${syncEnabled ? 'bg-blue-600 shadow-lg shadow-blue-500/50' : 'bg-slate-800'}`}>
-                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 \${syncEnabled ? 'left-8' : 'left-1'}`} />
+                      <button onClick={() => setSyncEnabled(!syncEnabled)} className={`w-14 h-7 rounded-full relative transition-all duration-300 ${syncEnabled ? 'bg-blue-600 shadow-lg shadow-blue-500/50' : 'bg-slate-800'}`}>
+                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 ${syncEnabled ? 'left-8' : 'left-1'}`} />
                       </button>
                     </div>
                     
@@ -423,7 +423,7 @@ const App = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                   <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-200/60 font-black">
                      <div className="flex items-center gap-4 mb-10 border-b border-slate-50 pb-6"><List size={22} className="text-blue-600" /><h4 className="font-black text-xs uppercase tracking-widest text-slate-900">Sync Activity Logs</h4></div>
-                     <div className="space-y-6"><LogEntry msg="Updated Price: Mahindra 2638 HST" time="2 mins ago" /><LogEntry msg="New Asset Push: Big Tex 14LP Dump" time="1 hour ago" /><LogEntry msg="Sold: Removed Listing SKU-992" time="3 hours ago" /></div>
+                     <div className="space-y-6"><LogEntry msg="Updated Price: Mahindra 2638 HST" time="2 mins ago" /></div>
                   </div>
                 </div>
               </div>
@@ -445,12 +445,12 @@ const App = () => {
 // --- SUB-COMPONENTS ---
 
 const NavItem = ({ icon, label, active = false, badge = null, onClick }) => (
-  <div onClick={onClick} className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300 \${active ? 'bg-red-600 text-white shadow-xl shadow-red-900/50 border-b-2 border-red-700' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-100'}`}>
+  <div onClick={onClick} className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300 ${active ? 'bg-red-600 text-white shadow-xl shadow-red-900/50 border-b-2 border-red-700' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-100'}`}>
     <div className="flex items-center gap-4">
       {icon}
       <span className="font-black text-[13px] uppercase tracking-wider">{label}</span>
     </div>
-    {badge && <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-md \${active ? 'bg-white text-red-600' : 'bg-green-500 text-white'}`}>{badge}</span>}
+    {badge && <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-md ${active ? 'bg-white text-red-600' : 'bg-green-500 text-white'}`}>{badge}</span>}
   </div>
 );
 
@@ -494,12 +494,12 @@ const MetricCard = ({ icon, label, value, subtext, color }) => {
   return (
     <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl relative overflow-hidden group">
       <div className="flex items-center gap-4 mb-8 relative z-10">
-        <div className={`p-4 rounded-xl \${styles[color]} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
+        <div className={`p-4 rounded-xl ${styles[color]} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
         <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 leading-none">{label}</h4>
       </div>
       <p className="text-5xl font-black text-slate-950 mb-3 tracking-tighter relative z-10 leading-none">{value}</p>
-      <p className={`text-[10px] font-black uppercase tracking-[0.1em] relative z-10 font-black \${styles[color].split(' ')[1]}`}>{subtext}</p>
-      <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 \${styles[color].split(' ')[0]} group-hover:scale-150 transition-transform duration-700`}></div>
+      <p className={`text-[10px] font-black uppercase tracking-[0.1em] relative z-10 font-black ${styles[color].split(' ')[1]}`}>{subtext}</p>
+      <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 ${styles[color].split(' ')[0]} group-hover:scale-150 transition-transform duration-700`}></div>
     </div>
   );
 };
@@ -531,13 +531,13 @@ const PerformanceChart = () => {
             <div className="w-full max-w-[45px] flex items-end justify-center gap-2 h-full relative">
               <div 
                 className="w-1/2 bg-blue-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-blue-400 relative shadow-xl" 
-                style={{ height: `\${(data.views / maxViews) * 100}%` }}
+                style={{ height: `${(data.views / maxViews) * 100}%` }}
               >
                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[9px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none shadow-2xl">{data.views}</div>
               </div>
               <div 
                 className="w-1/2 bg-red-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-red-400 relative shadow-xl" 
-                style={{ height: `\${(data.leads / maxViews) * 100 * 3.5}%` }} 
+                style={{ height: `${(data.leads / maxViews) * 100 * 3.5}%` }} 
               >
                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-10 shadow-2xl">{data.leads}</div>
               </div>
@@ -587,7 +587,7 @@ const ServiceRow = ({ id, issue, location, status, time }) => (
     </div>
     <div className="flex items-center gap-12">
        <span className="text-[10px] font-black text-slate-300 uppercase flex items-center gap-3 tracking-widest font-black"><Clock size={16} className="opacity-50"/> {time}</span>
-       <span className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] shadow-lg border-2 border-white \${status === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{status}</span>
+       <span className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] shadow-lg border-2 border-white ${status === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{status}</span>
     </div>
   </div>
 );
@@ -635,7 +635,7 @@ const FBPreviewModal = ({ unitData, onClose }) => (
           {unitData.images?.length > 0 ? <img src={unitData.images[0]} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><ImageIcon size={64}/></div>}
         </div>
         <div className="p-8 space-y-8">
-          <div className="text-slate-900"><h2 className="text-4xl font-black leading-none mb-2 tracking-tighter font-black font-black font-black font-black">\${parseInt(unitData.price || 0).toLocaleString()}</h2><h3 className="text-2xl font-bold text-slate-800 leading-tight mb-2 tracking-tight font-black font-black">{unitData.year} {unitData.title}</h3><p className="text-slate-400 text-sm font-black uppercase tracking-widest font-black">Delta, CO · Posted now</p></div>
+          <div className="text-slate-900"><h2 className="text-4xl font-black leading-none mb-2 tracking-tighter font-black font-black font-black font-black">${parseInt(unitData.price || 0).toLocaleString()}</h2><h3 className="text-2xl font-bold text-slate-800 leading-tight mb-2 tracking-tight font-black font-black">{unitData.year} {unitData.title}</h3><p className="text-slate-400 text-sm font-black uppercase tracking-widest font-black">Delta, CO · Posted now</p></div>
           <div className="flex gap-3"><button className="flex-1 bg-[#0866FF] text-white py-4 rounded-[1.25rem] font-black text-sm shadow-xl shadow-blue-200 font-black">Message</button><button className="p-4 bg-slate-100 rounded-[1.25rem] text-slate-600 font-black"><Plus size={24}/></button></div>
           <div className="pt-8 border-t border-slate-100 text-slate-900 font-black"><h4 className="font-black text-[12px] uppercase text-slate-400 mb-5 tracking-[0.3em] font-black font-black font-black font-black">Description</h4><p className="text-[16px] text-slate-800 font-medium leading-relaxed whitespace-pre-wrap font-black font-black">{unitData.description}</p><div className="mt-8 p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 border-dashed italic text-[11px] text-slate-500 whitespace-pre-wrap leading-relaxed font-black font-black">{unitData.sellerInfo}</div></div>
         </div>
