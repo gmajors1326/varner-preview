@@ -239,23 +239,24 @@ const App = () => {
               <h3 className="text-xl font-black text-slate-950 tracking-tight leading-none uppercase">{getHeaderTitle()}</h3>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {activeTab === 'inventory' && unitData.title && (
               <button 
                 onClick={handleClone}
-                className="bg-slate-100 text-slate-600 px-5 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm"
+                className="bg-slate-100 text-slate-600 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95"
               >
-                <Copy size={16} /> Clone Unit
+                <Copy size={16} /> <span className="hidden sm:inline">Clone Unit</span>
               </button>
             )}
 
             {(activeTab === 'inventory' || activeTab === 'all-inventory') && (
               <button 
                 onClick={activeTab === 'inventory' ? handleSave : handleAddNewUnit}
-                className="bg-red-600 text-white px-7 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800"
+                className="bg-red-600 text-white p-3 sm:px-7 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800"
               >
                 {isSaving ? <Zap className="animate-spin" size={16}/> : (activeTab === 'inventory' ? <Save size={16}/> : <Plus size={16}/>)}
-                {isSaving ? 'SYNCING...' : (activeTab === 'inventory' ? 'PUBLISH TO WEB' : 'NEW UNIT')}
+                <span className="hidden sm:inline">{isSaving ? 'SYNCING...' : (activeTab === 'inventory' ? 'PUBLISH TO WEB' : 'NEW UNIT')}</span>
+                {!isSaving && <span className="sm:hidden">{activeTab === 'inventory' ? 'PUBLISH' : 'NEW'}</span>}
               </button>
             )}
           </div>
@@ -305,17 +306,17 @@ const App = () => {
                     <input type="text" placeholder="Search Master Stock Ledger..." className="w-full pl-12 pr-6 py-3.5 bg-white border-2 border-slate-100 rounded-xl focus:border-red-500 outline-none font-bold text-sm shadow-sm" />
                   </div>
                 </div>
-                <div className="overflow-x-auto p-2">
-                  <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto p-2 no-scrollbar">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                       <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
-                        <th className="px-6 py-5">STOCK #</th>
-                        <th className="px-6 py-5">PHOTO</th>
+                        <th className="px-6 py-5 w-24">STOCK #</th>
+                        <th className="px-6 py-5 w-28">PHOTO</th>
                         <th className="px-6 py-5">YEAR / MAKE / MODEL</th>
-                        <th className="px-6 py-5 text-center">CONDITION</th>
-                        <th className="px-6 py-5">PRICE (USD)</th>
-                        <th className="px-6 py-5">STATUS</th>
-                        <th className="px-6 py-5 text-right">ACTIONS</th>
+                        <th className="px-6 py-5 text-center w-32">CONDITION</th>
+                        <th className="px-6 py-5 w-32">PRICE (USD)</th>
+                        <th className="px-6 py-5 w-40">STATUS</th>
+                        <th className="px-6 py-5 text-right w-32">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -789,7 +790,7 @@ const MetricCard = ({ icon, label, value, subtext, color, premium = false, descr
         <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
           <div className="group/info relative">
             <Info size={14} className="text-red-400 cursor-help hover:text-red-600 transition-colors" />
-            <div className="absolute right-0 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
+            <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
               {description}
             </div>
           </div>
@@ -934,11 +935,11 @@ const LogEntry = ({ msg, time }) => (
 );
 
 const LeadCaptureWidget = ({ value }) => (
-  <div className="bg-amber-50 rounded-[2rem] p-8 border border-red-500 shadow-xl relative overflow-hidden group text-slate-950 ring-4 ring-red-50">
+  <div className="bg-amber-50 rounded-[2rem] p-8 border border-red-500 shadow-xl relative overflow-hidden group text-slate-950 ring-4 ring-red-50 transition-transform active:scale-[0.99]">
     <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
       <div className="group/info relative">
         <Info size={14} className="text-red-400 cursor-help" />
-        <div className="absolute right-0 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
+        <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
           High-conversion lead capture system that bridges inventory with buyer inquiries instantly.
         </div>
       </div>
