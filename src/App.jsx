@@ -72,14 +72,14 @@ const App = () => {
     description: "2024 Mahindra 2638 HST equipped with front end loader and industrial tires. Excellent condition, ready for the yard.",
     sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>",
     images: [
-      '/left-front-1-700x460.jpg',
-      '/mahindra-2638-loader-lifestyle-1.jpg',
-      '/right-rear.jpg'
+      '/left.jpg',
+      '/mahindra.jpg',
+      '/rear.jpg'
     ],
     implementImages: [
-      '/5686621-0-24649441.jpg',
-      '/6529491-0-31556071.jpg',
-      '/9.jpg'
+      '/imp1.jpg',
+      '/imp2.jpg',
+      '/imp3.jpg'
     ]
   });
 
@@ -118,8 +118,8 @@ const App = () => {
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/mahindra-2638-loader-lifestyle-1.jpg', '/right-rear.jpg'] : [],
-      implementImages: item.id === '1' ? ['/5686621-0-24649441.jpg', '/6529491-0-31556071.jpg', '/9.jpg'] : []
+      images: ['/mahindra.jpg'],
+      implementImages: ['/imp1.jpg']
     });
     setActiveTab('inventory');
   };
@@ -685,7 +685,15 @@ const MediaSection = ({ title, images, onAdd, badge = "Auto-Optimized" }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
       {images && images.map((img, i) => (
         <div key={i} className="aspect-[4/3] bg-slate-50 rounded-[1.5rem] overflow-hidden relative shadow-md group cursor-pointer border-2 border-transparent hover:border-red-500 transition-all">
-          <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" alt={`Image ${i+1}`} />
+          <img 
+            src={img} 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+            alt={`Image ${i+1}`} 
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400";
+            }}
+          />
           {i === 0 && title.includes("High-Resolution") && (
             <div className="absolute bottom-3 left-3 bg-red-600 text-white text-[8px] font-black px-3 py-1.5 rounded uppercase tracking-widest shadow-xl font-black">
               MASTER PHOTO
@@ -934,7 +942,18 @@ const FBPreviewModal = ({ unitData, onClose }) => (
       </div>
       <div className="flex-1 overflow-y-auto no-scrollbar pb-12">
         <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
-          {unitData.images?.length > 0 ? <img src={unitData.images[0]} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><ImageIcon size={64}/></div>}
+          {unitData.images?.length > 0 ? (
+            <img 
+              src={unitData.images[0]} 
+              className="w-full h-full object-cover" 
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400";
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-200"><ImageIcon size={64}/></div>
+          )}
         </div>
         <div className="p-8 space-y-8">
           <div className="text-slate-900"><h2 className="text-4xl font-black leading-none mb-2 tracking-tighter font-black font-black font-black font-black">${parseInt(unitData.price || 0).toLocaleString()}</h2><h3 className="text-2xl font-bold text-slate-800 leading-tight mb-2 tracking-tight font-black font-black">{unitData.year} {unitData.title}</h3><p className="text-slate-400 text-sm font-black uppercase tracking-widest font-black">Delta, CO · Posted now</p></div>
@@ -1034,7 +1053,7 @@ const AiVisionModal = ({ onClose, onApply }) => {
             <div className="w-full max-w-md space-y-10 text-center">
               <div className="relative aspect-video bg-slate-950 rounded-[2rem] overflow-hidden shadow-2xl">
                 <img 
-                  src="/mahindra-2638-loader-lifestyle-1.jpg" 
+                  src="/mahindra.jpg" 
                   className="w-full h-full object-cover opacity-60" 
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
