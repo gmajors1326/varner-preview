@@ -84,10 +84,10 @@ const App = () => {
   });
 
   const [inventoryList] = useState([
-    { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', condition: 'New', price: '28950', status: 'In Stock' },
-    { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', condition: 'New', price: '12500', status: 'In Stock' },
-    { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', condition: 'Used', price: '45000', status: 'Pending Sale' },
-    { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', condition: 'Used', price: '16500', status: 'In Stock' },
+    { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', condition: 'New', price: '28950', status: 'In Stock', image: '/mahindra.jpg' },
+    { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg' },
+    { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg' },
+    { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', condition: 'Used', price: '16500', status: 'In Stock', image: '/mahindra.jpg' },
   ]);
 
   const usersList = [
@@ -300,6 +300,7 @@ const App = () => {
                     <thead>
                       <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
                         <th className="px-6 py-5">STOCK #</th>
+                        <th className="px-6 py-5">PHOTO</th>
                         <th className="px-6 py-5">YEAR / MAKE / MODEL</th>
                         <th className="px-6 py-5 text-center">CONDITION</th>
                         <th className="px-6 py-5">PRICE (USD)</th>
@@ -311,6 +312,18 @@ const App = () => {
                       {inventoryList.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleEditUnit(item)}>
                           <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
+                          <td className="px-6 py-5">
+                             <div className="w-16 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                               <img 
+                                 src={item.image} 
+                                 className="w-full h-full object-cover" 
+                                 onError={(e) => {
+                                   e.target.onerror = null;
+                                   e.target.src = "https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=100";
+                                 }}
+                               />
+                             </div>
+                          </td>
                           <td className="px-6 py-5 text-slate-900">
                             <p className="font-black text-base leading-tight uppercase tracking-tight">{item.year} {item.make}</p>
                             <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">{item.model}</p>
