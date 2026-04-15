@@ -342,16 +342,19 @@ const App = () => {
                       <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
                         <Box size={14} className="text-red-600" /> Equipment Identity
                       </h3>
-                      <button 
-                        onClick={() => setShowAiVision(true)}
-                        className="bg-amber-50 text-slate-900 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-amber-100 transition-all active:scale-95 shadow-lg group border-2 border-red-500 relative"
-                      >
-                        <div className="absolute -top-2 -right-2 z-10">
-                          <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
-                        </div>
-                        <Sparkles size={12} className="text-red-500 group-hover:rotate-12 transition-transform" />
-                        Smart Intake
-                      </button>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase pr-1">AI VISION ENABLED</span>
+                        <button 
+                          onClick={() => setShowAiVision(true)}
+                          className="bg-amber-50 text-slate-900 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-amber-100 transition-all active:scale-95 shadow-lg group border-2 border-red-500 relative"
+                        >
+                          <div className="absolute -top-2 -right-2 z-10">
+                            <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
+                          </div>
+                          <Sparkles size={12} className="text-red-500 group-hover:rotate-12 transition-transform" />
+                          Smart Intake
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -367,7 +370,6 @@ const App = () => {
                       <div className="md:col-span-2 border-y border-slate-50 py-6 my-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block flex justify-between items-center">
                           <span>VIN / SERIAL NUMBER</span>
-                          <span className="text-red-600 italic text-[9px] font-black tracking-widest">AI VISION ENABLED</span>
                         </label>
                         <div className="flex gap-3">
                           <input 
