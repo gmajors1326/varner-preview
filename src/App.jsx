@@ -76,7 +76,11 @@ const App = () => {
       '/Mahindra-2638-Loader-Lifestyle-1.jpg',
       '/Right-rear.jpg'
     ],
-    implementImages: []
+    implementImages: [
+      '/5686621-0-24649441.jpg',
+      '/6529491-0-31556071.jpg',
+      '/9.jpg'
+    ]
   });
 
   const [inventoryList] = useState([
@@ -115,7 +119,7 @@ const App = () => {
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
       images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/Mahindra-2638-Loader-Lifestyle-1.jpg', '/Right-rear.jpg'] : [],
-      implementImages: []
+      implementImages: item.id === '1' ? ['/5686621-0-24649441.jpg', '/6529491-0-31556071.jpg', '/9.jpg'] : []
     });
     setActiveTab('inventory');
   };
@@ -940,6 +944,18 @@ const FBPreviewModal = ({ unitData, onClose }) => (
               className="mt-8 p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 border-dashed italic text-[11px] text-slate-500 leading-relaxed font-black font-black rich-text-content"
               dangerouslySetInnerHTML={{ __html: unitData.sellerInfo }}
             />
+            {unitData.implementImages?.length > 0 && (
+              <div className="pt-8 border-t border-slate-100">
+                <h4 className="font-black text-[12px] uppercase text-slate-400 mb-5 tracking-[0.3em]">Implements / Attachments</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {unitData.implementImages.map((img, i) => (
+                    <div key={i} className="aspect-square bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
+                      <img src={img} className="w-full h-full object-cover" alt={`Implement ${i+1}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
