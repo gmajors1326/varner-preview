@@ -431,23 +431,25 @@ const App = () => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block flex justify-between items-center">
                           <span>VIN / SERIAL NUMBER</span>
                         </label>
-                        <div className="flex gap-3">
-                          <input 
-                            type="text" 
-                            value={unitData.vin}
-                            onChange={(e) => handleInputChange('vin', e.target.value)}
-                            className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl p-4.5 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
-                            placeholder="SCAN OR TYPE SERIAL..."
-                          />
-                          <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex flex-col sm:flex-row gap-4 sm:items-end max-w-2xl">
+                          <div className="flex-1">
+                            <input 
+                              type="text" 
+                              value={unitData.vin}
+                              onChange={(e) => handleInputChange('vin', e.target.value)}
+                              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4.5 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
+                              placeholder="SCAN OR TYPE SERIAL..."
+                            />
+                          </div>
+                          <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
                             <div className="flex items-center gap-2 group/tip relative">
                               <Info size={12} className="text-red-400 cursor-help" />
-                              <div className="absolute right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800">
+                              <div className="absolute left-0 sm:left-auto sm:right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800">
                                 Rapidly extract VIN/Serial metadata from equipment data plates to eliminate manual entry.
                               </div>
                               <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase">AI VISION ENABLED</span>
                             </div>
-                            <button onClick={handleScanVin} className="bg-amber-50 text-slate-900 px-8 py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
+                            <button onClick={handleScanVin} className="w-full sm:w-auto bg-amber-50 text-slate-900 px-8 py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
                               <div className="absolute -top-2 -right-2 z-10">
                                 <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
                               </div>
