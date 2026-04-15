@@ -50,7 +50,7 @@ const App = () => {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
     stockStatus: "Draft", category: "Compact Tractors", color: "", meter: "", meterType: "Hours",
     intakeDate: "", description: "", images: [],
-    sellerInfo: "<ul><li>Call or stop by to see it in person</li><li>Varner Equipment</li><li>1375 Hwy 50</li><li>Delta, CO 81416</li><li>(970) 874-0612</li></ul>"
+    sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>"
   };
 
   const [unitData, setUnitData] = useState({
@@ -69,8 +69,12 @@ const App = () => {
     meterType: "Hours",
     intakeDate: "2026-03-15",
     description: "2024 Mahindra 2638 HST equipped with front end loader and industrial tires. Excellent condition, ready for the yard.",
-    sellerInfo: "<ul><li>Call or stop by to see it in person</li><li>Varner Equipment</li><li>1375 Hwy 50</li><li>Delta, CO 81416</li><li>(970) 874-0612</li></ul>",
-    images: ['https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400']
+    sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>",
+    images: [
+      '/left-front-1-700x460.jpg',
+      '/Mahindra-2638-Loader-Lifestyle-1.jpg',
+      '/Right-rear.jpg'
+    ]
   });
 
   const [inventoryList] = useState([
@@ -107,7 +111,7 @@ const App = () => {
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: item.id === '1' ? ['https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'] : []
+      images: item.id === '1' ? ['/left-front-1-700x460.jpg', '/Mahindra-2638-Loader-Lifestyle-1.jpg', '/Right-rear.jpg'] : []
     });
     setActiveTab('inventory');
   };
@@ -871,7 +875,7 @@ const AiVisionModal = ({ onClose, onApply }) => {
             <div className="w-full max-w-md space-y-10 text-center">
               <div className="relative aspect-video bg-slate-950 rounded-[2rem] overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=600" 
+                  src="/Mahindra-2638-Loader-Lifestyle-1.jpg" 
                   className="w-full h-full object-cover opacity-60" 
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
