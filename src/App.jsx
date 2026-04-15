@@ -50,7 +50,7 @@ const App = () => {
   const defaultEmptyUnit = {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
     stockStatus: "Draft", category: "Compact Tractors", color: "", meter: "", meterType: "Hours",
-    intakeDate: "", description: "", images: [],
+    intakeDate: "", description: "", images: [], attachments: [],
     sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>"
   };
 
@@ -75,8 +75,17 @@ const App = () => {
       '/left-front-1-700x460.jpg',
       '/Mahindra-2638-Loader-Lifestyle-1.jpg',
       '/Right-rear.jpg'
-    ]
+    ],
+    attachments: ['Standard Bucket', 'Mid-Mount Mower']
   });
+
+  const availableAttachments = [
+    { id: '1', name: 'Standard Bucket', price: '850', icon: <Box size={18} /> },
+    { id: '2', name: 'Pallet Forks', price: '1200', icon: <Wrench size={18} /> },
+    { id: '3', name: 'Mid-Mount Mower', price: '2400', icon: <Zap size={18} /> },
+    { id: '4', name: 'Backhoe Attachment', price: '6500', icon: <Truck size={18} /> },
+    { id: '5', name: 'Grapple Bucket', price: '2100', icon: <Box size={18} /> }
+  ];
 
   const [inventoryList] = useState([
     { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', condition: 'New', price: '28950', status: 'In Stock' },
@@ -546,9 +555,52 @@ const App = () => {
                          <div className="text-center">
                            <p className="text-3xl font-black text-blue-600">142</p>
                            <p className="text-[9px] text-slate-400 uppercase mt-1">Live Ads</p>
-                         </div>
-                       </div>
                     </div>
+                  </div>
+
+                  {/* PRODUCT UPSELL / ATTACHMENTS */}
+                  <div className="bg-white rounded-[2rem] p-10 shadow-xl border border-slate-200/60">
+                    <div className="flex justify-between items-center mb-10">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
+                        <Plus size={14} className="text-red-600" /> Upsell / Attachments
+                      </h3>
+                      <span className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase italic px-4 py-2 rounded-full border border-slate-100 tracking-widest shadow-sm">
+                        Revenue Growth
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                      {availableAttachments.map((item) => {
+                        const isSelected = unitData.attachments?.includes(item.name);
+                        return (
+                          <div 
+                            key={item.id}
+                            onClick={() => {
+                              const current = unitData.attachments || [];
+                              const next = isSelected 
+                                ? current.filter(a => a !== item.name)
+                                : [...current, item.name];
+                              handleInputChange('attachments', next);
+                            }}
+                            className={`p-6 rounded-[1.5rem] border-2 transition-all cursor-pointer group flex flex-col gap-4 ${isSelected ? 'bg-slate-950 border-red-600 text-white shadow-xl shadow-slate-300' : 'bg-slate-50 border-slate-100 text-slate-900 hover:border-slate-300'}`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className={`p-3 rounded-xl ${isSelected ? 'bg-red-600 text-white' : 'bg-white text-slate-400 group-hover:text-red-600 shadow-sm'}`}>
+                                {item.icon}
+                              </div>
+                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-red-600 border-red-600' : 'bg-white border-slate-200'}`}>
+                                {isSelected && <CheckCircle2 size={12} className="text-white" />}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="font-black text-sm uppercase leading-tight">{item.name}</p>
+                              <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isSelected ? 'text-slate-400' : 'text-slate-400'}`}>+${parseInt(item.price).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
                   </div>
                 </div>
               </div>
@@ -917,6 +969,16 @@ const FBPreviewModal = ({ unitData, onClose }) => (
               className="text-[16px] text-slate-800 font-medium leading-relaxed font-black font-black rich-text-content"
               dangerouslySetInnerHTML={{ __html: unitData.description }}
             />
+            {unitData.attachments?.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Included Attachments:</p>
+                <div className="flex flex-wrap gap-2">
+                  {unitData.attachments.map((a, i) => (
+                    <span key={i} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border border-slate-200">{a}</span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div 
               className="mt-8 p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 border-dashed italic text-[11px] text-slate-500 leading-relaxed font-black font-black rich-text-content"
               dangerouslySetInnerHTML={{ __html: unitData.sellerInfo }}
