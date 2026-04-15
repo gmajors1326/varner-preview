@@ -28,7 +28,11 @@ import {
   List,
   Search,
   Edit2,
-  X
+  X,
+  TrendingUp,
+  Activity,
+  DollarSign,
+  History
 } from 'lucide-react';
 
 const App = () => {
@@ -201,12 +205,25 @@ const App = () => {
             {/* --- DASHBOARD TAB --- */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
                   <MetricCard icon={<Users size={24}/>} label="Digital Leads" value="87" subtext="45% call rate" color="red" />
-                  <MetricCard icon={<Zap size={24}/>} label="API Health" value="100%" subtext="1,402 syncs" color="green" />
+                  <MetricCard icon={<DollarSign size={24}/>} label="Stock Value" value="$2.4M" subtext="Portfolio Total" color="green" />
+                  <MetricCard icon={<Activity size={24}/>} label="Service Queue" value="14" subtext="3 High Priority" color="amber" />
                 </div>
-                <PerformanceChart />
+
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                  <div className="xl:col-span-2">
+                    <PerformanceChart />
+                  </div>
+                  <div className="space-y-8">
+                    <QuickActions 
+                      onAdd={() => handleAddNewUnit()} 
+                      onScan={() => { setActiveTab('inventory'); handleScanVin(); }} 
+                    />
+                    <RecentActivity />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -490,7 +507,12 @@ const SelectField = ({ label, options, value, onChange }) => (
 );
 
 const MetricCard = ({ icon, label, value, subtext, color }) => {
-  const styles = { blue: "bg-blue-50 text-blue-600 shadow-blue-100", red: "bg-red-50 text-red-600 shadow-red-100", green: "bg-green-50 text-green-600 shadow-green-100" };
+  const styles = { 
+    blue: "bg-blue-50 text-blue-600 shadow-blue-100", 
+    red: "bg-red-50 text-red-600 shadow-red-100", 
+    green: "bg-green-50 text-green-600 shadow-green-100",
+    amber: "bg-amber-50 text-amber-600 shadow-amber-100"
+  };
   return (
     <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl relative overflow-hidden group">
       <div className="flex items-center gap-4 mb-8 relative z-10">
@@ -500,6 +522,61 @@ const MetricCard = ({ icon, label, value, subtext, color }) => {
       <p className="text-5xl font-black text-slate-950 mb-3 tracking-tighter relative z-10 leading-none">{value}</p>
       <p className={`text-[10px] font-black uppercase tracking-[0.1em] relative z-10 font-black ${styles[color].split(' ')[1]}`}>{subtext}</p>
       <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 ${styles[color].split(' ')[0]} group-hover:scale-150 transition-transform duration-700`}></div>
+    </div>
+  );
+};
+
+const QuickActions = ({ onAdd, onScan }) => (
+  <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl">
+    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+      <Zap size={14} className="text-red-600" /> Quick Operations
+    </h4>
+    <div className="grid grid-cols-2 gap-4">
+      <button onClick={onAdd} className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
+        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform">
+          <Plus size={20} className="text-red-600" />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Add Unit</span>
+      </button>
+      <button onClick={onScan} className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
+        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform">
+          <Camera size={20} className="text-slate-900" />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Scan VIN</span>
+      </button>
+    </div>
+  </div>
+);
+
+const RecentActivity = () => (
+  <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl">
+    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+      <History size={14} className="text-blue-600" /> Activity Stream
+    </h4>
+    <div className="space-y-6">
+      <ActivityItem icon={<CheckCircle2 size={14} />} title="Inventory Synced" desc="142 units updated on Meta" time="12m ago" color="green" />
+      <ActivityItem icon={<Truck size={14} />} title="Service Dispatched" desc="Unit #77492 (Hydraulic Leak)" time="1h ago" color="blue" />
+      <ActivityItem icon={<Users size={14} />} title="New Lead" desc="Marcus R. • Mahindra 2638" time="3h ago" color="red" />
+    </div>
+  </div>
+);
+
+const ActivityItem = ({ icon, title, desc, time, color }) => {
+  const colors = {
+    green: "text-green-600 bg-green-50",
+    blue: "text-blue-600 bg-blue-50",
+    red: "text-red-600 bg-red-50"
+  };
+  return (
+    <div className="flex gap-4">
+      <div className={`mt-1 p-2 rounded-lg ${colors[color]} h-fit`}>{icon}</div>
+      <div className="flex-1 border-b border-slate-50 pb-4 last:border-0">
+        <div className="flex justify-between items-start mb-1">
+          <h5 className="text-[11px] font-black uppercase tracking-tight text-slate-900">{title}</h5>
+          <span className="text-[9px] font-bold text-slate-400 uppercase">{time}</span>
+        </div>
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{desc}</p>
+      </div>
     </div>
   );
 };
