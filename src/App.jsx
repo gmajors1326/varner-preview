@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { 
   LayoutDashboard, 
   Box, 
@@ -488,9 +490,59 @@ const InputField = ({ label, value, onChange }) => (
 );
 
 const TextAreaField = ({ label, value, onChange }) => (
-  <div className="space-y-3">
+  <div className="space-y-3 rich-text-field">
     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 font-black">{label}</label>
-    <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={4} className="w-full bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] p-6 font-bold text-slate-800 focus:border-red-500 focus:bg-white outline-none transition-all resize-none shadow-sm leading-relaxed text-sm font-medium" />
+    <div className="bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] overflow-hidden focus-within:border-red-500 transition-all shadow-sm">
+      <ReactQuill 
+        theme="snow" 
+        value={value} 
+        onChange={onChange}
+        modules={{
+          toolbar: [
+            [{ 'header': [1, 2, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['clean']
+          ],
+        }}
+        className="bg-transparent"
+      />
+    </div>
+    <style dangerouslySetInnerHTML={{ __html: `
+      .rich-text-field .ql-toolbar.ql-snow {
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fff;
+        padding: 12px 20px;
+      }
+      .rich-text-field .ql-container.ql-snow {
+        border: none;
+        font-family: inherit;
+        font-size: 14px;
+        min-height: 150px;
+      }
+      .rich-text-field .ql-editor {
+        padding: 20px;
+        color: #1e293b;
+        line-height: 1.6;
+      }
+      .rich-text-field .ql-editor.ql-blank::before {
+        color: #94a3b8;
+        font-style: normal;
+        left: 20px;
+      }
+      .rich-text-content h1, .rich-text-content h2 {
+        font-weight: 900;
+        text-transform: uppercase;
+        margin-bottom: 0.5em;
+      }
+      .rich-text-content ul, .rich-text-content ol {
+        padding-left: 1.5em;
+        margin-bottom: 1em;
+      }
+      .rich-text-content ul { list-style-type: disc; }
+      .rich-text-content ol { list-style-type: decimal; }
+    `}} />
   </div>
 );
 
@@ -714,7 +766,17 @@ const FBPreviewModal = ({ unitData, onClose }) => (
         <div className="p-8 space-y-8">
           <div className="text-slate-900"><h2 className="text-4xl font-black leading-none mb-2 tracking-tighter font-black font-black font-black font-black">${parseInt(unitData.price || 0).toLocaleString()}</h2><h3 className="text-2xl font-bold text-slate-800 leading-tight mb-2 tracking-tight font-black font-black">{unitData.year} {unitData.title}</h3><p className="text-slate-400 text-sm font-black uppercase tracking-widest font-black">Delta, CO · Posted now</p></div>
           <div className="flex gap-3"><button className="flex-1 bg-[#0866FF] text-white py-4 rounded-[1.25rem] font-black text-sm shadow-xl shadow-blue-200 font-black">Message</button><button className="p-4 bg-slate-100 rounded-[1.25rem] text-slate-600 font-black"><Plus size={24}/></button></div>
-          <div className="pt-8 border-t border-slate-100 text-slate-900 font-black"><h4 className="font-black text-[12px] uppercase text-slate-400 mb-5 tracking-[0.3em] font-black font-black font-black font-black">Description</h4><p className="text-[16px] text-slate-800 font-medium leading-relaxed whitespace-pre-wrap font-black font-black">{unitData.description}</p><div className="mt-8 p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 border-dashed italic text-[11px] text-slate-500 whitespace-pre-wrap leading-relaxed font-black font-black">{unitData.sellerInfo}</div></div>
+          <div className="pt-8 border-t border-slate-100 text-slate-900 font-black">
+            <h4 className="font-black text-[12px] uppercase text-slate-400 mb-5 tracking-[0.3em] font-black font-black font-black font-black">Description</h4>
+            <div 
+              className="text-[16px] text-slate-800 font-medium leading-relaxed font-black font-black rich-text-content"
+              dangerouslySetInnerHTML={{ __html: unitData.description }}
+            />
+            <div 
+              className="mt-8 p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 border-dashed italic text-[11px] text-slate-500 leading-relaxed font-black font-black rich-text-content"
+              dangerouslySetInnerHTML={{ __html: unitData.sellerInfo }}
+            />
+          </div>
         </div>
       </div>
       <div className="p-8 bg-slate-50 border-t border-slate-200 shadow-inner font-black"><button onClick={onClose} className="w-full py-5 bg-slate-950 text-white font-black uppercase tracking-[0.4em] text-[11px] rounded-3xl shadow-3xl hover:bg-black transition-all font-black">Close Simulator</button></div>
