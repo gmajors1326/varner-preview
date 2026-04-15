@@ -87,7 +87,8 @@ const App = () => {
   const usersList = [
     { name: 'Ashley Varner', role: 'Administrator', status: 'Online', lastActive: 'Currently Active', device: 'Desktop' },
     { name: 'Employee 8402', role: 'Editor', status: 'Online', lastActive: '5m ago', device: 'iPad Pro' },
-    { name: 'Marcus (Sales)', role: 'Sales Manager', status: 'Offline', lastActive: '4:30 PM', device: 'iPhone' }
+    { name: 'Marcus (Sales)', role: 'Sales Manager', status: 'Offline', lastActive: '4:30 PM', device: 'iPhone' },
+    { name: 'Yard Staff (Temp)', role: 'Viewer', status: 'Inactive', lastActive: '2d ago', device: 'Android Tablet' }
   ];
 
   const handleInputChange = (field, value) => {
@@ -841,7 +842,9 @@ const SettingsTab = ({ users }) => (
                <div className="w-12 h-12 rounded-xl bg-slate-950 text-white flex items-center justify-center font-black text-xl group-hover:scale-110 transition-transform">A</div>
                <div><p className="font-black text-lg leading-none mb-1.5 font-black">{u.name}</p><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-black">{u.role} • {u.device}</p></div>
             </div>
-            <span className="bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest border border-green-200 font-black">Active</span>
+            <span className={`px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest border font-black ${u.status === 'Inactive' ? 'bg-slate-100 text-slate-400 border-slate-200' : 'bg-green-100 text-green-700 border-green-200'}`}>
+              {u.status}
+            </span>
           </div>
         ))}
       </div>
