@@ -35,7 +35,8 @@ import {
   Activity,
   DollarSign,
   History,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 
 const App = () => {
@@ -268,7 +269,15 @@ const App = () => {
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
-                  <MetricCard icon={<Users size={24}/>} label="Digital Leads" value="87" subtext="45% call rate" color="red" premium={true} />
+                  <MetricCard 
+                    icon={<Users size={24}/>} 
+                    label="Digital Leads" 
+                    value="87" 
+                    subtext="45% call rate" 
+                    color="red" 
+                    premium={true} 
+                    description="Track real-time inquiries directly from your website and Meta Marketplace. Includes automatic lead routing."
+                  />
                   <MetricCard icon={<Activity size={24}/>} label="Service Queue" value="14" subtext="3 High Priority" color="amber" />
                 </div>
 
@@ -387,7 +396,13 @@ const App = () => {
                         <Box size={14} className="text-red-600" /> Equipment Identity
                       </h3>
                       <div className="flex flex-col items-end gap-1.5">
-                        <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase pr-1">AI VISION ENABLED</span>
+                        <div className="flex items-center gap-2 group/tip relative">
+                          <Info size={12} className="text-red-400 cursor-help" />
+                          <div className="absolute right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800">
+                            Identify equipment, year, and specs from a single photo using Vision AI.
+                          </div>
+                          <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase">AI VISION ENABLED</span>
+                        </div>
                         <button 
                           onClick={() => setShowAiVision(true)}
                           className="bg-amber-50 text-slate-900 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-amber-100 transition-all active:scale-95 shadow-lg group border-2 border-red-500 relative"
@@ -424,7 +439,13 @@ const App = () => {
                             placeholder="SCAN OR TYPE SERIAL..."
                           />
                           <div className="flex flex-col items-end gap-1.5">
-                            <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase pr-1">AI VISION ENABLED</span>
+                            <div className="flex items-center gap-2 group/tip relative">
+                              <Info size={12} className="text-red-400 cursor-help" />
+                              <div className="absolute right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800">
+                                Rapidly extract VIN/Serial metadata from equipment data plates to eliminate manual entry.
+                              </div>
+                              <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase">AI VISION ENABLED</span>
+                            </div>
                             <button onClick={handleScanVin} className="bg-amber-50 text-slate-900 px-8 py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
                               <div className="absolute -top-2 -right-2 z-10">
                                 <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
@@ -755,7 +776,7 @@ const MediaSection = ({ title, images, onAdd, badge = "Auto-Optimized" }) => (
   </div>
 );
 
-const MetricCard = ({ icon, label, value, subtext, color, premium = false }) => {
+const MetricCard = ({ icon, label, value, subtext, color, premium = false, description = "" }) => {
   const styles = { 
     blue: "bg-blue-50 text-blue-600 shadow-blue-100", 
     red: "bg-red-50 text-red-600 shadow-red-100", 
@@ -765,7 +786,13 @@ const MetricCard = ({ icon, label, value, subtext, color, premium = false }) => 
   return (
     <div className={`rounded-[2rem] p-8 border shadow-xl relative overflow-hidden group transition-all ${premium ? 'bg-amber-50 border-red-500 ring-4 ring-red-50' : 'bg-white border-slate-200/60'}`}>
       {premium && (
-        <div className="absolute top-4 right-6 z-20">
+        <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
+          <div className="group/info relative">
+            <Info size={14} className="text-red-400 cursor-help hover:text-red-600 transition-colors" />
+            <div className="absolute right-0 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
+              {description}
+            </div>
+          </div>
           <span className="bg-red-600 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full shadow-lg">Premium Add-on</span>
         </div>
       )}
@@ -908,7 +935,13 @@ const LogEntry = ({ msg, time }) => (
 
 const LeadCaptureWidget = ({ value }) => (
   <div className="bg-amber-50 rounded-[2rem] p-8 border border-red-500 shadow-xl relative overflow-hidden group text-slate-950 ring-4 ring-red-50">
-    <div className="absolute top-4 right-6 z-20">
+    <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
+      <div className="group/info relative">
+        <Info size={14} className="text-red-400 cursor-help" />
+        <div className="absolute right-0 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
+          High-conversion lead capture system that bridges inventory with buyer inquiries instantly.
+        </div>
+      </div>
       <span className="bg-red-600 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full shadow-lg">Premium Add-on</span>
     </div>
     <div className="relative z-10 flex flex-col gap-3">
@@ -927,7 +960,13 @@ const LeadCaptureWidget = ({ value }) => (
 
 const ServiceRow = ({ id, issue, location, status, time }) => (
   <div className="p-7 flex items-center justify-between hover:bg-amber-100 transition-colors cursor-pointer group border-b border-slate-50 last:border-0 text-slate-950 bg-amber-50/50 relative">
-    <div className="absolute top-2 right-4 z-10">
+    <div className="absolute top-2 right-4 z-10 flex items-center gap-2">
+      <div className="group/info relative">
+        <Info size={12} className="text-red-400 cursor-help" />
+        <div className="absolute right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
+          Real-time field dispatching and ticket management for yard staff and technicians.
+        </div>
+      </div>
       <span className="text-[6px] font-black uppercase text-red-600 tracking-[0.2em]">Premium Module</span>
     </div>
     <div className="flex items-center gap-8">
