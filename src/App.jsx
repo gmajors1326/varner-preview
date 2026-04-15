@@ -215,7 +215,7 @@ const App = () => {
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
-                  <MetricCard icon={<Users size={24}/>} label="Digital Leads" value="87" subtext="45% call rate" color="red" />
+                  <MetricCard icon={<Users size={24}/>} label="Digital Leads" value="87" subtext="45% call rate" color="red" premium={true} />
                   <MetricCard icon={<Activity size={24}/>} label="Service Queue" value="14" subtext="3 High Priority" color="amber" />
                 </div>
 
@@ -292,8 +292,11 @@ const App = () => {
                       </h3>
                       <button 
                         onClick={() => setShowAiVision(true)}
-                        className="bg-slate-950 text-white px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all active:scale-95 shadow-lg group border-b-2 border-slate-800"
+                        className="bg-amber-50 text-slate-900 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-amber-100 transition-all active:scale-95 shadow-lg group border-2 border-red-500 relative"
                       >
+                        <div className="absolute -top-2 -right-2 z-10">
+                          <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
+                        </div>
                         <Sparkles size={12} className="text-red-500 group-hover:rotate-12 transition-transform" />
                         Smart Intake
                       </button>
@@ -322,8 +325,11 @@ const App = () => {
                             className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl p-4.5 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
                             placeholder="SCAN OR TYPE SERIAL..."
                           />
-                          <button onClick={handleScanVin} className="bg-slate-950 text-white px-8 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-black shadow-lg">
-                            {isScanning ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+                          <button onClick={handleScanVin} className="bg-amber-50 text-slate-900 px-8 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
+                            <div className="absolute -top-2 -right-2 z-10">
+                              <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
+                            </div>
+                            {isScanning ? <Loader2 size={18} className="animate-spin text-red-600" /> : <Camera size={18} className="text-red-600 group-hover:scale-110 transition-transform" />}
                             {isScanning ? 'READING...' : 'SCAN'}
                           </button>
                         </div>
@@ -623,7 +629,7 @@ const SelectField = ({ label, options, value, onChange }) => (
   </div>
 );
 
-const MetricCard = ({ icon, label, value, subtext, color }) => {
+const MetricCard = ({ icon, label, value, subtext, color, premium = false }) => {
   const styles = { 
     blue: "bg-blue-50 text-blue-600 shadow-blue-100", 
     red: "bg-red-50 text-red-600 shadow-red-100", 
@@ -631,7 +637,12 @@ const MetricCard = ({ icon, label, value, subtext, color }) => {
     amber: "bg-amber-50 text-amber-600 shadow-amber-100"
   };
   return (
-    <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl relative overflow-hidden group">
+    <div className={`rounded-[2rem] p-8 border shadow-xl relative overflow-hidden group transition-all ${premium ? 'bg-amber-50 border-red-500 ring-4 ring-red-50' : 'bg-white border-slate-200/60'}`}>
+      {premium && (
+        <div className="absolute top-4 right-6 z-20">
+          <span className="bg-red-600 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full shadow-lg">Premium Add-on</span>
+        </div>
+      )}
       <div className="flex items-center gap-4 mb-8 relative z-10">
         <div className={`p-4 rounded-xl ${styles[color]} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
         <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 leading-none">{label}</h4>
@@ -655,7 +666,10 @@ const QuickActions = ({ onAdd, onScan }) => (
         </div>
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Add Unit</span>
       </button>
-      <button onClick={onScan} className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
+      <button onClick={onScan} className="flex flex-col items-center justify-center p-6 bg-amber-50 rounded-2xl border-2 border-red-500 hover:bg-amber-100 transition-all group relative">
+        <div className="absolute -top-2 -right-2 z-10">
+          <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
+        </div>
         <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform">
           <Camera size={20} className="text-slate-900" />
         </div>
@@ -767,7 +781,10 @@ const LogEntry = ({ msg, time }) => (
 );
 
 const LeadCaptureWidget = ({ value }) => (
-  <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl relative overflow-hidden group text-slate-950">
+  <div className="bg-amber-50 rounded-[2rem] p-8 border border-red-500 shadow-xl relative overflow-hidden group text-slate-950 ring-4 ring-red-50">
+    <div className="absolute top-4 right-6 z-20">
+      <span className="bg-red-600 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full shadow-lg">Premium Add-on</span>
+    </div>
     <div className="relative z-10 flex flex-col gap-3">
       <div className="flex items-center justify-between">
          <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 leading-none">CAPTURED LEADS</h4>
@@ -783,7 +800,10 @@ const LeadCaptureWidget = ({ value }) => (
 );
 
 const ServiceRow = ({ id, issue, location, status, time }) => (
-  <div className="p-7 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group border-b border-slate-50 last:border-0 text-slate-950">
+  <div className="p-7 flex items-center justify-between hover:bg-amber-100 transition-colors cursor-pointer group border-b border-slate-50 last:border-0 text-slate-950 bg-amber-50/50 relative">
+    <div className="absolute top-2 right-4 z-10">
+      <span className="text-[6px] font-black uppercase text-red-600 tracking-[0.2em]">Premium Module</span>
+    </div>
     <div className="flex items-center gap-8">
       <div className="bg-white text-slate-950 border-2 border-slate-100 font-mono text-xs font-black px-4 py-2 rounded-xl shadow-sm group-hover:border-red-100 transition-colors">{id}</div>
       <div>
