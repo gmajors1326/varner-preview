@@ -303,7 +303,8 @@ const App = () => {
                         <th className="px-6 py-5">YEAR / MAKE / MODEL</th>
                         <th className="px-6 py-5 text-center">CONDITION</th>
                         <th className="px-6 py-5">PRICE (USD)</th>
-                        <th className="px-6 py-5 text-right">STATUS</th>
+                        <th className="px-6 py-5">STATUS</th>
+                        <th className="px-6 py-5 text-right">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -318,11 +319,32 @@ const App = () => {
                              <span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span>
                           </td>
                           <td className="px-6 py-5 font-black text-base text-slate-900 tracking-tighter">${parseInt(item.price).toLocaleString()}</td>
-                          <td className="px-6 py-5 text-right">
+                          <td className="px-6 py-5">
                              <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-green-500 bg-green-50 px-3 py-1 rounded-full border border-green-100">
                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-sm"></div>
                                {item.status}
                              </span>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                             <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                               <button 
+                                 onClick={() => handleEditUnit(item)}
+                                 className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95"
+                                 title="Edit Unit"
+                               >
+                                 <Edit2 size={16} />
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   handleEditUnit(item);
+                                   setTimeout(handleClone, 100);
+                                 }}
+                                 className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95"
+                                 title="Clone Unit"
+                               >
+                                 <Copy size={16} />
+                               </button>
+                             </div>
                           </td>
                         </tr>
                       ))}
