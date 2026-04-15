@@ -282,21 +282,19 @@ const App = () => {
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
                 <div className="xl:col-span-2 space-y-8">
                   
-                  {/* AI VISION INTAKE TRIGGER */}
-                  <button 
-                    onClick={() => setShowAiVision(true)}
-                    className="w-full bg-slate-950 text-white py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-black transition-all active:scale-95 shadow-2xl border-b-4 border-slate-800 group"
-                  >
-                    <div className="bg-red-600 p-2 rounded-lg group-hover:rotate-12 transition-transform">
-                      <Sparkles size={18} />
-                    </div>
-                    Start AI Vision Smart Intake
-                  </button>
-
                   <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-200/60 relative overflow-hidden text-slate-900">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-8 flex items-center gap-2 leading-none font-black">
-                      <Box size={14} className="text-red-600" /> Equipment Identity
-                    </h3>
+                    <div className="flex justify-between items-center mb-8">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
+                        <Box size={14} className="text-red-600" /> Equipment Identity
+                      </h3>
+                      <button 
+                        onClick={() => setShowAiVision(true)}
+                        className="bg-slate-950 text-white px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all active:scale-95 shadow-lg group border-b-2 border-slate-800"
+                      >
+                        <Sparkles size={12} className="text-red-500 group-hover:rotate-12 transition-transform" />
+                        Smart Intake
+                      </button>
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="md:col-span-2">
