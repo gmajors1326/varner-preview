@@ -34,7 +34,8 @@ import {
   TrendingUp,
   Activity,
   DollarSign,
-  History
+  History,
+  Sparkles
 } from 'lucide-react';
 
 const App = () => {
@@ -43,6 +44,7 @@ const App = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [activeTab, setActiveTab] = useState('all-inventory');
   const [showFBPreview, setShowFBPreview] = useState(false);
+  const [showAiVision, setShowAiVision] = useState(false);
 
   const defaultEmptyUnit = {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
@@ -279,6 +281,18 @@ const App = () => {
             {activeTab === 'inventory' && (
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
                 <div className="xl:col-span-2 space-y-8">
+                  
+                  {/* AI VISION INTAKE TRIGGER */}
+                  <button 
+                    onClick={() => setShowAiVision(true)}
+                    className="w-full bg-slate-950 text-white py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-black transition-all active:scale-95 shadow-2xl border-b-4 border-slate-800 group"
+                  >
+                    <div className="bg-red-600 p-2 rounded-lg group-hover:rotate-12 transition-transform">
+                      <Sparkles size={18} />
+                    </div>
+                    Start AI Vision Smart Intake
+                  </button>
+
                   <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-200/60 relative overflow-hidden text-slate-900">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-8 flex items-center gap-2 leading-none font-black">
                       <Box size={14} className="text-red-600" /> Equipment Identity
@@ -457,6 +471,17 @@ const App = () => {
 
       {/* FACEBOOK PREVIEW MODAL */}
       {showFBPreview && <FBPreviewModal unitData={unitData} onClose={() => setShowFBPreview(false)} />}
+
+      {/* AI VISION MODAL */}
+      {showAiVision && (
+        <AiVisionModal 
+          onClose={() => setShowAiVision(false)} 
+          onApply={(data) => {
+            setUnitData(prev => ({ ...prev, ...data }));
+            setShowAiVision(false);
+          }} 
+        />
+      )}
     </div>
   );
 };
@@ -756,7 +781,7 @@ const FBPreviewModal = ({ unitData, onClose }) => (
   <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-8">
     <div className="bg-white w-full max-w-[420px] rounded-[3.5rem] overflow-hidden shadow-3xl border-[12px] border-slate-950 relative h-[85vh] flex flex-col animate-in zoom-in duration-300">
       <div className="p-8 bg-white flex justify-between border-b items-center relative z-20 pt-10">
-        <span className="font-black text-[11px] uppercase text-blue-600 flex items-center gap-3 tracking-[0.2em] leading-none font-black font-black"><Facebook size={20} fill="currentColor"/> Meta Marketplace Preview</span>
+        <span className="font-black text-[11px] uppercase text-blue-600 flex items-center gap-3 tracking-[0.2em] leading-none font-black font-black font-black"><Facebook size={20} fill="currentColor"/> Meta Marketplace Preview</span>
         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors font-black"><X size={24} className="text-slate-400 font-black"/></button>
       </div>
       <div className="flex-1 overflow-y-auto no-scrollbar pb-12">
@@ -783,5 +808,142 @@ const FBPreviewModal = ({ unitData, onClose }) => (
     </div>
   </div>
 );
+
+const AiVisionModal = ({ onClose, onApply }) => {
+  const [step, setStep] = useState('upload'); // upload, scanning, results
+  const [scanProgress, setScanProgress] = useState(0);
+  const [results, setResults] = useState(null);
+
+  const startScan = () => {
+    setStep('scanning');
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 2;
+      setScanProgress(progress);
+      if (progress >= 100) {
+        clearInterval(interval);
+        setResults({
+          year: "2024",
+          make: "Mahindra",
+          model: "2638 HST",
+          category: "Compact Tractors",
+          title: "2024 Mahindra 2638 HST",
+          confidence: "98.4%"
+        });
+        setStep('results');
+      }
+    }, 40);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-50 flex items-center justify-center p-8">
+      <div className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-3xl border border-slate-200 flex flex-col animate-in zoom-in duration-300">
+        <div className="p-8 bg-slate-950 text-white flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <div className="bg-red-600 p-2 rounded-xl shadow-lg shadow-red-600/20">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <h3 className="font-black text-sm uppercase tracking-widest leading-none mb-1">AI Vision Engine</h3>
+              <p className="text-[9px] text-slate-500 uppercase font-black tracking-[0.2em]">Varner Neural Network v4.2</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition-colors"><X size={24} /></button>
+        </div>
+
+        <div className="flex-1 p-12 flex flex-col items-center justify-center min-h-[400px]">
+          {step === 'upload' && (
+            <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4">
+              <div className="w-32 h-32 bg-slate-50 rounded-[2.5rem] border-4 border-dashed border-slate-200 flex items-center justify-center mx-auto text-slate-300 group-hover:border-red-500 transition-all">
+                <ImageIcon size={48} />
+              </div>
+              <div>
+                <h4 className="text-2xl font-black tracking-tight text-slate-900 mb-2 uppercase">Identify Machine</h4>
+                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-xs mx-auto">Upload a photo of the equipment or its data plate for automatic detection.</p>
+              </div>
+              <button 
+                onClick={startScan}
+                className="bg-red-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-red-200 hover:bg-red-700 transition active:scale-95"
+              >
+                Upload & Analyze
+              </button>
+            </div>
+          )}
+
+          {step === 'scanning' && (
+            <div className="w-full max-w-md space-y-10 text-center">
+              <div className="relative aspect-video bg-slate-950 rounded-[2rem] overflow-hidden shadow-2xl">
+                <img 
+                  src="https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=600" 
+                  className="w-full h-full object-cover opacity-60" 
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-full h-[2px] bg-red-500 shadow-[0_0_20px_rgba(239,68,68,1)] absolute animate-scan-line"></div>
+                </div>
+                <div className="absolute top-4 left-4 bg-red-600/80 text-white text-[8px] font-black px-3 py-1 rounded uppercase tracking-[0.2em] backdrop-blur-md">
+                  Analyzing Geometry...
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${scanProgress}%` }}></div>
+                </div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Extracting Machine Metadata • {scanProgress}%</p>
+              </div>
+            </div>
+          )}
+
+          {step === 'results' && (
+            <div className="w-full space-y-8 animate-in fade-in zoom-in-95">
+              <div className="flex items-center gap-6 p-6 bg-green-50 border-2 border-green-100 rounded-[2rem]">
+                <div className="bg-white p-3 rounded-2xl shadow-sm text-green-600">
+                  <CheckCircle2 size={32} />
+                </div>
+                <div>
+                  <h4 className="font-black text-green-950 uppercase text-xs tracking-widest mb-1">Identification Success</h4>
+                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">{results.confidence} Match Found</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Make / Model</p>
+                  <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{results.make} {results.model}</p>
+                </div>
+                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Year</p>
+                  <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{results.year}</p>
+                </div>
+                <div className="col-span-2 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Detected Category</p>
+                  <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{results.category}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setStep('upload')} className="flex-1 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest text-slate-400 border-2 border-slate-100 hover:bg-slate-50 transition">Retry Scan</button>
+                <button 
+                  onClick={() => onApply(results)}
+                  className="flex-[2] bg-slate-950 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition shadow-xl"
+                >
+                  Apply Details to Unit
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scan-line {
+          0% { top: 0%; }
+          100% { top: 100%; }
+        }
+        .animate-scan-line {
+          animation: scan-line 2s linear infinite;
+        }
+      `}} />
+    </div>
+  );
+};
 
 export default App;
