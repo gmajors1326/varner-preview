@@ -119,8 +119,8 @@ const App = () => {
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: ['/mahindra.jpg'],
-      implementImages: ['/imp1.jpg']
+      images: ['/left.jpg', '/mahindra.jpg', '/rear.jpg'],
+      implementImages: ['/imp1.jpg', '/imp2.jpg', '/imp3.jpg']
     });
     setActiveTab('inventory');
   };
@@ -466,14 +466,14 @@ const App = () => {
                   <MediaSection 
                     title="High-Resolution Media" 
                     images={unitData.images} 
-                    onAdd={() => {}} 
+                    onAdd={() => handleInputChange('images', [...(unitData.images || []), '/mahindra.jpg'])} 
                   />
 
                   {/* IMPLEMENTS / ATTACHMENTS MEDIA */}
                   <MediaSection 
                     title="Implements / Attachments Media" 
                     images={unitData.implementImages} 
-                    onAdd={() => {}} 
+                    onAdd={() => handleInputChange('implementImages', [...(unitData.implementImages || []), '/imp1.jpg'])} 
                     badge="Add-on Products"
                   />
                 </div>
