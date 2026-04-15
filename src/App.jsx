@@ -875,38 +875,40 @@ const PerformanceChart = () => {
   const maxViews = Math.max(...chartData.map(d => d.views));
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-12 shadow-2xl border border-slate-100 h-[500px] flex flex-col text-slate-950">
-      <div className="flex justify-between items-start mb-12">
+    <div className="bg-white rounded-[2.5rem] p-6 sm:p-12 shadow-2xl border border-slate-100 min-h-[400px] sm:h-[500px] flex flex-col text-slate-950 overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-8 sm:mb-12">
         <div className="space-y-2">
-          <h3 className="text-2xl font-black tracking-tight leading-none uppercase">Weekly Engagement Ledger</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2 font-black">Sync Reach vs Inbound Lead Volume</p>
+          <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-none uppercase">Weekly Engagement Ledger</h3>
+          <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2 font-black">Sync Reach vs Inbound Lead Volume</p>
         </div>
-        <div className="flex gap-6 bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-inner">
-          <div className="flex items-center gap-3 font-black text-[10px] uppercase tracking-widest text-blue-600 font-black"><div className="w-3 h-3 rounded-full bg-blue-600 shadow-lg shadow-blue-200"></div> VIEWS</div>
-          <div className="flex items-center gap-3 font-black text-[10px] uppercase tracking-widest text-red-600 font-black"><div className="w-3 h-3 rounded-full bg-red-600 shadow-lg shadow-red-200"></div> LEADS</div>
+        <div className="flex gap-4 sm:gap-6 bg-slate-50 p-3 sm:p-5 rounded-2xl border border-slate-100 shadow-inner w-full sm:w-auto justify-center">
+          <div className="flex items-center gap-2 sm:gap-3 font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-blue-600 font-black"><div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-600 shadow-lg shadow-blue-200"></div> VIEWS</div>
+          <div className="flex items-center gap-2 sm:gap-3 font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-red-600 font-black"><div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-600 shadow-lg shadow-red-200"></div> LEADS</div>
         </div>
       </div>
       
-      <div className="flex-1 flex items-end justify-between gap-8 border-b-4 border-slate-50 pb-6">
-        {chartData.map((data, i) => (
-          <div key={i} className="flex flex-col items-center flex-1 gap-3 group h-full justify-end relative">
-            <div className="w-full max-w-[45px] flex items-end justify-center gap-2 h-full relative">
-              <div 
-                className="w-1/2 bg-blue-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-blue-400 relative shadow-xl" 
-                style={{ height: `${(data.views / maxViews) * 100}%` }}
-              >
-                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[9px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none shadow-2xl">{data.views}</div>
+      <div className="flex-1 overflow-x-auto no-scrollbar">
+        <div className="flex items-end justify-between gap-4 sm:gap-8 border-b-4 border-slate-50 pb-6 min-w-[500px] h-full">
+          {chartData.map((data, i) => (
+            <div key={i} className="flex flex-col items-center flex-1 gap-3 group h-full justify-end relative">
+              <div className="w-full max-w-[45px] flex items-end justify-center gap-1.5 sm:gap-2 h-full relative">
+                <div 
+                  className="w-1/2 bg-blue-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-blue-400 relative shadow-xl" 
+                  style={{ height: `${(data.views / maxViews) * 100}%` }}
+                >
+                   <div className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[8px] sm:text-[9px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none shadow-2xl">{data.views}</div>
+                </div>
+                <div 
+                  className="w-1/2 bg-red-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-red-400 relative shadow-xl" 
+                  style={{ height: `${(data.leads / maxViews) * 100 * 3.5}%` }} 
+                >
+                   <div className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] sm:text-[9px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-10 shadow-2xl">{data.leads}</div>
+                </div>
               </div>
-              <div 
-                className="w-1/2 bg-red-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-red-400 relative shadow-xl" 
-                style={{ height: `${(data.leads / maxViews) * 100 * 3.5}%` }} 
-              >
-                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-10 shadow-2xl">{data.leads}</div>
-              </div>
+              <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">{data.day}</span>
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{data.day}</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
