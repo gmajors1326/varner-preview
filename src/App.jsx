@@ -50,7 +50,7 @@ const App = () => {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
     stockStatus: "Draft", category: "Compact Tractors", color: "", meter: "", meterType: "Hours",
     intakeDate: "", description: "", images: [],
-    sellerInfo: "Call or stop by to see it in person.\nVarner Equipment\n1375 Hwy 50\nDelta, CO 81416\n(970) 874-0612"
+    sellerInfo: "<ul><li>Call or stop by to see it in person</li><li>Varner Equipment</li><li>1375 Hwy 50</li><li>Delta, CO 81416</li><li>(970) 874-0612</li></ul>"
   };
 
   const [unitData, setUnitData] = useState({
@@ -69,7 +69,7 @@ const App = () => {
     meterType: "Hours",
     intakeDate: "2026-03-15",
     description: "2024 Mahindra 2638 HST equipped with front end loader and industrial tires. Excellent condition, ready for the yard.",
-    sellerInfo: "Call or stop by to see it in person.\nVarner Equipment\n1375 Hwy 50\nDelta, CO 81416\n(970) 874-0612",
+    sellerInfo: "<ul><li>Call or stop by to see it in person</li><li>Varner Equipment</li><li>1375 Hwy 50</li><li>Delta, CO 81416</li><li>(970) 874-0612</li></ul>",
     images: ['https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400']
   });
 
