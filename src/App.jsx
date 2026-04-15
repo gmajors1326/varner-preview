@@ -457,7 +457,46 @@ const App = () => {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                   <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-200/60 font-black">
                      <div className="flex items-center gap-4 mb-10 border-b border-slate-50 pb-6"><List size={22} className="text-blue-600" /><h4 className="font-black text-xs uppercase tracking-widest text-slate-900">Sync Activity Logs</h4></div>
-                     <div className="space-y-6"><LogEntry msg="Updated Price: Mahindra 2638 HST" time="2 mins ago" /></div>
+                     <div className="space-y-2">
+                        <LogEntry msg="Price Sync: Mahindra 2638 HST" time="2 mins ago" />
+                        <LogEntry msg="New Media: Big Tex 14LP Dump" time="14 mins ago" />
+                        <LogEntry msg="Inventory Update: 142 SKUs checked" time="1h ago" />
+                        <LogEntry msg="Lead Captured: Marketplace Messenger" time="3h ago" />
+                        <LogEntry msg="Batch Update: Compact Tractors" time="5h ago" />
+                        <LogEntry msg="API Handshake: Success" time="12h ago" />
+                     </div>
+                  </div>
+                  <div className="space-y-8">
+                    <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-200/60 font-black">
+                      <div className="flex items-center gap-4 mb-8">
+                        <BarChart3 size={22} className="text-blue-600" />
+                        <h4 className="font-black text-xs uppercase tracking-widest text-slate-900">Distribution Health</h4>
+                      </div>
+                      <div className="space-y-6">
+                        <HealthBar label="Catalog Match Rate" value="98%" color="blue" />
+                        <HealthBar label="Image Optimization" value="100%" color="green" />
+                        <HealthBar label="Sync Latency" value="1.2s" color="blue" />
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-200/60 font-black">
+                       <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-6">Marketplace Reach</h4>
+                       <div className="flex items-center justify-between px-2">
+                         <div className="text-center">
+                           <p className="text-3xl font-black text-blue-600">4.2k</p>
+                           <p className="text-[9px] text-slate-400 uppercase mt-1">Weekly Views</p>
+                         </div>
+                         <div className="w-px h-10 bg-slate-100"></div>
+                         <div className="text-center">
+                           <p className="text-3xl font-black text-blue-600">28</p>
+                           <p className="text-[9px] text-slate-400 uppercase mt-1">Conversions</p>
+                         </div>
+                         <div className="w-px h-10 bg-slate-100"></div>
+                         <div className="text-center">
+                           <p className="text-3xl font-black text-blue-600">142</p>
+                           <p className="text-[9px] text-slate-400 uppercase mt-1">Live Ads</p>
+                         </div>
+                       </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -704,6 +743,18 @@ const PerformanceChart = () => {
     </div>
   );
 };
+
+const HealthBar = ({ label, value, color }) => (
+  <div className="space-y-2">
+    <div className="flex justify-between items-center">
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] font-black text-slate-900 uppercase">{value}</span>
+    </div>
+    <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+      <div className={`h-full ${color === 'blue' ? 'bg-blue-600' : 'bg-green-600'} rounded-full`} style={{ width: value.includes('%') ? value : '100%' }}></div>
+    </div>
+  </div>
+);
 
 const LogEntry = ({ msg, time }) => (
   <div className="flex justify-between items-center p-6 bg-slate-50/50 rounded-2xl border-2 border-white mb-4 hover:bg-white transition-all shadow-sm group font-black text-slate-900">
