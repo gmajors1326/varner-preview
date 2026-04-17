@@ -86,13 +86,19 @@ const App = () => {
   });
 
   const [inventoryList, setInventoryList] = useState([
-    { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', category: 'Compact Tractors', condition: 'New', price: '28950', status: 'In Stock', image: '/mahindra.jpg' },
-    { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', category: 'Commercial Trailers', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg' },
-    { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', category: 'Compact Tractors', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg' },
-    { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', category: 'Compact Tractors', condition: 'Used', price: '16500', status: 'In Stock', image: '/mahindra.jpg' },
-    { id: '5', stock: '77300', year: '2023', make: 'Mahindra', model: 'eMax 20S', category: 'Compact Tractors', condition: 'Used', price: '14000', status: 'Sold', image: '/left.jpg' },
-    { id: '6', stock: 'IMP-2201', year: '', make: 'Implement', model: 'Woods BB72.30 Brush Bull', category: 'Implements', condition: 'New', price: '4200', status: 'In Stock', image: '/imp1.jpg' },
-    { id: '7', stock: 'IMP-2202', year: '', make: 'Implement', model: 'Land Pride RTA1258 Tiller', category: 'Implements', condition: 'New', price: '2950', status: 'In Stock', image: '/imp2.jpg' },
+    { 
+      id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', category: 'Compact Tractors', condition: 'New', price: '28950', status: 'In Stock', image: '/mahindra.jpg',
+      attachments: [
+        { image: '/imp1.jpg', title: 'Front End Loader', price: '4500', description: 'Heavy duty loader with quick attach bucket.' },
+        { image: '/imp2.jpg', title: 'Backhoe Attachment', price: '7200', description: '9-foot digging depth, subframe mounted.' }
+      ]
+    },
+    { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', category: 'Commercial Trailers', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg', attachments: [] },
+    { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', category: 'Compact Tractors', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg', attachments: [] },
+    { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', category: 'Compact Tractors', condition: 'Used', price: '16500', status: 'In Stock', image: '/mahindra.jpg', attachments: [] },
+    { id: '5', stock: '77300', year: '2023', make: 'Mahindra', model: 'eMax 20S', category: 'Compact Tractors', condition: 'Used', price: '14000', status: 'Sold', image: '/left.jpg', attachments: [] },
+    { id: '6', stock: 'IMP-2201', year: '', make: 'Implement', model: 'Woods BB72.30 Brush Bull', category: 'Implements', condition: 'New', price: '4200', status: 'In Stock', image: '/imp1.jpg', attachments: [] },
+    { id: '7', stock: 'IMP-2202', year: '', make: 'Implement', model: 'Land Pride RTA1258 Tiller', category: 'Implements', condition: 'New', price: '2950', status: 'In Stock', image: '/imp2.jpg', attachments: [] },
   ]);
 
   const usersList = [
@@ -160,7 +166,8 @@ const App = () => {
           condition: unitData.condition,
           price: unitData.price,
           status: unitData.stockStatus,
-          image: unitData.images?.[0] || '/mahindra.jpg'
+          image: unitData.images?.[0] || '/mahindra.jpg',
+          attachments: unitData.attachments || []
         };
 
         if (existingIndex > -1) {
@@ -218,9 +225,9 @@ const App = () => {
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       category: item.category || "Compact Tractors",
-      description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: [item.image || '/mahindra.jpg', '/left.jpg', '/rear.jpg'],
-      attachments: []
+      description: item.description || `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
+      images: item.images || [item.image || '/mahindra.jpg', '/left.jpg', '/rear.jpg'],
+      attachments: item.attachments || []
     });
     setActiveTab('inventory');
   };
@@ -559,7 +566,15 @@ const App = () => {
                     onAdd={() => handleInputChange('images', [...(unitData.images || []), '/mahindra.jpg'])} 
                   />
 
-                  {/* IMPLEMENTS / ATTACHMENTS MEDIA */}
+                  {/* IMPLEMENTS / ATTACHMENTS MEDIA GRID (RESTORED) */}
+                  <MediaSection 
+                    title="Implements / Attachments Media" 
+                    images={unitData.attachments?.map(a => a.image) || []} 
+                    onAdd={handleAddImplement} 
+                    badge="Add-on Products"
+                  />
+
+                  {/* IMPLEMENTS / ATTACHMENTS DETAILS */}
                   <AttachmentsSection 
                     attachments={unitData.attachments} 
                     onAdd={handleAddImplement}
