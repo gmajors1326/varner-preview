@@ -83,11 +83,13 @@ const App = () => {
   });
 
   const [inventoryList, setInventoryList] = useState([
-    { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', condition: 'New', price: '28950', status: 'In Stock', image: '/mahindra.jpg' },
-    { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg' },
-    { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg' },
-    { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', condition: 'Used', price: '16500', status: 'In Stock', image: '/mahindra.jpg' },
-    { id: '5', stock: '77300', year: '2023', make: 'Mahindra', model: 'eMax 20S', condition: 'Used', price: '14000', status: 'Sold', image: '/left.jpg' },
+    { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', category: 'Compact Tractors', condition: 'New', price: '28950', status: 'In Stock', image: '/mahindra.jpg' },
+    { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', category: 'Commercial Trailers', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg' },
+    { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', category: 'Compact Tractors', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg' },
+    { id: '4', stock: '77415', year: '2021', make: 'Mahindra', model: '1626 Shuttle', category: 'Compact Tractors', condition: 'Used', price: '16500', status: 'In Stock', image: '/mahindra.jpg' },
+    { id: '5', stock: '77300', year: '2023', make: 'Mahindra', model: 'eMax 20S', category: 'Compact Tractors', condition: 'Used', price: '14000', status: 'Sold', image: '/left.jpg' },
+    { id: '6', stock: 'IMP-2201', year: '', make: 'Implement', model: 'Woods BB72.30 Brush Bull', category: 'Implements', condition: 'New', price: '4200', status: 'In Stock', image: '/imp1.jpg' },
+    { id: '7', stock: 'IMP-2202', year: '', make: 'Implement', model: 'Land Pride RTA1258 Tiller', category: 'Implements', condition: 'New', price: '2950', status: 'In Stock', image: '/imp2.jpg' },
   ]);
 
   const usersList = [
@@ -131,6 +133,7 @@ const App = () => {
           year: "",
           make: "Implement",
           model: removedItem.title,
+          category: "Implements",
           condition: "Used",
           price: removedItem.price || "0",
           status: "In Stock",
@@ -150,6 +153,7 @@ const App = () => {
           year: unitData.year,
           make: unitData.make,
           model: unitData.model,
+          category: unitData.category,
           condition: unitData.condition,
           price: unitData.price,
           status: unitData.stockStatus,
@@ -191,6 +195,7 @@ const App = () => {
       title: `${item.year} ${item.make} ${item.model}`,
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
+      category: item.category || "Compact Tractors",
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
       images: [item.image || '/mahindra.jpg', '/left.jpg', '/rear.jpg'],
       attachments: []
@@ -368,6 +373,7 @@ const App = () => {
                         <th className="px-6 py-5 w-24">STOCK #</th>
                         <th className="px-6 py-5 w-28">PHOTO</th>
                         <th className="px-6 py-5">YEAR / MAKE / MODEL</th>
+                        <th className="px-6 py-5">CATEGORY</th>
                         <th className="px-6 py-5 text-center w-32">CONDITION</th>
                         <th className="px-6 py-5 w-32">PRICE (USD)</th>
                         <th className="px-6 py-5 w-40">STATUS</th>
@@ -393,6 +399,9 @@ const App = () => {
                           <td className="px-6 py-5 text-slate-900">
                             <p className="font-black text-base leading-tight uppercase tracking-tight">{item.year} {item.make}</p>
                             <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">{item.model}</p>
+                          </td>
+                          <td className="px-6 py-5">
+                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.category}</span>
                           </td>
                           <td className="px-6 py-5 text-center">
                              <span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span>
@@ -504,7 +513,7 @@ const App = () => {
                         </div>
                       </div>
 
-                       <SelectField label="Equipment Category" options={['Compact Tractors', 'Commercial Trailers', 'Utility Vehicles']} value={unitData.category} onChange={(val) => handleInputChange('category', val)} />
+                       <SelectField label="Equipment Category" options={['Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements']} value={unitData.category} onChange={(val) => handleInputChange('category', val)} />
                        
                        <div className="flex gap-3 text-slate-900">
                          <div className="flex-1">
