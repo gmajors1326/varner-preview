@@ -423,9 +423,18 @@ const App = () => {
                         </div>
                       </div>
 
-                      <SelectField label="Equipment Category" options={['Compact Tractors', 'Commercial Trailers', 'Utility Vehicles']} value={unitData.category} onChange={(val) => handleInputChange('category', val)} />
-                      
-                      <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-50 text-slate-900">
+                       <SelectField label="Equipment Category" options={['Compact Tractors', 'Commercial Trailers', 'Utility Vehicles']} value={unitData.category} onChange={(val) => handleInputChange('category', val)} />
+                       
+                       <div className="flex gap-3 text-slate-900">
+                         <div className="flex-1">
+                           <SelectField label="Stock Status" options={['In Stock', 'Pending Sale', 'Sold', 'Draft']} value={unitData.stockStatus} onChange={(val) => handleInputChange('stockStatus', val)} />
+                         </div>
+                         <div className="flex-1">
+                           <SelectField label="Condition" options={['New', 'Used']} value={unitData.condition} onChange={(val) => handleInputChange('condition', val)} />
+                         </div>
+                       </div>
+                       
+                       <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-50 text-slate-900">
                         <TextAreaField label="Public Description / Features" value={unitData.description} onChange={(val) => handleInputChange('description', val)} />
                         <TextAreaField label="Seller Information Template" value={unitData.sellerInfo} onChange={(val) => handleInputChange('sellerInfo', val)} />
                       </div>
