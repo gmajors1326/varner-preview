@@ -42,10 +42,8 @@ import {
 const App = () => {
   const [syncEnabled, setSyncEnabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showFBPreview, setShowFBPreview] = useState(false);
-  const [showAiVision, setShowAiVision] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const defaultEmptyUnit = {
@@ -139,13 +137,6 @@ const App = () => {
     }, 800);
   };
 
-  const handleScanVin = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      handleInputChange('vin', "MAH-" + Math.random().toString(36).toUpperCase().substring(2, 10));
-      setIsScanning(false);
-    }, 1800);
-  };
 
   const getHeaderTitle = () => {
     switch(activeTab) {
@@ -268,17 +259,8 @@ const App = () => {
             {/* --- DASHBOARD TAB --- */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
-                  <MetricCard 
-                    icon={<Users size={24}/>} 
-                    label="Digital Leads" 
-                    value="87" 
-                    subtext="45% call rate" 
-                    color="red" 
-                    premium={true} 
-                    description="Track real-time inquiries directly from your website and Meta Marketplace. Includes automatic lead routing."
-                  />
                   <MetricCard icon={<Activity size={24}/>} label="Service Queue" value="14" subtext="3 High Priority" color="amber" />
                 </div>
 
@@ -289,7 +271,6 @@ const App = () => {
                   <div className="space-y-8">
                     <QuickActions 
                       onAdd={() => handleAddNewUnit()} 
-                      onScan={() => { setActiveTab('inventory'); handleScanVin(); }} 
                     />
                     <RecentActivity />
                   </div>
@@ -392,30 +373,11 @@ const App = () => {
                 <div className="xl:col-span-2 space-y-8">
                   
                   <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-200/60 relative overflow-hidden text-slate-900">
-                    <div className="flex justify-between items-center mb-8">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
-                        <Box size={14} className="text-red-600" /> Equipment Identity
-                      </h3>
-                      <div className="flex flex-col items-end gap-1.5">
-                        <div className="flex items-center gap-2 group/tip relative">
-                          <Info size={12} className="text-red-400 cursor-help" />
-                          <div className="absolute right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800">
-                            Identify equipment, year, and specs from a single photo using Vision AI.
-                          </div>
-                          <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase">AI VISION ENABLED</span>
-                        </div>
-                        <button 
-                          onClick={() => setShowAiVision(true)}
-                          className="bg-amber-50 text-slate-900 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 hover:bg-amber-100 transition-all active:scale-95 shadow-lg group border-2 border-red-500 relative"
-                        >
-                          <div className="absolute -top-2 -right-2 z-10">
-                            <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
-                          </div>
-                          <Sparkles size={12} className="text-red-500 group-hover:rotate-12 transition-transform" />
-                          Smart Intake
-                        </button>
+                      <div className="flex justify-between items-center mb-8">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
+                          <Box size={14} className="text-red-600" /> Equipment Identity
+                        </h3>
                       </div>
-                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="md:col-span-2">
@@ -440,22 +402,6 @@ const App = () => {
                               className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4.5 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
                               placeholder="SCAN OR TYPE SERIAL..."
                             />
-                          </div>
-                          <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
-                            <div className="flex items-center gap-2 group/tip relative">
-                              <Info size={12} className="text-red-400 cursor-help" />
-                              <div className="absolute left-0 sm:left-auto sm:right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-50 shadow-2xl border border-slate-800">
-                                Rapidly extract VIN/Serial metadata from equipment data plates to eliminate manual entry.
-                              </div>
-                              <span className="text-red-600 italic text-[7px] font-black tracking-widest leading-none uppercase">AI VISION ENABLED</span>
-                            </div>
-                            <button onClick={handleScanVin} className="w-full sm:w-auto bg-amber-50 text-slate-900 px-8 py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 hover:bg-amber-100 shadow-lg border-2 border-red-500 relative group">
-                              <div className="absolute -top-2 -right-2 z-10">
-                                <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
-                              </div>
-                              {isScanning ? <Loader2 size={18} className="animate-spin text-red-600" /> : <Camera size={18} className="text-red-600 group-hover:scale-110 transition-transform" />}
-                              {isScanning ? 'READING...' : 'SCAN'}
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -536,18 +482,16 @@ const App = () => {
                       </div>
 
                       {/* ENLARGED VIEW MARKETPLACE PREVIEW BUTTON */}
-                      <button 
-                        onClick={() => setShowFBPreview(true)} 
-                        className="w-full bg-slate-950 text-white py-6 rounded-[1.5rem] font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all active:scale-95 shadow-2xl shadow-slate-300 mt-2 leading-none border-b-4 border-slate-800"
-                      >
-                        View Marketplace Preview <ArrowUpRight size={18} className="text-blue-400" />
-                      </button>
+                        <button 
+                          onClick={() => setShowFBPreview(true)} 
+                          className="w-full bg-slate-950 text-white py-6 rounded-[1.5rem] font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all active:scale-95 shadow-2xl shadow-slate-300 mt-2 leading-none border-b-4 border-slate-800"
+                        >
+                          View Marketplace Preview <ArrowUpRight size={18} className="text-blue-400" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  <LeadCaptureWidget value={87} />
                 </div>
-              </div>
             )}
 
             {/* --- FIELD SERVICE TAB --- */}
@@ -558,9 +502,9 @@ const App = () => {
                   <button className="bg-slate-950 text-white px-7 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg">New Service Ticket</button>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  <ServiceRow id="#TCK-092" issue="Hydraulic Leak - Mahindra 2638" location="Montrose, CO" status="En Route" time="45m ago" />
-                  <ServiceRow id="#TCK-091" issue="Routine 50hr Service - Big Tex 14LP" location="Delta Yard" status="In Progress" time="2h ago" />
-                  <ServiceRow id="#TCK-089" issue="PTO Assembly Replacement" location="Olathe, CO" status="Pending Parts" time="1d ago" />
+                  <div className="p-20 text-center">
+                    <p className="text-slate-400 font-black uppercase text-[11px] tracking-widest">No active field deployments</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -630,15 +574,6 @@ const App = () => {
       {showFBPreview && <FBPreviewModal unitData={unitData} onClose={() => setShowFBPreview(false)} />}
 
       {/* AI VISION MODAL */}
-      {showAiVision && (
-        <AiVisionModal 
-          onClose={() => setShowAiVision(false)} 
-          onApply={(data) => {
-            setUnitData(prev => ({ ...prev, ...data }));
-            setShowAiVision(false);
-          }} 
-        />
-      )}
     </div>
   );
 };
@@ -779,7 +714,7 @@ const MediaSection = ({ title, images, onAdd, badge = "Auto-Optimized" }) => (
   </div>
 );
 
-const MetricCard = ({ icon, label, value, subtext, color, premium = false, description = "" }) => {
+const MetricCard = ({ icon, label, value, subtext, color }) => {
   const styles = { 
     blue: "bg-blue-50 text-blue-600 shadow-blue-100", 
     red: "bg-red-50 text-red-600 shadow-red-100", 
@@ -787,18 +722,7 @@ const MetricCard = ({ icon, label, value, subtext, color, premium = false, descr
     amber: "bg-amber-50 text-amber-600 shadow-amber-100"
   };
   return (
-    <div className={`rounded-[2rem] p-8 border shadow-xl relative overflow-hidden group transition-all ${premium ? 'bg-amber-50 border-red-500 ring-4 ring-red-50' : 'bg-white border-slate-200/60'}`}>
-      {premium && (
-        <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
-          <div className="group/info relative">
-            <Info size={14} className="text-red-400 cursor-help hover:text-red-600 transition-colors" />
-            <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
-              {description}
-            </div>
-          </div>
-          <span className="bg-red-600 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full shadow-lg">Premium Add-on</span>
-        </div>
-      )}
+    <div className="rounded-[2rem] p-8 border bg-white border-slate-200/60 shadow-xl relative overflow-hidden group transition-all">
       <div className="flex items-center gap-4 mb-8 relative z-10">
         <div className={`p-4 rounded-xl ${styles[color]} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
         <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 leading-none">{label}</h4>
@@ -810,26 +734,17 @@ const MetricCard = ({ icon, label, value, subtext, color, premium = false, descr
   );
 };
 
-const QuickActions = ({ onAdd, onScan }) => (
+const QuickActions = ({ onAdd }) => (
   <div className="bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-xl">
     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
       <Zap size={14} className="text-red-600" /> Quick Operations
     </h4>
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <button onClick={onAdd} className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
         <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform">
           <Plus size={20} className="text-red-600" />
         </div>
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Add Unit</span>
-      </button>
-      <button onClick={onScan} className="flex flex-col items-center justify-center p-6 bg-amber-50 rounded-2xl border-2 border-red-500 hover:bg-amber-100 transition-all group relative">
-        <div className="absolute -top-2 -right-2 z-10">
-          <span className="bg-red-600 text-white text-[6px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full shadow-lg">Premium</span>
-        </div>
-        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform">
-          <Camera size={20} className="text-slate-900" />
-        </div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Scan VIN</span>
       </button>
     </div>
   </div>
@@ -938,55 +853,8 @@ const LogEntry = ({ msg, time }) => (
   </div>
 );
 
-const LeadCaptureWidget = ({ value }) => (
-  <div className="bg-amber-50 rounded-[2rem] p-8 border border-red-500 shadow-xl relative overflow-hidden group text-slate-950 ring-4 ring-red-50 transition-transform active:scale-[0.99]">
-    <div className="absolute top-4 right-6 z-20 flex items-center gap-2">
-      <div className="group/info relative">
-        <Info size={14} className="text-red-400 cursor-help" />
-        <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 top-6 w-48 bg-slate-950 text-white p-3 rounded-xl text-[9px] font-bold uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
-          High-conversion lead capture system that bridges inventory with buyer inquiries instantly.
-        </div>
-      </div>
-      <span className="bg-red-600 text-white text-[7px] font-black uppercase tracking-[0.2em] px-2 py-1 rounded-full shadow-lg">Premium Add-on</span>
-    </div>
-    <div className="relative z-10 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-         <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 leading-none">CAPTURED LEADS</h4>
-         <div className="p-3 bg-red-50 text-red-600 rounded-xl shadow-sm font-bold"><Zap size={22} fill="currentColor" /></div>
-      </div>
-      <div className="flex items-baseline gap-2.5">
-        <span className="text-6xl font-black text-slate-950 tracking-tighter leading-none">{value}</span>
-        <span className="text-green-600 text-[11px] font-black uppercase tracking-tighter bg-green-50 px-3 py-1 rounded-lg font-black">+14%</span>
-      </div>
-      <p className="text-[11px] font-black text-slate-400 uppercase tracking-tight mt-4">Direct website inquiries.</p>
-    </div>
-  </div>
-);
 
-const ServiceRow = ({ id, issue, location, status, time }) => (
-  <div className="p-7 flex items-center justify-between hover:bg-amber-100 transition-colors cursor-pointer group border-b border-slate-50 last:border-0 text-slate-950 bg-amber-50/50 relative">
-    <div className="absolute top-2 right-4 z-10 flex items-center gap-2">
-      <div className="group/info relative">
-        <Info size={12} className="text-red-400 cursor-help" />
-        <div className="absolute right-0 top-5 w-48 bg-slate-950 text-white p-3 rounded-xl text-[8px] font-black uppercase tracking-widest leading-relaxed opacity-0 group-hover/info:opacity-100 transition-all pointer-events-none z-30 shadow-2xl border border-slate-800">
-          Real-time field dispatching and ticket management for yard staff and technicians.
-        </div>
-      </div>
-      <span className="text-[6px] font-black uppercase text-red-600 tracking-[0.2em]">Premium Module</span>
-    </div>
-    <div className="flex items-center gap-8">
-      <div className="bg-white text-slate-950 border-2 border-slate-100 font-mono text-xs font-black px-4 py-2 rounded-xl shadow-sm group-hover:border-red-100 transition-colors">{id}</div>
-      <div>
-        <h4 className="font-black text-slate-950 text-lg leading-tight group-hover:text-red-600 transition-colors uppercase tracking-tight font-black">{issue}</h4>
-        <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2 mt-2 tracking-widest font-black"><Wrench size={14}/> {location}</p>
-      </div>
-    </div>
-    <div className="flex items-center gap-12">
-       <span className="text-[10px] font-black text-slate-300 uppercase flex items-center gap-3 tracking-widest font-black"><Clock size={16} className="opacity-50"/> {time}</span>
-       <span className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] shadow-lg border-2 border-white ${status === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{status}</span>
-    </div>
-  </div>
-);
+
 
 const MobileAccessTab = () => (
   <div className="bg-white rounded-[3rem] p-14 border border-slate-200/60 shadow-2xl text-center max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1075,142 +943,5 @@ const FBPreviewModal = ({ unitData, onClose }) => (
     </div>
   </div>
 );
-
-const AiVisionModal = ({ onClose, onApply }) => {
-  const [step, setStep] = useState('upload'); // upload, scanning, results
-  const [scanProgress, setScanProgress] = useState(0);
-  const [results, setResults] = useState(null);
-
-  const startScan = () => {
-    setStep('scanning');
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 2;
-      setScanProgress(progress);
-      if (progress >= 100) {
-        clearInterval(interval);
-        setResults({
-          year: "2024",
-          make: "Mahindra",
-          model: "2638 HST",
-          category: "Compact Tractors",
-          title: "2024 Mahindra 2638 HST",
-          confidence: "98.4%"
-        });
-        setStep('results');
-      }
-    }, 40);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-50 flex items-center justify-center p-8">
-      <div className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-3xl border border-slate-200 flex flex-col animate-in zoom-in duration-300">
-        <div className="p-8 bg-slate-950 text-white flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="bg-red-600 p-2 rounded-xl shadow-lg shadow-red-600/20">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h3 className="font-black text-sm uppercase tracking-widest leading-none mb-1">AI Vision Engine</h3>
-              <p className="text-[9px] text-slate-500 uppercase font-black tracking-[0.2em]">Varner Neural Network v4.2</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition-colors"><X size={24} /></button>
-        </div>
-
-        <div className="flex-1 p-12 flex flex-col items-center justify-center min-h-[400px]">
-          {step === 'upload' && (
-            <div className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-4">
-              <div className="w-32 h-32 bg-slate-50 rounded-[2.5rem] border-4 border-dashed border-slate-200 flex items-center justify-center mx-auto text-slate-300 group-hover:border-red-500 transition-all">
-                <ImageIcon size={48} />
-              </div>
-              <div>
-                <h4 className="text-2xl font-black tracking-tight text-slate-900 mb-2 uppercase">Identify Machine</h4>
-                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest max-w-xs mx-auto">Upload a photo of the equipment or its data plate for automatic detection.</p>
-              </div>
-              <button 
-                onClick={startScan}
-                className="bg-red-600 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-red-200 hover:bg-red-700 transition active:scale-95"
-              >
-                Upload & Analyze
-              </button>
-            </div>
-          )}
-
-          {step === 'scanning' && (
-            <div className="w-full max-w-md space-y-10 text-center">
-              <div className="relative aspect-video bg-slate-950 rounded-[2rem] overflow-hidden shadow-2xl">
-                <img 
-                  src="/mahindra.jpg" 
-                  className="w-full h-full object-cover opacity-60" 
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-[2px] bg-red-500 shadow-[0_0_20px_rgba(239,68,68,1)] absolute animate-scan-line"></div>
-                </div>
-                <div className="absolute top-4 left-4 bg-red-600/80 text-white text-[8px] font-black px-3 py-1 rounded uppercase tracking-[0.2em] backdrop-blur-md">
-                  Analyzing Geometry...
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${scanProgress}%` }}></div>
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Extracting Machine Metadata • {scanProgress}%</p>
-              </div>
-            </div>
-          )}
-
-          {step === 'results' && (
-            <div className="w-full space-y-8 animate-in fade-in zoom-in-95">
-              <div className="flex items-center gap-6 p-6 bg-green-50 border-2 border-green-100 rounded-[2rem]">
-                <div className="bg-white p-3 rounded-2xl shadow-sm text-green-600">
-                  <CheckCircle2 size={32} />
-                </div>
-                <div>
-                  <h4 className="font-black text-green-950 uppercase text-xs tracking-widest mb-1">Identification Success</h4>
-                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">{results.confidence} Match Found</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Make / Model</p>
-                  <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{results.make} {results.model}</p>
-                </div>
-                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Year</p>
-                  <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{results.year}</p>
-                </div>
-                <div className="col-span-2 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Detected Category</p>
-                  <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{results.category}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setStep('upload')} className="flex-1 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest text-slate-400 border-2 border-slate-100 hover:bg-slate-50 transition">Retry Scan</button>
-                <button 
-                  onClick={() => onApply(results)}
-                  className="flex-[2] bg-slate-950 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-black transition shadow-xl"
-                >
-                  Apply Details to Unit
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes scan-line {
-          0% { top: 0%; }
-          100% { top: 100%; }
-        }
-        .animate-scan-line {
-          animation: scan-line 2s linear infinite;
-        }
-      `}} />
-    </div>
-  );
-};
 
 export default App;
