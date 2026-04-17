@@ -36,7 +36,9 @@ import {
   DollarSign,
   History,
   Sparkles,
-  Info
+  Info,
+  Trash2,
+  RotateCcw
 } from 'lucide-react';
 
 const App = () => {
@@ -45,6 +47,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showFBPreview, setShowFBPreview] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [deletedHistory, setDeletedHistory] = useState([]);
 
   const defaultEmptyUnit = {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
@@ -175,11 +178,30 @@ const App = () => {
 
   const handleDeleteUnit = (stockNumber) => {
     if (window.confirm(`Are you sure you want to delete unit #${stockNumber}?`)) {
-      setInventoryList(prev => prev.filter(item => item.stock !== stockNumber));
-      if (unitData.stockNumber === stockNumber) {
-        setUnitData(defaultEmptyUnit);
-        setActiveTab('all-inventory');
+      const unitToDelete = inventoryList.find(item => item.stock === stockNumber);
+      if (unitToDelete) {
+        setDeletedHistory(prev => [{ ...unitToDelete, deletedAt: new Date().toISOString() }, ...prev]);
+        setInventoryList(prev => prev.filter(item => item.stock !== stockNumber));
+        if (unitData.stockNumber === stockNumber) {
+          setUnitData(defaultEmptyUnit);
+          setActiveTab('all-inventory');
+        }
       }
+    }
+  };
+
+  const handleRestoreUnit = (stockNumber) => {
+    const unitToRestore = deletedHistory.find(item => item.stock === stockNumber);
+    if (unitToRestore) {
+      const { deletedAt, ...restoredUnit } = unitToRestore;
+      setInventoryList(prev => [restoredUnit, ...prev]);
+      setDeletedHistory(prev => prev.filter(item => item.stock !== stockNumber));
+    }
+  };
+
+  const handlePermanentDelete = (stockNumber) => {
+    if (window.confirm(`Permanently delete unit #${stockNumber}? This cannot be undone.`)) {
+      setDeletedHistory(prev => prev.filter(item => item.stock !== stockNumber));
     }
   };
 
@@ -223,6 +245,7 @@ const App = () => {
       case 'all-inventory': return "Master Stock Ledger";
       case 'inventory': return <span className="flex items-center gap-2">{unitData.title || "Inventory Editor"} <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded uppercase tracking-tighter font-black">SKU: {unitData.stockNumber || 'PENDING'}</span></span>;
       case 'marketplace': return "Meta Commerce Sync";
+      case 'history': return "Deletion History / Recycle Bin";
       case 'mobile': return "Mobile Companion Access";
       case 'settings': return "System Configuration";
       default: return "Varner OS";
@@ -256,6 +279,7 @@ const App = () => {
               <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab === 'all-inventory'} onClick={() => { setActiveTab('all-inventory'); setIsMobileMenuOpen(false); }} badge={inventoryList.length} />
               <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
               <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab === 'marketplace'} onClick={() => { setActiveTab('marketplace'); setIsMobileMenuOpen(false); }} badge="Live" />
+              <NavItem icon={<History size={20}/>} label="History" active={activeTab === 'history'} onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
               <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab === 'mobile'} onClick={() => { setActiveTab('mobile'); setIsMobileMenuOpen(false); }} />
             </nav>
 
@@ -283,6 +307,7 @@ const App = () => {
           <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab === 'all-inventory'} onClick={() => setActiveTab('all-inventory')} badge={inventoryList.length} />
           <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
           <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab === 'marketplace'} onClick={() => setActiveTab('marketplace')} badge="Live" />
+          <NavItem icon={<History size={20}/>} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
           <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab === 'mobile'} onClick={() => setActiveTab('mobile')} />
         </nav>
 
@@ -645,6 +670,7 @@ const App = () => {
 
             {activeTab === 'settings' && <SettingsTab users={usersList} />}
             {activeTab === 'mobile' && <MobileAccessTab />}
+            {activeTab === 'history' && <HistoryTab deletedItems={deletedHistory} onRestore={handleRestoreUnit} onPermanentDelete={handlePermanentDelete} />}
 
           </div>
         </div>
@@ -1105,6 +1131,82 @@ const FBPreviewModal = ({ unitData, onClose }) => (
         </div>
       </div>
       <div className="p-8 bg-slate-50 border-t border-slate-200 shadow-inner font-black"><button onClick={onClose} className="w-full py-5 bg-slate-950 text-white font-black uppercase tracking-[0.4em] text-[11px] rounded-3xl shadow-3xl hover:bg-black transition-all font-black">Close Simulator</button></div>
+    </div>
+  </div>
+);
+
+const HistoryTab = ({ deletedItems, onRestore, onPermanentDelete }) => (
+  <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-500">
+    <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+      <div>
+        <h3 className="text-xl font-black uppercase tracking-tight leading-none">Recycle Bin</h3>
+        <p className="text-slate-400 font-black uppercase text-[9px] tracking-[0.3em] mt-2 italic">Items stay here until permanently deleted</p>
+      </div>
+      <div className="bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+        <AlertCircle size={14} /> {deletedItems.length} Items Found
+      </div>
+    </div>
+    
+    <div className="overflow-x-auto p-2 no-scrollbar">
+      <table className="w-full text-left border-collapse min-w-[800px]">
+        <thead>
+          <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
+            <th className="px-6 py-5 w-24">STOCK #</th>
+            <th className="px-6 py-5 w-28">PHOTO</th>
+            <th className="px-6 py-5">EQUIPMENT</th>
+            <th className="px-6 py-5">DELETED ON</th>
+            <th className="px-6 py-5 text-right w-48">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-50">
+          {deletedItems.length === 0 ? (
+            <tr>
+              <td colSpan="5" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">
+                Recycle bin is empty
+              </td>
+            </tr>
+          ) : (
+            deletedItems.map((item) => (
+              <tr key={item.id} className="hover:bg-slate-50 transition-all group">
+                <td className="px-6 py-5 font-mono font-bold text-sm text-slate-400">{item.stock}</td>
+                <td className="px-6 py-5">
+                   <div className="w-16 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 grayscale opacity-60">
+                     <img 
+                       src={item.image} 
+                       className="w-full h-full object-cover" 
+                       onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=100"; }}
+                     />
+                   </div>
+                </td>
+                <td className="px-6 py-5">
+                  <p className="font-black text-slate-400 text-base uppercase leading-tight tracking-tight">{item.year} {item.make} {item.model}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest mt-1 text-slate-300">{item.category}</p>
+                </td>
+                <td className="px-6 py-5">
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-tight">{new Date(item.deletedAt).toLocaleDateString()} @ {new Date(item.deletedAt).toLocaleTimeString()}</p>
+                </td>
+                <td className="px-6 py-5 text-right">
+                   <div className="flex items-center justify-end gap-3">
+                     <button 
+                       onClick={() => onRestore(item.stock)}
+                       className="bg-green-50 text-green-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-green-100 transition-all active:scale-95 border border-green-100"
+                     >
+                       <RotateCcw size={14} /> Restore
+                     </button>
+                     <button 
+                       onClick={() => onPermanentDelete(item.stock)}
+                       className="bg-slate-100 text-slate-400 p-2.5 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-slate-200"
+                       title="Permanently Delete"
+                     >
+                       <Trash2 size={16} />
+                     </button>
+                   </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   </div>
 );
