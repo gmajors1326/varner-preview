@@ -49,7 +49,7 @@ const App = () => {
   const defaultEmptyUnit = {
     title: "", year: "", make: "", model: "", stockNumber: "", condition: "New", price: "", vin: "",
     stockStatus: "Draft", category: "Compact Tractors", color: "", meter: "", meterType: "Hours",
-    intakeDate: "", description: "", images: [], implementImages: [],
+    intakeDate: "", description: "", images: [], attachments: [],
     sellerInfo: "<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>"
   };
 
@@ -75,10 +75,10 @@ const App = () => {
       '/mahindra.jpg',
       '/rear.jpg'
     ],
-    implementImages: [
-      '/imp1.jpg',
-      '/imp2.jpg',
-      '/imp3.jpg'
+    attachments: [
+      { image: '/imp1.jpg', title: 'Front End Loader', price: '4500', description: 'Heavy duty loader with quick attach bucket.' },
+      { image: '/imp2.jpg', title: 'Backhoe Attachment', price: '7200', description: '9-foot digging depth, subframe mounted.' },
+      { image: '/imp3.jpg', title: 'Mid-Mount Mower', price: '2800', description: '60-inch side discharge mower deck.' }
     ]
   });
 
@@ -101,6 +101,28 @@ const App = () => {
     setUnitData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleAddImplement = () => {
+    setUnitData(prev => ({
+      ...prev,
+      attachments: [...(prev.attachments || []), { image: '/imp1.jpg', title: '', price: '', description: '' }]
+    }));
+  };
+
+  const handleUpdateImplement = (index, field, value) => {
+    setUnitData(prev => {
+      const newAttachments = [...prev.attachments];
+      newAttachments[index] = { ...newAttachments[index], [field]: value };
+      return { ...prev, attachments: newAttachments };
+    });
+  };
+
+  const handleRemoveImplement = (index) => {
+    setUnitData(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSave = () => {
     setIsSaving(true);
     setTimeout(() => setIsSaving(false), 2000);
@@ -119,7 +141,10 @@ const App = () => {
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
       images: ['/left.jpg', '/mahindra.jpg', '/rear.jpg'],
-      implementImages: ['/imp1.jpg', '/imp2.jpg', '/imp3.jpg']
+      attachments: [
+        { image: '/imp1.jpg', title: 'Standard Loader', price: '4500', description: 'Factory Mahindra loader.' },
+        { image: '/imp2.jpg', title: 'Box Blade', price: '1200', description: '6ft heavy duty box blade.' }
+      ]
     });
     setActiveTab('inventory');
   };
@@ -449,11 +474,11 @@ const App = () => {
                   />
 
                   {/* IMPLEMENTS / ATTACHMENTS MEDIA */}
-                  <MediaSection 
-                    title="Implements / Attachments Media" 
-                    images={unitData.implementImages} 
-                    onAdd={() => handleInputChange('implementImages', [...(unitData.implementImages || []), '/imp1.jpg'])} 
-                    badge="Add-on Products"
+                  <AttachmentsSection 
+                    attachments={unitData.attachments} 
+                    onAdd={handleAddImplement}
+                    onChange={handleUpdateImplement}
+                    onRemove={handleRemoveImplement}
                   />
                 </div>
 
@@ -723,6 +748,83 @@ const MediaSection = ({ title, images, onAdd, badge = "Auto-Optimized" }) => (
   </div>
 );
 
+const AttachmentsSection = ({ attachments = [], onAdd, onChange, onRemove }) => (
+  <div className="bg-white rounded-[2rem] p-10 shadow-xl border border-slate-200/60">
+    <div className="flex justify-between items-center mb-10">
+      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none font-black">
+        <ImageIcon size={14} className="text-red-600" /> Implements / Attachments
+      </h3>
+      <span className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase italic px-4 py-2 rounded-full border border-slate-100 tracking-widest shadow-sm">
+        Add-on Products
+      </span>
+    </div>
+    
+    <div className="space-y-6">
+      {attachments.map((imp, i) => (
+        <div key={i} className="bg-slate-50 rounded-[1.5rem] p-6 border-2 border-slate-100 flex flex-col md:flex-row gap-6 relative group">
+          <button 
+            onClick={() => onRemove(i)}
+            className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          >
+            <X size={16} />
+          </button>
+          
+          <div className="w-full md:w-40 aspect-square bg-white rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 relative">
+             <img 
+               src={imp.image} 
+               className="w-full h-full object-cover" 
+               onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400"; }}
+             />
+             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                <Camera size={20} className="text-white" />
+             </div>
+          </div>
+          
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <div className="sm:col-span-2">
+               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Implement Title</label>
+               <input 
+                 placeholder="e.g. Front End Loader"
+                 value={imp.title}
+                 onChange={(e) => onChange(i, 'title', e.target.value)}
+                 className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+               />
+             </div>
+             <div>
+               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Price (USD)</label>
+               <input 
+                 placeholder="0.00"
+                 value={imp.price}
+                 onChange={(e) => onChange(i, 'price', e.target.value)}
+                 className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+               />
+             </div>
+             <div className="sm:col-span-2">
+               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Short Description</label>
+               <textarea 
+                 placeholder="Brief specs or features..."
+                 value={imp.description}
+                 onChange={(e) => onChange(i, 'description', e.target.value)}
+                 className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm h-20 resize-none"
+               />
+             </div>
+          </div>
+        </div>
+      ))}
+      
+      <button 
+        onClick={onAdd}
+        className="w-full border-2 border-dashed border-slate-200 rounded-[1.5rem] p-8 flex flex-col items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50/20 transition-all bg-white group"
+      >
+        <div className="bg-white p-3 rounded-full shadow-lg mb-2 border border-slate-50 group-hover:scale-110 transition-transform">
+          <Plus size={24} />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Add Implement / Attachment</span>
+      </button>
+    </div>
+  </div>
+);
+
 const MetricCard = ({ icon, label, value, subtext, color }) => {
   const styles = { 
     blue: "bg-blue-50 text-blue-600 shadow-blue-100", 
@@ -933,13 +1035,22 @@ const FBPreviewModal = ({ unitData, onClose }) => (
               className="mt-8 p-6 bg-slate-50 rounded-[2rem] border-2 border-slate-100 border-dashed italic text-[11px] text-slate-500 leading-relaxed font-black font-black rich-text-content"
               dangerouslySetInnerHTML={{ __html: unitData.sellerInfo }}
             />
-            {unitData.implementImages?.length > 0 && (
+            {unitData.attachments?.length > 0 && (
               <div className="pt-8 border-t border-slate-100">
                 <h4 className="font-black text-[12px] uppercase text-slate-400 mb-5 tracking-[0.3em]">Implements / Attachments</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {unitData.implementImages.map((img, i) => (
-                    <div key={i} className="aspect-square bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
-                      <img src={img} className="w-full h-full object-cover" alt={`Implement ${i+1}`} />
+                <div className="space-y-4">
+                  {unitData.attachments.map((imp, i) => (
+                    <div key={i} className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="w-20 h-20 bg-slate-200 rounded-xl overflow-hidden shrink-0">
+                        <img src={imp.image} className="w-full h-full object-cover" alt={imp.title} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <h5 className="font-black text-sm text-slate-900 uppercase tracking-tight">{imp.title || 'Untitled Implement'}</h5>
+                          {imp.price && <span className="text-green-600 font-black text-xs">${parseInt(imp.price).toLocaleString()}</span>}
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{imp.description}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
