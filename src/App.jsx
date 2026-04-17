@@ -222,7 +222,6 @@ const App = () => {
       case 'dashboard': return "Operations Overview";
       case 'all-inventory': return "Master Stock Ledger";
       case 'inventory': return <span className="flex items-center gap-2">{unitData.title || "Inventory Editor"} <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded uppercase tracking-tighter font-black">SKU: {unitData.stockNumber || 'PENDING'}</span></span>;
-      case 'service': return "Field Service Dispatch";
       case 'marketplace': return "Meta Commerce Sync";
       case 'mobile': return "Mobile Companion Access";
       case 'settings': return "System Configuration";
@@ -256,7 +255,6 @@ const App = () => {
               <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }} />
               <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab === 'all-inventory'} onClick={() => { setActiveTab('all-inventory'); setIsMobileMenuOpen(false); }} badge={inventoryList.length} />
               <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Truck size={20}/>} label="Field Service" active={activeTab === 'service'} onClick={() => { setActiveTab('service'); setIsMobileMenuOpen(false); }} badge="3 Active" />
               <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab === 'marketplace'} onClick={() => { setActiveTab('marketplace'); setIsMobileMenuOpen(false); }} badge="Live" />
               <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab === 'mobile'} onClick={() => { setActiveTab('mobile'); setIsMobileMenuOpen(false); }} />
             </nav>
@@ -284,7 +282,6 @@ const App = () => {
           <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab === 'all-inventory'} onClick={() => setActiveTab('all-inventory')} badge={inventoryList.length} />
           <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
-          <NavItem icon={<Truck size={20}/>} label="Field Service" active={activeTab === 'service'} onClick={() => setActiveTab('service')} badge="3 Active" />
           <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab === 'marketplace'} onClick={() => setActiveTab('marketplace')} badge="Live" />
           <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab === 'mobile'} onClick={() => setActiveTab('mobile')} />
         </nav>
@@ -338,9 +335,8 @@ const App = () => {
             {/* --- DASHBOARD TAB --- */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
-                  <MetricCard icon={<Activity size={24}/>} label="Service Queue" value="14" subtext="3 High Priority" color="amber" />
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -591,21 +587,6 @@ const App = () => {
                     </div>
                   </div>
                 </div>
-            )}
-
-            {/* --- FIELD SERVICE TAB --- */}
-            {activeTab === 'service' && (
-              <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-xl overflow-hidden text-slate-950 animate-in fade-in duration-500">
-                <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                  <div><h3 className="text-xl font-black uppercase tracking-tight leading-none">Dispatch Control Board</h3><p className="text-slate-400 font-black uppercase text-[9px] tracking-[0.3em] mt-2">Active Field Deployments</p></div>
-                  <button className="bg-slate-950 text-white px-7 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg">New Service Ticket</button>
-                </div>
-                <div className="divide-y divide-slate-100">
-                  <div className="p-20 text-center">
-                    <p className="text-slate-400 font-black uppercase text-[11px] tracking-widest">No active field deployments</p>
-                  </div>
-                </div>
-              </div>
             )}
 
             {activeTab === 'marketplace' && (
@@ -933,7 +914,6 @@ const RecentActivity = () => (
     </h4>
     <div className="space-y-6">
       <ActivityItem icon={<CheckCircle2 size={14} />} title="Inventory Synced" desc="142 units updated on Meta" time="12m ago" color="green" />
-      <ActivityItem icon={<Truck size={14} />} title="Service Dispatched" desc="Unit #77492 (Hydraulic Leak)" time="1h ago" color="blue" />
       <ActivityItem icon={<Users size={14} />} title="New Lead" desc="Marcus R. • Mahindra 2638" time="3h ago" color="red" />
     </div>
   </div>
