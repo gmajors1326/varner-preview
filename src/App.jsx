@@ -82,7 +82,7 @@ const App = () => {
     ]
   });
 
-  const [inventoryList] = useState([
+  const [inventoryList, setInventoryList] = useState([
     { id: '1', stock: '77492', year: '2024', make: 'Mahindra', model: '2638 HST', condition: 'New', price: '28950', status: 'In Stock', image: '/mahindra.jpg' },
     { id: '2', stock: '77493', year: '2024', make: 'Big Tex', model: '14LP 14ft Dump', condition: 'New', price: '12500', status: 'In Stock', image: '/rear.jpg' },
     { id: '3', stock: '77420', year: '2019', make: 'Deutz-Fahr', model: 'Agrotron 6130', condition: 'Used', price: '45000', status: 'Pending Sale', image: '/left.jpg' },
@@ -117,15 +117,66 @@ const App = () => {
   };
 
   const handleRemoveImplement = (index) => {
+    const removedItem = unitData.attachments[index];
     setUnitData(prev => ({
       ...prev,
       attachments: prev.attachments.filter((_, i) => i !== index)
     }));
+    
+    // Add removed implement to inventory list
+    if (removedItem.title) {
+        setInventoryList(prev => [{
+          id: Math.random().toString(36).substr(2, 9),
+          stock: "IMP-" + Math.floor(1000 + Math.random() * 9000),
+          year: "",
+          make: "Implement",
+          model: removedItem.title,
+          condition: "Used",
+          price: removedItem.price || "0",
+          status: "In Stock",
+          image: removedItem.image || '/imp1.jpg'
+        }, ...prev]);
+    }
   };
 
   const handleSave = () => {
     setIsSaving(true);
-    setTimeout(() => setIsSaving(false), 2000);
+    setTimeout(() => {
+      setInventoryList(prev => {
+        const existingIndex = prev.findIndex(item => item.stock === unitData.stockNumber);
+        const updatedItem = {
+          id: unitData.id || Math.random().toString(36).substr(2, 9),
+          stock: unitData.stockNumber,
+          year: unitData.year,
+          make: unitData.make,
+          model: unitData.model,
+          condition: unitData.condition,
+          price: unitData.price,
+          status: unitData.stockStatus,
+          image: unitData.images?.[0] || '/mahindra.jpg'
+        };
+
+        if (existingIndex > -1) {
+          const newList = [...prev];
+          newList[existingIndex] = updatedItem;
+          return newList;
+        } else {
+          return [updatedItem, ...prev];
+        }
+      });
+      setIsSaving(false);
+      setActiveTab('all-inventory');
+    }, 1500);
+  };
+
+  const handleDeleteUnit = (stockNumber) => {
+    if (window.confirm(`Are you sure you want to delete unit #${stockNumber}?`)) {
+      setInventoryList(prev => prev.filter(item => item.stock !== stockNumber));
+      if (unitData.stockNumber === stockNumber) {
+        setUnitData(defaultEmptyUnit);
+        setActiveTab('all-inventory');
+      }
+    }
   };
 
   const handleAddNewUnit = () => {
@@ -136,15 +187,13 @@ const App = () => {
   const handleEditUnit = (item) => {
     setUnitData({
       ...defaultEmptyUnit,
+      id: item.id,
       title: `${item.year} ${item.make} ${item.model}`,
       year: item.year, make: item.make, model: item.model, stockNumber: item.stock,
       condition: item.condition, price: item.price, vin: `VIN-${item.stock}-XX`, stockStatus: item.status,
       description: `${item.year} ${item.make} ${item.model}. Ready for immediate delivery.`,
-      images: ['/left.jpg', '/mahindra.jpg', '/rear.jpg'],
-      attachments: [
-        { image: '/imp1.jpg', title: 'Standard Loader', price: '4500', description: 'Factory Mahindra loader.' },
-        { image: '/imp2.jpg', title: 'Box Blade', price: '1200', description: '6ft heavy duty box blade.' }
-      ]
+      images: [item.image || '/mahindra.jpg', '/left.jpg', '/rear.jpg'],
+      attachments: []
     });
     setActiveTab('inventory');
   };
@@ -381,6 +430,13 @@ const App = () => {
                                  title="Clone Unit"
                                >
                                  <Copy size={16} />
+                               </button>
+                               <button 
+                                 onClick={() => handleDeleteUnit(item.stock)}
+                                 className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all active:scale-95"
+                                 title="Delete Unit"
+                               >
+                                 <X size={16} />
                                </button>
                              </div>
                           </td>
