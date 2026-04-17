@@ -371,16 +371,11 @@ const App = () => {
                   <MetricCard icon={<Box size={24}/>} label="Live Units" value="142" subtext="+12 this week" color="blue" />
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                  <div className="xl:col-span-2">
-                    <PerformanceChart />
-                  </div>
-                  <div className="space-y-8">
-                    <QuickActions 
-                      onAdd={() => handleAddNewUnit()} 
-                    />
-                    <RecentActivity />
-                  </div>
+                <div className="space-y-8">
+                  <QuickActions 
+                    onAdd={() => handleAddNewUnit()} 
+                  />
+                  <RecentActivity />
                 </div>
               </div>
             )}
@@ -966,54 +961,6 @@ const ActivityItem = ({ icon, title, desc, time, color }) => {
           <span className="text-[9px] font-bold text-slate-400 uppercase">{time}</span>
         </div>
         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{desc}</p>
-      </div>
-    </div>
-  );
-};
-
-const PerformanceChart = () => {
-  const chartData = [
-    { day: 'MON', leads: 4, views: 120 }, { day: 'TUE', leads: 6, views: 165 }, { day: 'WED', leads: 5, views: 140 },
-    { day: 'THU', leads: 12, views: 290 }, { day: 'FRI', leads: 8, views: 190 }, { day: 'SAT', leads: 18, views: 420 },
-    { day: 'SUN', leads: 14, views: 350 },
-  ];
-  const maxViews = Math.max(...chartData.map(d => d.views));
-
-  return (
-    <div className="bg-white rounded-[2.5rem] p-6 sm:p-12 shadow-2xl border border-slate-100 min-h-[450px] flex flex-col text-slate-950 overflow-hidden relative">
-      <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-12">
-        <div className="space-y-2">
-          <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-none uppercase">Weekly Engagement Ledger</h3>
-          <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2 font-black">Sync Reach vs Inbound Lead Volume</p>
-        </div>
-        <div className="flex gap-4 sm:gap-6 bg-slate-50 p-3 sm:p-5 rounded-2xl border border-slate-100 shadow-inner w-full lg:w-auto justify-center">
-          <div className="flex items-center gap-2 sm:gap-3 font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-blue-600 font-black"><div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-blue-600 shadow-lg shadow-blue-200"></div> VIEWS</div>
-          <div className="flex items-center gap-2 sm:gap-3 font-black text-[8px] sm:text-[10px] uppercase tracking-widest text-red-600 font-black"><div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-600 shadow-lg shadow-red-200"></div> LEADS</div>
-        </div>
-      </div>
-      
-      <div className="flex-1 min-h-[250px] w-full overflow-x-auto no-scrollbar pb-2">
-        <div className="flex items-end justify-between gap-4 sm:gap-8 border-b-4 border-slate-50 pb-8 min-w-[600px] h-[250px]">
-          {chartData.map((data, i) => (
-            <div key={i} className="flex flex-col items-center flex-1 gap-4 group h-full justify-end relative">
-              <div className="w-full max-w-[45px] flex items-end justify-center gap-2 h-full relative">
-                <div 
-                  className="w-1/2 bg-blue-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-blue-400 relative shadow-xl shadow-blue-100" 
-                  style={{ height: `${(data.views / maxViews) * 100}%` }}
-                >
-                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-950 text-white text-[8px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none shadow-2xl z-20 whitespace-nowrap">{data.views} Views</div>
-                </div>
-                <div 
-                  className="w-1/2 bg-red-600 rounded-t-xl transition-all duration-1000 ease-out group-hover:bg-red-400 relative shadow-xl shadow-red-100" 
-                  style={{ height: `${(data.leads / maxViews) * 100 * 3.5}%` }} 
-                >
-                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[8px] font-black px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-20 shadow-2xl whitespace-nowrap">{data.leads} Leads</div>
-                </div>
-              </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{data.day}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
