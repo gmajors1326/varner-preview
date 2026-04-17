@@ -566,14 +566,6 @@ const App = () => {
                     onAdd={() => handleInputChange('images', [...(unitData.images || []), '/mahindra.jpg'])} 
                   />
 
-                  {/* IMPLEMENTS / ATTACHMENTS MEDIA GRID (RESTORED) */}
-                  <MediaSection 
-                    title="Implements / Attachments Media" 
-                    images={unitData.attachments?.map(a => a.image) || []} 
-                    onAdd={handleAddImplement} 
-                    badge="Add-on Products"
-                  />
-
                   {/* IMPLEMENTS / ATTACHMENTS DETAILS */}
                   <AttachmentsSection 
                     attachments={unitData.attachments} 
