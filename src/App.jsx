@@ -947,7 +947,6 @@ const RecentActivity = () => (
     </h4>
     <div className="space-y-6">
       <ActivityItem icon={<CheckCircle2 size={14} />} title="Inventory Synced" desc="142 units updated on Meta" time="12m ago" color="green" />
-      <ActivityItem icon={<Users size={14} />} title="New Lead" desc="Marcus R. • Mahindra 2638" time="3h ago" color="red" />
     </div>
   </div>
 );
