@@ -70,7 +70,7 @@ const defaultEmptyUnit = {
   title: '', year: '', make: '', model: '', stockNumber: '', condition: 'New',
   price: '', callForPrice: false, vin: '', stockStatus: 'Draft', category: 'Compact Tractors',
   color: '', length: '', meter: '', meterType: 'Hours', intakeDate: '', description: '',
-  featured: false, images: [], image_ids: [], attachments: [],
+  featured: false, showOnWebsite: true, images: [], image_ids: [], attachments: [],
   sellerInfo: '<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>',
 };
 
@@ -97,6 +97,7 @@ function apiToLocal(u) {
     description: u.description,
     sellerInfo: u.seller_info,
     featured: u.featured ?? false,
+    showOnWebsite: u.show_on_website ?? true,
     images: u.images ?? [],
     image_ids: u.image_ids ?? [],
     attachments: (u.implements ?? []).map(imp => ({
@@ -125,6 +126,8 @@ function apiToListItem(u) {
     status: u.stock_status,
     image: u.images?.[0] ?? '',
     images: u.images ?? [],
+    showOnWebsite: u.show_on_website ?? true,
+    featured: u.featured ?? false,
     attachments: (u.implements ?? []).map(imp => ({
       image: imp.image,
       image_id: imp.image_id ?? 0,
@@ -159,6 +162,11 @@ const App = () => {
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [activeFilters, setActiveFilters]     = useState({ status: [], categories: [], makes: [], models: [], yearMin: '', yearMax: '', priceMin: '', priceMax: '', conditions: [] });
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [isPublicMode, setIsPublicMode]       = useState(false);
+
+  useEffect(() => {
+    setIsPublicMode(!!document.querySelector('.varner-public-showroom'));
+  }, []);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -223,8 +231,26 @@ const App = () => {
     if (unitData.category === name) handleInputChange('category', '');
   };
 
-  const handleInputChange = (field, value) =>
+  const handleInputChange = (field, value) => {
     setUnitData(prev => ({ ...prev, [field]: value }));
+    
+    // Bidirectional sync: If toggling visibility or featured status in the editor,
+    // update the corresponding list item and save to the database immediately.
+    if ((field === 'featured' || field === 'showOnWebsite') && unitData.id) {
+      setInventoryList(prev => prev.map(u => u.wpId === unitData.id ? { ...u, [field]: value } : u));
+      
+      const wpField = field === 'showOnWebsite' ? 'show_on_website' : 'featured';
+      apiFetch(`/inventory/${unitData.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ [wpField]: value })
+      }).catch(e => {
+        showToast(`Sync failed: ${e.message}`, 'error');
+        // Rollback on failure
+        setUnitData(prev => ({ ...prev, [field]: !value }));
+        setInventoryList(prev => prev.map(u => u.wpId === unitData.id ? { ...u, [field]: !value } : u));
+      });
+    }
+  };
 
   // Image upload — sends file to WP Media Library, stores id + url
   const handleAddImages = async (files) => {
@@ -309,6 +335,7 @@ const App = () => {
         description:  unitData.description,
         seller_info:  unitData.sellerInfo,
         featured:     unitData.featured ?? false,
+        show_on_website: unitData.showOnWebsite ?? true,
         image_ids:    unitData.image_ids ?? [],
         implements:   (unitData.attachments ?? []).map(a => ({
           title:       a.title,
@@ -364,6 +391,33 @@ const App = () => {
     }
   };
 
+  const handleToggleBoolean = async (item, field) => {
+    const isShowOnWebsite = field === 'show_on_website';
+    const fieldKey = isShowOnWebsite ? 'showOnWebsite' : 'featured';
+    const newVal = !item[fieldKey];
+    
+    // Optimistic update for list
+    setInventoryList(prev => prev.map(u => u.wpId === item.wpId ? { ...u, [fieldKey]: newVal } : u));
+    
+    // Update unitData if currently editing this unit
+    if (unitData.id === item.wpId) {
+      setUnitData(prev => ({ ...prev, [fieldKey]: newVal }));
+    }
+    
+    try {
+      await apiFetch(`/inventory/${item.wpId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ [field]: newVal })
+      });
+    } catch (e) {
+      showToast(`Failed to update: ${e.message}`, 'error');
+      loadInventory(); // Rollback list
+      if (unitData.id === item.wpId) {
+        setUnitData(prev => ({ ...prev, [fieldKey]: !newVal }));
+      }
+    }
+  };
+
   const handlePermanentDelete = async (wpId) => {
     if (!window.confirm('PERMANENT DELETE: This cannot be undone. Proceed?')) return;
     try {
@@ -396,6 +450,8 @@ const App = () => {
       intakeDate:  '',
       description: '',
       sellerInfo:  defaultEmptyUnit.sellerInfo,
+      featured:    item.featured ?? false,
+      showOnWebsite: item.showOnWebsite ?? true,
       images:      item.image ? [item.image] : [],
       image_ids:   [],
       attachments: item.attachments ?? [],
@@ -432,6 +488,7 @@ const App = () => {
       item.model?.toLowerCase().includes(q) || item.year?.toLowerCase().includes(q) ||
       item.category?.toLowerCase().includes(q) || item.condition?.toLowerCase().includes(q)
     );
+    if (isPublicMode && item.showOnWebsite === false) return false;
     if (!hit(searchQuery?.toLowerCase())) return false;
     if (activeFilters.status.length     && !activeFilters.status.includes(item.status))       return false;
     if (activeFilters.categories.length && !activeFilters.categories.includes(item.category)) return false;
@@ -727,43 +784,62 @@ const App = () => {
                             <th className="px-6 py-5">CATEGORY</th>
                             <th className="px-6 py-5 text-center w-32">CONDITION</th>
                             <th className="px-6 py-5 w-32">PRICE (USD)</th>
-                            <th className="px-6 py-5 w-40">STATUS</th>
-                            <th className="px-6 py-5 text-right w-32">ACTIONS</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {filteredInventory.length === 0 ? (
-                            <tr><td colSpan="8" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
-                          ) : filteredInventory.map(item => (
-                            <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); }}>
-                              <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
-                              <td className="px-4 py-3">
-                                <div className="w-40 h-28 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                                  {item.images?.[0]
-                                    ? <img src={item.images[0]} alt={`${item.year} ${item.make} ${item.model}`} className="w-full h-full object-cover" onError={e => { e.target.onerror=null; e.target.src='https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }}/>
-                                    : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-300"/></div>
-                                  }
-                                </div>
-                              </td>
-                              <td className="px-6 py-5">
-                                <p className="font-black text-base leading-tight uppercase tracking-tight">{item.year} {item.make}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">{item.model}</p>
-                              </td>
-                              <td className="px-6 py-5"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.category}</span></td>
-                              <td className="px-6 py-5 text-center"><span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span></td>
-                              <td className="px-6 py-5 font-black text-base tracking-tighter">
-                                {item.callForPrice
-                                  ? <span className="text-red-600 text-[11px] uppercase tracking-widest">Call for Price</span>
-                                  : <span className="text-slate-900">${parseInt(item.price || 0).toLocaleString()}</span>
-                                }
-                              </td>
-                              <td className="px-6 py-5">
-                                <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${item.status==='In Stock' ? 'text-green-500 bg-green-50 border-green-100' : item.status==='Pending Sale' ? 'text-amber-500 bg-amber-50 border-amber-100' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
-                                  <div className={`w-1.5 h-1.5 rounded-full ${item.status==='In Stock' ? 'bg-green-500 animate-pulse' : item.status==='Pending Sale' ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                                  {item.status}
-                                </span>
-                              </td>
-                              <td className="px-6 py-5 text-right">
+                             <th className="px-6 py-5 w-40">STATUS</th>
+                             <th className="px-6 py-5 text-center w-28">WEBSITE</th>
+                             <th className="px-6 py-5 text-center w-28">FEATURED</th>
+                             <th className="px-6 py-5 text-right w-32">ACTIONS</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y divide-slate-50">
+                           {filteredInventory.length === 0 ? (
+                             <tr><td colSpan="10" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
+                           ) : filteredInventory.map(item => (
+                             <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); }}>
+                               <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
+                               <td className="px-4 py-3">
+                                 <div className="w-40 h-28 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                                   {item.images?.[0]
+                                     ? <img src={item.images[0]} alt={`${item.year} ${item.make} ${item.model}`} className="w-full h-full object-cover" onError={e => { e.target.onerror=null; e.target.src='https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }}/>
+                                     : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-300"/></div>
+                                   }
+                                 </div>
+                               </td>
+                               <td className="px-6 py-5">
+                                 <p className="font-black text-base leading-tight uppercase tracking-tight">{item.year} {item.make}</p>
+                                 <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">{item.model}</p>
+                               </td>
+                               <td className="px-6 py-5"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.category}</span></td>
+                               <td className="px-6 py-5 text-center"><span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span></td>
+                               <td className="px-6 py-5 font-black text-base tracking-tighter">
+                                 {item.callForPrice
+                                   ? <span className="text-red-600 text-[11px] uppercase tracking-widest">Call for Price</span>
+                                   : <span className="text-slate-900">${parseInt(item.price || 0).toLocaleString()}</span>
+                                 }
+                               </td>
+                               <td className="px-6 py-5">
+                                 <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${item.status==='In Stock' ? 'text-green-500 bg-green-50 border-green-100' : item.status==='Pending Sale' ? 'text-amber-500 bg-amber-50 border-amber-100' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
+                                   <div className={`w-1.5 h-1.5 rounded-full ${item.status==='In Stock' ? 'bg-green-500 animate-pulse' : item.status==='Pending Sale' ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                                   {item.status}
+                                 </span>
+                               </td>
+                               <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
+                                 <div className="flex justify-center">
+                                   <button onClick={() => handleToggleBoolean(item, 'show_on_website')} 
+                                     className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}>
+                                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`}/>
+                                   </button>
+                                 </div>
+                               </td>
+                               <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
+                                 <div className="flex justify-center">
+                                   <button onClick={() => handleToggleBoolean(item, 'featured')} 
+                                     className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`}/>
+                                   </button>
+                                 </div>
+                               </td>
+                               <td className="px-6 py-5 text-right">
+
                                 <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
                                   <button onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit"><Edit2 size={16}/></button>
                                   <button onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); setTimeout(handleClone, 200); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone"><Copy size={16}/></button>
@@ -819,7 +895,13 @@ const App = () => {
                             </button>
                           </div>
                           <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                            <select value={unitData.make} onChange={e => handleInputChange('make', e.target.value)}
+                            <select value={unitData.make} 
+                              onChange={e => {
+                                const v = e.target.value;
+                                handleInputChange('make', v);
+                                const newTitle = `${unitData.year} ${v} ${unitData.model}`.trim();
+                                handleInputChange('title', newTitle);
+                              }}
                               className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none">
                               <option value="">— Select Brand —</option>
                               {brands.map(b => <option key={b} value={b}>{b}</option>)}
@@ -828,12 +910,60 @@ const App = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="md:col-span-2">
-                        <InputField label="Public Inventory Title" value={unitData.title} onChange={v => handleInputChange('title', v)}/>
-                      </div>
                       <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
-                        <div className="flex-1"><InputField label="Year" value={unitData.year} onChange={v => handleInputChange('year', v)}/></div>
-                        <div className="flex-1"><InputField label="Model" value={unitData.model} onChange={v => handleInputChange('model', v)}/></div>
+                        <div className="flex-1">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Year</label>
+                            <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+                              <select 
+                                value={unitData.year} 
+                                onChange={e => {
+                                  const v = e.target.value;
+                                  handleInputChange('year', v);
+                                  const newTitle = `${v} ${unitData.make} ${unitData.model}`.trim();
+                                  handleInputChange('title', newTitle);
+                                }}
+                                className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
+                              >
+                                <option value="">— Select Year —</option>
+                                {Array.from({ length: 2027 - 1950 + 1 }, (_, i) => 2027 - i).map(year => (
+                                  <option key={year} value={year}>{year}</option>
+                                ))}
+                              </select>
+                              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400">
+                                <ChevronRight size={24} className="rotate-90"/>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <InputField 
+                            label="Model" 
+                            value={unitData.model} 
+                            onChange={v => {
+                              handleInputChange('model', v);
+                              const newTitle = `${unitData.year} ${unitData.make} ${v}`.trim();
+                              handleInputChange('title', newTitle);
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="md:col-span-2">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">
+                            Public Inventory Title <span className="text-red-600">(Mandatory)</span>
+                          </label>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide -mt-1 ml-1 leading-relaxed opacity-80">
+                            Main heading for website & marketplace. 
+                            <span className="text-slate-500"> Include Year, Make, and Model for optimal SEO and visibility.</span>
+                          </p>
+                          <input 
+                            type="text" 
+                            value={unitData.title} 
+                            onChange={e => handleInputChange('title', e.target.value)} 
+                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-black text-slate-900 focus:border-slate-300 focus:bg-white outline-none transition-all shadow-sm text-lg leading-none"
+                          />
+                        </div>
                       </div>
                       <div className="md:col-span-2 border-y border-slate-50 py-6 my-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block">VIN / SERIAL NUMBER</label>
@@ -870,17 +1000,38 @@ const App = () => {
                         <div className="flex-1"><InputField label="Color" value={unitData.color} onChange={v => handleInputChange('color', v)}/></div>
                         <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)}/></div>
                       </div>
-                      <div className="md:col-span-2">
-                        <button type="button" onClick={() => handleInputChange('featured', !unitData.featured)}
-                          className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border-2 font-black text-sm uppercase tracking-widest transition-all ${unitData.featured ? 'bg-red-600 border-red-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}>
-                          <span className="flex items-center gap-3">
-                            <Star size={16} fill={unitData.featured ? 'white' : 'none'} />
-                            Featured on Home Page
-                          </span>
-                          <span className={`text-[9px] px-3 py-1 rounded-lg ${unitData.featured ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-400'}`}>
-                            {unitData.featured ? 'YES' : 'NO'}
-                          </span>
-                        </button>
+                      <div className="md:col-span-2 space-y-4">
+                        <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl transition-all ${unitData.featured ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300'}`}>
+                              <Star size={20} fill={unitData.featured ? 'currentColor' : 'none'}/>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Featured Unit</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Display at the top of the homepage</p>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => handleInputChange('featured', !unitData.featured)}
+                            className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.featured ? 'left-8' : 'left-1'}`}/>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-xl transition-all ${unitData.showOnWebsite ? 'bg-green-100 text-green-600' : 'bg-white text-slate-300'}`}>
+                              <Eye size={20}/>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Website Visibility</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Publicly visible on showroom pages</p>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => handleInputChange('showOnWebsite', !unitData.showOnWebsite)}
+                            className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.showOnWebsite ? 'bg-green-600' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.showOnWebsite ? 'left-8' : 'left-1'}`}/>
+                          </button>
+                        </div>
                       </div>
                       <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-50">
                         <TextAreaField label="Public Description / Features" value={unitData.description} onChange={v => handleInputChange('description', v)}/>
@@ -891,6 +1042,23 @@ const App = () => {
 
                   <MediaSection title="High-Resolution Media" images={unitData.images} onAddFiles={handleAddImages} onRemove={handleRemoveImage} onReorder={handleReorderImages}/>
                   <AttachmentsSection attachments={unitData.attachments} onAdd={handleAddImplement} onChange={handleUpdateImplement} onRemove={handleRemoveImplement} onImageUpload={handleImplementImageUpload}/>
+
+                  {/* BOTTOM ACTION BUTTONS */}
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                    {unitData.title && (
+                      <button onClick={handleClone} className="flex-1 bg-white text-slate-600 px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-95 border-2 border-slate-100 shadow-xl shadow-slate-200/50">
+                        <Copy size={18}/> Clone Unit
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="flex-[2] bg-red-600 text-white px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all active:scale-95 shadow-2xl shadow-red-200 border-b-4 border-red-800 disabled:opacity-50"
+                    >
+                      {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Save size={18}/>}
+                      {isSaving ? 'SAVING TO LEDGER...' : 'PUBLISH TO MASTER LEDGER'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* RIGHT — MARKETPLACE WIDGET */}
