@@ -1,0 +1,140 @@
+{
+  "key": "group_varner_employment",
+  "title": "Employment Page Content",
+  "fields": [
+    {
+      "key": "field_employment_tagline",
+      "label": "Tagline",
+      "name": "employment_tagline",
+      "type": "text",
+      "instructions": "Small label above the main headline (e.g. \"Join The Crew\")",
+      "required": 0,
+      "default_value": "Join The Crew",
+      "placeholder": "Join The Crew",
+      "maxlength": 60
+    },
+    {
+      "key": "field_employment_headline",
+      "label": "Page Headline",
+      "name": "employment_headline",
+      "type": "text",
+      "instructions": "Main hero heading",
+      "required": 0,
+      "default_value": "Careers at Varner",
+      "placeholder": "Careers at Varner",
+      "maxlength": 80
+    },
+    {
+      "key": "field_employment_intro",
+      "label": "Intro Paragraph",
+      "name": "employment_intro",
+      "type": "textarea",
+      "instructions": "Descriptive paragraph shown below the headline",
+      "required": 0,
+      "default_value": "We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.",
+      "placeholder": "",
+      "rows": 4,
+      "new_lines": "br"
+    },
+    {
+      "key": "field_employment_jobs",
+      "label": "Job Listings",
+      "name": "employment_jobs",
+      "type": "repeater",
+      "instructions": "Add, remove, or reorder open positions. Each row is one job card.",
+      "required": 0,
+      "min": 0,
+      "max": 20,
+      "layout": "block",
+      "button_label": "Add Job Listing",
+      "sub_fields": [
+        {
+          "key": "field_job_title",
+          "label": "Job Title",
+          "name": "job_title",
+          "type": "text",
+          "required": 1,
+          "default_value": "",
+          "placeholder": "e.g. Heavy Equipment Mechanic",
+          "maxlength": 100
+        },
+        {
+          "key": "field_job_type",
+          "label": "Employment Type",
+          "name": "job_type",
+          "type": "text",
+          "required": 0,
+          "default_value": "Full-Time",
+          "placeholder": "Full-Time",
+          "maxlength": 40
+        },
+        {
+          "key": "field_job_location",
+          "label": "Location",
+          "name": "job_location",
+          "type": "text",
+          "required": 0,
+          "default_value": "Delta, CO",
+          "placeholder": "Delta, CO",
+          "maxlength": 60
+        },
+        {
+          "key": "field_job_description",
+          "label": "Job Description",
+          "name": "job_description",
+          "type": "textarea",
+          "required": 1,
+          "default_value": "",
+          "placeholder": "Describe the role and requirements...",
+          "rows": 3,
+          "new_lines": "br"
+        },
+        {
+          "key": "field_job_show_badge",
+          "label": "Show \"Urgently Hiring\" Badge",
+          "name": "job_show_badge",
+          "type": "true_false",
+          "required": 0,
+          "default_value": 0,
+          "ui": 1
+        },
+        {
+          "key": "field_job_badge_text",
+          "label": "Badge Text",
+          "name": "job_badge_text",
+          "type": "text",
+          "instructions": "Only shown when badge is enabled above",
+          "required": 0,
+          "default_value": "Urgently Hiring",
+          "placeholder": "Urgently Hiring",
+          "maxlength": 30,
+          "conditional_logic": [
+            [
+              {
+                "field": "field_job_show_badge",
+                "operator": "==",
+                "value": "1"
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "page_template",
+        "operator": "==",
+        "value": "page-employment.php"
+      }
+    ]
+  ],
+  "menu_order": 0,
+  "position": "normal",
+  "style": "default",
+  "label_placement": "top",
+  "instruction_placement": "label",
+  "active": true,
+  "description": "Controls editable content on the Employment / Careers page"
+}

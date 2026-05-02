@@ -3,3 +3,14 @@ dist
 .DS_Store
 *.local
 .env
+
+# Large binary / media files
+*.zip
+Videos/
+Raw HTML/
+
+# Plugin zips and extracted (source lives in -unpacked folders)
+Plugins/
+
+# Claude internal session files
+.claude/

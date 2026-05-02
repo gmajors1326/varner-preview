@@ -23,7 +23,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Settings, Zap, Menu, Image as ImageIcon, Smartphone, Eye,
   ArrowUpRight, BarChart3, Users, Wrench, Clock, ShieldCheck, Camera, Loader2,
   ScanText, List, Search, Edit2, X, TrendingUp, Activity, DollarSign, History,
-  Sparkles, Info, Trash2, RotateCcw, Star
+  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download
 } from 'lucide-react';
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
@@ -110,6 +110,16 @@ function apiToLocal(u) {
   };
 }
 
+// Friendly label for success messaging
+function getCategoryLabel(cat) {
+  if (!cat) return 'unit';
+  const c = String(cat).toLowerCase();
+  if (c.includes('tractor')) return 'tractor';
+  if (c.includes('trailer')) return 'trailer';
+  if (c.includes('implement') || c.includes('attachment')) return 'attachment';
+  return 'unit';
+}
+
 // Map inventory list item shape for the table
 function apiToListItem(u) {
   return {
@@ -163,6 +173,7 @@ const App = () => {
   const [activeFilters, setActiveFilters]     = useState({ status: [], categories: [], makes: [], models: [], yearMin: '', yearMax: '', priceMin: '', priceMax: '', conditions: [] });
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [isPublicMode, setIsPublicMode]       = useState(false);
+  const [fieldErrors, setFieldErrors]         = useState({});
 
   useEffect(() => {
     setIsPublicMode(!!document.querySelector('.varner-public-showroom'));
@@ -233,6 +244,13 @@ const App = () => {
 
   const handleInputChange = (field, value) => {
     setUnitData(prev => ({ ...prev, [field]: value }));
+
+    // Clear field-level error when user edits the field
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const next = { ...prev }; delete next[field]; return next;
+      });
+    }
     
     // Bidirectional sync: If toggling visibility or featured status in the editor,
     // update the corresponding list item and save to the database immediately.
@@ -313,6 +331,32 @@ const App = () => {
 
   // Save (create or update)
   const handleSave = async () => {
+    const required = [
+      ['title', 'Public Inventory Title'],
+      ['year', 'Year'],
+      ['make', 'Brand / Manufacturer'],
+      ['model', 'Model'],
+      ['category', 'Category'],
+      ['stockStatus', 'Stock Status'],
+      ['condition', 'Condition'],
+    ];
+    if (!unitData.callForPrice) {
+      required.push(['price', 'Price']);
+    }
+
+    const errors = {};
+    required.forEach(([key, label]) => {
+      if (!String(unitData[key] || '').trim()) {
+        errors[key] = `${label} is required`;
+      }
+    });
+
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      setActiveTab('inventory');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const payload = {
@@ -360,7 +404,8 @@ const App = () => {
 
       setUnitData(apiToLocal(saved));
       await loadInventory();
-      showToast('Unit saved successfully');
+      const catLabel = getCategoryLabel(unitData.category);
+      showToast(`Success! The ${catLabel} has been uploaded successfully!`);
       setActiveTab('all-inventory');
     } catch (e) {
       showToast('Save failed: ' + e.message, 'error');
@@ -680,14 +725,33 @@ const App = () => {
                 <Copy size={16}/> <span className="hidden sm:inline">Clone Unit</span>
               </button>
             )}
+
+            {activeTab === 'all-inventory' && (
+              <a
+                href="/wp-admin/admin.php?page=pmxi-admin-import"
+                className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95"
+              >
+                <Upload size={16}/> <span className="hidden sm:inline">Import Inventory</span><span className="sm:hidden">Import</span>
+              </a>
+            )}
+
+            {activeTab === 'all-inventory' && (
+              <a
+                href="/wp-admin/admin.php?page=pmxe-admin-manage"
+                className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95"
+              >
+                <Download size={16}/> <span className="hidden sm:inline">Export Inventory</span><span className="sm:hidden">Export</span>
+              </a>
+            )}
+
             {(activeTab === 'inventory' || activeTab === 'all-inventory') && (
               <button
                 onClick={activeTab === 'inventory' ? handleSave : handleAddNewUnit}
                 className="bg-red-600 text-white p-3 sm:px-7 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800"
               >
                 {isSaving ? <Zap className="animate-spin" size={16}/> : (activeTab === 'inventory' ? <Save size={16}/> : <Plus size={16}/>)}
-                <span className="hidden sm:inline">{isSaving ? 'SAVING...' : (activeTab === 'inventory' ? 'SAVE TO LEDGER' : 'NEW UNIT')}</span>
-                <span className="sm:hidden">{activeTab === 'inventory' ? 'SAVE' : 'NEW'}</span>
+                <span className="hidden sm:inline">{isSaving ? 'PUBLISHING…' : (activeTab === 'inventory' ? 'PUBLISH TO INVENTORY' : 'NEW UNIT')}</span>
+                <span className="sm:hidden">{activeTab === 'inventory' ? (isSaving ? 'PUB…' : 'PUBLISH') : 'NEW'}</span>
               </button>
             )}
           </div>
@@ -699,9 +763,11 @@ const App = () => {
             {/* DASHBOARD */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <MetricCard icon={<Box size={24}/>} label="Live Units" value={isLoading ? '…' : String(inventoryList.filter(i => i.status === 'In Stock').length)} subtext="In stock right now" color="blue" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <MetricCard icon={<Box size={24}/>} label="Live Units" value={isLoading ? '…' : String(inventoryList.filter(i => (i.status || '').toLowerCase() === 'in stock').length)} subtext="In stock right now" color="blue" />
                   <MetricCard icon={<TrendingUp size={24}/>} label="Total Units" value={isLoading ? '…' : String(inventoryList.length)} subtext="All active listings" color="amber" />
+                  <MetricCard icon={<CheckCircle2 size={24}/>} label="Sold Units" value={isLoading ? '…' : String(inventoryList.filter(i => (i.status || '').toLowerCase() === 'sold').length)} subtext="Marked as sold" color="green" />
+                  <MetricCard icon={<Clock size={24}/>} label="Pending Sales" value={isLoading ? '…' : String(inventoryList.filter(i => ['sale pending','pending sale','pending'].includes((i.status || '').toLowerCase())).length)} subtext="Awaiting close" color="red" />
                 </div>
                 <div className="space-y-8">
                   <QuickActions onAdd={handleAddNewUnit} />
@@ -883,6 +949,7 @@ const App = () => {
                             </select>
                             <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
                           </div>
+                          {fieldErrors.category && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.category}</p>}
                         </div>
                       </div>
                       <div className="md:col-span-2">
@@ -908,33 +975,35 @@ const App = () => {
                             </select>
                             <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
                           </div>
+                          {fieldErrors.make && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.make}</p>}
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
                         <div className="flex-1">
                           <div className="space-y-3">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Year</label>
-                            <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                              <select 
-                                value={unitData.year} 
-                                onChange={e => {
-                                  const v = e.target.value;
-                                  handleInputChange('year', v);
-                                  const newTitle = `${v} ${unitData.make} ${unitData.model}`.trim();
-                                  handleInputChange('title', newTitle);
-                                }}
-                                className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
-                              >
-                                <option value="">— Select Year —</option>
-                                {Array.from({ length: 2027 - 1950 + 1 }, (_, i) => 2027 - i).map(year => (
-                                  <option key={year} value={year}>{year}</option>
-                                ))}
-                              </select>
-                              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400">
-                                <ChevronRight size={24} className="rotate-90"/>
-                              </div>
+                          <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+                            <select 
+                              value={unitData.year} 
+                              onChange={e => {
+                                const v = e.target.value;
+                                handleInputChange('year', v);
+                                const newTitle = `${v} ${unitData.make} ${unitData.model}`.trim();
+                                handleInputChange('title', newTitle);
+                              }}
+                              className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
+                            >
+                              <option value="">— Select Year —</option>
+                              {Array.from({ length: 2027 - 1950 + 1 }, (_, i) => 2027 - i).map(year => (
+                                <option key={year} value={year}>{year}</option>
+                              ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400">
+                              <ChevronRight size={24} className="rotate-90"/>
                             </div>
                           </div>
+                          {fieldErrors.year && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.year}</p>}
+                        </div>
                         </div>
                         <div className="flex-1">
                           <InputField 
@@ -945,6 +1014,7 @@ const App = () => {
                               const newTitle = `${unitData.year} ${unitData.make} ${v}`.trim();
                               handleInputChange('title', newTitle);
                             }}
+                            error={fieldErrors.model}
                           />
                         </div>
                       </div>
@@ -963,13 +1033,22 @@ const App = () => {
                             onChange={e => handleInputChange('title', e.target.value)} 
                             className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-black text-slate-900 focus:border-slate-300 focus:bg-white outline-none transition-all shadow-sm text-lg leading-none"
                           />
+                          {fieldErrors.title && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.title}</p>}
                         </div>
                       </div>
-                      <div className="md:col-span-2 border-y border-slate-50 py-6 my-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 block">VIN / SERIAL NUMBER</label>
-                        <input type="text" value={unitData.vin} onChange={e => handleInputChange('vin', e.target.value)}
-                          className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
-                          placeholder="TYPE SERIAL..."/>
+                      <div className="md:col-span-2 border-y border-slate-50 py-6 my-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">VIN / SERIAL NUMBER</label>
+                          <input type="text" value={unitData.vin} onChange={e => handleInputChange('vin', e.target.value)}
+                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
+                            placeholder="TYPE SERIAL..."/>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Stock Number</label>
+                          <input type="text" value={unitData.stockNumber} onChange={e => handleInputChange('stockNumber', e.target.value)}
+                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-lg text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase"
+                            placeholder="STOCK #"/>
+                        </div>
                       </div>
                       <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 px-1 items-end">
                         <div className="space-y-3">
@@ -990,15 +1069,16 @@ const App = () => {
                               onChange={e => handleInputChange('price', e.target.value.replace(/[^0-9]/g, ''))}
                               className="flex-1 bg-transparent p-4 font-black text-slate-900 outline-none text-xl leading-none" placeholder="0.00"/>
                           </div>
+                          {fieldErrors.price && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.price}</p>}
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1"><SelectField label="Stock Status" options={['In Stock','Pending Sale','Sold','Draft']} value={unitData.stockStatus} onChange={v => handleInputChange('stockStatus', v)}/></div>
-                        <div className="flex-1"><SelectField label="Condition" options={['New','Used']} value={unitData.condition} onChange={v => handleInputChange('condition', v)}/></div>
+                        <div className="flex-1"><SelectField label="Stock Status" options={['In Stock','Pending Sale','Sold','Draft']} value={unitData.stockStatus} onChange={v => handleInputChange('stockStatus', v)} error={fieldErrors.stockStatus}/></div>
+                        <div className="flex-1"><SelectField label="Condition" options={['New','Used']} value={unitData.condition} onChange={v => handleInputChange('condition', v)} error={fieldErrors.condition}/></div>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1"><InputField label="Color" value={unitData.color} onChange={v => handleInputChange('color', v)}/></div>
-                        <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)}/></div>
+                        <div className="flex-1"><InputField label="Color" value={unitData.color} onChange={v => handleInputChange('color', v)} error={fieldErrors.color}/></div>
+                        <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)} error={fieldErrors.length}/></div>
                       </div>
                       <div className="md:col-span-2 space-y-4">
                         <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
@@ -1045,18 +1125,22 @@ const App = () => {
 
                   {/* BOTTOM ACTION BUTTONS */}
                   <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                    {unitData.title && (
-                      <button onClick={handleClone} className="flex-1 bg-white text-slate-600 px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-95 border-2 border-slate-100 shadow-xl shadow-slate-200/50">
-                        <Copy size={18}/> Clone Unit
-                      </button>
-                    )}
+                    <button
+                      onClick={handleClone}
+                      disabled={!unitData.id}
+                      className={`flex-1 px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 border-2 shadow-xl shadow-slate-200/50 ${!unitData.id ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
+                    >
+                      <Copy size={18}/>
+                      Clone Unit
+                    </button>
+
                     <button
                       onClick={handleSave}
                       disabled={isSaving}
                       className="flex-[2] bg-red-600 text-white px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all active:scale-95 shadow-2xl shadow-red-200 border-b-4 border-red-800 disabled:opacity-50"
                     >
                       {isSaving ? <Loader2 className="animate-spin" size={18}/> : <Save size={18}/>}
-                      {isSaving ? 'SAVING TO LEDGER...' : 'PUBLISH TO MASTER LEDGER'}
+                      {isSaving ? 'PUBLISHING…' : 'PUBLISH TO INVENTORY'}
                     </button>
                   </div>
                 </div>
@@ -1137,10 +1221,11 @@ const MappingRow = ({ label, value }) => (
   </div>
 );
 
-const InputField = ({ label, value, onChange }) => (
+const InputField = ({ label, value, onChange, error }) => (
   <div className="space-y-3">
     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">{label}</label>
-    <input type="text" value={value} onChange={e => onChange(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-black text-slate-900 focus:border-slate-300 focus:bg-white outline-none transition-all shadow-sm text-lg leading-none"/>
+    <input type="text" value={value} onChange={e => onChange(e.target.value)} className={`w-full bg-slate-50 border-2 rounded-xl p-4 font-black text-slate-900 outline-none transition-all shadow-sm text-lg leading-none ${error ? 'border-red-400 focus:border-red-500 bg-red-50/40' : 'border-slate-100 focus:border-slate-300 focus:bg-white'}`}/>
+    {error && <p className="text-[10px] font-bold text-red-600 pl-1">{error}</p>}
   </div>
 );
 
@@ -1157,16 +1242,17 @@ const TextAreaField = ({ label, value, onChange }) => (
   </div>
 );
 
-const SelectField = ({ label, options, value, onChange, placeholder }) => (
+const SelectField = ({ label, options, value, onChange, placeholder, error }) => (
   <div className="space-y-3">
     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">{label}</label>
-    <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+    <div className={`relative flex items-center bg-slate-50 border-2 rounded-xl transition-all shadow-sm min-h-[64px] ${error ? 'border-red-400 focus-within:border-red-500 bg-red-50/40' : 'border-slate-100 focus-within:border-slate-300 focus-within:bg-white'}`}>
       <select value={value} onChange={e => onChange(e.target.value)} className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none">
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o, i) => <option key={i} value={o}>{o}</option>)}
       </select>
       <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
     </div>
+    {error && <p className="text-[10px] font-bold text-red-600 pl-1">{error}</p>}
   </div>
 );
 
@@ -1395,11 +1481,19 @@ const MetricCard = ({ icon, label, value, subtext, color }) => {
 const QuickActions = ({ onAdd }) => (
   <div className="bg-white rounded-[2rem] p-5 sm:p-8 border border-slate-200/60 shadow-xl">
     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2"><Zap size={14} className="text-red-600"/>Quick Operations</h4>
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <button onClick={onAdd} className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
         <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform"><Plus size={20} className="text-red-600"/></div>
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Add Unit</span>
       </button>
+      <a href="/wp-admin/admin.php?page=pmxi-admin-import" className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
+        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform"><Upload size={20} className="text-slate-700"/></div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Import Inventory</span>
+      </a>
+      <a href="/wp-admin/admin.php?page=pmxe-admin-manage" className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
+        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform"><Download size={20} className="text-slate-700"/></div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Export Inventory</span>
+      </a>
     </div>
   </div>
 );

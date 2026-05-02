@@ -215,6 +215,12 @@ function varner_register_rest_routes() {
         'permission_callback' => $auth,
     ));
 
+    register_rest_route($ns, '/inventory/(?P<id>\d+)/ledger', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_ledger',
+        'permission_callback' => $auth,
+    ));
+
     register_rest_route($ns, '/media', array(
         'methods'             => 'POST',
         'callback'            => 'varner_api_upload_media',
@@ -229,6 +235,24 @@ function varner_register_rest_routes() {
     register_rest_route($ns, '/categories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
         array('methods' => 'POST', 'callback' => 'varner_api_save_categories', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/sessions', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_sessions',
+        'permission_callback' => function() { return current_user_can('manage_options'); },
+    ));
+
+    register_rest_route($ns, '/me', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_me',
+        'permission_callback' => 'is_user_logged_in',
+    ));
+
+    register_rest_route($ns, '/logout', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_logout',
+        'permission_callback' => 'is_user_logged_in',
     ));
 }
 
@@ -264,45 +288,222 @@ function varner_api_save_categories(WP_REST_Request $request) {
     return rest_ensure_response($categories);
 }
 
+function varner_os_user_initials(WP_User $user) {
+    $first = $user->first_name ?: '';
+    $last  = $user->last_name ?: '';
+
+    if ($first || $last) {
+        return strtoupper(substr($first, 0, 1) . substr($last, 0, 1));
+    }
+
+    $parts = preg_split('/\s+/', trim($user->display_name));
+    $initials = '';
+    foreach ($parts as $part) {
+        $initials .= substr($part, 0, 1);
+        if (strlen($initials) >= 2) break;
+    }
+    return strtoupper($initials);
+}
+
+function varner_api_me() {
+    $user = wp_get_current_user();
+    if (!$user || !$user->exists()) {
+        return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
+    }
+
+    return rest_ensure_response(array(
+        'id'           => $user->ID,
+        'display_name' => $user->display_name,
+        'first_name'   => $user->first_name,
+        'last_name'    => $user->last_name,
+        'initials'     => varner_os_user_initials($user),
+        'roles'        => $user->roles,
+    ));
+}
+
+function varner_api_logout() {
+    if (!is_user_logged_in()) {
+        return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
+    }
+
+    // Record logout before the session is cleared
+    if (function_exists('varner_os_record_logout')) {
+        varner_os_record_logout();
+    }
+
+    wp_logout();
+    return rest_ensure_response(array('success' => true));
+}
+
+// ─── Audit helpers ──────────────────────────────────────────────────────────
+
+function varner_os_current_actor() {
+    $user = wp_get_current_user();
+    if (!$user || !$user->exists()) return null;
+
+    return array(
+        'id'           => $user->ID,
+        'display_name' => $user->display_name,
+        'initials'     => varner_os_user_initials($user),
+    );
+}
+
+function varner_os_request_id(WP_REST_Request $request) {
+    $rid = $request->get_header('x-request-id');
+    if (!$rid) {
+        $rid = $request->get_param('request_id');
+    }
+    $rid = sanitize_text_field((string) $rid);
+    return $rid ? substr($rid, 0, 64) : '';
+}
+
+function varner_os_update_last_meta($post_id, $action, $actor) {
+    if (!$actor) return;
+    update_post_meta($post_id, '_varner_last_action', $action);
+    update_post_meta($post_id, '_varner_last_actor_name', $actor['display_name']);
+    update_post_meta($post_id, '_varner_last_actor_initials', $actor['initials']);
+    update_post_meta($post_id, '_varner_last_action_at', current_time('mysql'));
+}
+
+function varner_os_log_ledger($post_id, $action, $summary, $details = array(), $request_id = '') {
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_inventory_ledger';
+    $actor = varner_os_current_actor();
+
+    if ($request_id) {
+        $existing = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE request_id = %s LIMIT 1", $request_id));
+        if ($existing) {
+            return intval($existing);
+        }
+    }
+
+    $wpdb->insert(
+        $table,
+        array(
+            'post_id'      => intval($post_id),
+            'action'       => sanitize_text_field($action),
+            'user_id'      => $actor ? intval($actor['id']) : null,
+            'display_name' => $actor ? $actor['display_name'] : null,
+            'initials'     => $actor ? $actor['initials'] : null,
+            'summary'      => sanitize_text_field(substr((string) $summary, 0, 255)),
+            'details'      => wp_json_encode($details),
+            'request_id'   => $request_id ?: null,
+            'created_at'   => current_time('mysql'),
+        ),
+        array('%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s')
+    );
+
+    varner_os_update_last_meta($post_id, $action, $actor);
+
+    return $wpdb->insert_id;
+}
+
+function varner_os_diff_unit($before, $after) {
+    $diff = array();
+    $fields = array_keys(varner_get_equipment_fields_config());
+    $fields[] = 'title';
+    $fields[] = 'show_on_website';
+    $fields[] = 'stock_status';
+
+    foreach ($fields as $key) {
+        if (!array_key_exists($key, $before) || !array_key_exists($key, $after)) continue;
+        if (is_array($before[$key]) || is_array($after[$key])) continue;
+        if ($before[$key] == $after[$key]) continue;
+        $diff[$key] = array('from' => $before[$key], 'to' => $after[$key]);
+    }
+
+    return $diff;
+}
+
+function varner_os_diff_summary($diff) {
+    if (empty($diff)) return 'updated unit';
+    $parts = array();
+    foreach ($diff as $field => $change) {
+        $parts[] = sprintf('%s: %s -> %s', $field, $change['from'], $change['to']);
+        if (count($parts) >= 3) break;
+    }
+    return implode('; ', $parts);
+}
+
 // ─── 6. HELPERS ─────────────────────────────────────────────────────────────
+
+/**
+ * Centralized list of equipment fields for formatting and saving.
+ */
+function varner_get_equipment_fields_config() {
+    return array(
+        'year'           => array('type' => 'text'),
+        'make'           => array('type' => 'text'),
+        'model'          => array('type' => 'text'),
+        'stock_number'   => array('type' => 'text'),
+        'vin'            => array('type' => 'text'),
+        'price'          => array('type' => 'number'),
+        'call_for_price' => array('type' => 'bool'),
+        'condition'      => array('type' => 'text', 'default' => 'New'),
+        'stock_status'   => array('type' => 'text', 'default' => 'Draft'),
+        'category'       => array('type' => 'text'),
+        'color'          => array('type' => 'text'),
+        'length'         => array('type' => 'text'),
+        'meter'          => array('type' => 'text'),
+        'meter_type'     => array('type' => 'text', 'default' => 'Hours'),
+        'intake_date'    => array('type' => 'text'),
+        'description'    => array('type' => 'wysiwyg'),
+        'seller_info'    => array('type' => 'wysiwyg'),
+        'featured'       => array('type' => 'bool'),
+        'show_on_website'=> array('type' => 'bool', 'default' => true),
+    );
+}
 
 function varner_format_unit($post_id) {
     $post = get_post($post_id);
     if (!$post) return null;
 
+    $config = varner_get_equipment_fields_config();
+    $data   = array(
+        'id'    => $post_id,
+        'title' => $post->post_title,
+    );
+
+    foreach ($config as $key => $meta) {
+        $val = get_field($key, $post_id);
+        
+        if ($meta['type'] === 'bool') {
+            $data[$key] = (bool) ( $val !== false ? $val : ($meta['default'] ?? false) );
+        } elseif ($meta['type'] === 'number') {
+            $data[$key] = (string) ($val ?? '');
+        } else {
+            $data[$key] = $val ?: ($meta['default'] ?? '');
+        }
+    }
+
     // Gallery
-    $gallery    = get_field('gallery', $post_id);
-    $image_urls = array();
-    $image_ids  = array();
+    $gallery = get_field('gallery', $post_id);
+    $data['images']    = array();
+    $data['image_ids'] = array();
     if (!empty($gallery)) {
         foreach ($gallery as $img) {
             if (is_array($img)) {
-                $image_urls[] = $img['url'];
-                $image_ids[]  = $img['ID'];
+                $data['images'][]    = $img['url'];
+                $data['image_ids'][]  = $img['ID'];
             } elseif (is_numeric($img)) {
-                $image_urls[] = wp_get_attachment_url($img);
-                $image_ids[]  = intval($img);
+                $data['images'][]    = wp_get_attachment_url($img);
+                $data['image_ids'][]  = intval($img);
             }
         }
     }
 
     // Implements
-    $raw        = get_field('implements', $post_id);
-    $implements = array();
+    $raw = get_field('implements', $post_id);
+    $data['implements'] = array();
     if (!empty($raw)) {
         foreach ($raw as $imp) {
             $img_url = '';
             $img_id  = 0;
             if (!empty($imp['implement_image'])) {
-                if (is_array($imp['implement_image'])) {
-                    $img_url = $imp['implement_image']['url'];
-                    $img_id  = $imp['implement_image']['ID'];
-                } else {
-                    $img_url = wp_get_attachment_url($imp['implement_image']);
-                    $img_id  = intval($imp['implement_image']);
-                }
+                $img_url = is_array($imp['implement_image']) ? $imp['implement_image']['url'] : wp_get_attachment_url($imp['implement_image']);
+                $img_id  = is_array($imp['implement_image']) ? $imp['implement_image']['ID'] : intval($imp['implement_image']);
             }
-            $implements[] = array(
+            $data['implements'][] = array(
                 'title'       => $imp['implement_title']       ?? '',
                 'price'       => $imp['implement_price']       ?? '',
                 'description' => $imp['implement_description'] ?? '',
@@ -312,67 +513,36 @@ function varner_format_unit($post_id) {
         }
     }
 
-    return array(
-        'id'           => $post_id,
-        'title'        => $post->post_title,
-        'year'         => get_field('year',         $post_id) ?? '',
-        'make'         => get_field('make',         $post_id) ?? '',
-        'model'        => get_field('model',        $post_id) ?? '',
-        'stock_number' => get_field('stock_number', $post_id) ?? '',
-        'vin'          => get_field('vin',          $post_id) ?? '',
-        'price'        => (string)(get_field('price', $post_id) ?? ''),
-        'call_for_price' => (bool) get_field('call_for_price', $post_id),
-        'condition'    => get_field('condition',    $post_id) ?? 'New',
-        'stock_status' => get_field('stock_status', $post_id) ?? 'Draft',
-        'category'     => get_field('category',     $post_id) ?? '',
-        'color'        => get_field('color',        $post_id) ?? '',
-        'length'       => get_field('length',       $post_id) ?? '',
-        'meter'        => get_field('meter',        $post_id) ?? '',
-        'meter_type'   => get_field('meter_type',   $post_id) ?? 'Hours',
-        'intake_date'  => get_field('intake_date',  $post_id) ?? '',
-        'description'  => get_field('description',  $post_id) ?? '',
-        'seller_info'  => get_field('seller_info',  $post_id) ?? '',
-        'featured'     => (bool) get_field('featured', $post_id),
-        'show_on_website' => (bool) (get_field('show_on_website', $post_id) !== false ? get_field('show_on_website', $post_id) : true),
-        'images'       => $image_urls,
-        'image_ids'    => $image_ids,
-        'implements'   => $implements,
-        'deleted_at'   => get_post_meta($post_id, '_varner_deleted_at', true),
-    );
+    $data['deleted_at'] = get_post_meta($post_id, '_varner_deleted_at', true);
+    $data['last_action'] = get_post_meta($post_id, '_varner_last_action', true);
+    $data['last_actor_name'] = get_post_meta($post_id, '_varner_last_actor_name', true);
+    $data['last_actor_initials'] = get_post_meta($post_id, '_varner_last_actor_initials', true);
+    $data['last_action_at'] = get_post_meta($post_id, '_varner_last_action_at', true);
+    return $data;
 }
 
 function varner_save_unit_fields($post_id, $data) {
-    $text_fields = array('year','make','model','stock_number','vin','condition','stock_status','category','color','length','meter','meter_type','intake_date');
-    foreach ($text_fields as $field) {
-        if (array_key_exists($field, $data)) {
-            update_field($field, sanitize_text_field($data[$field]), $post_id);
+    $config = varner_get_equipment_fields_config();
+
+    foreach ($config as $key => $meta) {
+        if (!array_key_exists($key, $data)) continue;
+
+        $val = $data[$key];
+        if ($meta['type'] === 'bool') {
+            update_field($key, (bool) $val, $post_id);
+        } elseif ($meta['type'] === 'number') {
+            update_field($key, floatval($val), $post_id);
+        } elseif ($meta['type'] === 'wysiwyg') {
+            update_field($key, wp_kses_post($val), $post_id);
+        } else {
+            update_field($key, sanitize_text_field($val), $post_id);
         }
     }
 
-    if (array_key_exists('price', $data)) {
-        update_field('field_varner_price', floatval($data['price']), $post_id);
-    }
-    if (array_key_exists('call_for_price', $data)) {
-        update_field('field_varner_call_for_price', (bool) $data['call_for_price'], $post_id);
-    }
-    if (array_key_exists('featured', $data)) {
-        update_field('field_varner_featured', (bool) $data['featured'], $post_id);
-    }
-    if (array_key_exists('show_on_website', $data)) {
-        update_field('field_varner_show_on_website', (bool) $data['show_on_website'], $post_id);
-    }
-    if (array_key_exists('description', $data)) {
-        update_field('description', wp_kses_post($data['description']), $post_id);
-    }
-    if (array_key_exists('seller_info', $data)) {
-        update_field('seller_info', wp_kses_post($data['seller_info']), $post_id);
-    }
-
-    // Gallery — expects array of WP attachment IDs
+    // Gallery
     if (array_key_exists('image_ids', $data)) {
         $ids = array_map('intval', (array) $data['image_ids']);
         update_field('gallery', $ids, $post_id);
-        // Keep WP post thumbnail in sync with the first gallery image
         if (!empty($ids)) {
             set_post_thumbnail($post_id, $ids[0]);
         } else {
@@ -380,7 +550,7 @@ function varner_save_unit_fields($post_id, $data) {
         }
     }
 
-    // Implements — expects array of objects {title, price, description, image_id}
+    // Implements
     if (array_key_exists('implements', $data)) {
         $rows = array();
         foreach ((array) $data['implements'] as $imp) {
@@ -449,7 +619,12 @@ function varner_api_create_unit(WP_REST_Request $request) {
         return new WP_Error('create_failed', $post_id->get_error_message(), array('status' => 500));
     }
     varner_save_unit_fields($post_id, $data);
-    return rest_ensure_response(varner_format_unit($post_id));
+    $unit = varner_format_unit($post_id);
+
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'create', 'created unit', array('after' => $unit), $rid);
+
+    return rest_ensure_response($unit);
 }
 
 function varner_api_update_unit(WP_REST_Request $request) {
@@ -458,11 +633,19 @@ function varner_api_update_unit(WP_REST_Request $request) {
     if (!get_post($post_id)) {
         return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
     }
+    $before = varner_format_unit($post_id);
     if (isset($data['title'])) {
         wp_update_post(array('ID' => $post_id, 'post_title' => sanitize_text_field($data['title'])));
     }
     varner_save_unit_fields($post_id, $data);
-    return rest_ensure_response(varner_format_unit($post_id));
+    $after = varner_format_unit($post_id);
+
+    $diff = varner_os_diff_unit($before ?: array(), $after ?: array());
+    $summary = $before ? varner_os_diff_summary($diff) : 'updated unit';
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'update', $summary, array('diff' => $diff, 'before' => $before, 'after' => $after), $rid);
+
+    return rest_ensure_response($after);
 }
 
 function varner_api_soft_delete(WP_REST_Request $request) {
@@ -472,6 +655,8 @@ function varner_api_soft_delete(WP_REST_Request $request) {
     }
     update_post_meta($post_id, '_varner_deleted_at', current_time('c'));
     wp_trash_post($post_id);
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'delete', 'soft delete', array('deleted_at' => current_time('mysql')), $rid);
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
 }
 
@@ -479,12 +664,16 @@ function varner_api_restore_unit(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
     wp_untrash_post($post_id);
     delete_post_meta($post_id, '_varner_deleted_at');
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'restore', 'restore unit', array(), $rid);
     return rest_ensure_response(varner_format_unit($post_id));
 }
 
 function varner_api_permanent_delete(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
     wp_delete_post($post_id, true);
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'permanent_delete', 'permanent delete', array(), $rid);
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
 }
 
@@ -503,5 +692,78 @@ function varner_api_upload_media(WP_REST_Request $request) {
     return rest_ensure_response(array(
         'id'  => $attachment_id,
         'url' => wp_get_attachment_url($attachment_id),
+    ));
+}
+
+function varner_api_get_ledger(WP_REST_Request $request) {
+    global $wpdb;
+    $post_id = intval($request->get_param('id'));
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'equipment') {
+        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    }
+
+    $page = max(1, intval($request->get_param('page') ?: 1));
+    $per_page = min(50, max(1, intval($request->get_param('per_page') ?: 20)));
+    $offset = ($page - 1) * $per_page;
+
+    $table = $wpdb->prefix . 'varner_inventory_ledger';
+
+    $items = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, action, user_id, display_name, initials, summary, details, request_id, created_at FROM {$table} WHERE post_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
+        $post_id,
+        $per_page,
+        $offset
+    ), ARRAY_A);
+
+    $total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE post_id = %d", $post_id));
+
+    return rest_ensure_response(array(
+        'items'    => $items,
+        'total'    => intval($total),
+        'page'     => $page,
+        'per_page' => $per_page,
+    ));
+}
+
+function varner_api_get_sessions(WP_REST_Request $request) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_user_sessions';
+
+    $active_only = filter_var($request->get_param('active_only'), FILTER_VALIDATE_BOOLEAN);
+    $user_id     = intval($request->get_param('user_id'));
+    $page        = max(1, intval($request->get_param('page') ?: 1));
+    $per_page    = min(100, max(1, intval($request->get_param('per_page') ?: 20)));
+    $offset      = ($page - 1) * $per_page;
+
+    $wheres = array();
+    $params = array();
+    if ($active_only) {
+        $wheres[] = 'logout_at IS NULL';
+    }
+    if ($user_id > 0) {
+        $wheres[] = 'user_id = %d';
+        $params[] = $user_id;
+    }
+    $where_sql = $wheres ? ('WHERE ' . implode(' AND ', $wheres)) : '';
+
+    $sql = "SELECT id, user_id, session_token, login_at, logout_at, ip, user_agent, ended_reason FROM {$table} {$where_sql} ORDER BY login_at DESC LIMIT %d OFFSET %d";
+    $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
+
+    $count_sql = "SELECT COUNT(*) FROM {$table} {$where_sql}";
+    $total = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
+
+    // Attach user display_name/initials for convenience
+    foreach ($items as &$row) {
+        $u = $row['user_id'] ? get_user_by('id', $row['user_id']) : null;
+        $row['display_name'] = $u ? $u->display_name : '';
+        $row['initials']     = $u ? varner_os_user_initials($u) : '';
+    }
+
+    return rest_ensure_response(array(
+        'items'    => $items,
+        'total'    => intval($total),
+        'page'     => $page,
+        'per_page' => $per_page,
     ));
 }
