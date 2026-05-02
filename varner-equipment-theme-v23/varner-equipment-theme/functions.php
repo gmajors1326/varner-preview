@@ -363,6 +363,16 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
         }
     }
 
+    $stock_num = sanitize_text_field( $_GET['stock_number'] ?? '' );
+    if ( $stock_num ) {
+        $meta[] = array( 'key' => 'stock_number', 'value' => $stock_num, 'compare' => 'LIKE' );
+    }
+
+    $vin_num = sanitize_text_field( $_GET['vin'] ?? '' );
+    if ( $vin_num ) {
+        $meta[] = array( 'key' => 'vin', 'value' => $vin_num, 'compare' => 'LIKE' );
+    }
+
     $args = array(
         'post_type'      => 'equipment',
         'posts_per_page' => $posts_per_page,

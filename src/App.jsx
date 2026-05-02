@@ -170,7 +170,7 @@ const App = () => {
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [newBrandInput, setNewBrandInput]     = useState('');
   const [newCategoryInput, setNewCategoryInput] = useState('');
-  const [activeFilters, setActiveFilters]     = useState({ status: [], categories: [], makes: [], models: [], yearMin: '', yearMax: '', priceMin: '', priceMax: '', conditions: [] });
+  const [activeFilters, setActiveFilters]     = useState({ status: [], categories: [], makes: [], models: [], yearMin: '', yearMax: '', priceMin: '', priceMax: '', conditions: [], stockSearch: '', vinSearch: '' });
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [isPublicMode, setIsPublicMode]       = useState(false);
   const [fieldErrors, setFieldErrors]         = useState({});
@@ -525,7 +525,7 @@ const App = () => {
   };
 
   const handleFilterChange = (key, value) => setActiveFilters(prev => ({ ...prev, [key]: value }));
-  const handleClearFilters = () => { setActiveFilters({ status: [], categories: [], makes: [], models: [], yearMin: '', yearMax: '', priceMin: '', priceMax: '', conditions: [] }); setSearchQuery(''); };
+  const handleClearFilters = () => { setActiveFilters({ status: [], categories: [], makes: [], models: [], yearMin: '', yearMax: '', priceMin: '', priceMax: '', conditions: [], stockSearch: '', vinSearch: '' }); setSearchQuery(''); };
 
   const filteredInventory = inventoryList.filter(item => {
     const hit = (q) => !q || (
@@ -544,6 +544,8 @@ const App = () => {
     if (activeFilters.priceMin && parseInt(item.price||0) < parseInt(activeFilters.priceMin))  return false;
     if (activeFilters.priceMax && parseInt(item.price||0) > parseInt(activeFilters.priceMax))  return false;
     if (activeFilters.conditions.length && !activeFilters.conditions.includes(item.condition)) return false;
+    if (activeFilters.stockSearch && !item.stock?.toLowerCase().includes(activeFilters.stockSearch.toLowerCase())) return false;
+    if (activeFilters.vinSearch   && !item.vin?.toLowerCase().includes(activeFilters.vinSearch.toLowerCase()))   return false;
     return true;
   });
 
@@ -803,6 +805,8 @@ const App = () => {
                     {activeFilters.conditions.map(v => <span key={v} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('conditions', activeFilters.conditions.filter(x => x !== v))} className="font-black leading-none hover:text-red-200">×</button>{v.toUpperCase()}</span>)}
                     {(activeFilters.yearMin || activeFilters.yearMax) && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => { handleFilterChange('yearMin',''); handleFilterChange('yearMax',''); }} className="font-black leading-none hover:text-red-200">×</button>YEAR: {activeFilters.yearMin||'?'}–{activeFilters.yearMax||'?'}</span>}
                     {(activeFilters.priceMin || activeFilters.priceMax) && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => { handleFilterChange('priceMin',''); handleFilterChange('priceMax',''); }} className="font-black leading-none hover:text-red-200">×</button>PRICE: ${activeFilters.priceMin||'0'}–${activeFilters.priceMax||'∞'}</span>}
+                    {activeFilters.stockSearch && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('stockSearch','')} className="font-black leading-none hover:text-red-200">×</button>STOCK #: {activeFilters.stockSearch}</span>}
+                    {activeFilters.vinSearch   && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('vinSearch','')} className="font-black leading-none hover:text-red-200">×</button>VIN: {activeFilters.vinSearch}</span>}
                     <button onClick={handleClearFilters} className="ml-auto text-xs font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors shrink-0">Clear All</button>
                   </div>
                 )}
@@ -1726,6 +1730,8 @@ const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, on
     ...filters.conditions.map(v => ({ label: v, onRemove: () => toggleArr('conditions', v) })),
     ...(filters.yearMin || filters.yearMax ? [{ label: `Year: ${filters.yearMin || '?'}-${filters.yearMax || '?'}`, onRemove: () => { onFilterChange('yearMin', ''); onFilterChange('yearMax', ''); } }] : []),
     ...(filters.priceMin || filters.priceMax ? [{ label: `Price: $${filters.priceMin || '0'}-$${filters.priceMax || '∞'}`, onRemove: () => { onFilterChange('priceMin', ''); onFilterChange('priceMax', ''); } }] : []),
+    ...(filters.stockSearch ? [{ label: `Stock #: ${filters.stockSearch}`, onRemove: () => onFilterChange('stockSearch', '') }] : []),
+    ...(filters.vinSearch   ? [{ label: `VIN: ${filters.vinSearch}`,       onRemove: () => onFilterChange('vinSearch', '')   }] : []),
   ];
 
   const SectionHeader = ({ label, sKey, applied }) => (
@@ -1839,6 +1845,26 @@ const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, on
             </div>
           </div>
 
+          {/* Stock Number */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Stock #</p>
+            <div className="flex items-center gap-2">
+              <input type="text" placeholder="e.g. VE-1042" value={filters.stockSearch || ''}
+                onChange={e => onFilterChange('stockSearch', e.target.value)}
+                className="w-32 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all"/>
+            </div>
+          </div>
+
+          {/* VIN / Serial */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">VIN / Serial</p>
+            <div className="flex items-center gap-2">
+              <input type="text" placeholder="Full or partial VIN" value={filters.vinSearch || ''}
+                onChange={e => onFilterChange('vinSearch', e.target.value)}
+                className="w-40 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all"/>
+            </div>
+          </div>
+
           <button onClick={onClearAll} className="h-[48px] px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">
             Clear All
           </button>
@@ -1867,6 +1893,22 @@ const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, on
       </div>
 
       <div className="px-5 pb-5">
+        {/* Stock Number */}
+        <div className="mb-4">
+          <p className="font-bold text-sm text-gray-900 mb-2">Stock #</p>
+          <input type="text" placeholder="e.g. VE-1042" value={filters.stockSearch || ''}
+            onChange={e => onFilterChange('stockSearch', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 transition-colors"/>
+        </div>
+
+        {/* VIN / Serial */}
+        <div className="mb-4">
+          <p className="font-bold text-sm text-gray-900 mb-2">VIN / Serial</p>
+          <input type="text" placeholder="Full or partial VIN" value={filters.vinSearch || ''}
+            onChange={e => onFilterChange('vinSearch', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 transition-colors"/>
+        </div>
+
         {/* Stock Status */}
         <SectionHeader label="Stock Status" sKey="listingType" applied={filters.status.length > 0} />
         {sections.listingType && (

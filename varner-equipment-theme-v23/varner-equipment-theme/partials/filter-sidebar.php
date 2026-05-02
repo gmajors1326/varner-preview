@@ -4,16 +4,18 @@
  * Expected variable: $filter_data — from varner_get_filter_data()
  */
 
-$fs     = sanitize_text_field( $_GET['s']          ?? '' );
-$f_cats = array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) );
-$f_mks  = array_map( 'sanitize_text_field', (array) ( $_GET['make']      ?? [] ) );
-$f_cds  = array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? [] ) );
-$f_ymin = intval( $_GET['year_min']  ?? 0 );
-$f_ymax = intval( $_GET['year_max']  ?? 0 );
-$f_pmin = intval( $_GET['price_min'] ?? 0 );
-$f_pmax = intval( $_GET['price_max'] ?? 0 );
+$fs       = sanitize_text_field( $_GET['s']            ?? '' );
+$f_cats   = array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) );
+$f_mks    = array_map( 'sanitize_text_field', (array) ( $_GET['make']      ?? [] ) );
+$f_cds    = array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? [] ) );
+$f_ymin   = intval( $_GET['year_min']    ?? 0 );
+$f_ymax   = intval( $_GET['year_max']    ?? 0 );
+$f_pmin   = intval( $_GET['price_min']   ?? 0 );
+$f_pmax   = intval( $_GET['price_max']   ?? 0 );
+$f_stock  = sanitize_text_field( $_GET['stock_number'] ?? '' );
+$f_vin    = sanitize_text_field( $_GET['vin']          ?? '' );
 
-$has = $fs || $f_cats || $f_mks || $f_cds || $f_ymin || $f_ymax || $f_pmin || $f_pmax;
+$has = $fs || $f_cats || $f_mks || $f_cds || $f_ymin || $f_ymax || $f_pmin || $f_pmax || $f_stock || $f_vin;
 $page_url = get_permalink();
 
 $makes_top  = array_slice( $filter_data['makes'],  0, 5, true );
@@ -54,6 +56,18 @@ $has_checked_in_more = ! empty( array_intersect( $f_mks, array_keys( $makes_more
             <a href="<?php echo esc_url( varner_remove_filter( 's' ) ); ?>"
                class="flex items-center gap-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full hover:bg-red-700 transition-colors">
                 × "<?php echo esc_html( $fs ); ?>"
+            </a>
+            <?php endif; ?>
+            <?php if ( $f_stock ) : ?>
+            <a href="<?php echo esc_url( varner_remove_filter( 'stock_number' ) ); ?>"
+               class="flex items-center gap-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full hover:bg-red-700 transition-colors">
+                × Stock #<?php echo esc_html( $f_stock ); ?>
+            </a>
+            <?php endif; ?>
+            <?php if ( $f_vin ) : ?>
+            <a href="<?php echo esc_url( varner_remove_filter( 'vin' ) ); ?>"
+               class="flex items-center gap-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full hover:bg-red-700 transition-colors">
+                × VIN: <?php echo esc_html( $f_vin ); ?>
             </a>
             <?php endif; ?>
             <?php if ( $f_ymin || $f_ymax ) : ?>
@@ -197,6 +211,42 @@ $has_checked_in_more = ! empty( array_intersect( $f_mks, array_keys( $makes_more
                        class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 w-0 min-w-0">
                 <button type="submit"
                         class="bg-slate-900 text-white px-3 py-2.5 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-red-600 transition-colors shrink-0">
+                    Go
+                </button>
+            </div>
+        </div>
+    </details>
+
+    <!-- ── STOCK NUMBER ─────────────────────────────────────── -->
+    <details class="border-b border-slate-100">
+        <summary class="vf-summary flex justify-between items-center p-4 cursor-pointer list-none select-none hover:bg-slate-50 transition-colors">
+            <span class="font-black text-xs uppercase tracking-widest text-slate-900">Stock Number</span>
+            <span class="vf-toggle text-slate-400 font-bold text-sm"><?php echo $f_stock ? '—' : '›'; ?></span>
+        </summary>
+        <div class="px-4 pb-4">
+            <div class="flex gap-2">
+                <input type="text" name="stock_number" value="<?php echo esc_attr( $f_stock ); ?>" placeholder="e.g. VE-1042"
+                       class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 transition-colors min-w-0">
+                <button type="submit"
+                        class="bg-slate-900 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-red-600 transition-colors shrink-0">
+                    Go
+                </button>
+            </div>
+        </div>
+    </details>
+
+    <!-- ── VIN / SERIAL ──────────────────────────────────────── -->
+    <details class="border-b border-slate-100">
+        <summary class="vf-summary flex justify-between items-center p-4 cursor-pointer list-none select-none hover:bg-slate-50 transition-colors">
+            <span class="font-black text-xs uppercase tracking-widest text-slate-900">VIN / Serial</span>
+            <span class="vf-toggle text-slate-400 font-bold text-sm"><?php echo $f_vin ? '—' : '›'; ?></span>
+        </summary>
+        <div class="px-4 pb-4">
+            <div class="flex gap-2">
+                <input type="text" name="vin" value="<?php echo esc_attr( $f_vin ); ?>" placeholder="Full or partial VIN"
+                       class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 transition-colors min-w-0">
+                <button type="submit"
+                        class="bg-slate-900 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-red-600 transition-colors shrink-0">
                     Go
                 </button>
             </div>

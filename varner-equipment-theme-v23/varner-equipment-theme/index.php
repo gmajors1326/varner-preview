@@ -68,35 +68,43 @@
                     $theme_path_base = get_template_directory() . '/assets/';
 
                     $logos = array(
-                        'BigTex_white.png', 'CMTruckbeds_white.png', 'DuetzFahr_white.png', 
-                        'KRONE_white.png', 'MacDon_white.png', 'Mahindra_white.png', 
-                        'McHALE_white.png', 'ROXR_white.png', 'TitanTrailersMFG_white.png', 
-                        'Triton_white.png', 'TYM_white.png', 'Zetor_white.png'
+                        'BigTex_white.png'           => home_url( '/brands/big-tex' ),
+                        'CMTruckbeds_white.png'      => home_url( '/brands/cm-truck-beds' ),
+                        'DuetzFahr_white.png'        => home_url( '/brands/deutz-fahr' ),
+                        'KRONE_white.png'            => home_url( '/brands/krone' ),
+                        'MacDon_white.png'           => home_url( '/brands/macdon' ),
+                        'Mahindra_white.png'         => home_url( '/brands/mahindra' ),
+                        'McHALE_white.png'           => home_url( '/brands/mchale' ),
+                        'ROXR_white.png'             => home_url( '/brands/roxr' ),
+                        'TitanTrailersMFG_white.png' => home_url( '/brands/titan-mfg' ),
+                        'Triton_white.png'           => home_url( '/brands/triton' ),
+                        'TYM_white.png'              => home_url( '/brands/tym' ),
+                        'Zetor_white.png'            => home_url( '/brands/zetor' ),
                     );
-                    
-                    foreach ($logos as $logo) {
+
+                    foreach ($logos as $logo => $brand_href) {
                         $extraClasses = ($logo === 'CMTruckbeds_white.png') ? ' scale-90 ' : ' ';
                         $logo_path = $theme_path_base . $logo;
                         $logo_url = file_exists($logo_path) ? ($theme_base . $logo) : ($upload_base . '/' . $logo);
                         $logo_version = file_exists($logo_path) ? filemtime($logo_path) : time();
 
-                        echo '<div class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8">'
+                        echo '<a href="' . esc_url($brand_href) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8">'
                             . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300 hover:scale-105' . $extraClasses . '">'
-                            . '</div>';
+                            . '</a>';
                     }
                     ?>
                 </div>
                 <div class="flex items-center shrink-0">
-                    <?php 
-                    foreach ($logos as $logo) {
+                    <?php
+                    foreach ($logos as $logo => $brand_href) {
                         $extraClasses = ($logo === 'CMTruckbeds_white.png') ? ' scale-90 ' : ' ';
                         $logo_path = $theme_path_base . $logo;
                         $logo_url = file_exists($logo_path) ? ($theme_base . $logo) : ($upload_base . '/' . $logo);
                         $logo_version = file_exists($logo_path) ? filemtime($logo_path) : time();
 
-                        echo '<div class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8">'
+                        echo '<a href="' . esc_url($brand_href) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8">'
                             . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300 hover:scale-105' . $extraClasses . '">'
-                            . '</div>';
+                            . '</a>';
                     }
                     ?>
                 </div>
@@ -300,18 +308,18 @@
                     <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em]">Varner Equipment Media</div>
                     <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1] md:leading-[0.9] tracking-tighter uppercase break-words">See Our Machines<br class="hidden sm:block"/><span class="text-red-500 sm:inline block">In Action</span></h2>
                     <p class="text-base sm:text-lg text-slate-400 font-bold max-w-md mx-auto md:mx-0 leading-relaxed">Subscribe to our YouTube channel for walkthroughs, reviews, and heavy-duty demonstrations right here in Colorado.</p>
-                    <a href="https://www.youtube.com/" target="_blank" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
+                    <a href="https://www.youtube.com/@varnerequipment" target="_blank" rel="noopener" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
                         Visit Our Channel
                     </a>
                 </div>
                 <div class="w-full md:w-1/2">
-                    <div class="aspect-video bg-slate-900 rounded-2xl md:rounded-[2rem] overflow-hidden border border-slate-800 md:border-2 shadow-2xl relative group cursor-pointer w-full">
+                    <div id="yt-facade" class="aspect-video bg-slate-900 rounded-2xl md:rounded-[2rem] overflow-hidden border border-slate-800 md:border-2 shadow-2xl relative group cursor-pointer w-full" onclick="(function(el){var iframe=document.createElement('iframe');iframe.src='https://www.youtube.com/embed/goF_3TspZ6k?autoplay=1&rel=0';iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';iframe.allowFullscreen=true;iframe.className='w-full h-full absolute inset-0';el.innerHTML='';el.appendChild(iframe);})(this)">
                         <div class="absolute inset-0 flex items-center justify-center z-10">
                             <div class="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center pl-1 sm:pl-2 shadow-[0_0_30px_rgba(220,38,38,0.5)] group-hover:scale-110 transition-transform">
                                 <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                             </div>
                         </div>
-                        <img src="https://images.unsplash.com/photo-1594913785162-e6785b423cb1?auto=format&fit=crop&q=80&w=1200" alt="Video Thumbnail" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500 scale-105 group-hover:scale-100">
+                        <img src="https://img.youtube.com/vi/goF_3TspZ6k/maxresdefault.jpg" alt="Varner Equipment Video" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500 scale-105 group-hover:scale-100">
                     </div>
                 </div>
             </div>
