@@ -1,5 +1,21 @@
 # Varner OS / Theme Deployment Runbook
 
+---
+
+## Changelog
+
+### 2026-05-02
+- **YouTube — Visit Our Channel button**: `index.php` hero video section now links to `https://www.youtube.com/@varnerequipment`
+- **YouTube — Video embed**: "See Our Machines In Action" section uses click-to-play embed for video `goF_3TspZ6k`; thumbnail auto-loads from YouTube
+- **Brand logo ticker**: Each logo in the scrolling ticker now links to its brand page (`/brands/[slug]`)
+- **Product Videos nav link**: Changed from internal WordPress page to `https://www.youtube.com/@VarnerEquipment` (opens in new tab)
+- **Live Stock Ledger label**: Removed red "Live Stock Ledger" text above the inventory pulse bar on homepage
+- **Theme filter — Stock # and VIN**: Added Stock Number and VIN/Serial search inputs to the theme inventory filter sidebar (`partials/filter-sidebar.php`); query logic added to `varner_build_inventory_query()` in `functions.php` (uses LIKE for partial match)
+- **OS Plugin dashboard**: Rebuilt stale dist — restores Sold Units and Pending Sales metric cards and Import/Export buttons in Quick Operations
+- **OS Plugin filter**: Added Stock # and VIN/Serial search to the React FilterSidebar (both horizontal desktop bar and mobile slide-out panel); applied filter pills and Clear All support included
+
+---
+
 ## Deployment Artifacts
 
 - `varner-os-plugin-v23.zip`
@@ -38,6 +54,23 @@ Compress-Archive -Path '.\varner-equipment-theme-v23\varner-equipment-theme' -De
 # Lite ZIP
 if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
 Compress-Archive -Path '.\varner-equipment-theme-lite\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23-lite.zip' -Force
+```
+
+## Plugin React Build (when src/App.jsx changes)
+
+Any time `src/App.jsx` is edited, the React app must be rebuilt and the dist files copied into the plugin before zipping.
+
+```powershell
+# 1. Build
+npm run build
+
+# 2. Copy built files into plugin (keeps existing jpg assets)
+Copy-Item '.\dist\index.html' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\index.html' -Force
+Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\assets'     -Recurse -Force
+
+# 3. Zip plugin
+Remove-Item '.\varner-os-plugin-v23.zip' -Force -ErrorAction SilentlyContinue
+Compress-Archive -Path '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23' -DestinationPath '.\varner-os-plugin-v23.zip'
 ```
 
 ## Plugin Install or Update
