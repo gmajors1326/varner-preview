@@ -1,0 +1,20 @@
+/*
+Theme Name: Varner Equipment v23
+Description: High-performance, industrial-calm storefront for Varner Equipment. Version 1.23.0
+Author: hwy559.com
+Version: 1.23.0
+*/
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.hero-gradient {
+    background: linear-gradient(to top, #020617 0%, transparent 60%, rgba(2, 6, 23, 0.3) 100%);
+}
+
+/* Hide admin bar for logged in users to maintain app feel, or style it out of the way */
+.admin-bar .sticky-header {
+    top: 32px;
+}

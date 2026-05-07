@@ -76,8 +76,13 @@
                             </a>
                             <!-- Dropdown Menu -->
                             <div class="absolute left-0 top-full mt-2 w-56 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-2">
-                                <a href="<?php echo esc_url( home_url( '/inventory/in-stock-inventory' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">In Stock Inventory</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/showroom-inventory' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Showroom Inventory</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">New</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Used</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tractors</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/attachments' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Attachments</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Hay Equipment</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/misc' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Misc.</a>
                             </div>
                         </div>
 

@@ -163,62 +163,30 @@
                 <a href="<?php echo esc_url( home_url( '/inventory' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
             </div>
             <?php
-            $tractor_count = new WP_Query(array('post_type' => 'equipment', 'meta_query' => array(array('key' => 'category', 'value' => array('Compact Tractors', 'Tractors'), 'compare' => 'IN')), 'post_status' => 'publish', 'posts_per_page' => 1));
-            $trailer_count = new WP_Query(array('post_type' => 'equipment', 'meta_query' => array(array('key' => 'category', 'value' => array('Commercial Trailers', 'Trailers', 'Dump Trailers'), 'compare' => 'IN')), 'post_status' => 'publish', 'posts_per_page' => 1));
-            $attachment_count = new WP_Query(array('post_type' => 'equipment', 'meta_query' => array(array('key' => 'category', 'value' => array('Implements', 'Attachments', 'Loaders'), 'compare' => 'IN')), 'post_status' => 'publish', 'posts_per_page' => 1));
-            $used_count = new WP_Query(array('post_type' => 'equipment', 'meta_query' => array(array('key' => 'condition', 'value' => 'Used')), 'post_status' => 'publish', 'posts_per_page' => 1));
-            $new_count = new WP_Query(array('post_type' => 'equipment', 'meta_query' => array(array('key' => 'condition', 'value' => 'New')), 'post_status' => 'publish', 'posts_per_page' => 1));
-            $hay_count = new WP_Query(array('post_type' => 'equipment', 'meta_query' => array(array('key' => 'category', 'value' => 'Hay Equipment')), 'post_status' => 'publish', 'posts_per_page' => 1));
-
-            $inventory_url = home_url( '/inventory' );
+            $tractor_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Compact Tractors', 'post_status' => 'publish'));
+            $trailer_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Commercial Trailers', 'post_status' => 'publish'));
+            $attachment_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Implements', 'post_status' => 'publish'));
+            $used_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'condition', 'meta_value' => 'Used', 'post_status' => 'publish'));
+            $new_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'condition', 'meta_value' => 'New', 'post_status' => 'publish'));
+            $hay_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Hay Equipment', 'post_status' => 'publish'));
 
             $browse_cards = array(
-                array(
-                    'label' => 'New', 
-                    'icon'  => 'VE_New_Icon.png', 
-                    'meta'  => $new_count->found_posts . ' Units',
-                    'url'   => home_url( '/inventory/new' )
-                ),
-                array(
-                    'label' => 'Used', 
-                    'icon'  => 'VE_Used_Icon.png', 
-                    'meta'  => $used_count->found_posts . ' Units',
-                    'url'   => home_url( '/inventory/used' )
-                ),
-                array(
-                    'label' => 'Tractors', 
-                    'icon'  => 'VE_Tractor_Icon.png', 
-                    'meta'  => $tractor_count->found_posts . ' Units',
-                    'url'   => home_url( '/inventory/tractors' )
-                ),
-                array(
-                    'label' => 'Trailers', 
-                    'icon'  => 'VE_Trailer_Icon.png', 
-                    'meta'  => $trailer_count->found_posts . ' Units',
-                    'url'   => home_url( '/inventory/trailers' )
-                ),
-                array(
-                    'label' => 'Attachments', 
-                    'icon'  => 'VE_Attachment_Icon-300x300.png', 
-                    'meta'  => $attachment_count->found_posts . ' Units',
-                    'url'   => home_url( '/inventory/attachments' )
-                ),
-                array(
-                    'label' => 'Hay Equipment', 
-                    'icon'  => 'VE_Hay_Icon.png', 
-                    'meta'  => $hay_count->found_posts . ' Units',
-                    'url'   => home_url( '/inventory/hay-equipment' )
-                ),
+                array('label' => 'New', 'icon' => 'VE_New_Icon.png', 'meta' => $new_count->found_posts . ' Units'),
+                array('label' => 'Used', 'icon' => 'VE_Used_Icon.png', 'meta' => $used_count->found_posts . ' Units'),
+                array('label' => 'Tractors', 'icon' => 'VE_Tractor_Icon.png', 'meta' => $tractor_count->found_posts . ' Units'),
+                array('label' => 'Trailers', 'icon' => 'VE_Trailer_Icon.png', 'meta' => $trailer_count->found_posts . ' Units'),
+                array('label' => 'Attachments', 'icon' => 'VE_Attachment_Icon-300x300.png', 'meta' => $attachment_count->found_posts . ' Units'),
+                array('label' => 'Hay Equipment', 'icon' => 'VE_Hay_Icon.png', 'meta' => $hay_count->found_posts . ' Units'),
             );
             ?>
             <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-6 lg:gap-6 lg:overflow-visible lg:pb-0">
                 <?php foreach ( $browse_cards as $card ) : ?>
                     <div class="flex flex-col items-center justify-start gap-3 text-slate-900 snap-start shrink-0 lg:shrink">
-                        <a href="<?php echo esc_url( $card['url'] ); ?>" class="w-[200px] h-[200px] rounded-2xl bg-white border border-slate-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden group">
-                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[180px] h-[180px] object-contain group-hover:scale-110 transition-transform" loading="lazy" decoding="async" />
-                        </a>
+                        <button type="button" class="w-[200px] h-[200px] rounded-2xl bg-white border border-slate-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden">
+                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[180px] h-[180px] object-contain" loading="lazy" decoding="async" />
+                        </button>
                         <div class="text-center flex flex-col items-center">
-                            <a href="<?php echo esc_url( $card['url'] ); ?>" class="font-black text-2xl uppercase tracking-tighter leading-tight hover:text-red-600 transition-colors"><?php echo esc_html( $card['label'] ); ?></a>
+                            <div class="font-black text-2xl uppercase tracking-tighter leading-tight"><?php echo esc_html( $card['label'] ); ?></div>
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1"><?php echo esc_html( $card['meta'] ); ?></div>
                         </div>
                     </div>
@@ -269,7 +237,6 @@
             $instock_total = (int) $instock_query->found_posts;
         ?>
             <div class="mb-12">
-                <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Live Stock Ledger</div>
                 <div class="flex flex-wrap gap-3 items-center bg-white border border-slate-200 rounded-2xl shadow-sm px-5 py-4">
                     <span class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">Live Inventory Pulse</span>
                     <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[11px] font-black uppercase tracking-widest">
