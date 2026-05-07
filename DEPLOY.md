@@ -4,6 +4,14 @@
 
 ## Changelog
 
+### 2026-05-07
+- **FacetWP Integration**: Replaced manual filtering sidebar with FacetWP AJAX facets. Includes search, category (hierarchical), manufacturer, condition, price slider, and year dropdown.
+- **Dynamic Inventory Segments**: Implemented custom rewrite rules for `/inventory/new`, `/inventory/used`, `/inventory/tractors`, `/inventory/trailers`, `/inventory/attachments`, `/inventory/hay-equipment`, and `/inventory/misc`.
+- **Segment SEO & Auto-filtering**: Logic added to `functions.php` via `varner_get_segment_seo()` to provide unique H1/Subheadings/Blurbs and automatic pre-filtering for each segment.
+- **Menu Restructuring**: Updated `header.php` main navigation and `index.php` category grid to link directly to the new optimized segments.
+- **Category Expansion**: Updated `varner-backend.php` with 20+ specific equipment categories (e.g., Balers, Mowers, Horse Trailers) to improve inventory classification.
+- **Typography Fixes**: Relaxed H1 leading and tracking in `page-equipment-listing.php` and `single-equipment.php` to prevent layout "squenching" on long titles.
+
 ### 2026-05-02
 - **YouTube — Visit Our Channel button**: `index.php` hero video section now links to `https://www.youtube.com/@varnerequipment`
 - **YouTube — Video embed**: "See Our Machines In Action" section uses click-to-play embed for video `goF_3TspZ6k`; thumbnail auto-loads from YouTube

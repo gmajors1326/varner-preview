@@ -23,15 +23,23 @@ The system uses a strict 3-level taxonomy stored in `wp_postmeta`:
 ### Data Consistency
 -   **React Editor**: Mapping is defined in `src/App.jsx` via `ATTACHMENT_SUB_SUB_MAPPING`.
 -   **Theme Queries**: Logic is centralized in `functions.php` (specifically `varner_build_inventory_query` and `varner_get_segment_seo`).
+-   **Dynamic Segments**: Custom rewrite rules map `/inventory/{segment}` to `page-equipment-listing.php`. Each segment has unique SEO metadata and automatic filters defined in `varner_get_segment_seo`.
 
 ---
 
-## 3. Smart Faceted Search
-The filtering system is professionally faceted, meaning it calculates unit counts dynamically based on the user's active search.
+## 3. Faceted Search (FacetWP)
+The project utilizes **FacetWP** for high-performance, AJAX-powered filtering on all inventory listing pages.
 
--   **Logic Location**: `varner_get_filter_data()` in `functions.php`.
--   **Mechanism**: It performs multiple "lookahead" queries. For example, when counting Manufacturers, it ignores the current Manufacturer filter but respects all other filters (Category, Year, etc.) to show only relevant available brands.
--   **Hierarchy Tree**: A single optimized SQL join builds the recursive Category tree used in the sidebar.
+-   **Mechanism**: FacetWP intercepts `WP_Query` when `facetwp => true` is present in the arguments.
+-   **Facets**:
+    -   `inventory_search`: Keyword searching.
+    -   `inventory_category`: Hierarchical checkbox tree (source: `acf/category`).
+    -   `inventory_make`: Brand checkboxes (source: `acf/make`).
+    -   `inventory_condition`: New/Used toggle.
+    -   `inventory_price`: Price range slider.
+    -   `inventory_year`: Year dropdown.
+    -   `inventory_pagination`: AJAX "Load More" pager.
+-   **Legacy Note**: The manual PHP logic in `varner_get_filter_data()` and `partials/filter-sidebar.php` is deprecated but kept for fallback or Lite version stability if FacetWP is inactive.
 
 ---
 
