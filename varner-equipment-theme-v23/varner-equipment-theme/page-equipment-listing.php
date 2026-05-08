@@ -6,6 +6,12 @@
 
 get_header();
 
+if ( ! function_exists('get_field') ) {
+    echo '<div class="p-20 text-center font-bold">Theme Error: ACF is required.</div>';
+    get_footer();
+    return;
+}
+
 // 1. Identify the segment (slug) from the query or page title
 $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
 $seo = varner_get_segment_seo($slug);

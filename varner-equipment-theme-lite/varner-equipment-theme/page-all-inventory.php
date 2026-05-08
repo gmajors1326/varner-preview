@@ -2,6 +2,12 @@
 /* Template Name: All Inventory */
 get_header();
 
+if ( ! function_exists('get_field') ) {
+    echo '<div class="p-20 text-center font-bold">Theme Error: ACF is required.</div>';
+    get_footer();
+    return;
+}
+
 $filter_data = varner_get_filter_data();
 
 $query_args = varner_build_inventory_query( array() );

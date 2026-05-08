@@ -4,6 +4,12 @@
  */
 get_header();
 
+if ( ! function_exists('get_field') ) {
+    echo "This theme requires Advanced Custom Fields (ACF) to function.";
+    get_footer();
+    return;
+}
+
 $post_id         = get_the_ID();
 $year            = get_field( 'year',         $post_id );
 $make            = get_field( 'make',         $post_id );
