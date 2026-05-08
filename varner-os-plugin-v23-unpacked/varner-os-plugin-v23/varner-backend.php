@@ -290,26 +290,21 @@ function varner_api_get_brands() {
     return rest_ensure_response(get_option('varner_brands', $default));
 }
 
-function varner_api_save_brands(WP_REST_Request $request) {
-    $brands = array_map('sanitize_text_field', (array) $request->get_param('brands'));
-    $brands = array_values(array_unique(array_filter($brands)));
-    sort($brands);
-    update_option('varner_brands', $brands);
-    return rest_ensure_response($brands);
+function varner_api_save_list(string $param, string $option, WP_REST_Request $request) {
+    $items = array_values(array_unique(array_filter(array_map('sanitize_text_field', (array) $request->get_param($param)))));
+    sort($items);
+    update_option($option, $items);
+    return rest_ensure_response($items);
 }
+
+function varner_api_save_brands(WP_REST_Request $r)     { return varner_api_save_list('brands',     'varner_brands',     $r); }
 
 function varner_api_get_categories() {
     $default = array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements');
     return rest_ensure_response(get_option('varner_categories', $default));
 }
 
-function varner_api_save_categories(WP_REST_Request $request) {
-    $categories = array_map('sanitize_text_field', (array) $request->get_param('categories'));
-    $categories = array_values(array_unique(array_filter($categories)));
-    sort($categories);
-    update_option('varner_categories', $categories);
-    return rest_ensure_response($categories);
-}
+function varner_api_save_categories(WP_REST_Request $r) { return varner_api_save_list('categories', 'varner_categories', $r); }
 
 function varner_os_user_initials(WP_User $user) {
     $first = $user->first_name ?: '';

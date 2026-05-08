@@ -210,37 +210,26 @@ const App = () => {
     apiFetch('/categories').then(setCategories).catch(() => {});
   }, [loadInventory]);
 
-  const handleAddBrand = async () => {
-    const name = newBrandInput.trim();
-    if (!name || brands.includes(name)) return;
-    const updated = [...brands, name].sort((a, b) => a.localeCompare(b));
-    await apiFetch('/brands', { method: 'POST', body: JSON.stringify({ brands: updated }) });
-    setBrands(updated);
-    setNewBrandInput('');
+  const handleListAdd = async (endpoint, current, newVal, setter, inputSetter) => {
+    const name = newVal.trim();
+    if (!name || current.includes(name)) return;
+    const updated = [...current, name].sort((a, b) => a.localeCompare(b));
+    await apiFetch(`/${endpoint}`, { method: 'POST', body: JSON.stringify({ [endpoint]: updated }) });
+    setter(updated);
+    inputSetter('');
   };
 
-  const handleDeleteBrand = async (name) => {
-    const updated = brands.filter(b => b !== name);
-    await apiFetch('/brands', { method: 'POST', body: JSON.stringify({ brands: updated }) });
-    setBrands(updated);
-    if (unitData.make === name) handleInputChange('make', '');
+  const handleListDelete = async (endpoint, current, name, setter, clearField = null) => {
+    const updated = current.filter(v => v !== name);
+    await apiFetch(`/${endpoint}`, { method: 'POST', body: JSON.stringify({ [endpoint]: updated }) });
+    setter(updated);
+    if (clearField && unitData[clearField] === name) handleInputChange(clearField, '');
   };
 
-  const handleAddCategory = async () => {
-    const name = newCategoryInput.trim();
-    if (!name || categories.includes(name)) return;
-    const updated = [...categories, name].sort((a, b) => a.localeCompare(b));
-    await apiFetch('/categories', { method: 'POST', body: JSON.stringify({ categories: updated }) });
-    setCategories(updated);
-    setNewCategoryInput('');
-  };
-
-  const handleDeleteCategory = async (name) => {
-    const updated = categories.filter(c => c !== name);
-    await apiFetch('/categories', { method: 'POST', body: JSON.stringify({ categories: updated }) });
-    setCategories(updated);
-    if (unitData.category === name) handleInputChange('category', '');
-  };
+  const handleAddBrand      = () => handleListAdd('brands',     brands,     newBrandInput,    setBrands,     setNewBrandInput);
+  const handleDeleteBrand   = (n) => handleListDelete('brands',     brands,     n, setBrands,     'make');
+  const handleAddCategory   = () => handleListAdd('categories', categories, newCategoryInput, setCategories, setNewCategoryInput);
+  const handleDeleteCategory = (n) => handleListDelete('categories', categories, n, setCategories, 'category');
 
   const handleInputChange = (field, value) => {
     setUnitData(prev => ({ ...prev, [field]: value }));
@@ -476,41 +465,14 @@ const App = () => {
 
   const handleAddNewUnit = () => { setUnitData(defaultEmptyUnit); setActiveTab('inventory'); };
 
-  const handleEditUnit = (item) => {
-    setUnitData({
-      id:          item.wpId,
-      title:       `${item.year} ${item.make} ${item.model}`.trim(),
-      year:        item.year,
-      make:        item.make,
-      model:       item.model,
-      stockNumber: item.stock,
-      condition:   item.condition,
-      price:       item.price,
-      vin:         '',
-      stockStatus: item.status,
-      category:    item.category,
-      color:       '',
-      meter:       '',
-      meterType:   'Hours',
-      intakeDate:  '',
-      description: '',
-      sellerInfo:  defaultEmptyUnit.sellerInfo,
-      featured:    item.featured ?? false,
-      showOnWebsite: item.showOnWebsite ?? true,
-      images:      item.image ? [item.image] : [],
-      image_ids:   [],
-      attachments: item.attachments ?? [],
-    });
-    setActiveTab('inventory');
-  };
-
-  // Full edit — fetches complete data from API
+  // Fetches complete unit data from API and opens editor
   const handleFullEdit = async (wpId) => {
+    setActiveTab('inventory');
     try {
       const units = await apiFetch('/inventory');
       const unit  = units.find(u => u.id === wpId);
-      if (unit) { setUnitData(apiToLocal(unit)); setActiveTab('inventory'); }
-    } catch { /* fallback already applied */ }
+      if (unit) setUnitData(apiToLocal(unit));
+    } catch { /* tab already switched; user will see empty editor */ }
   };
 
   const handleClone = () => {
@@ -572,6 +534,9 @@ const App = () => {
   return (
     <div className="flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 min-h-screen">
 
+      {/* Quill editor styles — injected once at app root */}
+      <style dangerouslySetInnerHTML={{ __html: QUILL_STYLES }}/>
+
       {/* Toast */}
       {toast && (
         <div className={`fixed top-6 right-6 z-[9999] px-6 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all animate-in slide-in-from-top-4 ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
@@ -581,82 +546,16 @@ const App = () => {
 
       {/* Brands Management Modal */}
       {showBrandsModal && (
-        <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setShowBrandsModal(false); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col" style={{ maxHeight: '85vh' }}>
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Manage Brands</h3>
-                <p className="text-[10px] text-slate-400 font-bold mt-1">{brands.length} brands in list</p>
-              </div>
-              <button onClick={() => setShowBrandsModal(false)} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
-            </div>
-            <div className="p-5 shrink-0">
-              <div className="flex gap-2">
-                <input type="text" value={newBrandInput} onChange={e => setNewBrandInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddBrand()}
-                  placeholder="New brand name..."
-                  className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:border-red-500 transition-colors"/>
-                <button onClick={handleAddBrand}
-                  className="bg-red-600 text-white px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-700 transition-colors shrink-0">
-                  Add
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-1 px-5 pb-5">
-              <div className="space-y-1.5">
-                {brands.map(b => (
-                  <div key={b} className="flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-xl group hover:bg-red-50 transition-colors">
-                    <span className="font-bold text-sm text-slate-900">{b}</span>
-                    <button onClick={() => handleDeleteBrand(b)}
-                      className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
-                      <X size={14}/>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ManageListModal title="Manage Brands" items={brands} inputValue={newBrandInput}
+          onInputChange={setNewBrandInput} onAdd={handleAddBrand} onDelete={handleDeleteBrand}
+          onClose={() => setShowBrandsModal(false)} placeholder="New brand name..." />
       )}
 
       {/* Categories Management Modal */}
       {showCategoriesModal && (
-        <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setShowCategoriesModal(false); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col" style={{ maxHeight: '85vh' }}>
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
-              <div>
-                <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Manage Categories</h3>
-                <p className="text-[10px] text-slate-400 font-bold mt-1">{categories.length} categories in list</p>
-              </div>
-              <button onClick={() => setShowCategoriesModal(false)} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
-            </div>
-            <div className="p-5 shrink-0">
-              <div className="flex gap-2">
-                <input type="text" value={newCategoryInput} onChange={e => setNewCategoryInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-                  placeholder="New category name..."
-                  className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:border-red-500 transition-colors"/>
-                <button onClick={handleAddCategory}
-                  className="bg-red-600 text-white px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-700 transition-colors shrink-0">
-                  Add
-                </button>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-1 px-5 pb-5">
-              <div className="space-y-1.5">
-                {categories.map(c => (
-                  <div key={c} className="flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-xl group hover:bg-red-50 transition-colors">
-                    <span className="font-bold text-sm text-slate-900">{c}</span>
-                    <button onClick={() => handleDeleteCategory(c)}
-                      className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
-                      <X size={14}/>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ManageListModal title="Manage Categories" items={categories} inputValue={newCategoryInput}
+          onInputChange={setNewCategoryInput} onAdd={handleAddCategory} onDelete={handleDeleteCategory}
+          onClose={() => setShowCategoriesModal(false)} placeholder="New category name..." />
       )}
 
       {/* MOBILE SIDEBAR OVERLAY */}
@@ -665,26 +564,11 @@ const App = () => {
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
           <aside className="fixed inset-y-0 left-0 w-72 bg-slate-950 text-white p-6 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-6">
-              <div className="flex items-center gap-3">
-                <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
-                <div>
-                  <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
-                  <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
-                </div>
-              </div>
+              <SidebarLogo />
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2"><X size={24} /></button>
             </div>
-            <nav className="space-y-2 flex-1">
-              <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab==='dashboard'} onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab==='all-inventory'} onClick={() => { setActiveTab('all-inventory'); setIsMobileMenuOpen(false); }} badge={inventoryList.length} />
-              <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab==='inventory'} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab==='marketplace'} onClick={() => { setActiveTab('marketplace'); setIsMobileMenuOpen(false); }} badge="Live" />
-              <NavItem icon={<History size={20}/>} label="History" active={activeTab==='history'} onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
-              <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab==='mobile'} onClick={() => { setActiveTab('mobile'); setIsMobileMenuOpen(false); }} />
-            </nav>
-            <div className="mt-auto pt-4 border-t border-slate-800">
-              <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='settings'} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
-            </div>
+            <SidebarContent activeTab={activeTab} inventoryList={inventoryList} deletedHistory={deletedHistory}
+              onNav={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
           </aside>
         </div>
       )}
@@ -692,23 +576,10 @@ const App = () => {
       {/* SIDEBAR */}
       <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
         <div className="flex items-center gap-3 mb-8 border-b border-slate-800 pb-6">
-          <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
-          <div>
-            <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
-            <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
-          </div>
+          <SidebarLogo />
         </div>
-        <nav className="space-y-2 flex-1">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab==='dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <NavItem icon={<List size={20}/>} label="Inventory List" active={activeTab==='all-inventory'} onClick={() => setActiveTab('all-inventory')} badge={inventoryList.length} />
-          <NavItem icon={<Box size={20}/>} label="Add / Edit" active={activeTab==='inventory'} onClick={() => setActiveTab('inventory')} />
-          <NavItem icon={<Facebook size={20}/>} label="Meta Sync" active={activeTab==='marketplace'} onClick={() => setActiveTab('marketplace')} badge="Live" />
-          <NavItem icon={<History size={20}/>} label="History" active={activeTab==='history'} onClick={() => setActiveTab('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
-          <NavItem icon={<Smartphone size={20}/>} label="Mobile App" active={activeTab==='mobile'} onClick={() => setActiveTab('mobile')} />
-        </nav>
-        <div className="mt-auto pt-4 border-t border-slate-800">
-          <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='settings'} onClick={() => setActiveTab('settings')} />
-        </div>
+        <SidebarContent activeTab={activeTab} inventoryList={inventoryList} deletedHistory={deletedHistory}
+          onNav={tab => setActiveTab(tab)} />
       </aside>
 
       {/* MAIN */}
@@ -798,11 +669,12 @@ const App = () => {
                         {searchQuery.toUpperCase()}
                       </span>
                     )}
-                    {activeFilters.makes.map(v => <span key={v} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('makes', activeFilters.makes.filter(x => x !== v))} className="font-black leading-none hover:text-red-200">×</button>{v.toUpperCase()}</span>)}
-                    {activeFilters.status.map(v => <span key={v} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('status', activeFilters.status.filter(x => x !== v))} className="font-black leading-none hover:text-red-200">×</button>{v.toUpperCase()}</span>)}
-                    {activeFilters.categories.map(v => <span key={v} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('categories', activeFilters.categories.filter(x => x !== v))} className="font-black leading-none hover:text-red-200">×</button>{v.toUpperCase()}</span>)}
-                    {activeFilters.models.map(v => <span key={v} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('models', activeFilters.models.filter(x => x !== v))} className="font-black leading-none hover:text-red-200">×</button>{v.toUpperCase()}</span>)}
-                    {activeFilters.conditions.map(v => <span key={v} className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('conditions', activeFilters.conditions.filter(x => x !== v))} className="font-black leading-none hover:text-red-200">×</button>{v.toUpperCase()}</span>)}
+                    {['makes','status','categories','models','conditions'].flatMap(key =>
+                      activeFilters[key].map(v => (
+                        <FilterTag key={`${key}-${v}`} label={v.toUpperCase()}
+                          onRemove={() => handleFilterChange(key, activeFilters[key].filter(x => x !== v))} />
+                      ))
+                    )}
                     {(activeFilters.yearMin || activeFilters.yearMax) && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => { handleFilterChange('yearMin',''); handleFilterChange('yearMax',''); }} className="font-black leading-none hover:text-red-200">×</button>YEAR: {activeFilters.yearMin||'?'}–{activeFilters.yearMax||'?'}</span>}
                     {(activeFilters.priceMin || activeFilters.priceMax) && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => { handleFilterChange('priceMin',''); handleFilterChange('priceMax',''); }} className="font-black leading-none hover:text-red-200">×</button>PRICE: ${activeFilters.priceMin||'0'}–${activeFilters.priceMax||'∞'}</span>}
                     {activeFilters.stockSearch && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('stockSearch','')} className="font-black leading-none hover:text-red-200">×</button>STOCK #: {activeFilters.stockSearch}</span>}
@@ -864,7 +736,7 @@ const App = () => {
                            {filteredInventory.length === 0 ? (
                              <tr><td colSpan="10" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
                            ) : filteredInventory.map(item => (
-                             <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); }}>
+                             <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleFullEdit(item.wpId)}>
                                <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
                                <td className="px-4 py-3">
                                  <div className="w-40 h-28 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
@@ -911,8 +783,8 @@ const App = () => {
                                <td className="px-6 py-5 text-right">
 
                                 <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                                  <button onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit"><Edit2 size={16}/></button>
-                                  <button onClick={() => { handleEditUnit(item); handleFullEdit(item.wpId); setTimeout(handleClone, 200); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone"><Copy size={16}/></button>
+                                   <button onClick={() => handleFullEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit"><Edit2 size={16}/></button>
+                                   <button onClick={() => handleFullEdit(item.wpId).then(handleClone)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone"><Copy size={16}/></button>
                                   <button onClick={() => handleDeleteUnit(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete"><X size={16}/></button>
                                 </div>
                               </td>
@@ -1209,6 +1081,72 @@ const App = () => {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
+const SidebarLogo = () => (
+  <div className="flex items-center gap-3">
+    <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
+    <div>
+      <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
+      <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+    </div>
+  </div>
+);
+
+const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav }) => (
+  <>
+    <nav className="space-y-2 flex-1">
+      <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard"      active={activeTab==='dashboard'}     onClick={() => onNav('dashboard')} />
+      <NavItem icon={<List size={20}/>}            label="Inventory List" active={activeTab==='all-inventory'} onClick={() => onNav('all-inventory')} badge={inventoryList.length} />
+      <NavItem icon={<Box size={20}/>}             label="Add / Edit"     active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
+      <NavItem icon={<Facebook size={20}/>}        label="Meta Sync"      active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
+      <NavItem icon={<History size={20}/>}         label="History"        active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
+      <NavItem icon={<Smartphone size={20}/>}      label="Mobile App"     active={activeTab==='mobile'}        onClick={() => onNav('mobile')} />
+    </nav>
+    <div className="mt-auto pt-4 border-t border-slate-800">
+      <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='settings'} onClick={() => onNav('settings')} />
+    </div>
+  </>
+);
+
+const ManageListModal = ({ title, items, inputValue, onInputChange, onAdd, onDelete, onClose, placeholder }) => (
+  <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col" style={{ maxHeight: '85vh' }}>
+      <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+        <div>
+          <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">{title}</h3>
+          <p className="text-[10px] text-slate-400 font-bold mt-1">{items.length} {title.toLowerCase().split(' ')[1]} in list</p>
+        </div>
+        <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
+      </div>
+      <div className="p-5 shrink-0">
+        <div className="flex gap-2">
+          <input type="text" value={inputValue} onChange={e => onInputChange(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && onAdd()}
+            placeholder={placeholder}
+            className="flex-1 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:border-red-500 transition-colors"/>
+          <button onClick={onAdd} className="bg-red-600 text-white px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-700 transition-colors shrink-0">Add</button>
+        </div>
+      </div>
+      <div className="overflow-y-auto flex-1 px-5 pb-5">
+        <div className="space-y-1.5">
+          {items.map(item => (
+            <div key={item} className="flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-xl group hover:bg-red-50 transition-colors">
+              <span className="font-bold text-sm text-slate-900">{item}</span>
+              <button onClick={() => onDelete(item)} className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"><X size={14}/></button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const FilterTag = ({ label, onRemove }) => (
+  <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+    <button onClick={onRemove} className="font-black leading-none hover:text-red-200">×</button>
+    {label}
+  </span>
+);
+
 const NavItem = ({ icon, label, active = false, badge = null, onClick }) => (
   <div onClick={onClick} className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300 ${active ? 'bg-red-600 text-white shadow-xl shadow-red-900/50 border-b-2 border-red-700' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-100'}`}>
     <div className="flex items-center gap-4">{icon}<span className="font-black text-[13px] uppercase tracking-wider">{label}</span></div>
@@ -1233,6 +1171,8 @@ const InputField = ({ label, value, onChange, error }) => (
   </div>
 );
 
+const QUILL_STYLES = `.rich-text-field .ql-toolbar.ql-snow{border:none;border-bottom:1px solid #f1f5f9;background:#fff;padding:12px 20px}.rich-text-field .ql-container.ql-snow{border:none;font-family:inherit;font-size:14px;min-height:150px}.rich-text-field .ql-editor{padding:20px;color:#1e293b;line-height:1.6}.rich-text-field .ql-editor.ql-blank::before{color:#94a3b8;font-style:normal;left:20px}`;
+
 const TextAreaField = ({ label, value, onChange }) => (
   <div className="space-y-3 rich-text-field">
     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">{label}</label>
@@ -1242,7 +1182,6 @@ const TextAreaField = ({ label, value, onChange }) => (
         className="bg-transparent"
       />
     </div>
-    <style dangerouslySetInnerHTML={{ __html: `.rich-text-field .ql-toolbar.ql-snow{border:none;border-bottom:1px solid #f1f5f9;background:#fff;padding:12px 20px}.rich-text-field .ql-container.ql-snow{border:none;font-family:inherit;font-size:14px;min-height:150px}.rich-text-field .ql-editor{padding:20px;color:#1e293b;line-height:1.6}.rich-text-field .ql-editor.ql-blank::before{color:#94a3b8;font-style:normal;left:20px}` }}/>
   </div>
 );
 
@@ -1466,18 +1405,24 @@ const AttachmentsSection = ({ attachments = [], onAdd, onChange, onRemove, onIma
   );
 };
 
+const METRIC_COLORS = {
+  blue:  { text: 'bg-blue-50 text-blue-600',  bg: 'bg-blue-50'  },
+  red:   { text: 'bg-red-50 text-red-600',    bg: 'bg-red-50'   },
+  green: { text: 'bg-green-50 text-green-600',bg: 'bg-green-50' },
+  amber: { text: 'bg-amber-50 text-amber-600',bg: 'bg-amber-50' },
+};
+
 const MetricCard = ({ icon, label, value, subtext, color }) => {
-  const styles = { blue:'bg-blue-50 text-blue-600', red:'bg-red-50 text-red-600', green:'bg-green-50 text-green-600', amber:'bg-amber-50 text-amber-600' };
-  const bg     = { blue:'bg-blue-50', red:'bg-red-50', green:'bg-green-50', amber:'bg-amber-50' };
+  const c = METRIC_COLORS[color];
   return (
     <div className="rounded-[2rem] p-5 sm:p-8 border bg-white border-slate-200/60 shadow-xl relative overflow-hidden group transition-all">
       <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8 relative z-10">
-        <div className={`p-3 sm:p-4 rounded-xl ${styles[color]} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
+        <div className={`p-3 sm:p-4 rounded-xl ${c.text} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
         <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 leading-none">{label}</h4>
       </div>
       <p className="text-4xl sm:text-5xl font-black text-slate-950 mb-3 tracking-tighter relative z-10 leading-none">{value}</p>
-      <p className={`text-[10px] font-black uppercase tracking-[0.1em] relative z-10 ${styles[color]}`}>{subtext}</p>
-      <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 ${bg[color]} group-hover:scale-150 transition-transform duration-700`}></div>
+      <p className={`text-[10px] font-black uppercase tracking-[0.1em] relative z-10 ${c.text}`}>{subtext}</p>
+      <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 ${c.bg} group-hover:scale-150 transition-transform duration-700`}></div>
     </div>
   );
 };
@@ -1681,8 +1626,7 @@ const HistoryTab = ({ deletedItems, onRestore, onPermanentDelete }) => (
 const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, onKeywordSearch, onClearAll, horizontal = false }) => {
   const [sections, setSections] = React.useState({
     listingType: true, category: true, manufacturer: true,
-    model: true, year: true, price: true,
-    condition: false, state: false, city: false, country: false,
+    model: true, year: true, price: true, condition: false,
   });
   const [showAllMakes, setShowAllMakes] = React.useState(false);
   const [showAllModels, setShowAllModels] = React.useState(false);
@@ -2022,17 +1966,7 @@ const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, on
           </div>
         )}
 
-        {/* State */}
-        <SectionHeader label="State" sKey="state" />
-        {sections.state && <div className="py-2"><p className="text-xs text-gray-400 italic px-1">No state data available</p></div>}
 
-        {/* City */}
-        <SectionHeader label="City" sKey="city" />
-        {sections.city && <div className="py-2"><p className="text-xs text-gray-400 italic px-1">No city data available</p></div>}
-
-        {/* Country */}
-        <SectionHeader label="Country" sKey="country" />
-        {sections.country && <div className="py-2"><p className="text-xs text-gray-400 italic px-1">No country data available</p></div>}
       </div>
     </div>
   );

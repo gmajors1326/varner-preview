@@ -21,14 +21,14 @@ The system uses a strict 3-level taxonomy stored in `wp_postmeta`:
 3.  **Sub-Sub-Category** (e.g., Auger, Angle, Track Channels)
 
 ### Data Consistency
--   **React Editor**: Mapping is defined in `src/App.jsx` via `ATTACHMENT_SUB_SUB_MAPPING`.
+-   **React Editor**: Sub-sub-category options are driven by category selection logic in `src/App.jsx`. No standalone mapping constant currently exists in the codebase — sub-sub values are handled inline per category context.
 -   **Theme Queries**: Logic is centralized in `functions.php` (specifically `varner_build_inventory_query` and `varner_get_segment_seo`).
 -   **Dynamic Segments**: Custom rewrite rules map `/inventory/{segment}` to `page-equipment-listing.php`. Each segment has unique SEO metadata and automatic filters defined in `varner_get_segment_seo`.
 
 ---
 
 ## 3. Faceted Search (FacetWP)
-The project utilizes **FacetWP** for high-performance, AJAX-powered filtering on all inventory listing pages.
+The project utilizes **FacetWP** for high-performance, AJAX-powered filtering on all inventory listing pages. **FacetWP is an installed and required plugin dependency** — the full theme's filtering will not function without it active.
 
 -   **Mechanism**: FacetWP intercepts `WP_Query` when `facetwp => true` is present in the arguments.
 -   **Facets**:
@@ -56,40 +56,48 @@ Authorized brands are managed in three locations to ensure full integration:
 
 ### Editing the Inventory Editor (React)
 1.  Modify code in `src/`.
-2.  Run `npm run build`.
-3.  **Sync to Plugin**:
-    -   Copy `dist/index.html` -> `varner-os-plugin-v23-unpacked/varner-os-plugin-v23/dist/index.html`.
-    -   Replace `varner-os-plugin-v23-unpacked/varner-os-plugin-v23/dist/assets/` with the contents of `dist/assets/`.
+2.  Run `npm run build` from the project root.
+3.  **Sync to Plugin** (PowerShell):
+    ```powershell
+    Copy-Item '.\dist\index.html' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\index.html' -Force
+    Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\assets'     -Recurse -Force
+    ```
+4.  Rebuild the plugin ZIP. See `DEPLOY.md` for the exact command.
 
 ### Editing Themes
 1.  Apply changes to `varner-equipment-theme-v23`.
 2.  **Mandatory Lite Sync**: Always sync modified PHP files (header, footer, functions, partials) to `varner-equipment-theme-lite`.
+3.  **Rebuild both ZIPs**: After syncing, rebuild `varner-equipment-theme-v23.zip` and `varner-equipment-theme-v23-lite.zip`. See `DEPLOY.md` for the exact commands.
 
 ---
 
 ## 6. Deployment & Packaging
+> **See `DEPLOY.md` for the canonical packaging commands, ZIP structure rules, and post-install checks.** The commands below are for reference only; `DEPLOY.md` is the source of truth.
+
 All deployment artifacts are generated as ZIP files in the root directory.
 
-### Command Execution:
-```bash
+### Command Execution (PowerShell — run from project root):
+```powershell
 # Build React
 npm run build
 
-# Sync Plugin Assets (Example)
-cp dist/index.html varner-os-plugin-v23-unpacked/varner-os-plugin-v23/dist/
-cp dist/assets/* varner-os-plugin-v23-unpacked/varner-os-plugin-v23/dist/assets/
+# Sync Plugin Assets
+Copy-Item '.\dist\index.html' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\index.html' -Force
+Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\assets'     -Recurse -Force
 
 # Package Everything
-powershell -Command "
-  Compress-Archive -Path '.\varner-equipment-theme-v23\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23.zip' -Force;
-  Compress-Archive -Path '.\varner-equipment-theme-lite\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23-lite.zip' -Force;
-  Compress-Archive -Path '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23' -DestinationPath '.\varner-os-plugin-v23.zip' -Force;
-"
+if (Test-Path '.\varner-equipment-theme-v23.zip')      { Remove-Item '.\varner-equipment-theme-v23.zip'      -Force }
+if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
+if (Test-Path '.\varner-os-plugin-v23.zip')            { Remove-Item '.\varner-os-plugin-v23.zip'            -Force }
+Compress-Archive -Path '.\varner-equipment-theme-v23\varner-equipment-theme'  -DestinationPath '.\varner-equipment-theme-v23.zip'
+Compress-Archive -Path '.\varner-equipment-theme-lite\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23-lite.zip'
+Compress-Archive -Path '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23' -DestinationPath '.\varner-os-plugin-v23.zip'
 ```
 
 ---
 
 ## 7. Troubleshooting & SQL Cheat Sheet
+Run these queries via **wp-admin > Tools > phpMyAdmin** or WP-CLI (`wp db query "..."`).
 -   **Verify Meta Counts**: `SELECT meta_value, COUNT(*) FROM wp_postmeta WHERE meta_key = 'category' GROUP BY meta_value;`
 -   **Reset Brand Transient**: `DELETE FROM wp_options WHERE option_name LIKE '_transient_varner_brand_counts%';`
 -   **Identify Orphans**: Units missing a `category` can be found via: `SELECT post_id FROM wp_postmeta WHERE meta_key = 'category' AND meta_value = '';`

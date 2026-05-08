@@ -34,7 +34,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 }
 ?>
 
-<section class="pt-32 pb-24 bg-slate-50 min-h-screen">
+<section class="pt-36 pb-16 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
 
         <!-- Breadcrumb -->

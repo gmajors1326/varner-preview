@@ -34,7 +34,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 }
 ?>
 
-<section class="pt-32 pb-24 bg-slate-50 min-h-screen">
+<section class="pt-36 pb-16 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
 
         <!-- Breadcrumb -->
@@ -71,7 +71,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                 <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3" id="vne-detail-carousel">
                     <?php foreach ( $images as $i => $img_url ) : ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
-                         alt="<?php echo esc_attr( $title_text ); ?>"
+                         alt="<?php echo esc_attr( $title_text . ' for sale in Delta Colorado at Varner Equipment' ); ?>"
                          loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
                          class="vne-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                          style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>">
@@ -252,6 +252,42 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                 *Monthly payment stated above assumes a secured commercial use loan transaction available for highly qualified commercial loan applicants. Actual loan payment amount and terms may vary. Consumer financing not available for consumers residing in Nevada. Additional state restrictions may apply. Equal opportunity lender. Click here for more state licenses and disclosures. NMLS ID: 1857954. VERMONT RESIDENTS: THIS IS A LOAN SOLICITATION ONLY. CurrencyFinance IS NOT THE LENDER. INFORMATION RECEIVED WILL BE SHARED WITH ONE OR MORE THIRD PARTIES IN CONNECTION WITH YOUR LOAN INQUIRY. THE LENDER MAY NOT BE SUBJECT TO ALL VERMONT LENDING LAWS. THE LENDER MAY BE SUBJECT TO FEDERAL LENDING LAWS. CALIFORNIA RESIDENTS: Financing provided or arranged by Express Tech-Financing, LLC dba Currency pursuant to California Finance Lender License #60DBO54873.
             </p>
         </div>
+
+        <!-- ── RELATED EQUIPMENT ──────────────────────────────── -->
+        <?php
+        $related_args = array(
+            'post_type'      => 'equipment',
+            'posts_per_page' => 4,
+            'post__not_in'   => array($post_id),
+            'meta_query'     => array(
+                array(
+                    'key'   => 'category',
+                    'value' => $category,
+                ),
+            ),
+        );
+        $related_query = new WP_Query($related_args);
+
+        if ($related_query->have_posts()) : ?>
+            <div class="mt-20 border-t border-slate-200 pt-16">
+                <div class="flex items-end justify-between mb-10">
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none mb-3">Similar Units</h2>
+                        <p class="text-red-600 text-[11px] font-black uppercase tracking-[0.2em]">Recommended for your operation</p>
+                    </div>
+                    <a href="<?php echo esc_url(home_url('/inventory')); ?>" class="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors">
+                        Explore Full Yard
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <?php while ($related_query->have_posts()) : $related_query->the_post(); ?>
+                        <?php varner_include_equipment_card(get_the_ID()); ?>
+                    <?php endwhile; wp_reset_postdata(); ?>
+                </div>
+            </div>
+        <?php endif; ?>
 
     </div><!-- /max-w-7xl -->
 </section>

@@ -183,7 +183,7 @@ add_action( 'admin_post_varner_parts_request_submit', 'varner_handle_parts_reque
  * Service Request form handler
  */
 function varner_handle_service_request_submit() {
-    varner_verify_form_submission( 'varner_service_nonce', 'varner_service_request_submit', 'varner_captcha' );
+    varner_verify_form_submission( 'varner_service_nonce', 'varner_service_request_submit', 'varner_service_captcha' );
 
     $fname = sanitize_text_field( $_POST['first_name'] );
     $lname = sanitize_text_field( $_POST['last_name'] );
@@ -452,12 +452,32 @@ add_filter( 'query_vars', function( $vars ) {
 });
 
 /**
+ * FacetWP: Allow URL parameters to pre-populate facets.
+ * e.g. /all-inventory?fwp_inventory_search=Mahindra
+ * will auto-fire the search facet on page load.
+ */
+add_filter( 'facetwp_preload_url_vars', function( $url_vars ) {
+    // Pass through any fwp_* query params from the URL into FacetWP
+    foreach ( $_GET as $key => $value ) {
+        if ( strpos( $key, 'fwp_' ) === 0 ) {
+            $facet_name = substr( $key, 4 ); // strip 'fwp_' prefix
+            $url_vars[ $facet_name ] = sanitize_text_field( $value );
+        }
+    }
+    return $url_vars;
+});
+
+/**
+ * Register Rewrite Rules
+ * Handles /inventory/new, /inventory/used, etc.
+ */
+/**
  * Register Rewrite Rules
  * Handles /inventory/new, /inventory/used, etc.
  */
 add_action( 'init', function() {
     add_rewrite_rule(
-        '^inventory/(new|used|tractors|trailers|attachments|hay-equipment|hay-equip|misc)/?$',
+        '^inventory/(all-units|new|used|tractors|trailers|attachments|hay-equipment|misc)/?$',
         'index.php?inventory_segment=$matches[1]',
         'top'
     );
@@ -468,6 +488,13 @@ add_action( 'init', function() {
  */
 function varner_get_segment_seo($slug) {
     $segments = array(
+        'all-units' => array(
+            'title'  => 'All Inventory',
+            'h1'     => 'Complete Collection',
+            'sub'    => 'Western Colorado\'s most diverse selection of heavy-duty equipment.',
+            'blurb'  => 'From tractors to trailers, we keep you moving with the best brands in the business.',
+            'filter' => array() // No filter = all inventory
+        ),
         'new' => array(
             'title'  => 'New Inventory',
             'h1'     => 'New Equipment',
@@ -510,13 +537,7 @@ function varner_get_segment_seo($slug) {
             'blurb'  => 'Krone and MacDon equipment designed for maximum yield and quality in the field.',
             'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes', 'Tedders'))
         ),
-        'hay-equip' => array(
-            'title'  => 'Hay Equipment',
-            'h1'     => 'Hay & Harvest',
-            'sub'    => 'Precision baling and mowing technology for a perfect harvest.',
-            'blurb'  => 'Krone and MacDon equipment designed for maximum yield and quality in the field.',
-            'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes', 'Tedders'))
-        ),
+
         'misc' => array(
             'title'  => 'Miscellaneous',
             'h1'     => 'Misc. Equipment',
@@ -541,6 +562,26 @@ add_filter( 'template_include', function( $template ) {
     }
     return $template;
 }, 30);
+
+/**
+ * Load all ACF fields for a single equipment post and include the card partial.
+ * Call this inside any have_posts() loop instead of repeating the get_field() block.
+ */
+function varner_include_equipment_card( $post_id = null ) {
+    if ( ! $post_id ) $post_id = get_the_ID();
+    $year            = get_field( 'year',           $post_id );
+    $make            = get_field( 'make',           $post_id );
+    $model           = get_field( 'model',          $post_id );
+    $price           = get_field( 'price',          $post_id );
+    $call_for_price  = get_field( 'call_for_price', $post_id );
+    $category        = get_field( 'category',       $post_id );
+    $condition       = get_field( 'condition',      $post_id );
+    $stock_number    = get_field( 'stock_number',   $post_id );
+    $length          = get_field( 'length',         $post_id );
+    $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
+    $images          = varner_get_card_images( $post_id );
+    include get_template_directory() . '/partials/equipment-card.php';
+}
 
 // Carousel JS — outputs once in the footer on every front-end page.
 add_action( 'wp_footer', function () {
@@ -587,3 +628,96 @@ add_action( 'wp_footer', function () {
 </script>
     <?php
 } );
+
+/**
+ * SEO DOMINANCE: JSON-LD Schema Markup
+ * Injects structured data into the head for Product and LocalBusiness.
+ */
+add_action( 'wp_head', function() {
+    // 1. GLOBAL LOCAL BUSINESS SCHEMA (Authority for the dealership)
+    $local_business = array(
+        "@context" => "https://schema.org",
+        "@type" => "AutomotiveBusiness", // Best fit for equipment/trailer dealers
+        "name" => "Varner Equipment",
+        "image" => varner_get_brand_logo_url('red'),
+        "@id" => home_url('/'),
+        "url" => home_url('/'),
+        "telephone" => "+19708740612",
+        "address" => array(
+            "@type" => "PostalAddress",
+            "streetAddress" => "1375 US-50",
+            "addressLocality" => "Delta",
+            "addressRegion" => "CO",
+            "postalCode" => "81416",
+            "addressCountry" => "US"
+        ),
+        "geo" => array(
+            "@type" => "GeoCoordinates",
+            "latitude" => 38.7441, // Approximate for Delta US-50
+            "longitude" => -108.0690
+        ),
+        "openingHoursSpecification" => array(
+            array(
+                "@type" => "OpeningHoursSpecification",
+                "dayOfWeek" => array("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),
+                "opens" => "08:00",
+                "closes" => "17:00"
+            ),
+            array(
+                "@type" => "OpeningHoursSpecification",
+                "dayOfWeek" => "Saturday",
+                "opens" => "09:00",
+                "closes" => "12:00"
+            )
+        ),
+        "sameAs" => array(
+            "https://www.facebook.com/varnerequipment",
+            "https://www.youtube.com/@VarnerEquipment"
+        )
+    );
+
+    echo '<script type="application/ld+json">' . json_encode($local_business) . '</script>' . "\n";
+
+    // 2. PRODUCT SCHEMA (Specific for equipment listings)
+    if ( is_singular('equipment') ) {
+        $post_id = get_the_ID();
+        $year    = get_field('year', $post_id);
+        $make    = get_field('make', $post_id);
+        $model   = get_field('model', $post_id);
+        $price   = get_field('price', $post_id);
+        $stock   = get_field('stock_number', $post_id);
+        $cond    = get_field('condition', $post_id);
+        $desc    = wp_strip_all_tags(get_field('description', $post_id));
+        $images  = varner_get_card_images($post_id);
+        
+        $title = trim("$year $make $model");
+        if (!$title) $title = get_the_title();
+
+        $product_schema = array(
+            "@context" => "https://schema.org/",
+            "@type" => "Product",
+            "name" => $title,
+            "image" => $images,
+            "description" => $desc ?: "High-quality equipment for sale at Varner Equipment in Delta, CO.",
+            "sku" => $stock,
+            "brand" => array(
+                "@type" => "Brand",
+                "name" => $make
+            ),
+            "offers" => array(
+                "@type" => "Offer",
+                "url" => get_permalink($post_id),
+                "priceCurrency" => "USD",
+                "price" => $price ?: "0",
+                "availability" => (get_field('stock_status', $post_id) === 'Sold') ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+                "itemCondition" => ($cond === 'New') ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+                "seller" => array(
+                    "@type" => "Organization",
+                    "name" => "Varner Equipment"
+                )
+            )
+        );
+
+        echo '<script type="application/ld+json">' . json_encode($product_schema) . '</script>' . "\n";
+    }
+}, 5 );

@@ -33,7 +33,7 @@
         <!-- HEADER -->
         <header class="bg-white flex flex-col w-full relative z-10">
             <!-- LOGO & CTA ROW -->
-            <div class="max-w-7xl mx-auto px-4 py-4 md:py-5 flex items-center justify-between w-full relative">
+            <div class="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between w-full relative">
                 <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="flex items-center justify-center transform hover:rotate-1 transition-transform shrink-0">
                     <?php 
                     $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('red') : '';
@@ -42,19 +42,19 @@
                 </a>
 
                 <!-- CENTERED ADDRESS -->
-                <div class="hidden lg:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center justify-center z-10 pointer-events-none pl-20 xl:pl-32 w-[350px]">
+                <div class="hidden lg:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center justify-center z-10 pointer-events-none pl-20 xl:pl-32 w-[420px]">
                     <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto w-full">
-                        <svg class="w-8 h-8 text-red-600 group-hover:text-slate-900 transition-colors shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <svg class="w-10 h-10 text-red-600 group-hover:text-slate-900 transition-colors shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         <div class="flex flex-col text-center">
-                            <span class="font-black text-slate-900 uppercase tracking-tighter text-2xl leading-none">1375 US-50</span>
-                            <span class="font-black text-red-600 uppercase tracking-[0.1em] text-[10px] group-hover:text-slate-900 transition-colors mt-1">Delta, CO 81416</span>
+                            <span class="font-black text-slate-900 uppercase tracking-tighter text-3xl leading-none">1375 US-50</span>
+                            <span class="font-black text-red-600 uppercase tracking-[0.1em] text-sm group-hover:text-slate-900 transition-colors mt-1">Delta, CO 81416</span>
                         </div>
                     </a>
                 </div>
 
                 <div class="flex items-center gap-4 relative z-10">
-                    <a href="tel:9708740612" class="bg-red-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl font-black flex items-center gap-2 shadow-lg hover:bg-red-700 transition-all active:scale-95 text-lg md:text-xl">
-                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                    <a href="tel:9708740612" class="bg-red-600 text-white px-6 md:px-10 py-3 md:py-4 rounded-2xl font-black flex items-center gap-2 shadow-lg hover:bg-red-700 transition-all active:scale-95 text-xl md:text-2xl">
+                        <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                         <span class="hidden sm:inline">(970) 874-0612</span>
                         <span class="sm:hidden">CALL</span>
                     </a>
@@ -65,7 +65,7 @@
             <div class="bg-slate-50 border-t border-slate-200 border-b-4 border-red-600 w-full">
                 <!-- Removed overflow-x-auto so dropdowns don't get clipped, use flex-wrap instead if needed for mobile -->
                 <div class="max-w-7xl mx-auto px-4">
-                    <nav class="flex items-center justify-center gap-6 lg:gap-8 py-4 flex-wrap relative">
+                    <nav class="flex items-center justify-center gap-6 lg:gap-8 py-2.5 flex-wrap relative">
                         <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Home</a>
                         
                         <!-- INVENTORY DROPDOWN -->
@@ -76,13 +76,13 @@
                             </a>
                             <!-- Dropdown Menu -->
                             <div class="absolute left-0 top-full mt-2 w-56 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-2">
+                                <a href="<?php echo esc_url( home_url( '/inventory/all-units/' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-slate-50 hover:text-red-700 border-b-2 border-red-100 transition-colors">View All</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">New</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Used</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tractors</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Trailers</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/attachments' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Attachments</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Hay Equipment</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/misc' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Misc.</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="block px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Hay Equipment</a>
                             </div>
                         </div>
 
@@ -213,7 +213,7 @@
                         <a href="https://www.allpartsstore.com/index.htm?customernumber=CO0612" target="_blank" rel="noopener" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">
                             Online Parts Store
                         </a>
-                        <a href="<?php echo esc_url( home_url( '/product-videos' ) ); ?>" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
+                        <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" rel="noopener" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
                         
                         <!-- DEALER INFO DROPDOWN -->
                         <div class="group relative">
@@ -235,3 +235,5 @@
             </div>
         </header>
     </div>
+
+<?php include get_template_directory() . '/partials/breadcrumb.php'; ?>

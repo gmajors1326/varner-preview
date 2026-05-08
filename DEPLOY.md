@@ -28,6 +28,7 @@
 
 - `varner-os-plugin-v23.zip`
 - `varner-equipment-theme-v23.zip`
+- `varner-equipment-theme-v23-lite.zip`
 
 ## Workspace Rule
 
@@ -51,7 +52,8 @@
 ### Rebuild both ZIPs (run from project root)
 
 ```powershell
-# Sync changed files from full → lite (example for page-brand.php and functions.php)
+# Sync changed files from full → lite
+# REPLACE the filenames below with whichever files you actually changed
 Copy-Item '.\varner-equipment-theme-v23\varner-equipment-theme\page-brand.php' '.\varner-equipment-theme-lite\varner-equipment-theme\page-brand.php' -Force
 Copy-Item '.\varner-equipment-theme-v23\varner-equipment-theme\functions.php'  '.\varner-equipment-theme-lite\varner-equipment-theme\functions.php'  -Force
 
@@ -101,10 +103,24 @@ Compress-Archive -Path '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23' -D
 
 ## Plugin REST Endpoints (v23)
 
-- `GET /varner/v1/me`
-- `POST /varner/v1/logout`
-- `GET /varner/v1/inventory/{id}/ledger` (paginated)
-- `GET /varner/v1/sessions` (admin-only; supports `active` and `user` filters; paginated)
+| Method | Endpoint | Auth | Notes |
+|--------|----------|------|-------|
+| `GET` | `/varner/v1/inventory` | public | All active listings |
+| `POST` | `/varner/v1/inventory` | editor | Create new unit |
+| `GET` | `/varner/v1/inventory/deleted` | editor | Soft-deleted units |
+| `PATCH` | `/varner/v1/inventory/{id}` | editor | Update unit fields |
+| `DELETE` | `/varner/v1/inventory/{id}` | editor | Soft delete |
+| `POST` | `/varner/v1/inventory/{id}/restore` | editor | Restore soft-deleted unit |
+| `DELETE` | `/varner/v1/inventory/{id}/permanent` | editor | Permanent delete |
+| `GET` | `/varner/v1/inventory/{id}/ledger` | editor | Paginated ledger entries |
+| `POST` | `/varner/v1/media` | editor | Upload media attachment |
+| `GET` | `/varner/v1/brands` | editor | Get brand list |
+| `POST` | `/varner/v1/brands` | editor | Save brand list |
+| `GET` | `/varner/v1/categories` | editor | Get category list |
+| `POST` | `/varner/v1/categories` | editor | Save category list |
+| `GET` | `/varner/v1/sessions` | admin | Supports `active` and `user` filters; paginated |
+| `GET` | `/varner/v1/me` | logged-in | Current user info |
+| `POST` | `/varner/v1/logout` | logged-in | Destroy session |
 
 ## Quick Verification in wp-admin
 
