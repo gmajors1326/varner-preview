@@ -127,30 +127,71 @@ function varner_get_segment_seo($slug) {
     return $segments[$slug] ?? null;
 }
 
-function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1 ) {
+function varner_build_inventory_query( $base_meta = array(), $posts_per_page = 12 ) {
     $meta = array();
-    if ( ! empty( $base_meta ) ) $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
-    
-    $filters = array(
-        'category'  => array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) ),
-        'make'      => array_map( 'sanitize_text_field', (array) ( $_GET['make']      ?? [] ) ),
-        'condition' => array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? [] ) ),
-    );
-    foreach ( $filters as $key => $vals ) {
-        if ( $vals ) {
+    // ALWAYS start with base_meta if provided (e.g. the segment filter)
+    if ( ! empty( $base_meta ) ) {
+        $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
+    }
+
+    $is_fwp_refresh = ( isset($_POST['action']) && $_POST['action'] === 'facetwp_refresh' );
+
+    // Only apply manual $_GET filters if NOT an AJAX refresh.
+    if ( ! $is_fwp_refresh ) {
+        $filters = array(
+            'category'  => array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) ),
+            'make'      => array_map( 'sanitize_text_field', (array) ( $_GET['make']      ?? [] ) ),
+            'condition' => array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? [] ) ),
+        );
+
+        foreach ( $filters as $key => $vals ) {
+            if ( ! empty($vals) ) {
+                if ( empty( $meta ) ) $meta['relation'] = 'AND';
+                $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+            }
+        }
+
+        // Year/Price Ranges
+        $y_min = intval( $_GET['year_min'] ?? 0 );
+        $y_max = intval( $_GET['year_max'] ?? 0 );
+        if ( $y_min || $y_max ) {
             if ( empty( $meta ) ) $meta['relation'] = 'AND';
-            $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+            if ( $y_min && $y_max ) $meta[] = array( 'key' => 'year', 'value' => array($y_min, $y_max), 'compare' => 'BETWEEN', 'type' => 'NUMERIC' );
+            elseif ( $y_min ) $meta[] = array( 'key' => 'year', 'value' => $y_min, 'compare' => '>=', 'type' => 'NUMERIC' );
+            else $meta[] = array( 'key' => 'year', 'value' => $y_max, 'compare' => '<=', 'type' => 'NUMERIC' );
+        }
+
+        $p_min = intval( $_GET['price_min'] ?? 0 );
+        $p_max = intval( $_GET['price_max'] ?? 0 );
+        if ( $p_min || $p_max ) {
+            if ( empty( $meta ) ) $meta['relation'] = 'AND';
+            if ( $p_min && $p_max ) $meta[] = array( 'key' => 'price', 'value' => array($p_min, $p_max), 'compare' => 'BETWEEN', 'type' => 'DECIMAL' );
+            elseif ( $p_min ) $meta[] = array( 'key' => 'price', 'value' => $p_min, 'compare' => '>=', 'type' => 'DECIMAL' );
+            else $meta[] = array( 'key' => 'price', 'value' => $p_max, 'compare' => '<=', 'type' => 'DECIMAL' );
         }
     }
 
-    $args = array('post_type' => 'equipment', 'posts_per_page' => $posts_per_page, 'post_status' => 'publish');
-    if ( ! empty( $meta ) ) $args['meta_query'] = $meta;
-    if ( ! empty($_GET['s']) ) $args['s'] = sanitize_text_field($_GET['s']);
+    $args = array(
+        'post_type'      => 'equipment',
+        'posts_per_page' => $posts_per_page,
+        'post_status'    => 'publish',
+        'orderby'        => 'date',
+        'order'          => 'DESC'
+    );
+    
+    if ( ! empty( $meta ) ) {
+        $args['meta_query'] = $meta;
+    }
+
+    $s = sanitize_text_field( $_GET['s'] ?? '' );
+    if ( ! $s ) $s = sanitize_text_field( $_GET['fwp_inventory_search'] ?? '' );
+    if ( $s ) $args['s'] = $s;
 
     return $args;
 }
 
 function varner_get_filter_data() {
+
     global $wpdb;
     $base = "FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE p.post_type = 'equipment' AND p.post_status = 'publish' AND pm.meta_value != ''";
     $makes = $wpdb->get_results("SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'make' GROUP BY pm.meta_value ORDER BY cnt DESC", OBJECT_K);
@@ -223,11 +264,25 @@ add_filter( 'facetwp_preload_url_vars', function( $url_vars ) {
         $seo = varner_get_segment_seo($seg);
         if ( $seo && ! empty($seo['filter']) ) {
             foreach ( $seo['filter'] as $key => $vals ) {
-                $url_vars['inventory_' . $key] = (array) $vals;
+                // Ensure values are in an array for FacetWP
+                $facet_name = 'inventory_' . $key;
+                if ( empty($url_vars[$facet_name]) ) {
+                    $url_vars[$facet_name] = (array) $vals;
+                }
             }
         }
     }
-    if ( ! empty($_GET['fwp_inventory_search']) ) $url_vars['inventory_search'] = sanitize_text_field($_GET['fwp_inventory_search']);
+    
+    // Support standard Search query param
+    if ( ! empty($_GET['s']) ) {
+        $url_vars['inventory_search'] = sanitize_text_field($_GET['s']);
+    }
+    
+    // Support the dedicated fwp param
+    if ( ! empty($_GET['fwp_inventory_search']) ) {
+        $url_vars['inventory_search'] = sanitize_text_field($_GET['fwp_inventory_search']);
+    }
+
     return $url_vars;
 });
 

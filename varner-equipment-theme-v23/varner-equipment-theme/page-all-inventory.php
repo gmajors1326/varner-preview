@@ -10,11 +10,11 @@ if ( ! function_exists('get_field') ) {
 
 $filter_data = varner_get_filter_data();
 
-$query_args = varner_build_inventory_query( array() );
-
-$inventory_query = new WP_Query( $query_args );
-$total           = $inventory_query->found_posts;
-
+// Safer count query
+$count_args = varner_build_inventory_query(array());
+$count_args['posts_per_page'] = -1;
+$count_args['fields'] = 'ids';
+$total = count(get_posts($count_args));
 ?>
 
 <section class="pt-36 pb-16 bg-slate-50 min-h-[60vh]">

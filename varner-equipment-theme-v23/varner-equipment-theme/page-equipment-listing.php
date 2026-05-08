@@ -38,10 +38,11 @@ if (!empty($seo['filter'])) {
     }
 }
 
-$query_args = varner_build_inventory_query($base_meta);
-$query_args['facetwp'] = false; // Don't intercept this count query
-$inventory_query = new WP_Query($query_args);
-$total = $inventory_query->found_posts;
+// Get count using a standard get_posts call (faster and safer for FacetWP)
+$count_args = varner_build_inventory_query($base_meta);
+$count_args['posts_per_page'] = -1;
+$count_args['fields'] = 'ids';
+$total = count(get_posts($count_args));
 
 // 3. Active filter count for badge
 $active_filter_count =
