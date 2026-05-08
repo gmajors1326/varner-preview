@@ -33,6 +33,7 @@ if (!empty($seo['filter'])) {
 }
 
 $query_args = varner_build_inventory_query($base_meta);
+$query_args['facetwp'] = false; // Don't intercept this count query
 $inventory_query = new WP_Query($query_args);
 $total = $inventory_query->found_posts;
 
@@ -138,9 +139,6 @@ $active_filter_count =
             </div>
 
         </div>
-
-    </div>
-</section>
 
     </div>
 </section>

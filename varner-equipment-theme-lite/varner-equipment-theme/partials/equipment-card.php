@@ -41,12 +41,13 @@ $is_pending     = $card_status_lc === 'sale pending' || $card_status_lc === 'pen
                class="vne-slide vne-lightbox-trigger block absolute inset-0 w-full h-full transition-opacity duration-300"
                data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
                data-start="<?php echo esc_url( $img_url ); ?>"
-               style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
+                style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
                 <img src="<?php echo esc_url( $img_url ); ?>"
-                     alt="<?php echo esc_attr( $title_text ); ?>"
+                     alt="<?php echo esc_attr( $title_text . ' for sale in Delta Colorado at Varner Equipment' ); ?>"
                      loading="lazy"
                      class="w-full h-full object-cover">
             </a>
+
             <?php endforeach; ?>
 
             <!-- Condition badge -->

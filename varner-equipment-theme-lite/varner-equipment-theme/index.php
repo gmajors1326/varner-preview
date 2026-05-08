@@ -265,7 +265,8 @@ get_header();
             <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
                 <div>
                     <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Operations Segments</div>
-                    <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Browse by Category</h2>
+                    <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Browse Inventory</h2>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Serving Delta, Grand Junction, and Montrose with high-performance equipment.</p>
                 </div>
                 <a href="<?php echo esc_url( home_url( '/inventory' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
             </div>
@@ -284,33 +285,33 @@ get_header();
 
             $browse_cards = array(
                 array(
-                    'label' => 'New',
+                    'label' => 'New Units',
                     'icon'  => 'VE_New_Icon.png',
-                    'meta'  => $sum_counts( $conds, array( 'New' ) ) . ' Units',
+                    'meta'  => $sum_counts( $conds, array( 'New' ) ) . ' In Stock',
                     'url'   => home_url( '/inventory/new' )
                 ),
                 array(
-                    'label' => 'Used',
+                    'label' => 'Used Units',
                     'icon'  => 'VE_Used_Icon.png',
-                    'meta'  => $sum_counts( $conds, array( 'Used' ) ) . ' Units',
+                    'meta'  => $sum_counts( $conds, array( 'Used' ) ) . ' Available',
                     'url'   => home_url( '/inventory/used' )
                 ),
                 array(
-                    'label' => 'Tractors',
+                    'label' => 'Heavy Duty Tractors',
                     'icon'  => 'VE_Tractor_Icon.png',
-                    'meta'  => $sum_counts( $cats, array( 'Compact Tractors', 'Tractors' ) ) . ' Units',
+                    'meta'  => $sum_counts( $cats, array( 'Compact Tractors', 'Tractors' ) ) . ' Machines',
                     'url'   => home_url( '/inventory/tractors' )
                 ),
                 array(
-                    'label' => 'Trailers',
+                    'label' => 'Commercial Trailers',
                     'icon'  => 'VE_Trailer_Icon.png',
-                    'meta'  => $sum_counts( $cats, array( 'Commercial Trailers', 'Trailers', 'Dump Trailers' ) ) . ' Units',
+                    'meta'  => $sum_counts( $cats, array( 'Commercial Trailers', 'Trailers', 'Dump Trailers' ) ) . ' Stocked',
                     'url'   => home_url( '/inventory/trailers' )
                 ),
                 array(
                     'label' => 'Attachments',
                     'icon'  => 'VE_Attachment_Icon-300x300.png',
-                    'meta'  => $sum_counts( $cats, array( 'Implements', 'Attachments', 'Loaders' ) ) . ' Units',
+                    'meta'  => $sum_counts( $cats, array( 'Implements', 'Attachments', 'Loaders' ) ) . ' Implements',
                     'url'   => home_url( '/inventory/attachments' )
                 ),
                 array(
@@ -325,7 +326,7 @@ get_header();
                 <?php foreach ( $browse_cards as $card ) : ?>
                     <div class="flex flex-col items-center justify-start gap-3 text-slate-900 snap-start shrink-0 lg:shrink">
                         <a href="<?php echo esc_url( $card['url'] ); ?>" class="w-[200px] h-[200px] rounded-2xl bg-white border border-slate-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden group">
-                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[180px] h-[180px] object-contain group-hover:scale-110 transition-transform" loading="lazy" decoding="async" />
+                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] . ' for sale in Delta Colorado' ); ?>" class="w-[180px] h-[180px] object-contain group-hover:scale-110 transition-transform" loading="lazy" decoding="async" />
                         </a>
                         <div class="text-center flex flex-col items-center">
                             <a href="<?php echo esc_url( $card['url'] ); ?>" class="font-black text-2xl uppercase tracking-tighter leading-tight hover:text-red-600 transition-colors"><?php echo esc_html( $card['label'] ); ?></a>
