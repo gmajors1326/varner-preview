@@ -8,6 +8,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * ACF Fallback: Prevents site crashes if ACF plugin is deactivated.
+ */
+if ( ! function_exists( 'get_field' ) ) {
+    function get_field( $selector, $post_id = false, $format_value = true ) { return null; }
+}
+if ( ! function_exists( 'the_field' ) ) {
+    function the_field( $selector, $post_id = false, $format_value = true ) { echo ''; }
+}
+if ( ! function_exists( 'get_sub_field' ) ) {
+    function get_sub_field( $selector, $format_value = true ) { return null; }
+}
+if ( ! function_exists( 'have_rows' ) ) {
+    function have_rows( $selector, $post_id = false ) { return false; }
+}
+
+/**
  * Enqueue scripts and styles.
  */
 function varner_theme_scripts() {

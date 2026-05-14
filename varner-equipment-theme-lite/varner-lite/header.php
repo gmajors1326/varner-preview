@@ -13,7 +13,7 @@
     $og_image = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
     $og_type = 'website';
 
-    if (is_singular('equipment')) {
+    if (is_singular('equipment') && function_exists('get_field')) {
         $post_id = get_the_ID();
         $year = get_field('year', $post_id);
         $make = get_field('make', $post_id);
