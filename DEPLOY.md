@@ -52,13 +52,19 @@
 | `varner-equipment-theme-v23.zip` | `varner-equipment-theme-v23/varner-v23/` |
 | `varner-equipment-theme-v23-lite.zip` | `varner-equipment-theme-lite/varner-lite/` |
 
-### Rebuild both ZIPs (run from project root)
+### Automated Build
+To rebuild **both** ZIPs automatically in one step:
+```powershell
+.\build.ps1
+```
 
+### Manual Sync & Rebuild
+If you prefer to run commands manually:
 ```powershell
 # Sync changed files from full → lite
-# REPLACE the filenames below with whichever files you actually changed
-Copy-Item '.\varner-equipment-theme-v23\varner-equipment-theme\page-brand.php' '.\varner-equipment-theme-lite\varner-equipment-theme\page-brand.php' -Force
-Copy-Item '.\varner-equipment-theme-v23\varner-equipment-theme\functions.php'  '.\varner-equipment-theme-lite\varner-equipment-theme\functions.php'  -Force
+Copy-Item '.\varner-equipment-theme-v23\varner-v23\functions.php'  '.\varner-equipment-theme-lite\varner-lite\functions.php'  -Force
+Copy-Item '.\varner-equipment-theme-v23\varner-v23\header.php'     '.\varner-equipment-theme-lite\varner-lite\header.php'     -Force
+Copy-Item '.\varner-equipment-theme-v23\varner-v23\index.php'      '.\varner-equipment-theme-lite\varner-lite\index.php'      -Force
 
 # Full ZIP
 if (Test-Path '.\varner-equipment-theme-v23.zip') { Remove-Item '.\varner-equipment-theme-v23.zip' -Force }
