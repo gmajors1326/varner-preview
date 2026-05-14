@@ -140,21 +140,6 @@
                         'Mahindra_white.png' => 'mahindra', 
                         'McHALE_white.png' => 'mchale',
                         'ROXR_white.png' => 'roxr',
-                    <?php 
-                    $uploads = wp_get_upload_dir();
-                    $upload_base = $uploads['baseurl'] . $uploads['subdir'];
-                    $theme_base = get_template_directory_uri() . '/assets/';
-                    $theme_path_base = get_template_directory() . '/assets/';
-
-                    $logos = array(
-                        'BigTex_white.png' => 'big-tex',
-                        'CMTruckbeds_white.png' => 'cm-truck-beds',
-                        'DuetzFahr_white.png' => 'deutz-fahr', 
-                        'KRONE_white.png' => 'krone',
-                        'MacDon_white.png' => 'macdon',
-                        'Mahindra_white.png' => 'mahindra', 
-                        'McHALE_white.png' => 'mchale',
-                        'ROXR_white.png' => 'roxr',
                         'TitanTrailersMFG_white.png' => 'titan-mfg', 
                         'Triton_white.png' => 'triton',
                         'TYM_white.png' => 'tym',
@@ -204,7 +189,7 @@
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
                 <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
                     <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 group-hover:text-red-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.15.14a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0"/><path d="m2 22 5-5"/><path d="M9.5 14.5 16 8"/><path d="m17 2 5 5"/><path d="m3.5 14.5 4 4"/><path d="m10.5 7.5 4 4"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.15.14a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0"/></svg>
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1">Request Service</div>
