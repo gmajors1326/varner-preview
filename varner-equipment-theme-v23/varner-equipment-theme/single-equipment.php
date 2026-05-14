@@ -228,7 +228,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 
                 <!-- Financing CTA -->
                 <div class="flex flex-col gap-3">
-                    <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>"
+                    <a href="<?php echo esc_url( $finance_url ); ?>"
                        class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         *Apply for Financing

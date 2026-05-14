@@ -78,6 +78,20 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 
                 <!-- Main image carousel -->
                 <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3" id="vne-detail-carousel">
+                    <?php $images_json = esc_attr( json_encode( $images ) ); ?>
+                    <?php foreach ( $images as $i => $img_url ) : ?>
+                    <button type="button"
+                            class="vne-slide vne-lightbox-trigger absolute inset-0 w-full h-full transition-opacity duration-300"
+                            style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>;"
+                            data-images="<?php echo $images_json; ?>"
+                            data-start="<?php echo esc_url( $img_url ); ?>"
+                            aria-label="View photo <?php echo $i + 1; ?>">
+                        <img src="<?php echo esc_url( $img_url ); ?>"
+                             alt="<?php echo esc_attr( $title_text ); ?>"
+                             loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
+                             class="w-full h-full object-cover">
+                    </button>
+                    <?php endforeach; ?>
                     <?php foreach ( $images as $i => $img_url ) : ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
                          alt="<?php echo esc_attr( $title_text ); ?>"
@@ -214,7 +228,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 
                 <!-- Financing CTA -->
                 <div class="flex flex-col gap-3">
-                    <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>"
+                    <a href="<?php echo esc_url( $finance_url ); ?>"
                        class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         *Apply for Financing
