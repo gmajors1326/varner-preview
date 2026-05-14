@@ -27,19 +27,19 @@ The system uses a strict 3-level taxonomy stored in `wp_postmeta`:
 
 ---
 
-## 3. Faceted Search (FacetWP)
-The project utilizes **FacetWP** for high-performance, AJAX-powered filtering on all inventory listing pages. **FacetWP is an installed and required plugin dependency** — the full theme's filtering will not function without it active.
+## 3. Inventory Filtering (Native)
+The project utilizes a custom **native PHP/SQL filtering system** for high-performance filtering on all inventory listing pages.
 
--   **Mechanism**: FacetWP intercepts `WP_Query` when `facetwp => true` is present in the arguments.
--   **Facets**:
-    -   `inventory_search`: Keyword searching.
-    -   `inventory_category`: Hierarchical checkbox tree (source: `acf/category`).
-    -   `inventory_make`: Brand checkboxes (source: `acf/make`).
+-   **Mechanism**: Filtering is handled via `WP_Query` meta-queries constructed in `varner_build_inventory_query()`.
+-   **Sidebar**: Centralized in `partials/inventory-sidebar.php`.
+-   **Fields**:
+    -   `inventory_search`: Keyword searching (`s`).
+    -   `inventory_category`: Category checkboxes.
+    -   `inventory_make`: Brand checkboxes.
     -   `inventory_condition`: New/Used toggle.
-    -   `inventory_price`: Price range slider.
-    -   `inventory_year`: Year dropdown.
-    -   `inventory_pagination`: AJAX "Load More" pager.
--   **Legacy Note**: The manual PHP logic in `varner_get_filter_data()` and `partials/filter-sidebar.php` is deprecated but kept for fallback or Lite version stability if FacetWP is inactive.
+    -   `inventory_price`: Price range sliders and inputs.
+    -   `inventory_year`: Year range sliders and inputs.
+-   **Legacy Note**: The previous FacetWP integration and `filter-sidebar.php` have been consolidated into the current native implementation.
 
 ---
 

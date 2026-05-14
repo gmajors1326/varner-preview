@@ -12,20 +12,18 @@ get_header();
             </div>
             
             <div class="flex flex-col md:flex-row gap-16 items-start">
-                <div class="w-full md:w-1/2 prose prose-lg prose-slate max-w-none font-bold text-slate-600 leading-relaxed">
+                <div class="w-full md:w-1/2 prose prose-lg prose-slate max-w-none font-bold text-slate-600 leading-relaxed space-y-6">
                     <?php
-                    if ( have_posts() ) :
-                        while ( have_posts() ) : the_post();
+                    if ( have_posts() ) {
+                        while ( have_posts() ) {
+                            the_post();
                             the_content();
-                        endwhile;
-                    endif;
+                        }
+                    }
                     ?>
-                    <!-- Placeholder Content if page is empty -->
-                    <?php if (empty(get_the_content())): ?>
-                        <p>Varner Equipment is a family owned and operated tractor and trailer dealership located in Delta, Colorado. We are your one-stop shop for high-performance equipment that you can rely on to get the job done right.</p>
-                        <p>Since we opened our doors, we've committed ourselves to offering the best products from top brands like Mahindra, Big Tex Trailers, Deutz-Fahr, and more. But we don't just sell equipment; we back it up with a dedicated service team and a fully stocked parts department to keep you running season after season.</p>
-                        <p>Whether you're managing a large agricultural operation, running a commercial fleet, or simply maintaining your property, the Varner family and our knowledgeable staff are here to ensure you get exactly what you need.</p>
-                    <?php endif; ?>
+                    <p>Varner Equipment is a family-run dealership in Delta, Colorado, focused on keeping farmers, ranchers, and property owners productive. We pair proven brands like Big Tex, TYM, Mahindra, Krone, MacDon, and Triton with local know-how, so you get the right tractor, trailer, or implement for your land and budget. Our team listens first, recommends what truly fits, and stands behind every sale with responsive support.</p>
+                    <p>We stock new and pre-owned equipment—from compact and utility tractors to hay tools, flatbed and dump trailers, and work-ready attachments. Every unit is inspected, clearly priced, and ready to work, whether you need horsepower for acreage, hauling capacity for business, or a dependable setup for the season. If you don’t see it on the lot, we’ll help source it.</p>
+                    <p>Service is the heart of Varner Equipment. Our technicians handle maintenance, repairs, and parts requests quickly to keep downtime low and your operation profitable. Call, visit the yard, or browse online—when you’re ready to work, we’re here to help.</p>
                 </div>
                 
                 <div class="w-full md:w-1/2">

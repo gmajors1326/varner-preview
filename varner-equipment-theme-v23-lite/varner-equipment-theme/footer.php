@@ -1,10 +1,3 @@
-    <?php
-    $in_stock_page = get_page_by_path( 'inventory/in-stock-inventory' ) ?: get_page_by_path( 'in-stock-inventory' );
-    $showroom_page = get_page_by_path( 'inventory/showroom-inventory' ) ?: get_page_by_path( 'showroom-inventory' );
-    $in_stock_link = $in_stock_page ? get_permalink( $in_stock_page ) : home_url( '/inventory/in-stock-inventory' );
-    $showroom_link = $showroom_page ? get_permalink( $showroom_page ) : home_url( '/inventory/showroom-inventory' );
-    ?>
-
     <!-- LOCATION / GOOGLE MAPS SECTION -->
     <section class="border-b border-slate-200 overflow-hidden bg-white">
         <div class="w-full h-[400px] sm:h-[500px] bg-slate-200 relative">
@@ -35,7 +28,6 @@
             </div>
         </div>
     </section>
-    <div class="h-2 bg-red-600"></div>
 
     <!-- FOOTER -->
     <footer class="bg-slate-950 pt-24 pb-12 border-t border-slate-900">
@@ -44,10 +36,12 @@
                 <div class="w-fit text-left">
                 <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Inventory</h4>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
-                    <li><a href="<?php echo esc_url( home_url( '/inventory' ) ); ?>" class="hover:text-red-500 transition-colors">All Inventory</a></li>
-                    <li><a href="<?php echo esc_url( $in_stock_link ); ?>" class="hover:text-red-500 transition-colors">In Stock Inventory</a></li>
-                    <li><a href="<?php echo esc_url( $showroom_link ); ?>" class="hover:text-red-500 transition-colors">Showroom Inventory</a></li>
-                    <li><a href="<?php echo esc_url( home_url( '/brands' ) ); ?>" class="hover:text-red-500 transition-colors">Brands</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="hover:text-red-500 transition-colors">All Inventory</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="hover:text-red-500 transition-colors">New</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="hover:text-red-500 transition-colors">Used</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="hover:text-red-500 transition-colors">Tractors</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/attachments' ) ); ?>" class="hover:text-red-500 transition-colors">Attachments</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="hover:text-red-500 transition-colors">Hay Equipment</a></li>
                 </ul>
                 </div>
             </div>
@@ -145,18 +139,6 @@
             </div>
         </div>
     </footer>
-
-    <!-- COPYRIGHT BAR -->
-    <div class="bg-slate-950 border-t border-slate-900 py-6 px-4">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-[11px] font-bold uppercase tracking-widest">
-            <span>&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</span>
-            <div class="flex items-center gap-3">
-                <a href="<?php echo esc_url( home_url( '/privacy-policy' ) ); ?>" class="hover:text-red-500 transition-colors">Privacy Policy</a>
-                <span class="text-slate-700">|</span>
-                <a href="<?php echo esc_url( home_url( '/terms-and-conditions' ) ); ?>" class="hover:text-red-500 transition-colors">Terms &amp; Conditions</a>
-            </div>
-        </div>
-    </div>
 
     <script>
         (function() {
@@ -320,6 +302,7 @@
                 if (e.key === 'ArrowRight') nextImage();
                 if (e.key === 'ArrowLeft') prevImage();
             });
+
         })();
     </script>
 

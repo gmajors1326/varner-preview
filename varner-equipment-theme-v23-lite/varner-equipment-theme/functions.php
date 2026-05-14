@@ -251,41 +251,12 @@ add_action( 'admin_post_nopriv_varner_employment_submit', 'varner_handle_employm
 add_action( 'admin_post_varner_employment_submit', 'varner_handle_employment_submit' );
 
 // ─── Force brand landing template for /brands/* pages ───────────────────────
+// (Deprecated in favor of rewrite rule based include below)
+/*
 add_filter( 'template_include', function( $template ) {
-    if ( ! is_page() ) {
-        return $template;
-    }
-
-    $req = $_SERVER['REQUEST_URI'] ?? '';
-
-    // Match /brand(s)/slug — but not the root /brands/ listing page
-    $url_match = preg_match( '#/(brand|brands)/[^/]+/?$#', $req )
-              && ! preg_match( '#/(brand|brands)/?$#', $req );
-
-    // Also match when the page's parent has slug "brands" or "brand"
-    $parent_match = false;
-    $queried = get_queried_object();
-    if ( $queried instanceof WP_Post && $queried->post_parent ) {
-        $parent = get_post( $queried->post_parent );
-        if ( $parent && in_array( $parent->post_name, array( 'brands', 'brand' ), true ) ) {
-            $parent_match = true;
-        }
-    }
-
-    if ( $url_match || $parent_match ) {
-        $brand_template = locate_template( 'page-brand.php' );
-        if ( $brand_template ) {
-            return $brand_template;
-        }
-    }
-
-    return $template;
+...
 }, 20 );
-
-// Clear brand counts cache whenever an equipment post is saved or deleted
-add_action( 'save_post_equipment',   function() { delete_transient( 'varner_brand_counts' ); } );
-add_action( 'delete_post',           function( $id ) { if ( get_post_type( $id ) === 'equipment' ) delete_transient( 'varner_brand_counts' ); } );
-add_action( 'trashed_post',          function( $id ) { if ( get_post_type( $id ) === 'equipment' ) delete_transient( 'varner_brand_counts' ); } );
+*/
 
 // ─── INVENTORY FILTER HELPERS ────────────────────────────────────────────────
 
@@ -326,7 +297,118 @@ function varner_get_filter_data() {
          $base AND pm.meta_key = 'year'"
     );
 
-    return compact( 'makes', 'categories', 'conditions', 'year_range' );
+    $price_range = $wpdb->get_row(
+        "SELECT MIN(CAST(pm.meta_value AS DECIMAL(15,2))) AS min_price,
+                MAX(CAST(pm.meta_value AS DECIMAL(15,2))) AS max_price
+         $base AND pm.meta_key = 'price'"
+    );
+
+    return compact( 'makes', 'categories', 'conditions', 'year_range', 'price_range' );
+}
+
+/**
+ * Dynamic Inventory Segments & SEO
+ */
+function varner_get_segment_seo($slug) {
+    $segments = array(
+        'all-units' => array('title' => 'All Inventory', 'h1' => 'Complete Collection', 'sub' => 'Western Colorado\'s selection.', 'filter' => array()),
+        'new'       => array('title' => 'New Inventory', 'h1' => 'New Equipment', 'sub' => 'Latest machines.', 'filter' => array('condition' => array('New'))),
+        'used'      => array('title' => 'Used Inventory', 'h1' => 'Proven Performance', 'sub' => 'Certified units.', 'filter' => array('condition' => array('Used'))),
+        'tractors'  => array('title' => 'Tractors', 'h1' => 'Heavy-Duty Tractors', 'sub' => 'Backbone of any operation.', 'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))),
+        'trailers'  => array('title' => 'Trailers', 'h1' => 'Commercial Trailers', 'sub' => 'Haul with confidence.', 'filter' => array('category' => array('Commercial Trailers', 'Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))),
+        'attachments' => array('title' => 'Attachments', 'h1' => 'Attachments & Implements', 'sub' => 'Maximize versatility.', 'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))),
+        'hay-equipment' => array('title' => 'Hay Equipment', 'h1' => 'Hay & Harvest', 'sub' => 'Precision baling.', 'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))),
+        'misc'      => array('title' => 'Miscellaneous', 'h1' => 'Misc. Equipment', 'sub' => 'Tools & accessories.', 'filter' => array('category' => array('Misc', 'Other')))
+    );
+    return $segments[$slug] ?? null;
+}
+
+add_filter( 'query_vars', function( $vars ) { 
+    $vars[] = 'inventory_segment'; 
+    $vars[] = 'brand_name';
+    return $vars; 
+});
+
+add_action( 'init', function() {
+    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
+    add_rewrite_rule('^brands/([^/]+)/?$', 'index.php?brand_name=$matches[1]', 'top');
+});
+
+add_filter( 'template_include', function( $template ) {
+    if ( get_query_var('inventory_segment') ) {
+        $listing_template = locate_template('page-equipment-listing.php');
+        if ( $listing_template ) return $listing_template;
+    }
+    if ( get_query_var('brand_name') ) {
+        $brand_template = locate_template('page-brand.php');
+        if ( $brand_template ) return $brand_template;
+    }
+    if ( is_page() ) {
+        $about_template = locate_template( 'page-about-us.php' );
+        if ( $about_template ) {
+            $post_obj = get_post();
+            $slug     = $post_obj ? $post_obj->post_name : '';
+            $path     = $post_obj ? get_page_uri( $post_obj ) : '';
+            if ( $slug === 'about-us' || $slug === 'about' || $path === 'dealer-info/about-us' || $path === 'dealer-info/about' ) {
+                return $about_template;
+            }
+        }
+    }
+    return $template;
+}, 30);
+
+// Ensure About page uses the About template if present
+function varner_ensure_about_page_template() {
+    $candidates = array( 'dealer-info/about-us', 'about-us', 'dealer-info/about', 'about' );
+    foreach ( $candidates as $candidate ) {
+        $page = get_page_by_path( $candidate );
+        if ( $page && ! is_wp_error( $page ) ) {
+            update_post_meta( $page->ID, '_wp_page_template', 'page-about-us.php' );
+            break;
+        }
+    }
+}
+add_action( 'init', 'varner_ensure_about_page_template' );
+
+// Ensure Finance page exists and uses the Finance template
+function varner_ensure_finance_page() {
+    $page = get_page_by_path( 'finance' );
+    if ( ! $page ) {
+        $page_id = wp_insert_post( array(
+            'post_title'   => 'Finance',
+            'post_name'    => 'finance',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+        ) );
+        if ( is_wp_error( $page_id ) ) { return; }
+        $page = get_post( $page_id );
+    }
+    if ( $page && ! is_wp_error( $page ) ) {
+        update_post_meta( $page->ID, '_wp_page_template', 'page-finance.php' );
+    }
+}
+add_action( 'after_switch_theme', 'varner_ensure_finance_page' );
+add_action( 'init', 'varner_ensure_finance_page' );
+
+/**
+ * Card Partial Loader
+ */
+function varner_include_equipment_card( $post_id = null ) {
+    if ( ! function_exists('get_field') ) return;
+    if ( ! $post_id ) $post_id = get_the_ID();
+    $year            = get_field( 'year',           $post_id );
+    $make            = get_field( 'make',           $post_id );
+    $model           = get_field( 'model',          $post_id );
+    $price           = get_field( 'price',          $post_id );
+    $call_for_price  = get_field( 'call_for_price', $post_id );
+    $category        = get_field( 'category',       $post_id );
+    $condition       = get_field( 'condition',      $post_id );
+    $stock_number    = get_field( 'stock_number',   $post_id );
+    $length          = get_field( 'length',         $post_id );
+    $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
+    $images          = varner_get_card_images( $post_id );
+    include get_template_directory() . '/partials/equipment-card.php';
 }
 
 /**
@@ -335,6 +417,8 @@ function varner_get_filter_data() {
  */
 function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1 ) {
     $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
+
+    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( $_GET['paged'] ?? 1 ) ) );
 
     $filters = array(
         'category'  => array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) ),
@@ -346,6 +430,16 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
         if ( $vals ) {
             $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
         }
+    }
+
+    $stock_number = sanitize_text_field( $_GET['stock_number'] ?? '' );
+    if ( $stock_number !== '' ) {
+        $meta[] = array( 'key' => 'stock_number', 'value' => $stock_number, 'compare' => 'LIKE' );
+    }
+
+    $vin = sanitize_text_field( $_GET['vin'] ?? '' );
+    if ( $vin !== '' ) {
+        $meta[] = array( 'key' => 'vin', 'value' => $vin, 'compare' => 'LIKE' );
     }
 
     $ranges = array(
@@ -363,27 +457,52 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
         }
     }
 
-    $stock_num = sanitize_text_field( $_GET['stock_number'] ?? '' );
-    if ( $stock_num ) {
-        $meta[] = array( 'key' => 'stock_number', 'value' => $stock_num, 'compare' => 'LIKE' );
-    }
-
-    $vin_num = sanitize_text_field( $_GET['vin'] ?? '' );
-    if ( $vin_num ) {
-        $meta[] = array( 'key' => 'vin', 'value' => $vin_num, 'compare' => 'LIKE' );
-    }
-
     $args = array(
         'post_type'      => 'equipment',
         'posts_per_page' => $posts_per_page,
         'post_status'    => 'publish',
         'meta_query'     => $meta,
+        'paged'          => $paged,
     );
 
     $keyword = sanitize_text_field( $_GET['s'] ?? '' );
-    if ( $keyword ) { $args['s'] = $keyword; }
+    if ( $keyword ) { 
+        $args['s'] = $keyword; 
+        // Allow searching in meta fields via a hook
+        add_filter( 'posts_search', 'varner_search_meta_fields', 10, 2 );
+    }
 
     return $args;
+}
+
+/**
+ * Extend WordPress search to include specific equipment meta fields.
+ */
+function varner_search_meta_fields( $search, $wp_query ) {
+    global $wpdb;
+
+    if ( empty( $search ) || ! $wp_query->is_main_query() && $wp_query->get( 'post_type' ) !== 'equipment' ) {
+        return $search;
+    }
+
+    $q = $wp_query->query_vars;
+    $n = ! empty( $q['exact'] ) ? '' : '%';
+    $search = $search_and = '';
+
+    foreach ( (array) $q['search_terms'] as $term ) {
+        $term = esc_sql( $wpdb->esc_like( $term ) );
+        $search .= "{$search_and}(($wpdb->posts.post_title LIKE '{$n}{$term}{$n}') OR ($wpdb->posts.post_content LIKE '{$n}{$term}{$n}') OR (EXISTS (SELECT 1 FROM {$wpdb->postmeta} WHERE post_id = {$wpdb->posts}.ID AND meta_key IN ('make','model','category','sub-category','sub-sub-category','stock_number','vin') AND meta_value LIKE '{$n}{$term}{$n}')))";
+        $search_and = ' AND ';
+    }
+
+    if ( ! empty( $search ) ) {
+        $search = " AND ({$search}) ";
+    }
+
+    // Remove the filter so it doesn't affect other queries
+    remove_filter( 'posts_search', 'varner_search_meta_fields', 10 );
+
+    return $search;
 }
 
 /**
@@ -392,6 +511,7 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
  * For scalar filters, removes the key entirely.
  */
 function varner_remove_filter( $key, $value = null ) {
+    global $wp;
     $current = $_GET;
     unset( $current['paged'] );
     if ( $value === null ) {
@@ -401,16 +521,19 @@ function varner_remove_filter( $key, $value = null ) {
         $arr     = array_values( array_filter( $arr, function ( $v ) use ( $value ) { return $v !== $value; } ) );
         if ( empty( $arr ) ) { unset( $current[ $key ] ); } else { $current[ $key ] = $arr; }
     }
-    return get_permalink() . ( $current ? '?' . http_build_query( $current ) : '' );
+    
+    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) );
+    return $base_url . ( $current ? '?' . http_build_query( $current ) : '' );
 }
 
 /**
  * Returns a page URL with both range keys removed (e.g. year_min + year_max together).
  */
 function varner_remove_range_filter( $key1, $key2 ) {
+    global $wp;
     $current = $_GET;
     unset( $current[ $key1 ], $current[ $key2 ], $current['paged'] );
-    return get_permalink() . ( $current ? '?' . http_build_query( $current ) : '' );
+    return ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' );
 }
 
 // ─── EQUIPMENT CARD HELPERS ──────────────────────────────────────────────────

@@ -205,6 +205,14 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    const isVarnerOSPage = window.location.search.includes('page=varner-os');
+    const isEquipmentEdit = window.location.pathname.includes('post.php') || window.location.pathname.includes('post-new.php');
+    const postId = window.varnerData?.post_id;
+
+    if (!isVarnerOSPage && (isEquipmentEdit || (postId && postId > 0))) {
+      handleFullEdit(postId);
+    }
+
     loadInventory();
     apiFetch('/brands').then(setBrands).catch(() => {});
     apiFetch('/categories').then(setCategories).catch(() => {});
@@ -596,6 +604,12 @@ const App = () => {
             {activeTab === 'inventory' && unitData.title && (
               <button onClick={handleClone} className="bg-slate-100 text-slate-600 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
                 <Copy size={16}/> <span className="hidden sm:inline">Clone Unit</span>
+              </button>
+            )}
+
+            {activeTab === 'inventory' && (
+              <button onClick={handleAddNewUnit} className="bg-red-600 text-white p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-all border-b-2 border-red-800 shadow-xl shadow-red-100 active:scale-95">
+                <Plus size={16}/> <span className="hidden sm:inline">New Unit</span>
               </button>
             )}
 

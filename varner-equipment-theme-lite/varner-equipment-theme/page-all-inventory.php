@@ -11,7 +11,7 @@ if ( ! function_exists('get_field') ) {
 $filter_data = varner_get_filter_data();
 
 // Safer count query
-$count_args = varner_build_inventory_query(array());
+$count_args = varner_build_inventory_query(array(), -1);
 $count_args['posts_per_page'] = -1;
 $count_args['fields'] = 'ids';
 $total = count(get_posts($count_args));
@@ -30,15 +30,28 @@ $total = count(get_posts($count_args));
         <div class="flex flex-col lg:flex-row gap-12">
             
             <!-- LEFT SIDEBAR: FILTERS -->
-            <?php include get_template_directory() . '/partials/facet-sidebar.php'; ?>
+            <?php include get_template_directory() . '/partials/inventory-sidebar.php'; ?>
 
             <!-- RIGHT CONTENT: GRID -->
             <div class="flex-1">
                 
+                <?php 
+                    $query_args = varner_build_inventory_query(array(), 12);
+                    $inventory_query = new WP_Query( $query_args );
+                    $current_page = max( 1, intval( get_query_var('paged') ?: 1 ) );
+                    $total_found  = intval( $inventory_query->found_posts );
+                    $reset_url    = strtok( get_permalink(), '?' );
+                    $pagination_args = $_GET;
+                    unset( $pagination_args['paged'] );
+                    $pagination_args = array_map( function( $v ) {
+                        return is_array( $v ) ? array_map( 'sanitize_text_field', $v ) : sanitize_text_field( $v );
+                    }, $pagination_args );
+                ?>
+
                 <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                        <?php echo do_shortcode('[facetwp facet="inventory_counts"]'); ?>
+                        Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
                     </p>
                     <button onclick="window.print()" class="flex items-center gap-1.5 text-slate-400 hover:text-red-600 transition-colors text-[9px] font-black uppercase tracking-[0.15em] shrink-0 border-l border-slate-200 pl-4">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -47,12 +60,8 @@ $total = count(get_posts($count_args));
                 </div>
 
                 <!-- Inventory grid -->
-                <div class="facetwp-template grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     <?php 
-                    $query_args = varner_build_inventory_query(array());
-                    $query_args['facetwp'] = true;
-                    $inventory_query = new WP_Query( $query_args );
-
                     if ( $inventory_query->have_posts() ) :
                         while ( $inventory_query->have_posts() ) : $inventory_query->the_post();
                             varner_include_equipment_card();
@@ -65,17 +74,29 @@ $total = count(get_posts($count_args));
                             </div>
                             <p class="text-slate-900 font-black uppercase tracking-widest text-sm mb-2">No Units Found</p>
                             <p class="text-slate-400 font-bold text-xs mb-8">Try adjusting your filters to find what you're looking for.</p>
-                            <button onclick="FWP.reset()" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">
+                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">
                                 Reset All Filters
-                            </button>
+                            </a>
                         </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- Pagination -->
+                <?php 
+                    $pagination = paginate_links( array(
+                        'total'   => max( 1, $inventory_query->max_num_pages ),
+                        'current' => $current_page,
+                        'type'    => 'list',
+                        'add_args'=> $pagination_args,
+                    ) );
+                ?>
+                <?php if ( $pagination ) : ?>
                 <div class="mt-12 flex justify-center">
-                    <?php echo do_shortcode('[facetwp facet="inventory_pagination"]'); ?>
+                    <div class="prose prose-sm max-w-none">
+                        <?php echo $pagination; ?>
+                    </div>
                 </div>
+                <?php endif; ?>
             </div>
 
         </div>

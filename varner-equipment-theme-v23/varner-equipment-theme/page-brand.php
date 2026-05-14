@@ -6,137 +6,253 @@
 
 get_header();
 
-global $wpdb;
+$brand_slug = get_query_var('brand_name');
+if ( $brand_slug ) {
+    $brand_name = str_replace('-', ' ', $brand_slug);
+    $brand_name = ucwords($brand_name);
+    // Special naming overrides
+    $overrides = array(
+        'big tex' => 'Big Tex',
+        'tym'     => 'TYM',
+        'zetor'   => 'Zetor',
+        'krone'   => 'Krone',
+        'macdon'  => 'MacDon',
+        'mchale'  => 'McHale',
+        'roxr'    => 'ROXR',
+        'titan trailers' => 'Titan Trailers',
+        'titan mfg' => 'Titan Trailers'
+    );
+    if ( isset( $overrides[ strtolower($brand_name) ] ) ) {
+        $brand_name = $overrides[ strtolower($brand_name) ];
+    }
+} else {
+    $brand_name = get_the_title();
+}
 
-$brand_name = get_the_title();
+$brand_norm   = sanitize_title( $brand_name );
 
-$brand_logos = array(
-    'Mahindra'        => 'Mahindra_white.png',
-    'Big Tex'         => 'BigTex_white.png',
-    'Deutz-Fahr'      => 'DuetzFahr_white.png',
-    'KRONE'           => 'KRONE_white.png',
-    'MacDon'          => 'MacDon_white.png',
-    'McHale'          => 'McHALE_white.png',
-    'ROXOR'           => 'ROXR_white.png',
-    'Titan Trailers'  => 'TitanTrailersMFG_white.png',
-    'Triton'          => 'Triton_white.png',
-    'TYM'             => 'TYM_white.png',
-    'Zetor'           => 'Zetor_white.png',
-    'CM Truck Beds'   => 'CMTruckbeds_white.png',
+// Inventory filter data
+$filter_data = varner_get_filter_data();
+
+// Attempt to locate a brand logo from the media library
+if ( ! function_exists( 'varner_find_brand_logo_url' ) ) {
+    function varner_find_brand_logo_url( $brand_slug, $brand_name ) {
+        $candidates = array_filter( array( sanitize_title( $brand_name ), $brand_slug ) );
+        foreach ( array_unique( $candidates ) as $candidate ) {
+            $found = get_posts( array(
+                'post_type'      => 'attachment',
+                'name'           => $candidate,
+                'post_status'    => 'inherit',
+                'posts_per_page' => 1,
+                'orderby'        => 'date',
+                'order'          => 'DESC',
+            ) );
+            if ( $found ) {
+                return wp_get_attachment_image_url( $found[0]->ID, 'large' );
+            }
+        }
+
+        // Fallback: match by filename containing *_white.png
+        $file_candidates = array();
+        foreach ( $candidates as $c ) {
+            $file_candidates[] = $c . '_white';
+            $file_candidates[] = $c . '-white';
+        }
+        foreach ( array_unique( $file_candidates ) as $fc ) {
+            $by_file = get_posts( array(
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'posts_per_page' => 1,
+                'meta_query'     => array(
+                    array(
+                        'key'     => '_wp_attached_file',
+                        'value'   => $fc,
+                        'compare' => 'LIKE',
+                    ),
+                ),
+            ) );
+            if ( $by_file ) {
+                return wp_get_attachment_image_url( $by_file[0]->ID, 'large' );
+            }
+        }
+
+        // Fallback: look for bundled asset matching slug + _white.png
+        $slug_key = sanitize_title( $brand_slug ?: $brand_name );
+        $flat_key = preg_replace( '/[^a-z0-9]/i', '', $brand_name );
+        $asset_candidates = array_unique( array_filter( array(
+            $slug_key . '_white.png',
+            $slug_key . '-white.png',
+            str_replace( '-', '_', $slug_key ) . '_white.png',
+            $flat_key ? strtolower( $flat_key ) . '_white.png' : '',
+            $flat_key ? $flat_key . '_white.png' : '',
+        ) ) );
+        foreach ( $asset_candidates as $fname ) {
+            foreach ( array( '/assets/', '/images/' ) as $subdir ) {
+                $dir = get_template_directory() . $subdir . $fname;
+                if ( file_exists( $dir ) ) {
+                    return get_template_directory_uri() . $subdir . $fname;
+                }
+            }
+        }
+
+        // Fallback: bundled theme assets (_white.png)
+        $theme_assets = array(
+            'big-tex'              => 'BigTex_white.png',
+            'cm-truck-beds'        => 'CMTruckbeds_white.png',
+            'duetzfahr'            => 'DuetzFahr_white.png',
+            'deutz-fahr'           => 'DuetzFahr_white.png',
+            'krone'                => 'KRONE_white.png',
+            'macdon'               => 'MacDon_white.png',
+            'mahindra'             => 'Mahindra_white.png',
+            'mchale'               => 'McHALE_white.png',
+            'roxor'                => 'ROXR_white.png',
+            'roxr'                 => 'ROXR_white.png',
+            'titan-mfg'            => 'TitanTrailersMFG_white.png',
+            'titan-trailers'       => 'TitanTrailersMFG_white.png',
+            'titantrailersmfg'     => 'TitanTrailersMFG_white.png',
+            'titon-mfg'            => 'TitanTrailersMFG_white.png',
+            'triton'               => 'Triton_white.png',
+            'tym'                  => 'TYM_white.png',
+            'zetor'                => 'Zetor_white.png',
+            'varnerequipment'      => 'VarnerEquipment_white.png',
+            'bale-king'            => 'BaleKing_white.png',
+            'baumalight'           => 'Baumalight_white.png',
+            'beaver-valley'        => 'BeaverValley_white.png',
+            'bison'                => 'Bison_white.png',
+            'brush-chief'          => 'BrushChief_white.png',
+            'danuser'              => 'Danuser_white.png',
+            'degelman'             => 'Degelman_white.png',
+            'enorossi'             => 'Enorossi_white.png',
+            'mk-martin'            => 'MKMartin_white.png',
+            'maschio'              => 'Maschio_white.png',
+            'maxon'                => 'Maxon_white.png',
+            'rc-trailers'          => 'RCTrailers_white.png',
+            'speeco'               => 'Speeco_white.png',
+            'tar-river'            => 'TarRiver_white.png',
+            'tidenberg'            => 'Tidenberg_white.png',
+            'worksaver'            => 'Worksaver_white.png',
+        );
+
+        $slug_key = sanitize_title( $brand_slug ?: $brand_name );
+        if ( isset( $theme_assets[ $slug_key ] ) ) {
+            $filename = $theme_assets[ $slug_key ];
+            $paths = array(
+                array( 'dir' => get_template_directory() . '/images/' . $filename, 'uri' => get_template_directory_uri() . '/images/' . $filename ),
+                array( 'dir' => get_template_directory() . '/assets/' . $filename, 'uri' => get_template_directory_uri() . '/assets/' . $filename ),
+            );
+            foreach ( $paths as $p ) {
+                if ( file_exists( $p['dir'] ) ) {
+                    return $p['uri'];
+                }
+            }
+        }
+        return '';
+    }
+}
+
+$brand_logo_url = varner_find_brand_logo_url( $brand_slug ?: $brand_norm, $brand_name );
+
+$words        = array_filter( preg_split( '/\s+/', strtolower( $brand_name ) ) );
+$meta_keys    = array( 'make', 'manufacturer', 'brand' );
+$meta_clauses = array( 'relation' => 'OR' );
+
+foreach ( $meta_keys as $mk ) {
+    $and_clause = array( 'relation' => 'AND' );
+    foreach ( $words as $w ) {
+        $and_clause[] = array( 'key' => $mk, 'value' => $w, 'compare' => 'LIKE' );
+    }
+    $meta_clauses[] = $and_clause;
+    $meta_clauses[] = array( 'key' => $mk, 'value' => $brand_name, 'compare' => 'LIKE' );
+    $meta_clauses[] = array( 'key' => $mk, 'value' => $brand_norm, 'compare' => 'LIKE' );
+}
+
+$brand_meta = array(
+    'relation' => 'OR',
+    array( 'key' => 'make',          'value' => $brand_name, 'compare' => 'LIKE' ),
+    array( 'key' => 'manufacturer',  'value' => $brand_name, 'compare' => 'LIKE' ),
+    array( 'key' => 'brand',         'value' => $brand_name, 'compare' => 'LIKE' ),
 );
-$assets_base = trailingslashit( get_template_directory_uri() ) . 'assets/';
-$brand_logo  = isset( $brand_logos[ $brand_name ] ) ? $assets_base . $brand_logos[ $brand_name ] : '';
 
-// ── Active filters ──────────────────────────────────────────────────────────
-$f_cats = array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) );
-$f_cds  = array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? [] ) );
-$f_ymin = intval( $_GET['year_min']  ?? 0 );
-$f_ymax = intval( $_GET['year_max']  ?? 0 );
-$f_pmin = intval( $_GET['price_min'] ?? 0 );
-$f_pmax = intval( $_GET['price_max'] ?? 0 );
-$fs     = sanitize_text_field( $_GET['s'] ?? '' );
-$has_filters = $f_cats || $f_cds || $f_ymin || $f_ymax || $f_pmin || $f_pmax || $fs;
+$count_args = varner_build_inventory_query( array( $brand_meta ), -1 );
+$count_args['posts_per_page'] = -1;
+$count_args['fields'] = 'ids';
+$total_units = count( get_posts( $count_args ) );
 
-$page_url = get_permalink();
-
-// ── Brand-specific filter options ───────────────────────────────────────────
-$brand_safe = esc_sql( $brand_name );
-
-$brand_categories = $wpdb->get_results( $wpdb->prepare(
-    "SELECT pm.meta_value AS val, COUNT(*) AS cnt
-     FROM {$wpdb->postmeta} pm
-     JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-     JOIN {$wpdb->postmeta} pm2 ON pm2.post_id = p.ID AND pm2.meta_key = 'make' AND pm2.meta_value = %s
-     WHERE p.post_type = 'equipment' AND p.post_status = 'publish'
-       AND pm.meta_key = 'category' AND pm.meta_value != ''
-     GROUP BY pm.meta_value ORDER BY cnt DESC",
-    $brand_name
-), OBJECT_K );
-
-$brand_conditions = $wpdb->get_results( $wpdb->prepare(
-    "SELECT pm.meta_value AS val, COUNT(*) AS cnt
-     FROM {$wpdb->postmeta} pm
-     JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-     JOIN {$wpdb->postmeta} pm2 ON pm2.post_id = p.ID AND pm2.meta_key = 'make' AND pm2.meta_value = %s
-     WHERE p.post_type = 'equipment' AND p.post_status = 'publish'
-       AND pm.meta_key = 'condition' AND pm.meta_value != ''
-     GROUP BY pm.meta_value ORDER BY cnt DESC",
-    $brand_name
-), OBJECT_K );
-
-// ── Query ───────────────────────────────────────────────────────────────────
-$base_meta = array( array( 'key' => 'make', 'value' => $brand_name, 'compare' => 'LIKE' ) );
-$args      = varner_build_inventory_query( $base_meta, -1 );
-$brand_query = new WP_Query( $args );
+$query_args = varner_build_inventory_query( array( $brand_meta ), 12 );
+$brand_query = new WP_Query( $query_args );
+$current_page = max( 1, get_query_var('paged') );
 ?>
 
-<section class="pt-36 pb-10 bg-slate-950 text-white shadow-2xl relative overflow-hidden">
+<section class="py-16 bg-slate-950 text-white min-h-[400px] flex items-center relative overflow-hidden">
     <!-- Decorative background element -->
-    <div class="absolute -right-24 -bottom-24 w-96 h-96 bg-red-600/10 rounded-full blur-3xl"></div>
-    
-    <div class="max-w-7xl mx-auto px-4 relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
-        <div class="flex-1">
-            <a href="<?php echo esc_url( home_url( '/brands' ) ); ?>" class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-red-500 hover:text-white transition-colors mb-4 group">
-                <svg class="w-3 h-3 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
-                Back to All Brands
-            </a>
+    <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-[100px]"></div>
+    <div class="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-96 h-96 bg-slate-500/10 rounded-full blur-[100px]"></div>
+
+    <div class="max-w-7xl mx-auto px-4 w-full relative z-10">
+        <div class="flex flex-col md:flex-row items-center gap-12">
+            <div class="shrink-0">
+                <?php if ( $brand_logo_url ) : ?>
+                    <img src="<?php echo esc_url( $brand_logo_url ); ?>" 
+                         alt="<?php echo esc_attr( $brand_name ); ?> logo" 
+                         class="w-[280px] sm:w-[320px] h-auto max-h-[320px] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]" 
+                         loading="lazy" 
+                         decoding="async" />
+                <?php else : ?>
+                    <h1 class="text-[46px] font-black tracking-tighter text-white m-0">
+                        <?php echo esc_html( $brand_name ); ?>
+                    </h1>
+                <?php endif; ?>
+            </div>
             
-            <?php if ( $brand_logo ) : ?>
-                <img src="<?php echo esc_url( $brand_logo ); ?>" alt="<?php echo esc_attr( $brand_name ); ?>" class="h-16 md:h-20 w-auto object-contain drop-shadow-2xl mb-4">
-            <?php else : ?>
-                <h1 class="text-5xl md:text-7xl font-black tracking-tight uppercase leading-[1.1] mb-2"><?php echo esc_html( $brand_name ); ?></h1>
-            <?php endif; ?>
-            <p class="text-slate-400 font-bold text-sm"><?php echo $brand_query->found_posts; ?> unit<?php echo $brand_query->found_posts !== 1 ? 's' : ''; ?> <?php echo $has_filters ? 'match your filters' : 'in stock'; ?></p>
+            <div class="flex-1 text-center md:text-left space-y-6">
+                <div>
+                    <h2 class="text-red-500 font-black uppercase tracking-[0.3em] text-sm mb-2">Authorized Dealer</h2>
+                </div>
+                
+                <p class="text-slate-300 text-xl font-medium max-w-2xl leading-relaxed">
+                    Explore our current selection of <span class="text-white font-bold"><?php echo esc_html( $brand_name ); ?></span> equipment. 
+                    From new arrivals to certified pre-owned units, find the perfect machine for your operation.
+                </p>
+
+                <div class="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4">
+                    <div class="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
+                        <span class="text-3xl font-black text-white"><?php echo number_format_i18n( $total_units ); ?></span>
+                        <span class="text-slate-400 font-black uppercase tracking-widest text-[10px] leading-tight">Units<br/>Available</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        Live Inventory Tracking
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- MAIN LISTING -->
-<section class="py-12 bg-slate-50 min-h-[60vh]">
+<section class="py-16 bg-slate-100">
     <div class="max-w-7xl mx-auto px-4">
+        <div class="flex flex-col lg:flex-row gap-10">
+            <div class="w-full lg:w-72 shrink-0">
+                <?php 
+                    $facet_search_label = $brand_name . ' Inventory';
+                    $selected_makes_override = array();
+                    $brand_count = 0;
+                    if ( isset( $filter_data['makes'] ) ) {
+                        foreach ( $filter_data['makes'] as $mk => $obj ) {
+                            if ( strcasecmp( $mk, $brand_name ) === 0 ) { $brand_count = intval( $obj->cnt ?? 0 ); break; }
+                        }
+                    }
+                    if ( $brand_count > 0 ) {
+                        $selected_makes_override = array( $brand_name );
+                    }
+                    include get_template_directory() . '/partials/inventory-sidebar.php'; 
+                ?>
+            </div>
 
-        <div class="flex flex-col lg:flex-row gap-12">
-            
-            <!-- LEFT SIDEBAR: FILTERS -->
-            <aside class="w-full lg:w-72 shrink-0">
-                <div class="sticky top-28 space-y-8">
-                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-                        <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Search <?php echo esc_html($brand_name); ?></h3>
-                            <?php echo do_shortcode('[facetwp facet="inventory_search"]'); ?>
-                        </div>
-                        <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</h3>
-                            <?php echo do_shortcode('[facetwp facet="inventory_category"]'); ?>
-                        </div>
-                        <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</h3>
-                            <?php echo do_shortcode('[facetwp facet="inventory_condition"]'); ?>
-                        </div>
-                        <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Price Range</h3>
-                            <div class="px-1">
-                                <?php echo do_shortcode('[facetwp facet="inventory_price"]'); ?>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Year</h3>
-                            <?php echo do_shortcode('[facetwp facet="inventory_year"]'); ?>
-                        </div>
-                        <div class="pt-4 border-t border-slate-100">
-                            <button onclick="FWP.reset()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Clear All Filters</button>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- RIGHT CONTENT: GRID -->
             <div class="flex-1">
-                
-                <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                        <?php echo do_shortcode('[facetwp facet="inventory_counts"]'); ?>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                        Showing <?php echo number_format_i18n( $brand_query->post_count ); ?> of <?php echo number_format_i18n( $total_units ); ?> units
                     </p>
                     <button onclick="window.print()" class="flex items-center gap-1.5 text-slate-400 hover:text-red-600 transition-colors text-[9px] font-black uppercase tracking-[0.15em] shrink-0">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -144,46 +260,47 @@ $brand_query = new WP_Query( $args );
                     </button>
                 </div>
 
-                <!-- Inventory grid -->
-                <div class="facetwp-template grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <?php 
-                    // Use FacetWP enabled query
-                    $args['facetwp'] = true;
-                    $brand_query = new WP_Query( $args );
-
-                    if ( $brand_query->have_posts() ) :
-                        while ( $brand_query->have_posts() ) : $brand_query->the_post();
+                <?php if ( $brand_query->have_posts() ) : ?>
+                    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <?php while ( $brand_query->have_posts() ) : $brand_query->the_post();
                             $post_id        = get_the_ID();
-                            $year           = get_field( 'year', $post_id );
-                            $make           = get_field( 'make', $post_id );
-                            $model          = get_field( 'model', $post_id );
-                            $category       = get_field( 'category', $post_id );
-                            $condition      = get_field( 'condition', $post_id );
+                            $year           = get_field( 'year',         $post_id );
+                            $make           = get_field( 'make',         $post_id );
+                            $model          = get_field( 'model',        $post_id );
+                            $category       = get_field( 'category',     $post_id );
+                            $condition      = get_field( 'condition',    $post_id );
                             $stock_status   = get_field( 'stock_status', $post_id );
-                            $price          = get_field( 'price', $post_id );
-                            $call_for_price = get_field( 'call_for_price', $post_id );
-                            $formatted_price = $call_for_price ? 'Call for Price' : ( is_numeric( $price ) ? number_format( $price ) : ( $price ?: '—' ) );
                             $stock_number   = get_field( 'stock_number', $post_id );
-                            $length         = get_field( 'length', $post_id );
-                            $images         = varner_get_card_images( $post_id );
-                            include get_template_directory() . '/partials/equipment-card.php';
+                            $length         = get_field( 'length',       $post_id );
+                            $price          = get_field( 'price',        $post_id );
+                            $call_for_price = get_field( 'call_for_price', $post_id );
+                            $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
+                            $images   = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
+                            include locate_template( 'partials/equipment-card.php', false, false );
                         endwhile; wp_reset_postdata(); ?>
-                    <?php else : ?>
-                        <div class="col-span-full bg-white border border-slate-200 rounded-3xl p-20 text-center shadow-inner">
-                            <p class="font-black uppercase tracking-widest text-slate-400 text-sm mb-4">No Units Found</p>
-                            <button onclick="FWP.reset()" class="inline-block bg-red-600 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 transition-all">Clear All Filters</button>
+                    </div>
+                    <?php 
+                        $pagination_args = $_GET; unset( $pagination_args['paged'] );
+                        $pagination_args = array_map( function( $v ) { return is_array( $v ) ? array_map( 'sanitize_text_field', $v ) : sanitize_text_field( $v ); }, $pagination_args );
+                        $pagination = paginate_links( array(
+                            'total'   => max( 1, $brand_query->max_num_pages ),
+                            'current' => $current_page,
+                            'type'    => 'list',
+                            'add_args'=> $pagination_args,
+                        ) );
+                    ?>
+                    <?php if ( $pagination ) : ?>
+                    <div class="mt-12 flex justify-center">
+                        <div class="prose prose-sm max-w-none">
+                            <?php echo $pagination; ?>
                         </div>
+                    </div>
                     <?php endif; ?>
-                </div>
-
-                <!-- Pagination -->
-                <div class="mt-12 flex justify-center">
-                    <?php echo do_shortcode('[facetwp facet="inventory_pagination"]'); ?>
-                </div>
+                <?php else : ?>
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 font-bold text-slate-600">No units found for this brand yet.</div>
+                <?php endif; ?>
             </div>
-
         </div>
-
     </div>
 </section>
 

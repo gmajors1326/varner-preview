@@ -41,13 +41,12 @@ $is_pending     = $card_status_lc === 'sale pending' || $card_status_lc === 'pen
                class="vne-slide vne-lightbox-trigger block absolute inset-0 w-full h-full transition-opacity duration-300"
                data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
                data-start="<?php echo esc_url( $img_url ); ?>"
-                style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
+               style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
                 <img src="<?php echo esc_url( $img_url ); ?>"
-                     alt="<?php echo esc_attr( $title_text . ' for sale in Delta Colorado at Varner Equipment' ); ?>"
+                     alt="<?php echo esc_attr( $title_text ); ?>"
                      loading="lazy"
                      class="w-full h-full object-cover">
             </a>
-
             <?php endforeach; ?>
 
             <!-- Condition badge -->
@@ -68,11 +67,13 @@ $is_pending     = $card_status_lc === 'sale pending' || $card_status_lc === 'pen
             <?php endif; ?>
 
             <!-- Lightbox trigger icon -->
-            <div class="absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity pointer-events-none">
-                <div class="bg-black/50 text-white p-2 rounded-lg backdrop-blur-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-                </div>
-            </div>
+            <button type="button"
+                    class="vne-lightbox-trigger absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity bg-black/60 text-white p-2 rounded-lg backdrop-blur-sm hover:bg-black/80"
+                    aria-label="View photos"
+                    data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
+                    data-start="<?php echo esc_url( $images[0] ?? '' ); ?>">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            </button>
 
             <?php if ( count( $images ) > 1 ) : ?>
             <!-- Prev arrow -->
@@ -124,7 +125,7 @@ $is_pending     = $card_status_lc === 'sale pending' || $card_status_lc === 'pen
             <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
             <div class="flex items-center gap-1 text-[11px] text-slate-500 font-medium mt-1">
                 Payments as low as USD $<?php echo number_format( $monthly_payment, 2 ); ?>*
-                <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="text-red-500 hover:text-red-600 shrink-0">
+                <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="text-red-500 hover:text-red-600 shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
             </div>
@@ -133,7 +134,7 @@ $is_pending     = $card_status_lc === 'sale pending' || $card_status_lc === 'pen
 
         <!-- Financing button -->
         <div class="flex gap-2">
-            <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>"
+            <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>"
                class="flex-1 text-center text-[9px] font-black uppercase tracking-wide border-2 border-slate-700 text-slate-700 py-2.5 px-1 rounded-lg hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all leading-tight">
                 *Apply for<br>Financing
             </a>

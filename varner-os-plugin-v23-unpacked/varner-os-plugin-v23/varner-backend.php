@@ -291,7 +291,39 @@ function varner_api_get_brands() {
 }
 
 function varner_api_save_list(string $param, string $option, WP_REST_Request $request) {
-    $items = array_values(array_unique(array_filter(array_map('sanitize_text_field', (array) $request->get_param($param)))));
+    $payload = $request->get_json_params();
+    if (!is_array($payload)) {
+        $payload = array();
+    }
+
+    // Full list save (preferred)
+    $raw_items = $request->get_param($param);
+
+    // Flexible fallbacks for legacy/single-item "Add" buttons
+    if (null === $raw_items) {
+        $singular = rtrim($param, 's');
+        foreach (array($singular, 'item', 'name', 'value') as $alt_key) {
+            if ($request->get_param($alt_key) !== null) {
+                $raw_items = $request->get_param($alt_key);
+                break;
+            }
+            if (array_key_exists($alt_key, $payload)) {
+                $raw_items = $payload[$alt_key];
+                break;
+            }
+        }
+    }
+
+    // If a single string is provided, append it to existing list instead of replacing everything
+    if (is_string($raw_items)) {
+        $existing = get_option($option, array());
+        if (!is_array($existing)) {
+            $existing = array();
+        }
+        $raw_items = array_merge($existing, array($raw_items));
+    }
+
+    $items = array_values(array_unique(array_filter(array_map('sanitize_text_field', (array) $raw_items))));
     sort($items);
     update_option($option, $items);
     return rest_ensure_response($items);

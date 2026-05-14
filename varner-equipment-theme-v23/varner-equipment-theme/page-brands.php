@@ -22,22 +22,44 @@ $brands = $wpdb->get_results(
     )
 );
 
-$brand_logos = array(
-    'Mahindra'        => 'Mahindra_white.png',
-    'Big Tex'         => 'BigTex_white.png',
-    'Deutz-Fahr'      => 'DuetzFahr_white.png',
-    'KRONE'           => 'KRONE_white.png',
-    'MacDon'          => 'MacDon_white.png',
-    'McHale'          => 'McHALE_white.png',
-    'ROXOR'           => 'ROXR_white.png',
-    'Titan Trailers'  => 'TitanTrailersMFG_white.png',
-    'Triton'          => 'Triton_white.png',
-    'TYM'             => 'TYM_white.png',
-    'Zetor'           => 'Zetor_white.png',
-    'CM Truck Beds'   => 'CMTruckbeds_white.png',
-);
+function varner_resolve_brand_logo( $brand_name ) {
+    $slug      = sanitize_title( $brand_name );
+    $flat_slug = preg_replace( '/[^a-z0-9]/i', '', strtolower( $brand_name ) );
 
-$assets_base = trailingslashit( get_template_directory_uri() ) . 'assets/';
+    // 1) Media library by title/slug
+    $candidates = array_filter( array( $slug, sanitize_title( $brand_name ) ) );
+    foreach ( array_unique( $candidates ) as $cand ) {
+        $found = get_posts( array(
+            'post_type'      => 'attachment',
+            'name'           => $cand,
+            'post_status'    => 'inherit',
+            'posts_per_page' => 1,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ) );
+        if ( $found ) {
+            return wp_get_attachment_image_url( $found[0]->ID, 'large' );
+        }
+    }
+
+    // 2) Theme assets with _white suffix
+    $asset_names = array_unique( array_filter( array(
+        $slug . '_white.png',
+        $slug . '-white.png',
+        str_replace( '-', '_', $slug ) . '_white.png',
+        $flat_slug ? $flat_slug . '_white.png' : '',
+    ) ) );
+    foreach ( $asset_names as $fname ) {
+        foreach ( array( '/assets/', '/images/' ) as $subdir ) {
+            $dir = get_template_directory() . $subdir . $fname;
+            if ( file_exists( $dir ) ) {
+                return get_template_directory_uri() . $subdir . $fname;
+            }
+        }
+    }
+
+    return '';
+}
 
 function varner_brand_featured_unit( $brand_slug ) {
     $args = array(
@@ -61,9 +83,12 @@ function varner_brand_featured_unit( $brand_slug ) {
     $stock_status   = get_field( 'stock_status', $post_id );
     $price          = get_field( 'price', $post_id );
     $call_for_price = get_field( 'call_for_price', $post_id );
-    $formatted_price = $call_for_price ? 'Call for Price' : ( is_numeric( $price ) ? '$' . number_format( $price ) : ( $price ?: '—' ) );
-    $images         = get_field( 'images', $post_id );
-    $image_url      = ( is_array( $images ) && ! empty( $images ) ) ? $images[0] : get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
+    $formatted_price = ( $call_for_price || $price === '' || $price === null )
+        ? 'Call For Price'
+        : ( is_numeric( $price ) ? 'USD $' . number_format( $price ) : (string) $price );
+
+    $card_images    = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
+    $image_url      = ! empty( $card_images ) ? $card_images[0] : get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
 
     $status_label = '';
     $status_color = '';
@@ -106,7 +131,7 @@ function varner_brand_featured_unit( $brand_slug ) {
     <div class="max-w-7xl mx-auto px-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <?php if ( $brands ) : foreach ( $brands as $brand ) :
             $brand_name = $brand->make;
-            $brand_logo = isset( $brand_logos[ $brand_name ] ) ? $assets_base . $brand_logos[ $brand_name ] : '';
+            $brand_logo = varner_resolve_brand_logo( $brand_name );
             $featured   = varner_brand_featured_unit( $brand_name );
             $filter_url = add_query_arg( 'make', rawurlencode( $brand_name ), home_url( '/inventory' ) );
         ?>
@@ -118,7 +143,7 @@ function varner_brand_featured_unit( $brand_slug ) {
                     <div class="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 mt-1"><?php echo intval( $brand->qty ); ?> Units</div>
                 </div>
                 <?php if ( $brand_logo ) : ?>
-                    <img src="<?php echo esc_url( $brand_logo ); ?>" alt="<?php echo esc_attr( $brand_name ); ?>" class="h-12 w-auto object-contain drop-shadow" />
+                    <img src="<?php echo esc_url( $brand_logo ); ?>" alt="<?php echo esc_attr( $brand_name ); ?>" class="h-12 md:h-14 max-w-[200px] w-auto object-contain drop-shadow" />
                 <?php endif; ?>
             </div>
 

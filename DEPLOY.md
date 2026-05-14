@@ -4,8 +4,11 @@
 
 ## Changelog
 
+### 2026-05-13
+- **Native Sidebar Consolidation**: Removed `facet-sidebar.php` and `filter-sidebar.php`. Created `inventory-sidebar.php` which combines native dual-range sliders with "Applied Filters" pill logic and auto-submission.
+- **Documentation Cleanup**: Removed FacetWP references from `SKILL.md` and `DEPLOY.md` to reflect the actual native implementation.
+
 ### 2026-05-07
-- **FacetWP Integration**: Replaced manual filtering sidebar with FacetWP AJAX facets. Includes search, category (hierarchical), manufacturer, condition, price slider, and year dropdown.
 - **Dynamic Inventory Segments**: Implemented custom rewrite rules for `/inventory/new`, `/inventory/used`, `/inventory/tractors`, `/inventory/trailers`, `/inventory/attachments`, `/inventory/hay-equipment`, and `/inventory/misc`.
 - **Segment SEO & Auto-filtering**: Logic added to `functions.php` via `varner_get_segment_seo()` to provide unique H1/Subheadings/Blurbs and automatic pre-filtering for each segment.
 - **Menu Restructuring**: Updated `header.php` main navigation and `index.php` category grid to link directly to the new optimized segments.

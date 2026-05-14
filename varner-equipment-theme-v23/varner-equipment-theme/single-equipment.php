@@ -4,12 +4,6 @@
  */
 get_header();
 
-if ( ! function_exists('get_field') ) {
-    echo "This theme requires Advanced Custom Fields (ACF) to function.";
-    get_footer();
-    return;
-}
-
 $post_id         = get_the_ID();
 $year            = get_field( 'year',         $post_id );
 $make            = get_field( 'make',         $post_id );
@@ -31,6 +25,13 @@ $images          = varner_get_card_images( $post_id );
 $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
 $title_text      = trim( "$year $make $model" ) ?: get_the_title();
 
+$finance_url = add_query_arg( array(
+    'price' => is_numeric( $price ) ? $price : '',
+    'term'  => 60,
+    'apr'   => 9.49,
+    'down'  => 10,
+), home_url( '/finance' ) );
+
 // Monthly payment — 10% APR, 60 months
 $monthly_payment = '';
 if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
@@ -40,7 +41,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 }
 ?>
 
-<section class="pt-36 pb-16 bg-slate-50 min-h-screen">
+<section class="pt-32 pb-24 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
 
         <!-- Breadcrumb -->
@@ -73,11 +74,27 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
             <!-- LEFT: Image Gallery -->
             <div class="w-full lg:w-[520px] shrink-0">
 
+                <?php $images_json = esc_attr( json_encode( $images ) ); ?>
+
                 <!-- Main image carousel -->
                 <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3" id="vne-detail-carousel">
+                    <?php $images_json = esc_attr( json_encode( $images ) ); ?>
+                    <?php foreach ( $images as $i => $img_url ) : ?>
+                    <button type="button"
+                            class="vne-slide vne-lightbox-trigger absolute inset-0 w-full h-full transition-opacity duration-300"
+                            style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>;"
+                            data-images="<?php echo $images_json; ?>"
+                            data-start="<?php echo esc_url( $img_url ); ?>"
+                            aria-label="View photo <?php echo $i + 1; ?>">
+                        <img src="<?php echo esc_url( $img_url ); ?>"
+                             alt="<?php echo esc_attr( $title_text ); ?>"
+                             loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
+                             class="w-full h-full object-cover">
+                    </button>
+                    <?php endforeach; ?>
                     <?php foreach ( $images as $i => $img_url ) : ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
-                         alt="<?php echo esc_attr( $title_text . ' for sale in Delta Colorado at Varner Equipment' ); ?>"
+                         alt="<?php echo esc_attr( $title_text ); ?>"
                          loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
                          class="vne-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                          style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>">
@@ -97,6 +114,14 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                         <?php echo esc_html( $condition ); ?>
                     </span>
                     <?php endif; ?>
+
+                    <button type="button"
+                            class="vne-lightbox-trigger absolute bottom-3 right-3 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 text-white text-[10px] font-black uppercase tracking-widest shadow hover:bg-black/80"
+                            data-images="<?php echo $images_json; ?>"
+                            data-start="<?php echo esc_url( $images[0] ?? '' ); ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l2-3h6l2 3h4v12H3Z"/><circle cx="12" cy="13" r="3"/></svg>
+                        View Photos
+                    </button>
                 </div>
 
                 <!-- Photos count -->
@@ -108,9 +133,11 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                 <?php if ( count( $images ) > 1 ) : ?>
                 <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;">
                     <?php foreach ( $images as $i => $img_url ) : ?>
-                    <button class="vne-thumb shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
+                    <button class="vne-thumb vne-lightbox-trigger shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
                             style="border-color:<?php echo $i === 0 ? 'rgb(220,38,38)' : 'rgb(226,232,240)'; ?>"
                             data-index="<?php echo $i; ?>"
+                            data-images="<?php echo $images_json; ?>"
+                            data-start="<?php echo esc_url( $img_url ); ?>"
                             aria-label="Photo <?php echo $i + 1; ?>">
                         <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy"
                              class="w-full h-full object-cover">
@@ -149,7 +176,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                     <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
                     <div class="flex items-center gap-2 mt-2 text-[12px] text-slate-500 font-bold flex-wrap">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
+                        <a href="<?php echo esc_url( $finance_url ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
                         <span class="text-slate-200">|</span>
                         <span>Payments as low as <strong class="text-slate-700">USD $<?php echo number_format( $monthly_payment, 2 ); ?>*</strong></span>
                     </div>
@@ -259,42 +286,6 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
             </p>
         </div>
 
-        <!-- ── RELATED EQUIPMENT ──────────────────────────────── -->
-        <?php
-        $related_args = array(
-            'post_type'      => 'equipment',
-            'posts_per_page' => 4,
-            'post__not_in'   => array($post_id),
-            'meta_query'     => array(
-                array(
-                    'key'   => 'category',
-                    'value' => $category,
-                ),
-            ),
-        );
-        $related_query = new WP_Query($related_args);
-
-        if ($related_query->have_posts()) : ?>
-            <div class="mt-20 border-t border-slate-200 pt-16">
-                <div class="flex items-end justify-between mb-10">
-                    <div>
-                        <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none mb-3">Similar Units</h2>
-                        <p class="text-red-600 text-[11px] font-black uppercase tracking-[0.2em]">Recommended for your operation</p>
-                    </div>
-                    <a href="<?php echo esc_url(home_url('/inventory')); ?>" class="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors">
-                        Explore Full Yard
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    </a>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <?php while ($related_query->have_posts()) : $related_query->the_post(); ?>
-                        <?php varner_include_equipment_card(get_the_ID()); ?>
-                    <?php endwhile; wp_reset_postdata(); ?>
-                </div>
-            </div>
-        <?php endif; ?>
-
     </div><!-- /max-w-7xl -->
 </section>
 
@@ -308,6 +299,8 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     var next   = wrap.querySelector('.vne-next');
     if (slides.length <= 1) return;
     var cur = 0;
+    var timer;
+    var intervalMs = 3000;
 
     function go(i) {
         slides[cur].style.opacity = '0';
@@ -319,17 +312,32 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
         if (thumbs[cur]) thumbs[cur].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
-    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { go(i); }); });
-    if (prev) prev.addEventListener('click', function () { go(cur - 1); });
-    if (next) next.addEventListener('click', function () { go(cur + 1); });
+    function startTimer() {
+        stopTimer();
+        timer = setInterval(function() { go(cur + 1); }, intervalMs);
+    }
+
+    function stopTimer() {
+        if (timer) clearInterval(timer);
+        timer = null;
+    }
+
+    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { go(i); startTimer(); }); });
+    if (prev) prev.addEventListener('click', function () { go(cur - 1); startTimer(); });
+    if (next) next.addEventListener('click', function () { go(cur + 1); startTimer(); });
 
     // Swipe support
     var startX = 0;
     wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
     wrap.addEventListener('touchend',   function (e) {
         var dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) go(dx < 0 ? cur + 1 : cur - 1);
+        if (Math.abs(dx) > 40) { go(dx < 0 ? cur + 1 : cur - 1); startTimer(); }
     }, { passive: true });
+
+    wrap.addEventListener('mouseenter', stopTimer);
+    wrap.addEventListener('mouseleave', startTimer);
+
+    startTimer();
 })();
 </script>
 
