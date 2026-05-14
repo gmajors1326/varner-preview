@@ -3,6 +3,57 @@
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <?php
+    // Dynamic SEO Logic
+    $seo_description = "Varner Equipment - Colorado's premier dealer for Mahindra tractors, Big Tex trailers, and heavy equipment. Quality machines for agricultural and industrial operations in Delta, CO.";
+    $seo_keywords = "Mahindra tractors, Big Tex trailers, Deutz-Fahr, heavy equipment Colorado, farm equipment Delta CO, trailers for sale, agricultural machinery";
+    $og_title = get_bloginfo('name');
+    $og_url = home_url(add_query_arg(null, null));
+    $og_image = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
+    $og_type = 'website';
+
+    if (is_singular('equipment')) {
+        $post_id = get_the_ID();
+        $year = get_field('year', $post_id);
+        $make = get_field('make', $post_id);
+        $model = get_field('model', $post_id);
+        $cat = get_field('category', $post_id);
+        $seo_description = "View details for this $year $make $model $cat at Varner Equipment. Your trusted source for high-performance heavy equipment in Delta, Colorado.";
+        $seo_keywords = "$make $model, $cat for sale, Varner Equipment inventory, $make dealer Colorado";
+        $og_title = "$year $make $model | Varner Equipment";
+        $og_type = 'product';
+        $images = varner_get_card_images($post_id);
+        if (!empty($images)) $og_image = $images[0];
+    } elseif (is_page_template('page-equipment-listing.php')) {
+        $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
+        $seo = function_exists('varner_get_segment_seo') ? varner_get_segment_seo($slug) : null;
+        if ($seo) {
+            $seo_description = $seo['sub'] . " Browse our live inventory at Varner Equipment.";
+            $og_title = $seo['h1'] . " | Varner Equipment";
+        }
+    }
+    ?>
+
+    <meta name="description" content="<?php echo esc_attr($seo_description); ?>">
+    <meta name="keywords" content="<?php echo esc_attr($seo_keywords); ?>">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="<?php echo esc_attr($og_type); ?>">
+    <meta property="og:url" content="<?php echo esc_url($og_url); ?>">
+    <meta property="og:title" content="<?php echo esc_attr($og_title); ?>">
+    <meta property="og:description" content="<?php echo esc_attr($seo_description); ?>">
+    <meta property="og:image" content="<?php echo esc_url($og_image); ?>">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<?php echo esc_url($og_url); ?>">
+    <meta property="twitter:title" content="<?php echo esc_attr($og_title); ?>">
+    <meta property="twitter:description" content="<?php echo esc_attr($seo_description); ?>">
+    <meta property="twitter:image" content="<?php echo esc_url($og_image); ?>">
+
+    <link rel="canonical" href="<?php echo esc_url($og_url); ?>">
+
     <?php wp_head(); ?>
 </head>
 <body <?php body_class('bg-white text-slate-900 selection:bg-red-100 selection:text-red-600'); ?>>

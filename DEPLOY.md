@@ -62,11 +62,12 @@ Copy-Item '.\varner-equipment-theme-v23\varner-equipment-theme\functions.php'  '
 
 # Full ZIP
 if (Test-Path '.\varner-equipment-theme-v23.zip') { Remove-Item '.\varner-equipment-theme-v23.zip' -Force }
-Compress-Archive -Path '.\varner-equipment-theme-v23\varner-v23' -DestinationPath '.\varner-equipment-theme-v23.zip' -Force
+# Using tar ensures forward slashes for Linux compatibility
+cmd /c "cd varner-equipment-theme-v23 && tar -a -c -f ../varner-equipment-theme-v23.zip varner-v23"
 
 # Lite ZIP
 if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
-Compress-Archive -Path '.\varner-equipment-theme-lite\varner-lite' -DestinationPath '.\varner-equipment-theme-v23-lite.zip' -Force
+cmd /c "cd varner-equipment-theme-lite && tar -a -c -f ../varner-equipment-theme-v23-lite.zip varner-lite"
 ```
 
 ## Plugin React Build (when src/App.jsx changes)

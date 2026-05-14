@@ -140,6 +140,21 @@
                         'Mahindra_white.png' => 'mahindra', 
                         'McHALE_white.png' => 'mchale',
                         'ROXR_white.png' => 'roxr',
+                    <?php 
+                    $uploads = wp_get_upload_dir();
+                    $upload_base = $uploads['baseurl'] . $uploads['subdir'];
+                    $theme_base = get_template_directory_uri() . '/assets/';
+                    $theme_path_base = get_template_directory() . '/assets/';
+
+                    $logos = array(
+                        'BigTex_white.png' => 'big-tex',
+                        'CMTruckbeds_white.png' => 'cm-truck-beds',
+                        'DuetzFahr_white.png' => 'deutz-fahr', 
+                        'KRONE_white.png' => 'krone',
+                        'MacDon_white.png' => 'macdon',
+                        'Mahindra_white.png' => 'mahindra', 
+                        'McHALE_white.png' => 'mchale',
+                        'ROXR_white.png' => 'roxr',
                         'TitanTrailersMFG_white.png' => 'titan-mfg', 
                         'Triton_white.png' => 'triton',
                         'TYM_white.png' => 'tym',
@@ -151,9 +166,11 @@
                         $logo_path = $theme_path_base . $logo;
                         $logo_url = file_exists($logo_path) ? ($theme_base . $logo) : ($upload_base . '/' . $logo);
                         $logo_version = file_exists($logo_path) ? filemtime($logo_path) : time();
+                        $brand_name = str_replace(['_white.png', 'MFG_white.png'], '', $logo);
+                        $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
                         echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
                             . '</a>';
                     }
                     ?>
@@ -165,9 +182,11 @@
                         $logo_path = $theme_path_base . $logo;
                         $logo_url = file_exists($logo_path) ? ($theme_base . $logo) : ($upload_base . '/' . $logo);
                         $logo_version = file_exists($logo_path) ? filemtime($logo_path) : time();
+                        $brand_name = str_replace(['_white.png', 'MFG_white.png'], '', $logo);
+                        $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
                         echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
                             . '</a>';
                     }
                     ?>
