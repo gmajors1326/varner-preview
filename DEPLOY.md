@@ -49,8 +49,8 @@
 ### Source folders
 | ZIP | Source folder |
 |-----|--------------|
-| `varner-equipment-theme-v23.zip` | `varner-equipment-theme-v23/varner-equipment-theme/` |
-| `varner-equipment-theme-v23-lite.zip` | `varner-equipment-theme-lite/varner-equipment-theme/` |
+| `varner-equipment-theme-v23.zip` | `varner-equipment-theme-v23/varner-v23/` |
+| `varner-equipment-theme-v23-lite.zip` | `varner-equipment-theme-lite/varner-lite/` |
 
 ### Rebuild both ZIPs (run from project root)
 
@@ -62,11 +62,11 @@ Copy-Item '.\varner-equipment-theme-v23\varner-equipment-theme\functions.php'  '
 
 # Full ZIP
 if (Test-Path '.\varner-equipment-theme-v23.zip') { Remove-Item '.\varner-equipment-theme-v23.zip' -Force }
-Compress-Archive -Path '.\varner-equipment-theme-v23\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23.zip' -Force
+Compress-Archive -Path '.\varner-equipment-theme-v23\varner-v23' -DestinationPath '.\varner-equipment-theme-v23.zip' -Force
 
 # Lite ZIP
 if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
-Compress-Archive -Path '.\varner-equipment-theme-lite\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23-lite.zip' -Force
+Compress-Archive -Path '.\varner-equipment-theme-lite\varner-lite' -DestinationPath '.\varner-equipment-theme-v23-lite.zip' -Force
 ```
 
 ## Plugin React Build (when src/App.jsx changes)

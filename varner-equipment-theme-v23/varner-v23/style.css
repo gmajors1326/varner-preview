@@ -1,8 +1,16 @@
 /*
 Theme Name: Varner Equipment v23
-Description: High-performance, industrial-calm storefront for Varner Equipment. Version 1.23.0
+Theme URI: https://varnerequipment.com
 Author: hwy559.com
-Version: 1.23.0
+Author URI: https://hwy559.com
+Description: High-performance, industrial-calm storefront for Varner Equipment. Optimized for v23 OS.
+Version: 1.23.1
+Requires at least: 5.4
+Tested up to: 6.4
+Requires PHP: 7.4
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: varner
 */
 
 body {
