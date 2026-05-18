@@ -1,0 +1,29 @@
+{
+  "key": "group_varner_videos",
+  "title": "Video Details",
+  "fields": [
+    {
+      "key": "field_youtube_link",
+      "label": "YouTube Link",
+      "name": "youtube_link",
+      "type": "oembed",
+      "required": 1
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "post_type",
+        "operator": "==",
+        "value": "video"
+      }
+    ]
+  ],
+  "menu_order": 0,
+  "position": "normal",
+  "style": "default",
+  "label_placement": "top",
+  "instruction_placement": "label",
+  "active": true,
+  "description": "Content for the Video custom post type"
+}

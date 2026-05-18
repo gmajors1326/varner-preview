@@ -1,7 +1,15 @@
-<?php get_header(); ?>
+<?php 
+    get_header();
+    $h_headline_main   = get_field('hero_headline_main') ?: 'Beyond the';
+    $h_headline_accent = get_field('hero_headline_accent') ?: 'Standard.';
+    $h_subline         = get_field('hero_subheadline') ?: "Colorado's premier destination for high-performance new and used farm equipment. Authorized dealer for Mahindra, Big Tex, Deutz-Fahr, and dozens of other world-class agricultural and construction brands.";
+    $h_btn_1           = get_field('hero_button_1_text') ?: 'Shop Inventory';
+    $h_btn_2           = get_field('hero_button_2_text') ?: 'Book Service';
+    $h_btn_3           = get_field('hero_button_3_text') ?: 'Order Parts';
+?>
 
     <!-- HERO SECTION -->
-    <section id="hero-parallax" class="relative h-[85vh] bg-slate-950 flex items-center overflow-hidden">
+    <section id="hero-parallax" class="relative min-h-[85vh] lg:h-[85vh] bg-slate-950 flex flex-col justify-center overflow-hidden pb-32 lg:pb-0">
         <div id="hero-parallax-media" class="absolute inset-0 z-0">
             <div class="absolute inset-0 w-full h-full scale-105">
                 <!-- CINEMATIC VIDEO BACKGROUND -->
@@ -14,35 +22,38 @@
             </div>
         </div>
 
-        <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pb-12">
+        <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 pb-12">
             <div class="max-w-3xl space-y-8">
-                <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl">
-                    Beyond the <br />
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600">Standard.</span>
+                <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
+                    <?php echo $h_headline_main; ?> <br />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600 reveal-on-scroll delay-200 inline-block"><?php echo $h_headline_accent; ?></span>
                 </h1>
-                <p class="text-xl text-slate-200 font-bold max-w-xl leading-relaxed drop-shadow-md">
-                    Colorado's high-performance source for Mahindra, Big Tex, and Deutz-Fahr. 
+                <p class="text-xl text-slate-200 font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300">
+                    <?php echo esc_html($h_subline); ?>
                 </p>
-                <div class="flex flex-col sm:flex-row gap-4 pt-6 items-start">
-                    <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="relative z-50 bg-white text-slate-900 px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
-                        Shop Inventory
+                <div class="grid grid-cols-2 sm:flex sm:flex-row flex-wrap gap-3 sm:gap-4 pt-6 items-start">
+                    <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
+                        <?php echo esc_html($h_btn_1); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all">
-                        Book Service
+                    <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-500">
+                        <?php echo esc_html($h_btn_2); ?>
+                    </a>
+                    <a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="hidden sm:inline-block relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
+                        <?php echo esc_html($h_btn_3); ?>
                     </a>
                 </div>
             </div>
         </div>
 
         <!-- QUICK SEARCH UTILITY (Bottom of Hero) -->
-        <div class="absolute bottom-12 left-0 right-0 z-30">
-            <div class="max-w-7xl mx-auto px-4">
-                <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-2 border-slate-100 flex flex-col lg:flex-row gap-3 items-center">
+        <div class="relative lg:absolute bottom-0 lg:bottom-12 left-0 right-0 z-30 reveal-on-scroll delay-1000 mt-8 lg:mt-0 w-full">
+            <div class="max-w-7xl mx-auto px-4 py-6 lg:py-0">
+                <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/30 flex flex-col lg:flex-row gap-3 items-center">
                     <div class="flex-1 w-full">
-                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-[30px] px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
+                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-[30px] px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
                     </div>
                     <div class="w-full lg:w-40">
-                        <select id="hero-search-category" name="category[]" class="w-full h-[30px] px-3 bg-slate-50 rounded-lg font-black uppercase text-[10px] tracking-widest border border-transparent outline-none cursor-pointer">
+                        <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-[30px] px-3 bg-slate-50 rounded-lg font-black uppercase text-[10px] tracking-widest border border-transparent outline-none cursor-pointer">
                             <option value="" disabled selected hidden>Select Type</option>
                             <option value="all">All Types</option>
                             <option value="__new__">New</option>
@@ -53,7 +64,7 @@
                             <option value="Hay Equipment">Hay Equipment</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-full lg:w-auto h-[30px] bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">
+                    <button type="submit" class="w-full lg:w-auto h-12 lg:h-[30px] bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">
                         Find Machines
                     </button>
                 </form>
@@ -122,8 +133,8 @@
 
     <!-- BRAND TICKER -->
     <section class="bg-white py-0">
-        <div class="w-full h-[50px] sm:h-[100px] md:h-[140px] bg-red-600 flex items-center relative overflow-hidden">
-            <div class="flex animate-[scroll_70s_linear_infinite] hover:[animation-play-state:paused] w-max will-change-transform">
+        <div class="w-full h-auto min-h-[80px] sm:min-h-[120px] md:min-h-[160px] bg-red-600 flex items-center relative overflow-hidden py-[20px]">
+            <div class="flex hover:[animation-play-state:paused] w-max will-change-transform" style="animation: scroll 35s linear infinite;">
                 <div class="flex items-center shrink-0">
                     <?php 
                     $uploads = wp_get_upload_dir();
@@ -184,7 +195,7 @@
     </section>
 
     <!-- SUPPORT HUB BAR (Under Hero) -->
-    <section class="py-12 bg-white relative z-20 overflow-hidden">
+    <section class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
                 <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
@@ -221,11 +232,11 @@
     </section>
 
     <!-- CATEGORY GRID -->
-    <section class="pt-32 pb-24 bg-slate-100">
+    <section class="pt-32 pb-24 bg-slate-100 reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
-                    <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Operations Segments</div>
+                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Operations Segments</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Browse by Category</h2>
                 </div>
                 <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
@@ -277,11 +288,11 @@
                 array('label' => 'Hay Equipment', 'icon' => 'VE_Hay_Icon.png', 'meta' => $hay_count . ' Units', 'url' => home_url('/inventory/hay-equipment')),
             );
             ?>
-            <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-6 lg:gap-6 lg:overflow-visible lg:pb-0">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
                 <?php foreach ( $browse_cards as $card ) : ?>
-                    <a href="<?php echo esc_url( $card['url'] ); ?>" class="flex flex-col items-center justify-start gap-3 text-slate-900 snap-start shrink-0 lg:shrink group">
-                        <div class="w-[200px] h-[200px] rounded-2xl bg-white border border-slate-200 shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden">
-                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[180px] h-[180px] object-contain" loading="lazy" decoding="async" />
+                    <a href="<?php echo esc_url( $card['url'] ); ?>" class="flex flex-col items-center justify-start gap-3 text-slate-900 group">
+                        <div class="w-full aspect-square max-w-[200px] mx-auto rounded-2xl bg-white border border-slate-200 shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden">
+                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[85%] h-[85%] object-contain" loading="lazy" decoding="async" />
                         </div>
                         <div class="text-center flex flex-col items-center">
                             <div class="font-black text-2xl uppercase tracking-tighter leading-tight group-hover:text-red-600 transition-colors"><?php echo esc_html( $card['label'] ); ?></div>
@@ -300,9 +311,9 @@
             // Removed Live Inventory Pulse block per request
             ?>
 
-            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
-                    <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Live Inventory Ledger</div>
+                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Hand-Picked Inventory Ledger</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Featured Inventory</h2>
                 </div>
                 <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>

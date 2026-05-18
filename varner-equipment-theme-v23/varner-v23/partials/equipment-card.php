@@ -37,7 +37,7 @@ $finance_url    = add_query_arg( array(
 ), home_url( '/finance' ) );
 ?>
 
-<div class="vne-card bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md flex flex-col hover:shadow-xl hover:border-red-200 transition-all duration-300 h-full">
+<div class="vne-card bg-white/90 backdrop-blur-md rounded-2xl overflow-hidden border border-white/50 shadow-md flex flex-col hover:shadow-2xl hover:border-red-500/20 transition-all duration-300 h-full">
 
     <!-- ── IMAGE CAROUSEL ─────────────────────────────────── -->
     <div class="vne-carousel-wrap relative group/carousel" id="<?php echo esc_attr( $uid ); ?>">

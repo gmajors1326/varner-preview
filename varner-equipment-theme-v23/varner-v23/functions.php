@@ -24,6 +24,20 @@ if ( ! function_exists( 'have_rows' ) ) {
 }
 
 /**
+ * Register ACF Options Page for Global Settings
+ */
+if( function_exists('acf_add_options_page') ) {
+    acf_add_options_page(array(
+        'page_title'    => 'Varner Site Settings',
+        'menu_title'    => 'Site Settings',
+        'menu_slug'     => 'varner-site-settings',
+        'capability'    => 'edit_posts',
+        'redirect'      => false,
+        'icon_url'      => 'dashicons-admin-generic',
+    ));
+}
+
+/**
  * Enqueue scripts and styles.
  */
 function varner_theme_scripts() {
@@ -627,3 +641,148 @@ add_action( 'wp_footer', function () {
 </script>
     <?php
 } );
+
+/**
+ * Render Breadcrumbs for the current page.
+ */
+function varner_render_breadcrumbs() {
+    if ( is_front_page() ) return; // No breadcrumbs on home
+
+    echo '<div class="bg-white border-b border-slate-100">';
+    echo '<div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">';
+    
+    echo '<nav class="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 flex-wrap">';
+    echo '<a href="' . esc_url( home_url( '/' ) ) . '" class="hover:text-red-600 transition-colors">Home</a>';
+
+    $request_uri = $_SERVER['REQUEST_URI'];
+
+    if ( is_singular('equipment') ) {
+        echo '<span>›</span>';
+        echo '<a href="' . esc_url( home_url( '/inventory/all-units' ) ) . '" class="hover:text-red-600 transition-colors">Inventory</a>';
+        
+        $category = get_field('category');
+        if ( $category ) {
+            echo '<span>›</span>';
+            $cat_slug = sanitize_title($category);
+            echo '<a href="' . esc_url( home_url( '/inventory/' . $cat_slug ) ) . '" class="hover:text-red-600 transition-colors">' . esc_html( $category ) . '</a>';
+        }
+
+        echo '<span>›</span>';
+        echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+
+    } elseif ( strpos($request_uri, '/brands/') !== false ) {
+        echo '<span>›</span>';
+        echo '<a href="' . esc_url( home_url( '/brands' ) ) . '" class="hover:text-red-600 transition-colors">Brands</a>';
+        echo '<span>›</span>';
+        echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+
+    } elseif ( is_page() ) {
+        // Special case for equipment listing pages
+        $slug = get_query_var('inventory_segment');
+        if ( $slug && $slug !== 'all-units' ) {
+            echo '<span>›</span>';
+            echo '<a href="' . esc_url( home_url( '/inventory/all-units' ) ) . '" class="hover:text-red-600 transition-colors">Inventory</a>';
+        }
+
+        $post = get_post();
+        if ( $post && $post->post_parent ) {
+            $parent_id   = $post->post_parent;
+            $breadcrumbs = array();
+            while ( $parent_id ) {
+                $page = get_page( $parent_id );
+                $breadcrumbs[] = '<a href="' . get_permalink( $page->ID ) . '" class="hover:text-red-600 transition-colors">' . get_the_title( $page->ID ) . '</a>';
+                $parent_id  = $page->post_parent;
+            }
+            $breadcrumbs = array_reverse( $breadcrumbs );
+            foreach ( $breadcrumbs as $crumb ) {
+                echo '<span>›</span>';
+                echo $crumb;
+            }
+        }
+        echo '<span>›</span>';
+        echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+
+    } elseif ( is_search() ) {
+        echo '<span>›</span>';
+        echo '<span class="text-slate-900">Search Results</span>';
+    } elseif ( is_404() ) {
+        echo '<span>›</span>';
+        echo '<span class="text-slate-900">404 - Not Found</span>';
+    }
+
+    echo '</nav>';
+
+    echo '</div>';
+    echo '</div>';
+}
+
+/**
+ * Register Video Custom Post Type and Taxonomy
+ */
+function varner_register_video_cpt() {
+    $labels = array(
+        "name" => __( "Videos", "varner-v23" ),
+        "singular_name" => __( "Video", "varner-v23" ),
+        "menu_name" => __( "Videos", "varner-v23" ),
+        "all_items" => __( "All Videos", "varner-v23" ),
+        "add_new" => __( "Add New Video", "varner-v23" ),
+        "add_new_item" => __( "Add New Video", "varner-v23" ),
+        "edit_item" => __( "Edit Video", "varner-v23" ),
+        "new_item" => __( "New Video", "varner-v23" ),
+        "view_item" => __( "View Video", "varner-v23" ),
+        "search_items" => __( "Search Videos", "varner-v23" ),
+        "not_found" => __( "No Videos Found", "varner-v23" ),
+    );
+
+    $args = array(
+        "label" => __( "Videos", "varner-v23" ),
+        "labels" => $labels,
+        "description" => "",
+        "public" => true,
+        "publicly_queryable" => true,
+        "show_ui" => true,
+        "show_in_rest" => true,
+        "rest_base" => "",
+        "rest_controller_class" => "WP_REST_Posts_Controller",
+        "has_archive" => false,
+        "show_in_menu" => true,
+        "show_in_nav_menus" => true,
+        "delete_with_user" => false,
+        "exclude_from_search" => false,
+        "capability_type" => "post",
+        "map_meta_cap" => true,
+        "hierarchical" => false,
+        "rewrite" => array( "slug" => "video", "with_front" => true ),
+        "query_var" => true,
+        "menu_icon" => "dashicons-video-alt3",
+        "supports" => array( "title" ),
+    );
+
+    register_post_type( "video", $args );
+
+    $tax_labels = array(
+        "name" => __( "Video Categories", "varner-v23" ),
+        "singular_name" => __( "Video Category", "varner-v23" ),
+    );
+
+    $tax_args = array(
+        "label" => __( "Video Categories", "varner-v23" ),
+        "labels" => $tax_labels,
+        "public" => true,
+        "publicly_queryable" => true,
+        "hierarchical" => true,
+        "show_ui" => true,
+        "show_in_menu" => true,
+        "show_in_nav_menus" => true,
+        "query_var" => true,
+        "rewrite" => array( "slug" => "video_category", "with_front" => true ),
+        "show_admin_column" => true,
+        "show_in_rest" => true,
+        "rest_base" => "video_category",
+        "rest_controller_class" => "WP_REST_Terms_Controller",
+        "show_in_quick_edit" => false,
+    );
+    register_taxonomy( "video_category", array( "video" ), $tax_args );
+}
+add_action( "init", "varner_register_video_cpt" );
+

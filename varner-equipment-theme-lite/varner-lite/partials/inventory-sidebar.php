@@ -64,123 +64,135 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
         </div>
         <?php endif; ?>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-            <form method="get" action="" id="varner-inventory-filter-form" class="space-y-8">
-                
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
-                    <div class="space-y-2">
-                        <input type="text" name="s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
-                        <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
-                    </div>
-                </div>
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <!-- Mobile Toggle -->
+            <button type="button" id="vne-mobile-filter-toggle" class="w-full lg:hidden flex justify-between items-center p-5 bg-slate-50 border-b border-slate-200 text-slate-900 font-black uppercase tracking-widest text-[10px]">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Search & Filter Inventory
+                </span>
+                <svg id="vne-mobile-filter-icon" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
 
-                <div class="grid grid-cols-2 gap-3">
+            <!-- Filter Content -->
+            <div id="vne-mobile-filter-content" class="hidden lg:block p-6 space-y-8">
+                <form method="get" action="" id="varner-inventory-filter-form" class="space-y-8">
+                    
                     <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Stock #</h3>
-                        <input type="text" name="stock_number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
+                        <div class="space-y-2">
+                            <input type="text" name="s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
+                            <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
+                        </div>
                     </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Stock #</h3>
+                            <input type="text" name="stock_number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                        </div>
+                        <div>
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">VIN / Serial</h3>
+                            <input type="text" name="vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                        </div>
+                    </div>
+
                     <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">VIN / Serial</h3>
-                        <input type="text" name="vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</h3>
+                        <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+                            <?php foreach ( $fallback_categories as $cat_key => $cat_obj ) : ?>
+                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <span class="flex items-center gap-2">
+                                        <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" />
+                                        <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
+                                    </span>
+                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($cat_obj->cnt); ?>)</span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</h3>
-                    <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
-                        <?php foreach ( $fallback_categories as $cat_key => $cat_obj ) : ?>
-                            <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                <span class="flex items-center gap-2">
-                                    <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" />
-                                    <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
-                                </span>
-                                <span class="text-[9px] font-black text-slate-400">(<?php echo intval($cat_obj->cnt); ?>)</span>
-                            </label>
-                        <?php endforeach; ?>
+                    <div>
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</h3>
+                        <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+                            <?php foreach ( $fallback_makes as $make_key => $make_obj ) : ?>
+                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <span class="flex items-center gap-2">
+                                        <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" />
+                                        <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
+                                    </span>
+                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($make_obj->cnt); ?>)</span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</h3>
-                    <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
-                        <?php foreach ( $fallback_makes as $make_key => $make_obj ) : ?>
-                            <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                <span class="flex items-center gap-2">
-                                    <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" />
-                                    <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
-                                </span>
-                                <span class="text-[9px] font-black text-slate-400">(<?php echo intval($make_obj->cnt); ?>)</span>
-                            </label>
-                        <?php endforeach; ?>
+                    <?php if ( $facet_show_condition ) : ?>
+                    <div>
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</h3>
+                        <div class="flex gap-2">
+                            <?php 
+                            $conditions_to_show = array('New', 'Used');
+                            foreach ( $conditions_to_show as $cond_key ) : 
+                                $is_checked = in_array( $cond_key, $selected_condition, true );
+                                $exists = isset($fallback_conditions[$cond_key]);
+                            ?>
+                                <label class="flex-1 text-center cursor-pointer group">
+                                    <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" />
+                                    <div class="v-cond-btn py-2 rounded-xl border <?php echo $is_checked ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
+                                        <?php echo esc_html( $cond_key ); ?>
+                                    </div>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if ( empty($fallback_conditions) ) : ?>
+                            <p class="mt-2 text-[9px] font-bold text-red-600">No condition data found in inventory.</p>
+                        <?php endif; ?>
                     </div>
-                </div>
-
-                <?php if ( $facet_show_condition ) : ?>
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</h3>
-                    <div class="flex gap-2">
-                        <?php 
-                        $conditions_to_show = array('New', 'Used');
-                        foreach ( $conditions_to_show as $cond_key ) : 
-                            $is_checked = in_array( $cond_key, $selected_condition, true );
-                            $exists = isset($fallback_conditions[$cond_key]);
-                        ?>
-                            <label class="flex-1 text-center cursor-pointer group">
-                                <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" />
-                                <div class="v-cond-btn py-2 rounded-xl border <?php echo $is_checked ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
-                                    <?php echo esc_html( $cond_key ); ?>
-                                </div>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php if ( empty($fallback_conditions) ) : ?>
-                        <p class="mt-2 text-[9px] font-bold text-red-600">No condition data found in inventory.</p>
                     <?php endif; ?>
-                </div>
-                <?php endif; ?>
 
-                <div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
-                        <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_price_display"></span>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="flex gap-2 items-center">
-                            <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                            <span class="text-slate-300">-</span>
-                            <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
+                            <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_price_display"></span>
                         </div>
-                        <div class="relative h-1 bg-slate-100 rounded-full">
-                            <input id="<?php echo $uid; ?>_price_range_min" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_min_value !== '' ? $price_min_value : $price_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                            <input id="<?php echo $uid; ?>_price_range_max" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_max_value !== '' ? $price_max_value : $price_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Year</h3>
-                        <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_year_display"></span>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="flex gap-2 items-center">
-                            <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                            <span class="text-slate-300">-</span>
-                            <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                        </div>
-                        <div class="relative h-1 bg-slate-100 rounded-full">
-                            <input id="<?php echo $uid; ?>_year_range_min" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_min_value !== '' ? $year_min_value : $year_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                            <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                        <div class="space-y-4">
+                            <div class="flex gap-2 items-center">
+                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <span class="text-slate-300">-</span>
+                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                            </div>
+                            <div class="relative h-1 bg-slate-100 rounded-full">
+                                <input id="<?php echo $uid; ?>_price_range_min" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_min_value !== '' ? $price_min_value : $price_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                                <input id="<?php echo $uid; ?>_price_range_max" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_max_value !== '' ? $price_max_value : $price_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="pt-4 border-t border-slate-100">
-                    <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">Apply Filters</button>
-                </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Year</h3>
+                            <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_year_display"></span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex gap-2 items-center">
+                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <span class="text-slate-300">-</span>
+                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                            </div>
+                            <div class="relative h-1 bg-slate-100 rounded-full">
+                                <input id="<?php echo $uid; ?>_year_range_min" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_min_value !== '' ? $year_min_value : $year_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                                <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                            </div>
+                        </div>
+                    </div>
 
-            </form>
+                    <div class="pt-4 border-t border-slate-100">
+                        <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">Apply Filters</button>
+                    </div>
+
+                </form>
+            </div>
         </div>
     </div>
 </aside>
@@ -235,6 +247,21 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
         }
       });
     });
+
+    // Mobile filter accordion toggle
+    var filterToggle = document.getElementById('vne-mobile-filter-toggle');
+    var filterContent = document.getElementById('vne-mobile-filter-content');
+    var filterIcon = document.getElementById('vne-mobile-filter-icon');
+    if (filterToggle && filterContent && filterIcon) {
+      filterToggle.addEventListener('click', function() {
+        filterContent.classList.toggle('hidden');
+        if (filterContent.classList.contains('hidden')) {
+          filterIcon.style.transform = 'rotate(0deg)';
+        } else {
+          filterIcon.style.transform = 'rotate(180deg)';
+        }
+      });
+    }
   });
 })();
 </script>

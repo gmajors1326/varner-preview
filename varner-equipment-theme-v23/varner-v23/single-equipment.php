@@ -44,22 +44,6 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 <section class="pt-32 pb-24 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
 
-        <!-- Breadcrumb -->
-        <nav class="mb-4 text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 flex-wrap">
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="hover:text-red-600 transition-colors">Home</a>
-            <span>›</span>
-            <a href="<?php echo esc_url( home_url( '/inventory' ) ); ?>" class="hover:text-red-600 transition-colors">Inventory</a>
-            <?php if ( $category ) : ?>
-            <span>›</span>
-            <span class="text-slate-600"><?php echo esc_html( $category ); ?></span>
-            <?php endif; ?>
-            <?php if ( $make ) : ?>
-            <span>›</span>
-            <span class="text-slate-600"><?php echo esc_html( $make ); ?></span>
-            <?php endif; ?>
-            <span>›</span>
-            <span class="text-slate-900"><?php echo esc_html( $title_text ); ?></span>
-        </nav>
 
         <!-- Back link -->
         <a href="javascript:history.back()"
@@ -155,12 +139,30 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                     <?php if ( $make ) : ?>
                     <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
                     <?php endif; ?>
-                    <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight">
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight mb-2">
                         <?php echo esc_html( $title_text ); ?>
                     </h1>
-                    <?php if ( $category ) : ?>
-                    <p class="text-red-600 text-[11px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></p>
-                    <?php endif; ?>
+                    
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <?php if ( $category ) : ?>
+                        <p class="text-red-600 text-[11px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></p>
+                        <?php endif; ?>
+
+                        <!-- UTILITY BUTTONS (PRINT & SHARE) -->
+                        <div class="flex items-center gap-3 shrink-0">
+                            <!-- Print Button -->
+                            <button onclick="window.print()" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-white transition-all bg-white hover:bg-red-600 px-4 py-2.5 rounded-xl border-2 border-red-100 hover:border-red-600 shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                Print
+                            </button>
+                            
+                            <!-- Share Button -->
+                            <button onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href})}else{alert('Link copied: '+window.location.href);navigator.clipboard.writeText(window.location.href);}" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-white transition-all bg-white hover:bg-red-600 px-4 py-2.5 rounded-xl border-2 border-red-100 hover:border-red-600 shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                                Share
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Price -->
@@ -299,9 +301,6 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     var next   = wrap.querySelector('.vne-next');
     if (slides.length <= 1) return;
     var cur = 0;
-    var timer;
-    var intervalMs = 3000;
-
     function go(i) {
         slides[cur].style.opacity = '0';
         if (thumbs[cur]) thumbs[cur].style.borderColor = 'rgb(226,232,240)';
@@ -312,32 +311,17 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
         if (thumbs[cur]) thumbs[cur].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
-    function startTimer() {
-        stopTimer();
-        timer = setInterval(function() { go(cur + 1); }, intervalMs);
-    }
-
-    function stopTimer() {
-        if (timer) clearInterval(timer);
-        timer = null;
-    }
-
-    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { go(i); startTimer(); }); });
-    if (prev) prev.addEventListener('click', function () { go(cur - 1); startTimer(); });
-    if (next) next.addEventListener('click', function () { go(cur + 1); startTimer(); });
+    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { go(i); }); });
+    if (prev) prev.addEventListener('click', function () { go(cur - 1); });
+    if (next) next.addEventListener('click', function () { go(cur + 1); });
 
     // Swipe support
     var startX = 0;
     wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
     wrap.addEventListener('touchend',   function (e) {
         var dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) { go(dx < 0 ? cur + 1 : cur - 1); startTimer(); }
+        if (Math.abs(dx) > 40) { go(dx < 0 ? cur + 1 : cur - 1); }
     }, { passive: true });
-
-    wrap.addEventListener('mouseenter', stopTimer);
-    wrap.addEventListener('mouseleave', startTimer);
-
-    startTimer();
 })();
 </script>
 

@@ -1,5 +1,5 @@
     <!-- LOCATION / GOOGLE MAPS SECTION -->
-    <section class="border-b border-slate-200 overflow-hidden bg-white">
+    <section id="varner-map" class="border-b border-slate-200 overflow-hidden bg-white">
         <div class="w-full h-[400px] sm:h-[500px] bg-slate-200 relative">
             <iframe 
                 src="https://www.google.com/maps?q=Varner%20Equipment%2C%201375%20US-50%2C%20Delta%2C%20CO%2081416&z=8&output=embed" 
@@ -32,7 +32,7 @@
     <!-- FOOTER -->
     <footer class="bg-slate-950 pt-24 pb-12 border-t border-slate-900">
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 xl:gap-10 mb-16 items-start">
-            <div class="lg:col-span-2 flex flex-col items-center">
+            <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
                 <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Inventory</h4>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
@@ -45,7 +45,7 @@
                 </ul>
                 </div>
             </div>
-            <div class="lg:col-span-2 flex flex-col items-center">
+            <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
                 <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6 whitespace-nowrap">Quick Links</h4>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
@@ -59,7 +59,7 @@
                 </ul>
                 </div>
             </div>
-            <div class="lg:col-span-2 flex flex-col items-center">
+            <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
                 <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Hours</h4>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
@@ -69,7 +69,7 @@
                 </ul>
                 </div>
             </div>
-            <div class="lg:col-span-3 flex flex-col items-center text-center space-y-6">
+            <div class="lg:col-span-3 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
                 <div class="block w-full max-w-[250px] sm:max-w-[280px] lg:max-w-[240px] xl:max-w-[280px]">
                     <?php 
                     $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '';
@@ -136,6 +136,16 @@
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- COPYRIGHT BAR -->
+        <div class="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-white/10 text-center">
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</p>
+            <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex justify-center gap-2">
+                <a href="#" class="hover:text-red-500 transition-colors">Terms of Service</a>
+                <span>|</span>
+                <a href="#" class="hover:text-red-500 transition-colors">Privacy Policy</a>
             </div>
         </div>
     </footer>
@@ -303,6 +313,32 @@
                 if (e.key === 'ArrowLeft') prevImage();
             });
 
+        })();
+    </script>
+
+    <script>
+        /**
+         * Reveal on Scroll: Cinematic Entry Animations
+         */
+        (function() {
+            const reveals = document.querySelectorAll('.reveal-on-scroll');
+            
+            const observerOptions = {
+                threshold: 0.15,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        // Once it's revealed, we don't need to observe it anymore
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            reveals.forEach(el => observer.observe(el));
         })();
     </script>
 

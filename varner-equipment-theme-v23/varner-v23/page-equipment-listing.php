@@ -119,10 +119,6 @@ $active_filter_count =
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                         Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
                     </p>
-                    <button onclick="window.print()" class="flex items-center gap-1.5 text-slate-400 hover:text-red-600 transition-colors text-[9px] font-black uppercase tracking-[0.15em] shrink-0">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        Print
-                    </button>
                 </div>
 
                 <!-- Inventory Grid -->

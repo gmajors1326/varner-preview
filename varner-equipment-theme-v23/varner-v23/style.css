@@ -4,13 +4,13 @@ Theme URI: https://varnerequipment.com
 Author: hwy559.com
 Author URI: https://hwy559.com
 Description: High-performance, industrial-calm storefront for Varner Equipment. Optimized for v23 OS.
-Version: 1.23.1
+Version: 1.23.2
 Requires at least: 5.4
 Tested up to: 6.4
 Requires PHP: 7.4
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: varner
+Text Domain: varner-v23
 */
 
 body {
@@ -22,7 +22,32 @@ body {
     background: linear-gradient(to top, #020617 0%, transparent 60%, rgba(2, 6, 23, 0.3) 100%);
 }
 
-/* Hide admin bar for logged in users to maintain app feel, or style it out of the way */
-.admin-bar .sticky-header {
+/* Sticky Header adjustment for Admin Bar */
+.admin-bar .sticky {
     top: 32px;
 }
+@media screen and (max-width: 782px) {
+    .admin-bar .sticky {
+        top: 46px;
+    }
+}
+
+/* CINEMATIC REVEAL ANIMATIONS */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+}
+
+.reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Staggered delays for a more organic feel */
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-400 { transition-delay: 400ms; }
+.delay-500 { transition-delay: 500ms; }
