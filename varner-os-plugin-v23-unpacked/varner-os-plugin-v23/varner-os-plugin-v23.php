@@ -399,7 +399,17 @@ add_action('admin_enqueue_scripts', function ($hook) {
 add_action('init', 'varner_os_mobile_pwa_router');
 function varner_os_mobile_pwa_router() {
     $uri = $_SERVER['REQUEST_URI'] ?? '';
-    $path = trim(parse_url($uri, PHP_URL_PATH), '/');
+    $uri_path = trim(parse_url($uri, PHP_URL_PATH), '/');
+
+    // Support WordPress installations in a subdirectory
+    $site_path = parse_url(home_url(), PHP_URL_PATH);
+    $site_path = $site_path ? trim($site_path, '/') : '';
+
+    if ($site_path !== '' && strpos($uri_path, $site_path) === 0) {
+        $path = trim(substr($uri_path, strlen($site_path)), '/');
+    } else {
+        $path = $uri_path;
+    }
 
     // Handle manifest.json
     if ($path === 'mobile-app/manifest.json' || $path === 'manifest.json') {

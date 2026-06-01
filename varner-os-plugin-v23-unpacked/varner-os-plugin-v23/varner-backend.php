@@ -947,10 +947,18 @@ function varner_api_generate_mobile_token() {
     // Links token -> user_id
     set_transient('varner_mobile_token_' . $token, $user_id, 1800);
     
+    $site_url = site_url();
+    $path_prefix = parse_url($site_url, PHP_URL_PATH);
+    $path_prefix = $path_prefix ? '/' . trim($path_prefix, '/') : '';
+    $is_https = is_ssl() || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    $protocol = $is_https ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'varnerequipment.com';
+    $url = $protocol . $host . $path_prefix . '/mobile-app/?token=' . $token;
+
     return rest_ensure_response(array(
         'token'      => $token,
         'expires_in' => 1800,
-        'url'        => home_url('/mobile-app/?token=' . $token),
+        'url'        => $url,
     ));
 }
 
