@@ -411,6 +411,21 @@ function varner_os_mobile_pwa_router() {
         $path = $uri_path;
     }
 
+    // Get the launcher icon URL (prefers VE_Tractor_Icon.png from active theme assets or uploads)
+    $icon_url = '';
+    if (file_exists(get_stylesheet_directory() . '/assets/VE_Tractor_Icon.png')) {
+        $icon_url = get_stylesheet_directory_uri() . '/assets/VE_Tractor_Icon.png';
+    } elseif (file_exists(get_template_directory() . '/assets/VE_Tractor_Icon.png')) {
+        $icon_url = get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
+    } else {
+        $upload_dir = wp_upload_dir();
+        if (file_exists($upload_dir['basedir'] . '/2026/04/VE_Tractor_Icon.png')) {
+            $icon_url = $upload_dir['baseurl'] . '/2026/04/VE_Tractor_Icon.png';
+        } else {
+            $icon_url = varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png');
+        }
+    }
+
     // Handle manifest.json
     if ($path === 'mobile-app/manifest.json' || $path === 'manifest.json') {
         header('Content-Type: application/json; charset=utf-8');
@@ -426,7 +441,7 @@ function varner_os_mobile_pwa_router() {
             'status_bar'       => 'black-translucent',
             'icons'            => array(
                 array(
-                    'src'   => varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png'),
+                    'src'   => $icon_url,
                     'sizes' => '192x192 512x512',
                     'type'  => 'image/png',
                     'purpose' => 'any maskable'
@@ -513,7 +528,7 @@ function varner_os_mobile_pwa_router() {
             <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
             <meta name="theme-color" content="#0f172a">
             <link rel="manifest" href="<?php echo esc_url(home_url('/manifest.json')); ?>">
-            <link rel="apple-touch-icon" href="<?php echo esc_url(varner_get_brand_logo_url('red')); ?>">
+            <link rel="apple-touch-icon" href="<?php echo esc_url($icon_url); ?>">
             <style>
                 html, body {
                     margin: 0;
