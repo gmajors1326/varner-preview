@@ -133,6 +133,7 @@ Pop-Location
 | `GET` | `/varner/v1/sessions` | admin | Supports `active` and `user` filters; paginated |
 | `GET` | `/varner/v1/me` | logged-in | Current user info |
 | `POST` | `/varner/v1/logout` | logged-in | Destroy session |
+| `POST` | `/varner/v1/mobile/token` | editor | Generate secure alphanumeric mobile token |
 
 ## Quick Verification in wp-admin
 
@@ -140,3 +141,13 @@ Pop-Location
 2. Confirm the React app mounts.
 3. Confirm fallback server-rendered table shows recent sessions (last 25).
 4. Confirm inventory create/update/delete/restore actions write ledger entries to `wp_varner_inventory_ledger`.
+
+## Mobile Companion (PWA) & Audit Log Notes
+
+1. **Access Link**: Dynamically intercepting `/mobile-app/` route loads the mobile-optimized, standalone HTML console.
+2. **Dynamic QR Generation**: QR Code inside the desktop `Mobile Companion` tab points to `https://[your-domain]/mobile-app/?token=[TOKEN]`.
+3. **Session Audit Logging**: 
+   * When a device authenticates using a token, its session details are logged to `wp_varner_user_sessions`.
+   * Managers can track **Who** logged in (associated WP user), **When** (precise timestamp and rolling 30-minute session status), and **Where** (client IP address and device User-Agent header, e.g. "Safari on iPhone").
+   * Changes made via the phone are written to the append-only table `wp_varner_inventory_ledger` detailing the creator, action, and fields changed.
+4. **PWA Manifest & Service Worker**: Dynamic virtual endpoints served via `/manifest.json` and `/sw.js` trigger app installation on iOS/Android and cache files.

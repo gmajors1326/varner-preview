@@ -393,3 +393,186 @@ add_action('admin_enqueue_scripts', function ($hook) {
 
     varner_enqueue_react_assets();
 }, 20);
+
+// ─── MOBILE COMPANION PWA ROUTER INTERCEPTS ───────────────────────────────────
+
+add_action('init', 'varner_os_mobile_pwa_router');
+function varner_os_mobile_pwa_router() {
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    $path = trim(parse_url($uri, PHP_URL_PATH), '/');
+
+    // Handle manifest.json
+    if ($path === 'mobile-app/manifest.json' || $path === 'manifest.json') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array(
+            'name'             => 'Varner OS Mobile Companion',
+            'short_name'       => 'Varner Mobile',
+            'description'      => 'Mobile inventory management for Varner Equipment yard crew.',
+            'start_url'        => home_url('/mobile-app/'),
+            'display'          => 'standalone',
+            'orientation'      => 'any',
+            'background_color' => '#0f172a',
+            'theme_color'      => '#0f172a',
+            'status_bar'       => 'black-translucent',
+            'icons'            => array(
+                array(
+                    'src'   => varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png'),
+                    'sizes' => '192x192 512x512',
+                    'type'  => 'image/png',
+                    'purpose' => 'any maskable'
+                )
+            )
+        ));
+        exit;
+    }
+
+    // Handle sw.js
+    if ($path === 'mobile-app/sw.js' || $path === 'sw.js') {
+        header('Content-Type: application/javascript; charset=utf-8');
+        ?>
+        const CACHE_NAME = 'varner-mobile-cache-v1';
+        const ASSETS = [
+            '<?php echo esc_url_raw(home_url('/mobile-app/')); ?>',
+        ];
+
+        self.addEventListener('install', (e) => {
+            e.waitUntil(
+                caches.open(CACHE_NAME).then((cache) => {
+                    return cache.addAll(ASSETS);
+                }).then(() => self.skipWaiting())
+            );
+        });
+
+        self.addEventListener('activate', (e) => {
+            e.waitUntil(
+                caches.keys().then((keys) => {
+                    return Promise.all(
+                        keys.map((k) => {
+                            if (k !== CACHE_NAME) return caches.delete(k);
+                        })
+                    );
+                }).then(() => self.clients.claim())
+            );
+        });
+
+        self.addEventListener('fetch', (e) => {
+            const url = new URL(e.request.url);
+            
+            // Bypass cache for REST API and admin calls
+            if (url.pathname.includes('/wp-json/') || url.pathname.includes('/wp-admin/')) {
+                e.respondWith(fetch(e.request));
+                return;
+            }
+
+            e.respondWith(
+                caches.match(e.request).then((cached) => {
+                    return cached || fetch(e.request).then((response) => {
+                        // Cache text/css, text/javascript and images dynamically
+                        const mime = response.headers.get('content-type') || '';
+                        if (response.status === 200 && (mime.includes('css') || mime.includes('javascript') || mime.includes('image') || mime.includes('font'))) {
+                            const clone = response.clone();
+                            caches.open(CACHE_NAME).then((cache) => {
+                                cache.put(e.request, clone);
+                            });
+                        }
+                        return response;
+                    });
+                }).catch(() => {
+                    // Offline fallback for html requests
+                    if (e.request.headers.get('accept').includes('text/html')) {
+                        return caches.match('<?php echo esc_url_raw(home_url('/mobile-app/')); ?>');
+                    }
+                })
+            );
+        });
+        <?php
+        exit;
+    }
+
+    // Handle /mobile-app/
+    if ($path === 'mobile-app') {
+        status_header(200);
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+            <title>Varner OS Mobile Companion</title>
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+            <meta name="theme-color" content="#0f172a">
+            <link rel="manifest" href="<?php echo esc_url(home_url('/manifest.json')); ?>">
+            <link rel="apple-touch-icon" href="<?php echo esc_url(varner_get_brand_logo_url('red')); ?>">
+            <style>
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: #f8fafc;
+                    overflow: hidden;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                }
+                #varner-inventory-app {
+                    width: 100%;
+                    height: 100%;
+                    overflow: hidden;
+                }
+            </style>
+            <script>
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        navigator.serviceWorker.register('<?php echo esc_url_raw(home_url('/sw.js')); ?>')
+                            .then(reg => console.log('Service Worker registered successfully!', reg.scope))
+                            .catch(err => console.log('Service Worker registration failed:', err));
+                    });
+                }
+            </script>
+            <?php
+            $dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
+            $dist_url = plugin_dir_url(__FILE__) . 'dist/assets/';
+
+            $js_files = glob($dist_path . '*.js');
+            $css_files = glob($dist_path . '*.css');
+
+            $pick_latest = function($files) {
+                if (empty($files)) return null;
+                usort($files, function($a, $b) { return filemtime($b) <=> filemtime($a); });
+                foreach ($files as $f) {
+                    if (strpos(basename($f), 'main.') === 0) return $f;
+                }
+                return $files[0];
+            };
+
+            $js = $pick_latest($js_files);
+            $css = $pick_latest($css_files);
+
+            if ($js && $css) {
+                $ver = filemtime($js);
+                $css_ver = filemtime($css);
+                ?>
+                <link rel="stylesheet" href="<?php echo $dist_url . basename($css) . '?ver=' . $css_ver; ?>">
+                <script>
+                    window.varnerData = {
+                        post_id: 0,
+                        nonce: '<?php echo wp_create_nonce('wp_rest'); ?>',
+                        rest_url: '<?php echo esc_url_raw(rest_url()); ?>',
+                        is_mobile_app: true
+                    };
+                </script>
+                <script type="module" src="<?php echo $dist_url . basename($js) . '?ver=' . $ver; ?>"></script>
+                <?php
+            } else {
+                echo '<div style="padding:20px;text-align:center;color:red;">Error: React build assets not found. Please build the application first.</div>';
+            }
+            ?>
+        </head>
+        <body>
+            <div id="varner-inventory-app" class="varner-inventory-app-mount"></div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+}

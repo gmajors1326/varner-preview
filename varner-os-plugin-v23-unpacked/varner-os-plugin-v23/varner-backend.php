@@ -282,6 +282,12 @@ function varner_register_rest_routes() {
         array('methods' => 'GET',  'callback' => 'varner_api_get_settings',  'permission_callback' => $auth),
         array('methods' => 'POST', 'callback' => 'varner_api_save_settings', 'permission_callback' => $auth),
     ));
+
+    register_rest_route($ns, '/mobile/token', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_generate_mobile_token',
+        'permission_callback' => $auth,
+    ));
 }
 
 function varner_api_get_brands() {
@@ -924,5 +930,81 @@ function varner_api_save_settings(WP_REST_Request $request) {
     
     update_option('varner_theme_settings', $sanitized);
     return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
+}
+
+// ─── MOBILE COMPANION SECURE AUTHENTICATION & TOKEN SERVICES ──────────────────
+
+function varner_api_generate_mobile_token() {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
+    }
+    
+    // Generate a secure 16-character token
+    $token = strtoupper(bin2hex(random_bytes(8)));
+    
+    // Store in transient for 30 minutes (1800 seconds)
+    // Links token -> user_id
+    set_transient('varner_mobile_token_' . $token, $user_id, 1800);
+    
+    return rest_ensure_response(array(
+        'token'      => $token,
+        'expires_in' => 1800,
+        'url'        => home_url('/mobile-app/?token=' . $token),
+    ));
+}
+
+/**
+ * Bypasses cookie nonce validation for mobile token requests.
+ */
+add_filter('rest_authentication_errors', function($result) {
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']) || (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer/i', $_SERVER['HTTP_AUTHORIZATION']))) {
+        $token = '';
+        if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+            $token = sanitize_text_field($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']);
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches);
+            $token = sanitize_text_field($matches[1] ?? '');
+        }
+        if ($token && get_transient('varner_mobile_token_' . $token)) {
+            return true; // Bypass nonce error
+        }
+    }
+    return $result;
+}, 9);
+
+/**
+ * Authenticates user from X-Varner-Mobile-Token header or query arg.
+ */
+add_filter('determine_current_user', 'varner_authenticate_mobile_token', 15);
+function varner_authenticate_mobile_token($user_id) {
+    if ($user_id) {
+        return $user_id;
+    }
+    
+    $token = '';
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token = sanitize_text_field($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']);
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'];
+        if (preg_match('/Bearer\s+(.+)/i', $auth_header, $matches)) {
+            $token = sanitize_text_field($matches[1]);
+        }
+    } elseif (isset($_GET['mobile_token'])) {
+        $token = sanitize_text_field($_GET['mobile_token']);
+    }
+    
+    if (empty($token)) {
+        return $user_id;
+    }
+    
+    $stored_user_id = get_transient('varner_mobile_token_' . $token);
+    if ($stored_user_id) {
+        // Extend rolling session for another 30 mins
+        set_transient('varner_mobile_token_' . $token, $stored_user_id, 1800);
+        return intval($stored_user_id);
+    }
+    
+    return $user_id;
 }
 

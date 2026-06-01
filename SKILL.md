@@ -110,3 +110,19 @@ Run these queries via **wp-admin > Tools > phpMyAdmin** or WP-CLI (`wp db query 
 -   **Verify Meta Counts**: `SELECT meta_value, COUNT(*) FROM wp_postmeta WHERE meta_key = 'category' GROUP BY meta_value;`
 -   **Reset Brand Transient**: `DELETE FROM wp_options WHERE option_name LIKE '_transient_varner_brand_counts%';`
 -   **Identify Orphans**: Units missing a `category` can be found via: `SELECT post_id FROM wp_postmeta WHERE meta_key = 'category' AND meta_value = '';`
+-   **Active Mobile Tokens**: `SELECT option_name, option_value FROM wp_options WHERE option_name LIKE '_transient_varner_mobile_token_%';`
+
+---
+
+## 8. Mobile Companion PWA & Token Authentication
+The Mobile Companion is a fully responsive Progressive Web App that runs on any Android or iOS device.
+
+### Authentication Design:
+* Passwordless session tokens are generated via `POST /varner/v1/mobile/token` on the desktop app, which are stored as transients expiring in 30 minutes.
+* Tokens are validated by mapping the `X-Varner-Mobile-Token` HTTP header in `determine_current_user` to the generating User ID.
+* The REST authentication filter bypasses nonces when a valid token is provided, allowing secure stateless calls even if WordPress session cookies are cached on the device browser.
+
+### PWA Architecture:
+* Dynamically registers routes for `/mobile-app/` (HTML app shell), `/manifest.json` (configuration), and `/sw.js` (service worker caching) directly in the plugin main file.
+* Integrates directly with native mobile cameras using `<input type="file" accept="image/*" capture="environment">` inside `src/App.jsx`.
+* Session updates, device parameters (user agent details), and client IP addresses are automatically registered in the `wp_varner_user_sessions` auditing table.

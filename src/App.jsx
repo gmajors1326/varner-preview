@@ -23,7 +23,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Settings, Zap, Menu, Image as ImageIcon, Smartphone, Eye,
   ArrowUpRight, BarChart3, Users, Wrench, Clock, ShieldCheck, Camera, Loader2,
   ScanText, List, Search, Edit2, X, TrendingUp, Activity, DollarSign, History,
-  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download, ChevronUp, ChevronDown, Mail
+  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download, ChevronUp, ChevronDown, Mail, LogOut
 } from 'lucide-react';
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
@@ -34,14 +34,19 @@ const API = window.varnerData?.rest_url
 
 const NONCE = window.varnerData?.nonce ?? '';
 
+const getMobileToken = () => localStorage.getItem('varner_mobile_token') || '';
+
 async function apiFetch(path, options = {}) {
+  const token = getMobileToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'X-Varner-Mobile-Token': token } : { 'X-WP-Nonce': NONCE }),
+    ...(options.headers ?? {}),
+  };
+
   const res = await fetch(`${API}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-WP-Nonce': NONCE,
-      ...(options.headers ?? {}),
-    },
+    headers,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -51,11 +56,16 @@ async function apiFetch(path, options = {}) {
 }
 
 async function uploadFile(file) {
+  const token = getMobileToken();
+  const headers = {
+    ...(token ? { 'X-Varner-Mobile-Token': token } : { 'X-WP-Nonce': NONCE }),
+  };
+
   const form = new FormData();
   form.append('file', file);
   const res = await fetch(`${API}/media`, {
     method: 'POST',
-    headers: { 'X-WP-Nonce': NONCE },
+    headers,
     body: form,
   });
   if (!res.ok) throw new Error('Upload failed');
@@ -185,9 +195,803 @@ function apiToListItem(u) {
   };
 }
 
+// ─── MobileAppLayout Component ────────────────────────────────────────────────
+
+const MobileAppLayout = ({
+  toast,
+  mobileToken,
+  setMobileToken,
+  mobileActiveTab,
+  setMobileActiveTab,
+  inventoryList,
+  loadInventory,
+  isLoading,
+  unitData,
+  setUnitData,
+  defaultEmptyUnit,
+  brands,
+  categories,
+  handleSave,
+  isSaving,
+  fieldErrors,
+  setFieldErrors,
+  handleInputChange,
+  handleAddImages,
+  handleRemoveImage,
+  handleReorderImages,
+  handleAddImplement,
+  handleUpdateImplement,
+  handleRemoveImplement,
+  handleImplementImageUpload,
+  handleToggleBoolean,
+  handleFullEdit,
+  handleDeleteUnit,
+  showToast
+}) => {
+  const [tokenInput, setTokenInput] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState('');
+  const [mobileCategoryFilter, setMobileCategoryFilter] = useState('');
+  const [mobileConditionFilter, setMobileConditionFilter] = useState('');
+
+  const cameraInputRef = React.useRef(null);
+  const galleryInputRef = React.useRef(null);
+
+  const verifyAndSaveToken = async (tokenToVerify) => {
+    setIsVerifying(true);
+    setAuthError('');
+    try {
+      localStorage.setItem('varner_mobile_token', tokenToVerify);
+      await apiFetch('/inventory');
+      setMobileToken(tokenToVerify);
+      loadInventory();
+      showToast('Welcome to Mobile Companion!');
+    } catch (err) {
+      localStorage.removeItem('varner_mobile_token');
+      setAuthError('Authentication failed: Invalid or expired token.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  useEffect(() => {
+    if (mobileToken) {
+      verifyAndSaveToken(mobileToken);
+    }
+  }, []);
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    const cleaned = tokenInput.trim().toUpperCase();
+    if (!cleaned) return;
+    verifyAndSaveToken(cleaned);
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to sign out?')) {
+      localStorage.removeItem('varner_mobile_token');
+      setMobileToken('');
+      setTokenInput('');
+      setAuthError('');
+    }
+  };
+
+  const handleEditClick = (wpId) => {
+    handleFullEdit(wpId);
+    setMobileActiveTab('edit');
+  };
+
+  const handleCreateNewClick = () => {
+    setUnitData(defaultEmptyUnit);
+    setFieldErrors({});
+    setMobileActiveTab('edit');
+  };
+
+  const handleMobileSave = async () => {
+    await handleSave();
+    const required = ['title', 'year', 'make', 'model', 'category', 'stockStatus', 'condition'];
+    if (!unitData.callForPrice) required.push('price');
+    const hasErrors = required.some(key => !String(unitData[key] || '').trim());
+    if (!hasErrors) {
+      setMobileActiveTab('list');
+    }
+  };
+
+  const filteredList = inventoryList.filter(item => {
+    const query = mobileSearch.toLowerCase();
+    const matchesSearch = !query || (
+      item.stock?.toLowerCase().includes(query) ||
+      item.make?.toLowerCase().includes(query) ||
+      item.model?.toLowerCase().includes(query) ||
+      item.year?.toLowerCase().includes(query) ||
+      item.category?.toLowerCase().includes(query)
+    );
+    const matchesCategory = !mobileCategoryFilter || item.category === mobileCategoryFilter;
+    const matchesCondition = !mobileConditionFilter || mobileConditionFilter === 'All' || item.condition === mobileConditionFilter;
+    return matchesSearch && matchesCategory && matchesCondition;
+  });
+
+  if (!mobileToken) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-900 text-white font-sans selection:bg-red-500/30">
+        {toast && (
+          <div className="fixed top-6 left-6 right-6 z-[9999] px-6 py-4 rounded-2xl font-black text-sm text-center shadow-2xl bg-green-600 text-white animate-in slide-in-from-top-4">
+            {toast.msg}
+          </div>
+        )}
+        <div className="flex-1 flex flex-col justify-center items-center px-6 py-12">
+          <div className="w-full max-w-sm space-y-8">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-red-500/20">
+                <Smartphone size={14}/> Mobile Companion
+              </div>
+              <h1 className="text-3xl font-black tracking-tighter uppercase">Varner OS</h1>
+              <p className="text-slate-400 text-xs mt-2 font-medium">Field Inventory Management Console</p>
+            </div>
+
+            <form onSubmit={handleLoginSubmit} className="bg-slate-800/50 backdrop-blur-md rounded-3xl p-8 border border-slate-700/50 shadow-2xl space-y-6">
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Secure Access Token</label>
+                <input
+                  type="text"
+                  value={tokenInput}
+                  onChange={e => setTokenInput(e.target.value)}
+                  placeholder="E.G. A1B2C3D4E5F6"
+                  maxLength={16}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-2xl py-4 px-4 text-center font-mono font-black text-lg tracking-widest uppercase focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                />
+              </div>
+
+              {authError && (
+                <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 p-4 rounded-2xl text-red-400 text-xs">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span className="font-bold">{authError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isVerifying || !tokenInput.trim()}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 disabled:opacity-50 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                {isVerifying ? <Loader2 className="animate-spin" size={16}/> : <Zap size={16}/>}
+                Authenticate Mobile
+              </button>
+            </form>
+
+            <div className="bg-slate-800/20 border border-slate-800/40 rounded-2xl p-5 text-center">
+              <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase tracking-wider">
+                To connect, open Varner OS on your desktop, navigate to "Mobile Companion" in the sidebar, and scan the QR code.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+      {toast && (
+        <div className={`fixed top-4 left-4 right-4 z-[9999] px-5 py-3 rounded-xl text-center font-black text-xs shadow-xl transition-all ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+          {toast.msg}
+        </div>
+      )}
+
+      <header className="bg-slate-900 text-white px-4 py-3.5 flex items-center justify-between shadow-md shrink-0 safe-top">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="font-black text-xs uppercase tracking-widest">Varner OS</span>
+          <span className="bg-slate-800 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded text-slate-400">Mobile</span>
+        </div>
+        <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white transition-colors">
+          <LogOut size={18} />
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
+        {mobileActiveTab === 'dashboard' && (
+          <div className="p-4 space-y-6 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Operations Overview</h2>
+              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">Yard Console</h1>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <Box size={18} className="text-blue-500" />
+                <div className="mt-4">
+                  <span className="text-2xl font-black text-slate-900">{inventoryList.filter(i => (i.status || '').toLowerCase() === 'in stock').length}</span>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Live Stock</p>
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <Clock size={18} className="text-red-500" />
+                <div className="mt-4">
+                  <span className="text-2xl font-black text-slate-900">{inventoryList.filter(i => ['sale pending','pending sale','pending'].includes((i.status || '').toLowerCase())).length}</span>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Pending</p>
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <CheckCircle2 size={18} className="text-green-500" />
+                <div className="mt-4">
+                  <span className="text-2xl font-black text-slate-900">{inventoryList.filter(i => (i.status || '').toLowerCase() === 'sold').length}</span>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Sold Units</p>
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <TrendingUp size={18} className="text-amber-500" />
+                <div className="mt-4">
+                  <span className="text-2xl font-black text-slate-900">{inventoryList.length}</span>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">Total Ledger</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Quick Actions</h3>
+              <div className="grid grid-cols-1 gap-2">
+                <button onClick={handleCreateNewClick} className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest text-[10px] py-4 rounded-xl shadow-lg shadow-red-100 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                  <Plus size={14}/> Create New Listing
+                </button>
+                <button onClick={() => setMobileActiveTab('list')} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-[10px] py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+                  <List size={14}/> View Active Stock
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-slate-100/80 rounded-2xl p-5 flex items-start gap-3">
+              <Sparkles size={18} className="text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-black text-[10px] uppercase tracking-wider text-slate-800">Camera Upload Tip</h4>
+                <p className="text-[10px] font-medium text-slate-500 leading-relaxed mt-1">
+                  When adding or editing units, tap "Take Photo" to launch your phone's camera instantly. Snap a photo and it will upload straight to the listing.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mobileActiveTab === 'list' && (
+          <div className="p-4 space-y-4 animate-in fade-in duration-300">
+            <div>
+              <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory Ledger</h2>
+              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">Active Stock</h1>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search Make, Model, Stock #..."
+                value={mobileSearch}
+                onChange={e => setMobileSearch(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-xs focus:border-red-500 outline-none shadow-sm transition-all"
+              />
+              {mobileSearch && (
+                <button onClick={() => setMobileSearch('')} className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-900"><X size={16}/></button>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              {['All', 'New', 'Used'].map(cond => (
+                <button
+                  key={cond}
+                  onClick={() => setMobileConditionFilter(cond === 'All' ? '' : cond)}
+                  className={`flex-1 text-center py-2.5 rounded-lg border font-black uppercase text-[9px] tracking-widest transition-all ${
+                    (cond === 'All' && !mobileConditionFilter) || mobileConditionFilter === cond
+                      ? 'bg-slate-900 border-slate-900 text-white'
+                      : 'bg-white border-slate-200 text-slate-500'
+                  }`}
+                >
+                  {cond}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              {isLoading ? (
+                <div className="text-center py-12 text-xs font-black uppercase tracking-widest text-slate-300">Loading ledger…</div>
+              ) : filteredList.length === 0 ? (
+                <div className="text-center py-12 text-xs font-black uppercase tracking-widest text-slate-300">No matching units found</div>
+              ) : (
+                filteredList.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleEditClick(item.wpId)}
+                    className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 active:bg-slate-50 transition-colors"
+                  >
+                    <div className="w-20 h-16 bg-slate-100 rounded-lg overflow-hidden border border-slate-100 shrink-0">
+                      {item.image ? (
+                        <img src={item.image} alt={item.model} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon size={16}/></div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                        <span className="font-mono text-[9px] font-bold text-slate-400">{item.stock || 'NO SKU'}</span>
+                        <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                          item.condition === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+                        }`}>{item.condition}</span>
+                        <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                          (item.status || '').toLowerCase() === 'in stock' ? 'bg-green-50 text-green-600' :
+                          ['sale pending','pending sale','pending'].includes((item.status || '').toLowerCase()) ? 'bg-yellow-50 text-yellow-600' :
+                          (item.status || '').toLowerCase() === 'sold' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'
+                        }`}>{item.status}</span>
+                      </div>
+                      <h4 className="font-black text-xs text-slate-900 truncate uppercase leading-tight">{item.year} {item.make} {item.model}</h4>
+                      <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-wide truncate">{item.category}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-xs text-red-600">
+                        {item.callForPrice ? 'Call' : item.price ? `$${parseFloat(item.price).toLocaleString()}` : '$0'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {mobileActiveTab === 'edit' && (
+          <div className="p-4 space-y-6 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <button onClick={() => setMobileActiveTab('list')} className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 flex items-center gap-1">
+                <ChevronLeft size={16}/> Back
+              </button>
+              <h2 className="text-sm font-black uppercase tracking-widest text-slate-900">
+                {unitData.id ? 'Edit Unit' : 'New Unit'}
+              </h2>
+              {unitData.id ? (
+                <button onClick={() => handleDeleteUnit(unitData.id, unitData.stockNumber)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
+                  <Trash2 size={16}/>
+                </button>
+              ) : <div className="w-6"></div>}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Public Inventory Title *</label>
+                <input
+                  type="text"
+                  value={unitData.title}
+                  onChange={e => handleInputChange('title', e.target.value)}
+                  className={`w-full bg-white border ${fieldErrors.title ? 'border-red-500' : 'border-slate-200'} rounded-xl py-3 px-4 text-xs font-bold focus:border-red-500 outline-none`}
+                  placeholder="e.g. 2026 Deutz Fahr 5080DF Keyline"
+                />
+                {fieldErrors.title && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.title}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Year *</label>
+                  <input
+                    type="text"
+                    value={unitData.year}
+                    onChange={e => handleInputChange('year', e.target.value)}
+                    className={`w-full bg-white border ${fieldErrors.year ? 'border-red-500' : 'border-slate-200'} rounded-xl py-3 px-4 text-xs font-mono font-bold focus:border-red-500 outline-none`}
+                    placeholder="2026"
+                  />
+                  {fieldErrors.year && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.year}</p>}
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Make / Brand *</label>
+                  <div className="relative">
+                    <select
+                      value={unitData.make}
+                      onChange={e => handleInputChange('make', e.target.value)}
+                      className={`w-full bg-white border ${fieldErrors.make ? 'border-red-500' : 'border-slate-200'} rounded-xl py-3 px-4 text-xs font-bold focus:border-red-500 outline-none appearance-none`}
+                    >
+                      <option value="">Select Brand</option>
+                      {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                      <option value="Other">Other</option>
+                    </select>
+                    <div className="absolute right-3.5 top-3.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                  </div>
+                  {fieldErrors.make && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.make}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Model *</label>
+                <input
+                  type="text"
+                  value={unitData.model}
+                  onChange={e => handleInputChange('model', e.target.value)}
+                  className={`w-full bg-white border ${fieldErrors.model ? 'border-red-500' : 'border-slate-200'} rounded-xl py-3 px-4 text-xs font-bold focus:border-red-500 outline-none`}
+                  placeholder="5080DF"
+                />
+                {fieldErrors.model && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.model}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Stock Number</label>
+                  <input
+                    type="text"
+                    value={unitData.stockNumber}
+                    onChange={e => handleInputChange('stockNumber', e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-mono font-bold focus:border-red-500 outline-none"
+                    placeholder="12345"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">VIN / Serial</label>
+                  <input
+                    type="text"
+                    value={unitData.vin}
+                    onChange={e => handleInputChange('vin', e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-mono font-bold focus:border-red-500 outline-none"
+                    placeholder="VIN"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Category *</label>
+                <div className="relative">
+                  <select
+                    value={unitData.category}
+                    onChange={e => handleInputChange('category', e.target.value)}
+                    className={`w-full bg-white border ${fieldErrors.category ? 'border-red-500' : 'border-slate-200'} rounded-xl py-3 px-4 text-xs font-bold focus:border-red-500 outline-none appearance-none`}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="Other">Other</option>
+                  </select>
+                  <div className="absolute right-3.5 top-3.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                </div>
+                {fieldErrors.category && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.category}</p>}
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 font-black">Price Details</span>
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={unitData.callForPrice}
+                      onChange={e => handleInputChange('callForPrice', e.target.checked)}
+                      className="accent-red-600 w-4 h-4"
+                    />
+                    Call For Price
+                  </label>
+                </div>
+                {!unitData.callForPrice && (
+                  <div>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Retail Price (USD) *</label>
+                    <input
+                      type="number"
+                      value={unitData.price}
+                      onChange={e => handleInputChange('price', e.target.value)}
+                      className={`w-full bg-white border ${fieldErrors.price ? 'border-red-500' : 'border-slate-200'} rounded-xl py-3 px-4 text-xs font-mono font-bold focus:border-red-500 outline-none`}
+                      placeholder="e.g. 45000"
+                    />
+                    {fieldErrors.price && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.price}</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Condition *</label>
+                  <div className="relative">
+                    <select
+                      value={unitData.condition}
+                      onChange={e => handleInputChange('condition', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold focus:border-red-500 outline-none appearance-none"
+                    >
+                      <option value="New">New</option>
+                      <option value="Used">Used</option>
+                    </select>
+                    <div className="absolute right-3.5 top-3.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Stock Status *</label>
+                  <div className="relative">
+                    <select
+                      value={unitData.stockStatus}
+                      onChange={e => handleInputChange('stockStatus', e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs font-bold focus:border-red-500 outline-none appearance-none"
+                    >
+                      <option value="In Stock">In Stock</option>
+                      <option value="Pending Sale">Pending Sale</option>
+                      <option value="Sold">Sold</option>
+                      <option value="Draft">Draft</option>
+                    </select>
+                    <div className="absolute right-3.5 top-3.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Show on Website</h4>
+                    <p className="text-[8px] font-bold text-slate-400 mt-0.5">Toggle visibility on all public pages</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('showOnWebsite', !unitData.showOnWebsite)}
+                    className={`w-12 h-6.5 rounded-full p-1 transition-colors ${unitData.showOnWebsite ? 'bg-red-600' : 'bg-slate-200'}`}
+                  >
+                    <div className={`w-4.5 h-4.5 rounded-full bg-white transition-transform ${unitData.showOnWebsite ? 'translate-x-5.5' : 'translate-x-0'}`}></div>
+                  </button>
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-slate-50">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900 font-black">Featured Unit</h4>
+                    <p className="text-[8px] font-bold text-slate-400 mt-0.5">Feature this unit on the homepage</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('featured', !unitData.featured)}
+                    className={`w-12 h-6.5 rounded-full p-1 transition-colors ${unitData.featured ? 'bg-red-600' : 'bg-slate-200'}`}
+                  >
+                    <div className={`w-4.5 h-4.5 rounded-full bg-white transition-transform ${unitData.featured ? 'translate-x-5.5' : 'translate-x-0'}`}></div>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Description (Plain Text / HTML)</label>
+                <textarea
+                  value={unitData.description}
+                  onChange={e => handleInputChange('description', e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-xs focus:border-red-500 outline-none"
+                  rows={4}
+                  placeholder="Details about the unit..."
+                />
+              </div>
+
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 font-black">Image Gallery</h3>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{unitData.images?.length || 0} Images</span>
+                </div>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  ref={cameraInputRef}
+                  className="hidden"
+                  onChange={e => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length) handleAddImages(files);
+                  }}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  ref={galleryInputRef}
+                  className="hidden"
+                  onChange={e => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length) handleAddImages(files);
+                  }}
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow"
+                  >
+                    <Camera size={14}/> Take Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  >
+                    <ImageIcon size={14}/> Add Gallery
+                  </button>
+                </div>
+
+                {unitData.images?.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 pt-2">
+                    {unitData.images.map((img, i) => (
+                      <div key={i} className="relative aspect-square bg-slate-100 rounded-lg overflow-hidden border border-slate-100 group">
+                        <img src={img} alt="Thumb" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(i)}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                        >
+                          <X size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(i)}
+                          className="absolute top-1 right-1 bg-slate-900/80 text-white rounded-full p-1 lg:hidden"
+                        >
+                          <X size={10} />
+                        </button>
+                        {i > 0 && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleReorderImages(i, i - 1); }}
+                            className="absolute bottom-1 left-1 bg-slate-900/80 text-white rounded p-0.5 text-[8px]"
+                          >
+                            ◀
+                          </button>
+                        )}
+                        {i < unitData.images.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleReorderImages(i, i + 1); }}
+                            className="absolute bottom-1 right-1 bg-slate-900/80 text-white rounded p-0.5 text-[8px]"
+                          >
+                            ▶
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 font-black">Implements / Attachments</h3>
+                  <button
+                    type="button"
+                    onClick={handleAddImplement}
+                    className="text-[9px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1"
+                  >
+                    <Plus size={12}/> Add Item
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {(unitData.attachments ?? []).map((imp, idx) => (
+                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200/50 space-y-3 relative animate-in fade-in">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImplement(idx)}
+                        className="absolute top-3 right-3 text-slate-400 hover:text-red-500"
+                      >
+                        <X size={16}/>
+                      </button>
+
+                      <div>
+                        <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Implement Title</label>
+                        <input
+                          type="text"
+                          value={imp.title}
+                          onChange={e => handleUpdateImplement(idx, 'title', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-xs font-bold"
+                          placeholder="e.g. Loader Bucket"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Price (USD)</label>
+                          <input
+                            type="text"
+                            value={imp.price}
+                            onChange={e => handleUpdateImplement(idx, 'price', e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-xs font-bold"
+                            placeholder="e.g. 1200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Attachment Image</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImplementImageUpload(idx, file);
+                              }}
+                              className="hidden"
+                              id={`imp-img-${idx}`}
+                            />
+                            <label
+                              htmlFor={`imp-img-${idx}`}
+                              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3 text-center text-slate-500 text-[10px] font-black uppercase tracking-widest cursor-pointer hover:border-red-500 truncate"
+                            >
+                              {imp.image ? 'CHANGE IMAGE' : 'CHOOSE PHOTO'}
+                            </label>
+                            {imp.image && (
+                              <div className="w-8 h-8 rounded overflow-hidden border border-slate-200 shrink-0">
+                                <img src={imp.image} alt="Implement" className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Description</label>
+                        <textarea
+                          value={imp.description}
+                          onChange={e => handleUpdateImplement(idx, 'description', e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-xs"
+                          rows={2}
+                          placeholder="Brief description..."
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleMobileSave}
+              disabled={isSaving}
+              className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-4.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all mt-4 border-b-2 border-red-800"
+            >
+              {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Save size={16}/>}
+              {isSaving ? 'SAVING CHANGES…' : (unitData.id ? 'SAVE UNIT CHANGES' : 'PUBLISH NEW UNIT')}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex items-center justify-around py-3 px-2 shadow-2xl z-50 shrink-0 safe-bottom animate-in slide-in-from-bottom-8">
+        <button
+          onClick={() => setMobileActiveTab('dashboard')}
+          className={`flex flex-col items-center gap-1 p-2 min-w-16 transition-colors ${
+            mobileActiveTab === 'dashboard' ? 'text-red-500' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <LayoutDashboard size={20} />
+          <span className="text-[9px] font-black uppercase tracking-wider">Overview</span>
+        </button>
+        
+        <button
+          onClick={() => { setMobileActiveTab('list'); loadInventory(); }}
+          className={`flex flex-col items-center gap-1 p-2 min-w-16 transition-colors ${
+            mobileActiveTab === 'list' ? 'text-red-500' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <List size={20} />
+          <span className="text-[9px] font-black uppercase tracking-wider">Ledger</span>
+        </button>
+
+        <button
+          onClick={handleCreateNewClick}
+          className={`flex flex-col items-center gap-1 p-2 min-w-16 transition-colors ${
+            mobileActiveTab === 'edit' && !unitData.id ? 'text-red-500' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Plus size={20} />
+          <span className="text-[9px] font-black uppercase tracking-wider">Add New</span>
+        </button>
+      </nav>
+    </div>
+  );
+};
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 const App = () => {
+  const isMobileApp = window.varnerData?.is_mobile_app || window.location.pathname.includes('/mobile-app/');
+  const [mobileToken, setMobileToken] = useState(
+    new URLSearchParams(window.location.search).get('token') || localStorage.getItem('varner_mobile_token') || ''
+  );
+  const [mobileActiveTab, setMobileActiveTab] = useState('dashboard');
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    if (tokenFromUrl) {
+      localStorage.setItem('varner_mobile_token', tokenFromUrl);
+      setMobileToken(tokenFromUrl);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   const [syncEnabled, setSyncEnabled]         = useState(true);
   const [isSaving, setIsSaving]               = useState(false);
   const [isLoading, setIsLoading]             = useState(true);
@@ -578,6 +1382,42 @@ const App = () => {
       default:              return 'Varner OS';
     }
   };
+
+  if (isMobileApp) {
+    return (
+      <MobileAppLayout
+        toast={toast}
+        mobileToken={mobileToken}
+        setMobileToken={setMobileToken}
+        mobileActiveTab={mobileActiveTab}
+        setMobileActiveTab={setMobileActiveTab}
+        inventoryList={inventoryList}
+        loadInventory={loadInventory}
+        isLoading={isLoading}
+        unitData={unitData}
+        setUnitData={setUnitData}
+        defaultEmptyUnit={defaultEmptyUnit}
+        brands={brands}
+        categories={categories}
+        handleSave={handleSave}
+        isSaving={isSaving}
+        fieldErrors={fieldErrors}
+        setFieldErrors={setFieldErrors}
+        handleInputChange={handleInputChange}
+        handleAddImages={handleAddImages}
+        handleRemoveImage={handleRemoveImage}
+        handleReorderImages={handleReorderImages}
+        handleAddImplement={handleAddImplement}
+        handleUpdateImplement={handleUpdateImplement}
+        handleRemoveImplement={handleRemoveImplement}
+        handleImplementImageUpload={handleImplementImageUpload}
+        handleToggleBoolean={handleToggleBoolean}
+        handleFullEdit={handleFullEdit}
+        handleDeleteUnit={handleDeleteUnit}
+        showToast={showToast}
+      />
+    );
+  }
 
   return (
     <div className="flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 min-h-screen">
@@ -1187,7 +2027,7 @@ const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav }) => 
       <NavItem icon={<Box size={20}/>}             label="Add / Edit"     active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
       <NavItem icon={<Facebook size={20}/>}        label="Meta Sync"      active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
       <NavItem icon={<History size={20}/>}         label="History"        active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
-      <NavItem icon={<Smartphone size={20}/>}      label="Mobile App"     active={activeTab==='mobile'}        onClick={() => onNav('mobile')} />
+      <NavItem icon={<Smartphone size={20}/>}      label="Mobile Companion" active={activeTab==='mobile'}        onClick={() => onNav('mobile')} />
     </nav>
     <div className="mt-auto pt-4 border-t border-slate-800">
       <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='settings'} onClick={() => onNav('settings')} />
@@ -1599,14 +2439,20 @@ const MobileAccessTab = () => {
   const [token, setToken]           = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [expiry, setExpiry]         = useState(null);
+  const [qrUrl, setQrUrl]           = useState('');
 
-  const generateToken = () => {
+  const generateToken = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setToken(Math.random().toString(36).substring(2, 15).toUpperCase());
-      setExpiry(new Date(Date.now() + 30 * 60000).toLocaleTimeString());
+    try {
+      const data = await apiFetch('/mobile/token', { method: 'POST' });
+      setToken(data.token);
+      setQrUrl(data.url);
+      setExpiry(new Date(Date.now() + data.expires_in * 1000).toLocaleTimeString());
+    } catch (e) {
+      alert('Failed to generate secure token: ' + e.message);
+    } finally {
       setIsGenerating(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -1628,7 +2474,7 @@ const MobileAccessTab = () => {
           <div className="flex justify-center lg:justify-end">
             <div className={`bg-white p-8 rounded-[2.5rem] shadow-2xl transition-all duration-700 ${token ? 'scale-100 opacity-100' : 'scale-90 opacity-20 blur-sm'}`}>
               <div className="w-64 h-64 bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-slate-100">
-                {token ? <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://varnerequipment.com/mobile/access/${token}`} className="w-full h-full p-4" alt="QR"/> : <div className="text-center p-8"><ScanText size={48} className="text-slate-200 mx-auto mb-4"/><p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Token Required</p></div>}
+                {token ? <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrUrl)}`} className="w-full h-full p-4" alt="QR"/> : <div className="text-center p-8"><ScanText size={48} className="text-slate-200 mx-auto mb-4"/><p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Token Required</p></div>}
               </div>
               {token && <div className="mt-6 text-center"><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Secure Token</p><p className="text-xl font-mono font-black text-slate-900 tracking-wider">{token}</p><div className="mt-4 flex items-center justify-center gap-2 text-amber-500"><Clock size={12}/><span className="text-[9px] font-black uppercase tracking-widest">Expires at {expiry}</span></div></div>}
             </div>
