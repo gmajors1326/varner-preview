@@ -27,7 +27,7 @@ get_header(); ?>
                             </div>
                             <div>
                                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Visit Us</p>
-                                <p class="font-black text-lg leading-tight uppercase">1375 US-50<br>Delta, CO 81416</p>
+                                <p class="font-black text-lg leading-tight uppercase"><?php echo esc_html( varner_get_theme_setting( 'contact_address_line1', '1375 US-50' ) ); ?><br><?php echo esc_html( varner_get_theme_setting( 'contact_address_line2', 'Delta, CO 81416' ) ); ?></p>
                             </div>
                         </div>
 
@@ -37,7 +37,7 @@ get_header(); ?>
                             </div>
                             <div>
                                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Call Us</p>
-                                <a href="tel:9708740612" class="font-black text-2xl hover:text-red-500 transition-colors tracking-tighter">(970) 874-0612</a>
+                                <a href="tel:<?php echo esc_attr( varner_get_theme_setting( 'contact_phone_raw', '9708740612' ) ); ?>" class="font-black text-2xl hover:text-red-500 transition-colors tracking-tighter"><?php echo esc_html( varner_get_theme_setting( 'contact_phone', '(970) 874-0612' ) ); ?></a>
                             </div>
                         </div>
 
@@ -47,7 +47,7 @@ get_header(); ?>
                             </div>
                             <div>
                                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Email Us</p>
-                                <p class="font-black text-lg break-all uppercase tracking-tight">sales@varner equipment.com</p>
+                                <p class="font-black text-lg break-all uppercase tracking-tight"><?php echo esc_html( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?></p>
                             </div>
                         </div>
                     </div>
@@ -59,15 +59,15 @@ get_header(); ?>
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] font-black uppercase text-slate-500">Mon - Fri</span>
-                            <span class="text-sm font-black text-slate-900 uppercase">8am - 5pm</span>
+                            <span class="text-sm font-black text-slate-900 uppercase"><?php echo esc_html( varner_get_theme_setting( 'hours_mon_fri', '8am - 5pm' ) ); ?></span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] font-black uppercase text-slate-500">Saturday</span>
-                            <span class="text-sm font-black text-slate-900 uppercase">9am - Noon</span>
+                            <span class="text-sm font-black text-slate-900 uppercase"><?php echo esc_html( varner_get_theme_setting( 'hours_sat', '9am - Noon' ) ); ?></span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] font-black uppercase text-slate-500">Sunday</span>
-                            <span class="text-sm font-black text-red-600 uppercase">Closed</span>
+                            <span class="text-sm font-black text-red-600 uppercase"><?php echo esc_html( varner_get_theme_setting( 'hours_sun', 'Closed' ) ); ?></span>
                         </div>
                     </div>
                 </div>

@@ -2,14 +2,14 @@
     <section id="varner-map" class="border-b border-slate-200 overflow-hidden bg-white">
         <div class="w-full h-[400px] sm:h-[500px] bg-slate-200 relative">
             <iframe 
-                src="https://www.google.com/maps?q=Varner%20Equipment%2C%201375%20US-50%2C%20Delta%2C%20CO%2081416&z=8&output=embed" 
+                src="<?php echo esc_url( varner_get_theme_setting( 'contact_map_embed_url', 'https://www.google.com/maps?q=Varner%20Equipment%2C%201375%20US-50%2C%20Delta%2C%20CO%2081416&z=8&output=embed' ) ); ?>" 
                 width="100%" 
                 height="100%" 
                 style="border:0;" 
                 allowfullscreen="" 
                 loading="lazy" 
                 referrerpolicy="no-referrer-when-downgrade"
-                class="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-700"
+                class="absolute inset-0 transition-all duration-700"
             ></iframe>
 
             <!-- OVERLAY INFO CARD -->
@@ -18,10 +18,10 @@
                     <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-3 sm:mb-4">Our Dealership</div>
                     <h3 class="text-2xl sm:text-3xl font-black text-slate-900 leading-tight mb-3 sm:mb-4 uppercase tracking-tight">Varner Equipment</h3>
                     <div class="space-y-1 sm:space-y-2 text-slate-600 font-bold text-xs sm:text-sm mb-5 sm:mb-6">
-                        <p>1375 US-50</p>
-                        <p>Delta, CO 81416</p>
+                        <p><?php echo esc_html( varner_get_theme_setting( 'contact_address_line1', '1375 US-50' ) ); ?></p>
+                        <p><?php echo esc_html( varner_get_theme_setting( 'contact_address_line2', 'Delta, CO 81416' ) ); ?></p>
                     </div>
-                    <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener" class="block text-center w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-red-600 transition-all">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="block text-center w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-red-600 transition-all">
                         Get Directions
                     </a>
                 </div>
@@ -63,9 +63,9 @@
                 <div class="w-fit text-left">
                 <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Hours</h4>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
-                    <li>Mon-Fri 8am-5pm</li>
-                    <li>Sat 9-Noon</li>
-                    <li>Sun Closed</li>
+                    <li>Mon-Fri: <?php echo esc_html( varner_get_theme_setting( 'hours_mon_fri', '8am - 5pm' ) ); ?></li>
+                    <li>Sat: <?php echo esc_html( varner_get_theme_setting( 'hours_sat', '9am - Noon' ) ); ?></li>
+                    <li>Sun: <?php echo esc_html( varner_get_theme_setting( 'hours_sun', 'Closed' ) ); ?></li>
                 </ul>
                 </div>
             </div>
@@ -77,16 +77,16 @@
                     <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto">
                 </div>
                 <div class="flex items-center justify-center gap-5 text-white pt-2">
-                    <a href="https://www.facebook.com/varnerequipment" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Facebook">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_facebook', 'https://www.facebook.com/varnerequipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Facebook">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.1V12h3.4V9.7c0-3.3 2-5.1 5-5.1 1.4 0 2.8.2 2.8.2v3.1h-1.6c-1.6 0-2.1 1-2.1 2V12h3.6l-.6 2.9h-3v7A10 10 0 0 0 22 12z"/></svg>
                     </a>
-                    <a href="https://www.youtube.com/" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="YouTube">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_youtube', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="YouTube">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 7.2a2.6 2.6 0 0 0-1.8-1.8C16.2 5 12 5 12 5s-4.2 0-5.8.4a2.6 2.6 0 0 0-1.8 1.8A27.4 27.4 0 0 0 4 12a27.4 27.4 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C7.8 19 12 19 12 19s4.2 0 5.8-.4a2.6 2.6 0 0 0 1.8-1.8A27.4 27.4 0 0 0 20 12a27.4 27.4 0 0 0-.4-4.8zM10 15.5V8.5L16 12l-6 3.5z"/></svg>
                     </a>
-                    <a href="mailto:info@varnerequipment.com" class="hover:text-red-500 transition-colors" aria-label="Email">
+                    <a href="mailto:<?php echo esc_attr( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?>" class="hover:text-red-500 transition-colors" aria-label="Email">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2 8 5 8-5V8l-8 5-8-5v0z"/></svg>
                     </a>
-                    <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Location">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Location">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 1 7 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 0 1 7-7zm0 9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
                     </a>
                 </div>

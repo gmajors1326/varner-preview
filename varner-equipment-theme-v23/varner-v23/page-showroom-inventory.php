@@ -40,7 +40,7 @@ $total           = $inventory_query->found_posts;
                         <span id="vf-toggle-icon">▼</span>
                     </button>
                     <div id="vf-sidebar-wrap" class="hidden lg:block">
-                        <?php include get_template_directory() . '/partials/inventory-sidebar.php'; ?>
+                        <?php include get_template_directory() . '/partials/filter-sidebar.php'; ?>
                     </div>
                 </aside>
 

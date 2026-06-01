@@ -20,17 +20,14 @@ $meter           = get_field( 'meter',        $post_id );
 $meter_type      = get_field( 'meter_type',   $post_id ) ?: 'Hours';
 $description     = get_field( 'description',  $post_id );
 $stock_status    = get_field( 'stock_status', $post_id );
+$has_attachments = get_field( 'has_attachments', $post_id );
+$attachment_details = get_field( 'attachment_details', $post_id );
+$engine_horsepower = get_field( 'engine_horsepower', $post_id );
+$drive           = get_field( 'drive', $post_id );
 $images          = varner_get_card_images( $post_id );
 
 $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
 $title_text      = trim( "$year $make $model" ) ?: get_the_title();
-
-$finance_url = add_query_arg( array(
-    'price' => is_numeric( $price ) ? $price : '',
-    'term'  => 60,
-    'apr'   => 9.49,
-    'down'  => 10,
-), home_url( '/finance' ) );
 
 // Monthly payment — 10% APR, 60 months
 $monthly_payment = '';
@@ -58,24 +55,8 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
             <!-- LEFT: Image Gallery -->
             <div class="w-full lg:w-[520px] shrink-0">
 
-                <?php $images_json = esc_attr( json_encode( $images ) ); ?>
-
                 <!-- Main image carousel -->
                 <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3" id="vne-detail-carousel">
-                    <?php $images_json = esc_attr( json_encode( $images ) ); ?>
-                    <?php foreach ( $images as $i => $img_url ) : ?>
-                    <button type="button"
-                            class="vne-slide vne-lightbox-trigger absolute inset-0 w-full h-full transition-opacity duration-300"
-                            style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>;"
-                            data-images="<?php echo $images_json; ?>"
-                            data-start="<?php echo esc_url( $img_url ); ?>"
-                            aria-label="View photo <?php echo $i + 1; ?>">
-                        <img src="<?php echo esc_url( $img_url ); ?>"
-                             alt="<?php echo esc_attr( $title_text ); ?>"
-                             loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
-                             class="w-full h-full object-cover">
-                    </button>
-                    <?php endforeach; ?>
                     <?php foreach ( $images as $i => $img_url ) : ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
                          alt="<?php echo esc_attr( $title_text ); ?>"
@@ -98,14 +79,6 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                         <?php echo esc_html( $condition ); ?>
                     </span>
                     <?php endif; ?>
-
-                    <button type="button"
-                            class="vne-lightbox-trigger absolute bottom-3 right-3 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 text-white text-[10px] font-black uppercase tracking-widest shadow hover:bg-black/80"
-                            data-images="<?php echo $images_json; ?>"
-                            data-start="<?php echo esc_url( $images[0] ?? '' ); ?>">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h4l2-3h6l2 3h4v12H3Z"/><circle cx="12" cy="13" r="3"/></svg>
-                        View Photos
-                    </button>
                 </div>
 
                 <!-- Photos count -->
@@ -117,11 +90,9 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                 <?php if ( count( $images ) > 1 ) : ?>
                 <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;">
                     <?php foreach ( $images as $i => $img_url ) : ?>
-                    <button class="vne-thumb vne-lightbox-trigger shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
+                    <button class="vne-thumb shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
                             style="border-color:<?php echo $i === 0 ? 'rgb(220,38,38)' : 'rgb(226,232,240)'; ?>"
                             data-index="<?php echo $i; ?>"
-                            data-images="<?php echo $images_json; ?>"
-                            data-start="<?php echo esc_url( $img_url ); ?>"
                             aria-label="Photo <?php echo $i + 1; ?>">
                         <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy"
                              class="w-full h-full object-cover">
@@ -139,30 +110,12 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                     <?php if ( $make ) : ?>
                     <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
                     <?php endif; ?>
-                    <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight mb-2">
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight">
                         <?php echo esc_html( $title_text ); ?>
                     </h1>
-                    
-                    <div class="flex items-center justify-between flex-wrap gap-4">
-                        <?php if ( $category ) : ?>
-                        <p class="text-red-600 text-[11px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></p>
-                        <?php endif; ?>
-
-                        <!-- UTILITY BUTTONS (PRINT & SHARE) -->
-                        <div class="flex items-center gap-3 shrink-0">
-                            <!-- Print Button -->
-                            <button onclick="window.print()" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-white transition-all bg-white hover:bg-red-600 px-4 py-2.5 rounded-xl border-2 border-red-100 hover:border-red-600 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                Print
-                            </button>
-                            
-                            <!-- Share Button -->
-                            <button onclick="if(navigator.share){navigator.share({title:document.title,url:window.location.href})}else{alert('Link copied: '+window.location.href);navigator.clipboard.writeText(window.location.href);}" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-white transition-all bg-white hover:bg-red-600 px-4 py-2.5 rounded-xl border-2 border-red-100 hover:border-red-600 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                                Share
-                            </button>
-                        </div>
-                    </div>
+                    <?php if ( $category ) : ?>
+                    <p class="text-red-600 text-[11px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Price -->
@@ -178,18 +131,18 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                     <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
                     <div class="flex items-center gap-2 mt-2 text-[12px] text-slate-500 font-bold flex-wrap">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        <a href="<?php echo esc_url( $finance_url ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
+                        <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
                         <span class="text-slate-200">|</span>
                         <span>Payments as low as <strong class="text-slate-700">USD $<?php echo number_format( $monthly_payment, 2 ); ?>*</strong></span>
                     </div>
                     <?php endif; ?>
                 </div>
 
-                <!-- Email Seller -->
-                <a href="mailto:contact@varnerequipment.com?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
+                <!-- E-mail Us -->
+                <a href="mailto:jacob@varnerequipment.com?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
                    class="flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[11px] hover:bg-red-600 transition-all shadow-md w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                    Email Seller
+                    E-mail Us
                 </a>
 
                 <!-- Machine Location -->
@@ -219,10 +172,10 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.72a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                 (970) 874-0612
                             </a>
-                            <a href="mailto:contact@varnerequipment.com"
+                            <a href="mailto:jacob@varnerequipment.com"
                                class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                contact@varnerequipment.com
+                                jacob@varnerequipment.com
                             </a>
                         </div>
                     </div>
@@ -230,7 +183,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 
                 <!-- Financing CTA -->
                 <div class="flex flex-col gap-3">
-                    <a href="<?php echo esc_url( $finance_url ); ?>"
+                    <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>"
                        class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         *Apply for Financing
@@ -258,7 +211,10 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                             'Stock Status' => array( 'text', $stock_status ),
                             'Color'        => array( 'text', $color ),
                             'Length'       => array( 'text', $length ),
-                            'Meter'        => array( 'text', $meter ? $meter . ' ' . $meter_type : '' ),
+                            'Hours'        => array( 'text', $meter ? $meter . ' ' . $meter_type : '' ),
+                            'Engine Horsepower' => array( 'text', $engine_horsepower ),
+                            'Drive'        => array( 'text', $drive ),
+                            'Attachments'  => array( 'text', $has_attachments ? ('Yes' . ($attachment_details ? ' — ' . $attachment_details : '')) : 'No' ),
                             'Description'  => array( 'html', $description ),
                         );
                         foreach ( $specs as $label => $spec ) :
@@ -283,7 +239,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 
         <!-- ── FINANCING DISCLAIMER ──────────────────────────────── -->
         <div class="mt-10 border-t border-slate-200 pt-8">
-            <p class="text-[10px] text-slate-400 leading-relaxed font-medium max-w-5xl">
+            <p class="text-xs text-slate-500 leading-relaxed font-medium max-w-5xl">
                 *Monthly payment stated above assumes a secured commercial use loan transaction available for highly qualified commercial loan applicants. Actual loan payment amount and terms may vary. Consumer financing not available for consumers residing in Nevada. Additional state restrictions may apply. Equal opportunity lender. Click here for more state licenses and disclosures. NMLS ID: 1857954. VERMONT RESIDENTS: THIS IS A LOAN SOLICITATION ONLY. CurrencyFinance IS NOT THE LENDER. INFORMATION RECEIVED WILL BE SHARED WITH ONE OR MORE THIRD PARTIES IN CONNECTION WITH YOUR LOAN INQUIRY. THE LENDER MAY NOT BE SUBJECT TO ALL VERMONT LENDING LAWS. THE LENDER MAY BE SUBJECT TO FEDERAL LENDING LAWS. CALIFORNIA RESIDENTS: Financing provided or arranged by Express Tech-Financing, LLC dba Currency pursuant to California Finance Lender License #60DBO54873.
             </p>
         </div>
@@ -301,6 +257,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     var next   = wrap.querySelector('.vne-next');
     if (slides.length <= 1) return;
     var cur = 0;
+
     function go(i) {
         slides[cur].style.opacity = '0';
         if (thumbs[cur]) thumbs[cur].style.borderColor = 'rgb(226,232,240)';
@@ -320,7 +277,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
     wrap.addEventListener('touchend',   function (e) {
         var dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) { go(dx < 0 ? cur + 1 : cur - 1); }
+        if (Math.abs(dx) > 40) go(dx < 0 ? cur + 1 : cur - 1);
     }, { passive: true });
 })();
 </script>

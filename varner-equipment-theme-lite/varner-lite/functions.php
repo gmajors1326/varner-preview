@@ -143,10 +143,8 @@ function varner_handle_chatbox_submit() {
     $mobile  = sanitize_text_field( $_POST['mobile'] ?? '' );
     $msg     = sanitize_textarea_field( $_POST['message'] ?? '' );
 
-    $subject = 'Website Chatbox: ' . ( $dept ?: 'General' );
-    $body    = "Department: {$dept}\nName: {$name}\nMobile: {$mobile}\n\nMessage:\n{$msg}";
-
-    wp_mail( 'ashley@varnerequiment.com', $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    wp_mail( $recipient, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( wp_get_referer() ?: home_url() );
     exit;
@@ -167,8 +165,8 @@ function varner_handle_contact_form_submit() {
           . "Email: " . sanitize_email( $_POST['email'] ) . "\n"
           . "Phone: " . sanitize_text_field( $_POST['phone'] ) . "\n\n"
           . "Message:\n" . sanitize_textarea_field( $_POST['message'] ) . "\n";
-
-    wp_mail( 'ashley@varnerequiment.com', 'General Website Inquiry: ' . $name, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    wp_mail( $recipient, 'General Website Inquiry: ' . $name, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) );
     exit;
@@ -199,8 +197,8 @@ function varner_handle_parts_request_submit() {
           . "Preferred Date: " . sanitize_text_field( $_POST['appointment_date'] ) . "\nDescription: " . sanitize_textarea_field( $_POST['parts_needed'] ) . "\n\n"
           . "HISTORY:\n"
           . "Prior Customer: " . sanitize_text_field( $_POST['prior_service'] ) . "\nLast Date: " . sanitize_text_field( $_POST['last_service_date'] ) . "\nLast Work: " . sanitize_text_field( $_POST['last_service_work'] ) . "\n";
-
-    wp_mail( 'ashley@varnerequiment.com', "Parts Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    wp_mail( $recipient, "Parts Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( home_url( '/contact?request=sent' ) );
     exit;
@@ -231,8 +229,8 @@ function varner_handle_service_request_submit() {
           . "Appointment Date: " . sanitize_text_field( $_POST['appointment_date'] ) . "\nDescription: " . sanitize_textarea_field( $_POST['services_needed'] ) . "\n\n"
           . "HISTORY:\n"
           . "Prior Customer: " . sanitize_text_field( $_POST['prior_service'] ) . "\nLast Date: " . sanitize_text_field( $_POST['last_service_date'] ) . "\nLast Work: " . sanitize_text_field( $_POST['last_service_work'] ) . "\n";
-
-    wp_mail( 'ashley@varnerequiment.com', "Service Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    wp_mail( $recipient, "Service Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( home_url( '/contact?request=sent' ) );
     exit;
@@ -287,6 +285,42 @@ add_filter( 'template_include', function( $template ) {
 ...
 }, 20 );
 */
+
+/**
+ * ── VARNER DIRECT URL ROUTER ──
+ * Intercepts requests at parse_request (before DB queries) for instant loading.
+ * Maps known URL paths directly to theme template files.
+ */
+add_action( 'parse_request', function( $wp ) {
+    $path = trim( $wp->request, '/' );
+
+    $route_map = array(
+        'services'                 => 'page-service-request.php',
+        'services/service-request' => 'page-service-request.php',
+        'services/parts-request'   => 'page-parts-request.php',
+        'dealer-info'              => 'page-about-us.php',
+        'dealer-info/about-us'     => 'page-about-us.php',
+        'dealer-info/our-team'     => 'page-our-team.php',
+        'dealer-info/employment'   => 'page-employment.php',
+        'videos'                   => 'page-videos.php',
+        'product-videos'           => 'page-videos.php',
+        'finance'                  => 'page-finance.php',
+        'financing'                => 'page-finance.php',
+        'contact'                  => 'page-contact.php',
+        'brands'                   => 'page-brands.php',
+    );
+
+    if ( isset( $route_map[ $path ] ) ) {
+        $tpl = get_template_directory() . '/' . $route_map[ $path ];
+        if ( file_exists( $tpl ) ) {
+            status_header( 200 );
+            // Load header/footer context
+            define( 'VARNER_VIRTUAL_PAGE', $path );
+            include $tpl;
+            exit;
+        }
+    }
+}, 1 );
 
 // ─── INVENTORY FILTER HELPERS ────────────────────────────────────────────────
 
@@ -646,7 +680,7 @@ add_action( 'wp_footer', function () {
  * Render Breadcrumbs for the current page.
  */
 function varner_render_breadcrumbs() {
-    if ( is_front_page() ) return; // No breadcrumbs on home
+    if ( is_front_page() && ! defined('VARNER_VIRTUAL_PAGE') ) return;
 
     echo '<div class="bg-white border-b border-slate-100">';
     echo '<div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">';
@@ -654,60 +688,91 @@ function varner_render_breadcrumbs() {
     echo '<nav class="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 flex-wrap">';
     echo '<a href="' . esc_url( home_url( '/' ) ) . '" class="hover:text-red-600 transition-colors">Home</a>';
 
-    $request_uri = $_SERVER['REQUEST_URI'];
-
-    if ( is_singular('equipment') ) {
-        echo '<span>›</span>';
-        echo '<a href="' . esc_url( home_url( '/inventory/all-units' ) ) . '" class="hover:text-red-600 transition-colors">Inventory</a>';
-        
-        $category = get_field('category');
-        if ( $category ) {
-            echo '<span>›</span>';
-            $cat_slug = sanitize_title($category);
-            echo '<a href="' . esc_url( home_url( '/inventory/' . $cat_slug ) ) . '" class="hover:text-red-600 transition-colors">' . esc_html( $category ) . '</a>';
+    // ── Virtual page breadcrumbs (from direct URL router) ──
+    if ( defined('VARNER_VIRTUAL_PAGE') ) {
+        $vpage = VARNER_VIRTUAL_PAGE;
+        $crumb_map = array(
+            'services'                 => array( array('Services', '/services') ),
+            'services/service-request' => array( array('Services', '/services'), array('Service Request', '') ),
+            'services/parts-request'   => array( array('Services', '/services'), array('Parts Request', '') ),
+            'dealer-info'              => array( array('Dealer Info', '') ),
+            'dealer-info/about-us'     => array( array('Dealer Info', '/dealer-info'), array('About Us', '') ),
+            'dealer-info/our-team'     => array( array('Dealer Info', '/dealer-info'), array('Our Team', '') ),
+            'dealer-info/employment'   => array( array('Dealer Info', '/dealer-info'), array('Employment', '') ),
+            'videos'                   => array( array('Videos', '') ),
+            'product-videos'           => array( array('Videos', '') ),
+            'finance'                  => array( array('Financing', '') ),
+            'financing'                => array( array('Financing', '') ),
+            'contact'                  => array( array('Contact', '') ),
+            'brands'                   => array( array('Brands', '') ),
+        );
+        if ( isset( $crumb_map[ $vpage ] ) ) {
+            foreach ( $crumb_map[ $vpage ] as $crumb ) {
+                echo '<span>›</span>';
+                if ( $crumb[1] ) {
+                    echo '<a href="' . esc_url( home_url( $crumb[1] ) ) . '" class="hover:text-red-600 transition-colors">' . esc_html( $crumb[0] ) . '</a>';
+                } else {
+                    echo '<span class="text-slate-900">' . esc_html( $crumb[0] ) . '</span>';
+                }
+            }
         }
 
-        echo '<span>›</span>';
-        echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+    // ── Standard WordPress breadcrumbs ──
+    } else {
+        $request_uri = $_SERVER['REQUEST_URI'];
 
-    } elseif ( strpos($request_uri, '/brands/') !== false ) {
-        echo '<span>›</span>';
-        echo '<a href="' . esc_url( home_url( '/brands' ) ) . '" class="hover:text-red-600 transition-colors">Brands</a>';
-        echo '<span>›</span>';
-        echo '<span class="text-slate-900">' . get_the_title() . '</span>';
-
-    } elseif ( is_page() ) {
-        // Special case for equipment listing pages
-        $slug = get_query_var('inventory_segment');
-        if ( $slug && $slug !== 'all-units' ) {
+        if ( is_singular('equipment') ) {
             echo '<span>›</span>';
             echo '<a href="' . esc_url( home_url( '/inventory/all-units' ) ) . '" class="hover:text-red-600 transition-colors">Inventory</a>';
-        }
-
-        $post = get_post();
-        if ( $post && $post->post_parent ) {
-            $parent_id   = $post->post_parent;
-            $breadcrumbs = array();
-            while ( $parent_id ) {
-                $page = get_page( $parent_id );
-                $breadcrumbs[] = '<a href="' . get_permalink( $page->ID ) . '" class="hover:text-red-600 transition-colors">' . get_the_title( $page->ID ) . '</a>';
-                $parent_id  = $page->post_parent;
-            }
-            $breadcrumbs = array_reverse( $breadcrumbs );
-            foreach ( $breadcrumbs as $crumb ) {
+            
+            $category = get_field('category');
+            if ( $category ) {
                 echo '<span>›</span>';
-                echo $crumb;
+                $cat_slug = sanitize_title($category);
+                echo '<a href="' . esc_url( home_url( '/inventory/' . $cat_slug ) ) . '" class="hover:text-red-600 transition-colors">' . esc_html( $category ) . '</a>';
             }
-        }
-        echo '<span>›</span>';
-        echo '<span class="text-slate-900">' . get_the_title() . '</span>';
 
-    } elseif ( is_search() ) {
-        echo '<span>›</span>';
-        echo '<span class="text-slate-900">Search Results</span>';
-    } elseif ( is_404() ) {
-        echo '<span>›</span>';
-        echo '<span class="text-slate-900">404 - Not Found</span>';
+            echo '<span>›</span>';
+            echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+
+        } elseif ( strpos($request_uri, '/brands/') !== false ) {
+            echo '<span>›</span>';
+            echo '<a href="' . esc_url( home_url( '/brands' ) ) . '" class="hover:text-red-600 transition-colors">Brands</a>';
+            echo '<span>›</span>';
+            echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+
+        } elseif ( is_page() ) {
+            $slug = get_query_var('inventory_segment');
+            if ( $slug && $slug !== 'all-units' ) {
+                echo '<span>›</span>';
+                echo '<a href="' . esc_url( home_url( '/inventory/all-units' ) ) . '" class="hover:text-red-600 transition-colors">Inventory</a>';
+            }
+
+            $post = get_post();
+            if ( $post && $post->post_parent ) {
+                $parent_id   = $post->post_parent;
+                $breadcrumbs = array();
+                while ( $parent_id ) {
+                    $page = get_page( $parent_id );
+                    $breadcrumbs[] = '<a href="' . get_permalink( $page->ID ) . '" class="hover:text-red-600 transition-colors">' . get_the_title( $page->ID ) . '</a>';
+                    $parent_id  = $page->post_parent;
+                }
+                $breadcrumbs = array_reverse( $breadcrumbs );
+                foreach ( $breadcrumbs as $crumb ) {
+                    echo '<span>›</span>';
+                    echo $crumb;
+                }
+            }
+            echo '<span>›</span>';
+            echo '<span class="text-slate-900">' . get_the_title() . '</span>';
+
+        } elseif ( is_search() ) {
+            echo '<span>›</span>';
+            echo '<span class="text-slate-900">Search Results</span>';
+        } elseif ( is_404() ) {
+            echo '<span>›</span>';
+            echo '<span class="text-slate-900">404 - Not Found</span>';
+        }
     }
 
     echo '</nav>';
@@ -785,4 +850,70 @@ function varner_register_video_cpt() {
     register_taxonomy( "video_category", array( "video" ), $tax_args );
 }
 add_action( "init", "varner_register_video_cpt" );
+
+/**
+ * Get default theme settings values.
+ */
+function varner_get_theme_settings_defaults() {
+    return array(
+        'hero_title'                 => "Beyond the <br />\n<span class=\"text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600\">Standard.</span>",
+        'hero_subtitle'              => "Colorado's high-performance source for Mahindra, Big Tex, and Deutz-Fahr.",
+        'hero_button1_text'          => "Shop Inventory",
+        'hero_button1_link'          => "/inventory",
+        'hero_button2_text'          => "Book Service",
+        'hero_button2_link'          => "/service-request",
+        'hero_video_url'             => "",
+        'support_hub_service_link'   => "/service-request",
+        'support_hub_parts_link'     => "https://www.allpartsstore.com/index.htm?customernumber=CO0612",
+        'support_hub_finance_link'   => "/contact",
+        'youtube_tagline'            => "Varner Equipment Media",
+        'youtube_title'              => "See Our Machines<br class=\"hidden sm:block\"/><span class=\"text-red-500 sm:inline block\">In Action</span>",
+        'youtube_paragraph'          => "Subscribe to our YouTube channel for walkthroughs, reviews, and heavy-duty demonstrations right here in Colorado.",
+        'youtube_channel_url'        => "https://www.youtube.com/@VarnerEquipment",
+        'youtube_video_id'           => "goF_3TspZ6k",
+        'youtube_custom_thumbnail'   => "",
+        'cta_title'                  => "What's Next On<br class=\"hidden sm:block\" />\nYour To-Do List?",
+        'cta_text'                   => "Varner Equipment is a family owned and operated tractor and trailer dealership. We are your one stop for equipment that you can rely on.",
+        'cta_button_text'            => "Learn more",
+        'cta_button_link'            => "/dealer-info/about-us",
+        'about_why_choose_us_title'  => "Why Choose Us?",
+        'about_why_choose_us_bullets'=> array(
+            "Family Owned & Operated",
+            "Expert Service Department",
+            "Extensive Parts Inventory",
+            "Top-Tier Equipment Brands"
+        ),
+        'contact_email'              => "ashley@varnerequipment.com",
+        'contact_phone'              => "(970) 874-0612",
+        'contact_phone_raw'          => "9708740612",
+        'contact_address_line1'      => "1375 US-50",
+        'contact_address_line2'      => "Delta, CO 81416",
+        'contact_map_link'           => "https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9",
+        'contact_map_embed_url'      => "https://www.google.com/maps?q=Varner%20Equipment%2C%201375%20US-50%2C%20Delta%2C%20CO%2081416&z=8&output=embed",
+        'hours_mon_fri'              => "8am - 5pm",
+        'hours_sat'                  => "9am - Noon",
+        'hours_sun'                  => "Closed",
+        'social_facebook'            => "https://www.facebook.com/varnerequipment",
+        'social_youtube'             => "https://www.youtube.com/@VarnerEquipment",
+    );
+}
+
+/**
+ * Retrieve a theme setting with visual-safe fallback.
+ */
+function varner_get_theme_setting($key, $default = null) {
+    $settings = get_option('varner_theme_settings', array());
+    if (isset($settings[$key])) {
+        return $settings[$key];
+    }
+    if ($default !== null) {
+        return $default;
+    }
+    $defaults = varner_get_theme_settings_defaults();
+    if (isset($defaults[$key])) {
+        return $defaults[$key];
+    }
+    return '';
+}
+
 

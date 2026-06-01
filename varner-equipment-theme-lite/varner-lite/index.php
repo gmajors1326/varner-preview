@@ -1,11 +1,5 @@
 <?php 
     get_header();
-    $h_headline_main   = get_field('hero_headline_main') ?: 'Beyond the';
-    $h_headline_accent = get_field('hero_headline_accent') ?: 'Standard.';
-    $h_subline         = get_field('hero_subheadline') ?: "Colorado's premier destination for high-performance new and used farm equipment. Authorized dealer for Mahindra, Big Tex, Deutz-Fahr, and dozens of other world-class agricultural and construction brands.";
-    $h_btn_1           = get_field('hero_button_1_text') ?: 'Shop Inventory';
-    $h_btn_2           = get_field('hero_button_2_text') ?: 'Book Service';
-    $h_btn_3           = get_field('hero_button_3_text') ?: 'Order Parts';
 ?>
 
     <!-- HERO SECTION -->
@@ -13,9 +7,58 @@
         <div id="hero-parallax-media" class="absolute inset-0 z-0">
             <div class="absolute inset-0 w-full h-full scale-105">
                 <!-- CINEMATIC VIDEO BACKGROUND -->
-                <video autoplay muted loop playsinline preload="auto" class="w-full h-full object-cover opacity-70">
-                    <source src="<?php echo get_template_directory_uri(); ?>/assets/VEHeroVid.mp4" type="video/mp4">
+                <video id="hero-video" muted loop playsinline webkit-playsinline
+                       class="absolute inset-0 w-full h-full object-cover opacity-70"
+                       style="min-width:100%;min-height:100%;">
                 </video>
+                <script>
+                (function(){
+                    var v = document.getElementById('hero-video');
+                    if(!v) return;
+                    <?php 
+                    $hero_vid = varner_get_theme_setting( 'hero_video_url', '' );
+                    $hero_vid_url = $hero_vid ? esc_url( $hero_vid ) : get_template_directory_uri() . '/assets/VEHeroVid.mp4';
+                    ?>
+                    var src = '<?php echo $hero_vid_url; ?>';
+                    v.muted = true;
+                    v.setAttribute('muted','');
+                    v.setAttribute('playsinline','');
+
+                    function loadAndPlay() {
+                        if (!v.querySelector('source')) {
+                            var s = document.createElement('source');
+                            s.src = src;
+                            s.type = 'video/mp4';
+                            v.appendChild(s);
+                            v.load();
+                        }
+                        v.play().catch(function(){});
+                    }
+
+                    // Desktop: load immediately
+                    if (window.innerWidth >= 1024) {
+                        v.setAttribute('preload','auto');
+                        v.setAttribute('autoplay','');
+                        loadAndPlay();
+                    } else {
+                        // Mobile: load on first interaction
+                        v.setAttribute('preload','none');
+                        var loaded = false;
+                        ['touchstart','touchend','click','scroll'].forEach(function(evt){
+                            document.addEventListener(evt, function(){
+                                if(!loaded){ loaded=true; loadAndPlay(); }
+                            }, {once:true, passive:true});
+                        });
+                    }
+
+                    // Retry for desktop
+                    var t = 0;
+                    var ri = setInterval(function(){
+                        if(!v.paused || ++t >= 20) clearInterval(ri);
+                        else v.play().catch(function(){});
+                    }, 500);
+                })();
+                </script>
                 <!-- 40% DARK BLUE OVERLAY -->
                 <div class="absolute inset-0 bg-blue-950/40"></div>
                 <div class="absolute inset-0 hero-gradient"></div>
@@ -25,21 +68,20 @@
         <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 pb-12">
             <div class="max-w-3xl space-y-8">
                 <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
-                    <?php echo $h_headline_main; ?> <br />
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600 reveal-on-scroll delay-200 inline-block"><?php echo $h_headline_accent; ?></span>
+                    <?php echo wp_kses_post( varner_get_theme_setting( 'hero_title' ) ); ?>
                 </h1>
                 <p class="text-xl text-slate-200 font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300">
-                    <?php echo esc_html($h_subline); ?>
+                    <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
                 </p>
                 <div class="grid grid-cols-2 sm:flex sm:flex-row flex-wrap gap-3 sm:gap-4 pt-6 items-start">
-                    <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
-                        <?php echo esc_html($h_btn_1); ?>
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
+                        <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-500">
-                        <?php echo esc_html($h_btn_2); ?>
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-500">
+                        <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="hidden sm:inline-block relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
-                        <?php echo esc_html($h_btn_3); ?>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
+                        Online Parts
                     </a>
                 </div>
             </div>
@@ -133,8 +175,8 @@
 
     <!-- BRAND TICKER -->
     <section class="bg-white py-0">
-        <div class="w-full h-auto min-h-[80px] sm:min-h-[120px] md:min-h-[160px] bg-red-600 flex items-center relative overflow-hidden py-[20px]">
-            <div class="flex hover:[animation-play-state:paused] w-max will-change-transform" style="animation: scroll 35s linear infinite;">
+        <div id="brand-ticker" class="w-full h-auto min-h-[80px] sm:min-h-[120px] md:min-h-[160px] bg-red-600 flex items-center relative overflow-hidden py-[20px]">
+            <div class="brand-ticker-track flex w-max will-change-transform" style="animation: scroll 35s linear infinite;">
                 <div class="flex items-center shrink-0">
                     <?php 
                     $uploads = wp_get_upload_dir();
@@ -191,6 +233,7 @@
         </div>
         <style>
             @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+            #brand-ticker:hover .brand-ticker-track { animation-play-state: paused !important; }
         </style>
     </section>
 
@@ -198,7 +241,7 @@
     <section class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-                <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
+                <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_service_link', '/services/service-request' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
                     <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 group-hover:text-red-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.15.14a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0"/></svg>
                     </div>
@@ -208,7 +251,7 @@
                     </div>
                 </a>
 
-                <a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
+                <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
                     <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 group-hover:text-red-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
                     </div>
@@ -218,7 +261,7 @@
                     </div>
                 </a>
 
-                <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-900 text-white hover:bg-red-600 hover:translate-y-[-2px] transition-all group shadow-xl shadow-slate-200">
+                <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_finance_link', '/finance' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-900 text-white hover:bg-red-600 hover:translate-y-[-2px] transition-all group shadow-xl shadow-slate-200">
                     <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
@@ -361,24 +404,35 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex flex-col md:flex-row gap-10 lg:gap-20 items-center">
                 <div class="w-full md:w-1/2 space-y-6 text-white text-center md:text-left">
-                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em]">Varner Equipment Media</div>
-                    <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1] md:leading-[0.9] tracking-tighter uppercase break-words">See Our Machines<br class="hidden sm:block"/><span class="text-red-500 sm:inline block">In Action</span></h2>
-                    <p class="text-base sm:text-lg text-slate-400 font-bold max-w-md mx-auto md:mx-0 leading-relaxed">Subscribe to our YouTube channel for walkthroughs, reviews, and heavy-duty demonstrations right here in Colorado.</p>
-                    <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
+                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em]"><?php echo esc_html( varner_get_theme_setting( 'youtube_tagline', 'Varner Equipment Media' ) ); ?></div>
+                    <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1] md:leading-[0.9] tracking-tighter uppercase break-words"><?php echo wp_kses_post( varner_get_theme_setting( 'youtube_title' ) ); ?></h2>
+                    <p class="text-base sm:text-lg text-slate-400 font-bold max-w-md mx-auto md:mx-0 leading-relaxed"><?php echo wp_kses_post( varner_get_theme_setting( 'youtube_paragraph' ) ); ?></p>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'youtube_channel_url', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
                         Visit Our Channel
                     </a>
                 </div>
                 <div class="w-full md:w-1/2">
-                    <div class="aspect-video bg-slate-900 rounded-2xl md:rounded-[2rem] overflow-hidden border border-slate-800 md:border-2 shadow-2xl relative group w-full">
-                        <iframe 
-                            class="w-full h-full"
-                            src="https://www.youtube.com/embed/goF_3TspZ6k?autoplay=0&rel=0" 
-                            title="Varner Equipment - See Our Machines In Action" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            allowfullscreen>
-                        </iframe>
+                    <?php
+                    $yt_video_id = varner_get_theme_setting( 'youtube_video_id', 'goF_3TspZ6k' );
+                    $yt_custom_thumb = varner_get_theme_setting( 'youtube_custom_thumbnail', '' );
+                    $yt_thumb_url = $yt_custom_thumb ? $yt_custom_thumb : "https://img.youtube.com/vi/{$yt_video_id}/maxresdefault.jpg";
+                    ?>
+                    <div id="yt-player-container" 
+                         class="aspect-video bg-slate-900 rounded-2xl md:rounded-[2rem] overflow-hidden border border-slate-800 md:border-2 shadow-2xl relative group cursor-pointer w-full"
+                         data-video-id="<?php echo esc_attr( $yt_video_id ); ?>">
+                        <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center pl-1 sm:pl-2 shadow-[0_0_30px_rgba(220,38,38,0.5)] group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="<?php echo esc_url( $yt_thumb_url ); ?>" alt="Video Thumbnail" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500 scale-105 group-hover:scale-100">
                     </div>
+                    <script>
+                    document.getElementById('yt-player-container').addEventListener('click', function() {
+                        var videoId = this.getAttribute('data-video-id');
+                        this.innerHTML = '<iframe class="w-full h-full" src="https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+                    });
+                    </script>
                 </div>
             </div>
         </div>
@@ -390,16 +444,15 @@
             <div class="flex flex-col md:flex-row gap-10 lg:gap-16 items-center">
                 <div class="w-full md:w-7/12 text-center md:text-left">
                     <h2 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1] md:leading-[0.9] tracking-tighter uppercase break-words">
-                        What's Next On<br class="hidden sm:block" />
-                        Your To-Do List?
+                        <?php echo wp_kses_post( varner_get_theme_setting( 'cta_title' ) ); ?>
                     </h2>
                 </div>
                 <div class="w-full md:w-5/12 flex flex-col items-center md:items-start gap-6 sm:gap-8 text-center md:text-left">
                     <p class="text-lg sm:text-xl text-slate-600 font-bold leading-relaxed">
-                        Varner Equipment is a family owned and operated tractor and trailer dealership. We are your one stop for equipment that you can rely on.
+                        <?php echo wp_kses_post( varner_get_theme_setting( 'cta_text' ) ); ?>
                     </p>
-                    <a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="inline-block bg-slate-900 text-white px-10 py-5 sm:px-12 sm:py-6 rounded-3xl font-black uppercase tracking-widest text-[10px] sm:text-sm shadow-xl hover:bg-red-600 hover:text-white transition-all w-full sm:w-auto">
-                        Learn more
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'cta_button_link', '/dealer-info/about-us' ) ) ); ?>" class="inline-block bg-slate-900 text-white px-10 py-5 sm:px-12 sm:py-6 rounded-3xl font-black uppercase tracking-widest text-[10px] sm:text-sm shadow-xl hover:bg-red-600 hover:text-white transition-all w-full sm:w-auto">
+                        <?php echo esc_html( varner_get_theme_setting( 'cta_button_text', 'Learn more' ) ); ?>
                     </a>
                 </div>
             </div>

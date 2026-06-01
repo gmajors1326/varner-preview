@@ -6,8 +6,8 @@ Set-Location $repoRoot
 
 $fullZip   = Join-Path $repoRoot 'varner-equipment-theme-v23.zip'
 $liteZip   = Join-Path $repoRoot 'varner-equipment-theme-v23-lite.zip'
-$fullSrc   = Join-Path $repoRoot 'varner-equipment-theme-v23\varner-equipment-theme'
-$liteSrc   = Join-Path $repoRoot 'varner-equipment-theme-lite\varner-equipment-theme'
+$fullSrc   = Join-Path $repoRoot 'varner-equipment-theme-v23\varner-v23'
+$liteSrc   = Join-Path $repoRoot 'varner-equipment-theme-lite\varner-lite'
 
 if (Test-Path $fullZip) { Remove-Item $fullZip -Force }
 if (Test-Path $liteZip) { Remove-Item $liteZip -Force }

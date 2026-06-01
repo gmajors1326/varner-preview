@@ -184,7 +184,7 @@ $finance_url    = add_query_arg( array(
             <a href="mailto:contact@varnerequipment.com"
                class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Email Seller
+                E-mail Us
             </a>
             <a href="tel:9708740612"
                class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">

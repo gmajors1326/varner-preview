@@ -3,10 +3,10 @@
 get_header();
 ?>
 
-    <section class="py-16 bg-slate-950 text-white">
+    <section class="pt-32 pb-16 bg-slate-950 text-white">
         <div class="max-w-7xl mx-auto px-4 space-y-6">
             <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em]">Varner Equipment</div>
-            <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase"><?php the_title(); ?></h1>
+            <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase"><?php echo esc_html( get_the_title() ?: 'Product Videos' ); ?></h1>
             <?php if (get_the_content()): ?>
                 <div class="text-slate-300 max-w-2xl font-bold">
                     <?php the_content(); ?>

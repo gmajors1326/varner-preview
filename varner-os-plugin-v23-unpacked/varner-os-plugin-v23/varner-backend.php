@@ -277,6 +277,11 @@ function varner_register_rest_routes() {
         'callback'            => 'varner_api_logout',
         'permission_callback' => 'is_user_logged_in',
     ));
+
+    register_rest_route($ns, '/settings', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_settings',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_settings', 'permission_callback' => $auth),
+    ));
 }
 
 function varner_api_get_brands() {
@@ -501,6 +506,10 @@ function varner_get_equipment_fields_config() {
         'seller_info'    => array('type' => 'wysiwyg'),
         'featured'       => array('type' => 'bool'),
         'show_on_website'=> array('type' => 'bool', 'default' => true),
+        'has_attachments'=> array('type' => 'bool', 'default' => false),
+        'attachment_details' => array('type' => 'text'),
+        'engine_horsepower' => array('type' => 'text'),
+        'drive'          => array('type' => 'text'),
     );
 }
 
@@ -522,7 +531,11 @@ function varner_format_unit($post_id) {
         } elseif ($meta['type'] === 'number') {
             $data[$key] = (string) ($val ?? '');
         } else {
-            $data[$key] = $val ?: ($meta['default'] ?? '');
+            $raw = $val ?: ($meta['default'] ?? '');
+            if ($meta['type'] === 'wysiwyg' && $raw && strip_tags($raw) === $raw) {
+                $raw = nl2br(esc_html($raw));
+            }
+            $data[$key] = $raw;
         }
     }
 
@@ -563,6 +576,7 @@ function varner_format_unit($post_id) {
         }
     }
 
+    $data['created_at'] = $post->post_date;
     $data['deleted_at'] = get_post_meta($post_id, '_varner_deleted_at', true);
     $data['last_action'] = get_post_meta($post_id, '_varner_last_action', true);
     $data['last_actor_name'] = get_post_meta($post_id, '_varner_last_actor_name', true);
@@ -583,7 +597,11 @@ function varner_save_unit_fields($post_id, $data) {
         } elseif ($meta['type'] === 'number') {
             update_field($key, floatval($val), $post_id);
         } elseif ($meta['type'] === 'wysiwyg') {
-            update_field($key, wp_kses_post($val), $post_id);
+            $clean = wp_kses_post($val);
+            if (strip_tags($clean) === $clean) {
+                $clean = nl2br($clean);
+            }
+            update_field($key, $clean, $post_id);
         } else {
             update_field($key, sanitize_text_field($val), $post_id);
         }
@@ -817,3 +835,94 @@ function varner_api_get_sessions(WP_REST_Request $request) {
         'per_page' => $per_page,
     ));
 }
+
+function varner_backend_get_settings_defaults() {
+    if (function_exists('varner_get_theme_settings_defaults')) {
+        return varner_get_theme_settings_defaults();
+    }
+    return array(
+        'hero_title'                 => "Beyond the <br />\n<span class=\"text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600\">Standard.</span>",
+        'hero_subtitle'              => "Colorado's high-performance source for Mahindra, Big Tex, and Deutz-Fahr.",
+        'hero_button1_text'          => "Shop Inventory",
+        'hero_button1_link'          => "/inventory",
+        'hero_button2_text'          => "Book Service",
+        'hero_button2_link'          => "/service-request",
+        'hero_video_url'             => "",
+        'support_hub_service_link'   => "/service-request",
+        'support_hub_parts_link'     => "https://www.allpartsstore.com/index.htm?customernumber=CO0612",
+        'support_hub_finance_link'   => "/contact",
+        'youtube_tagline'            => "Varner Equipment Media",
+        'youtube_title'              => "See Our Machines<br class=\"hidden sm:block\"/><span class=\"text-red-500 sm:inline block\">In Action</span>",
+        'youtube_paragraph'          => "Subscribe to our YouTube channel for walkthroughs, reviews, and heavy-duty demonstrations right here in Colorado.",
+        'youtube_channel_url'        => "https://www.youtube.com/@VarnerEquipment",
+        'youtube_video_id'           => "goF_3TspZ6k",
+        'youtube_custom_thumbnail'   => "",
+        'cta_title'                  => "What's Next On<br class=\"hidden sm:block\" />\nYour To-Do List?",
+        'cta_text'                   => "Varner Equipment is a family owned and operated tractor and trailer dealership. We are your one stop for equipment that you can rely on.",
+        'cta_button_text'            => "Learn more",
+        'cta_button_link'            => "/dealer-info/about-us",
+        'about_why_choose_us_title'  => "Why Choose Us?",
+        'about_why_choose_us_bullets'=> array(
+            "Family Owned & Operated",
+            "Expert Service Department",
+            "Extensive Parts Inventory",
+            "Top-Tier Equipment Brands"
+        ),
+        'contact_email'              => "ashley@varnerequipment.com",
+        'contact_phone'              => "(970) 874-0612",
+        'contact_phone_raw'          => "9708740612",
+        'contact_address_line1'      => "1375 US-50",
+        'contact_address_line2'      => "Delta, CO 81416",
+        'contact_map_link'           => "https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9",
+        'contact_map_embed_url'      => "https://www.google.com/maps?q=Varner%20Equipment%2C%201375%20US-50%2C%20Delta%2C%20CO%2081416&z=8&output=embed",
+        'hours_mon_fri'              => "8am - 5pm",
+        'hours_sat'                  => "9am - Noon",
+        'hours_sun'                  => "Closed",
+        'social_facebook'            => "https://www.facebook.com/varnerequipment",
+        'social_youtube'             => "https://www.youtube.com/@VarnerEquipment",
+    );
+}
+
+function varner_api_get_settings() {
+    $settings = get_option('varner_theme_settings', array());
+    $defaults = varner_backend_get_settings_defaults();
+    
+    $merged = array();
+    foreach ($defaults as $key => $default_val) {
+        $merged[$key] = isset($settings[$key]) ? $settings[$key] : $default_val;
+    }
+    
+    return rest_ensure_response($merged);
+}
+
+function varner_api_save_settings(WP_REST_Request $request) {
+    $params = $request->get_json_params();
+    if (!is_array($params)) {
+        return new WP_Error('invalid_data', 'Invalid settings data', array('status' => 400));
+    }
+    
+    $defaults = varner_backend_get_settings_defaults();
+    $sanitized = array();
+    
+    foreach ($defaults as $key => $default_val) {
+        if (isset($params[$key])) {
+            if (is_array($default_val)) {
+                $sanitized[$key] = array_map('sanitize_text_field', (array)$params[$key]);
+            } else if (is_bool($default_val)) {
+                $sanitized[$key] = (bool)$params[$key];
+            } else {
+                if (in_array($key, array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text'), true)) {
+                    $sanitized[$key] = wp_kses_post($params[$key]);
+                } else {
+                    $sanitized[$key] = sanitize_text_field($params[$key]);
+                }
+            }
+        } else {
+            $sanitized[$key] = $default_val;
+        }
+    }
+    
+    update_option('varner_theme_settings', $sanitized);
+    return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
+}
+

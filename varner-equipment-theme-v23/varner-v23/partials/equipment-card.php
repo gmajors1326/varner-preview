@@ -29,15 +29,9 @@ $card_status    = isset( $stock_status ) ? $stock_status : get_field( 'stock_sta
 $card_status_lc = $card_status ? strtolower( trim( $card_status ) ) : '';
 $is_sold        = $card_status_lc === 'sold';
 $is_pending     = $card_status_lc === 'sale pending' || $card_status_lc === 'pending sale' || $card_status_lc === 'pending';
-$finance_url    = add_query_arg( array(
-    'price' => is_numeric( $price ) ? $price : '',
-    'term'  => 60,
-    'apr'   => 10,
-    'down'  => 10,
-), home_url( '/finance' ) );
 ?>
 
-<div class="vne-card bg-white/90 backdrop-blur-md rounded-2xl overflow-hidden border border-white/50 shadow-md flex flex-col hover:shadow-2xl hover:border-red-500/20 transition-all duration-300 h-full">
+<div class="vne-card bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-md flex flex-col hover:shadow-xl hover:border-red-200 transition-all duration-300 h-full">
 
     <!-- ── IMAGE CAROUSEL ─────────────────────────────────── -->
     <div class="vne-carousel-wrap relative group/carousel" id="<?php echo esc_attr( $uid ); ?>">
@@ -73,13 +67,11 @@ $finance_url    = add_query_arg( array(
             <?php endif; ?>
 
             <!-- Lightbox trigger icon -->
-            <button type="button"
-                    class="vne-lightbox-trigger absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity bg-black/60 text-white p-2 rounded-lg backdrop-blur-sm hover:bg-black/80"
-                    aria-label="View photos"
-                    data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
-                    data-start="<?php echo esc_url( $images[0] ?? '' ); ?>">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-            </button>
+            <div class="absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity pointer-events-none">
+                <div class="bg-black/50 text-white p-2 rounded-lg backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                </div>
+            </div>
 
             <?php if ( count( $images ) > 1 ) : ?>
             <!-- Prev arrow -->
@@ -131,7 +123,7 @@ $finance_url    = add_query_arg( array(
             <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
             <div class="flex items-center gap-1 text-[11px] text-slate-500 font-medium mt-1">
                 Payments as low as USD $<?php echo number_format( $monthly_payment, 2 ); ?>*
-                <a href="<?php echo esc_url( $finance_url ); ?>" class="text-red-500 hover:text-red-600 shrink-0">
+                <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="text-red-500 hover:text-red-600 shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
             </div>
@@ -140,7 +132,7 @@ $finance_url    = add_query_arg( array(
 
         <!-- Financing button -->
         <div class="flex gap-2">
-            <a href="<?php echo esc_url( $finance_url ); ?>"
+            <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>"
                class="flex-1 text-center text-[9px] font-black uppercase tracking-wide border-2 border-slate-700 text-slate-700 py-2.5 px-1 rounded-lg hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all leading-tight">
                 *Apply for<br>Financing
             </a>
@@ -184,7 +176,7 @@ $finance_url    = add_query_arg( array(
             <a href="mailto:contact@varnerequipment.com"
                class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Email Seller
+                E-mail Us
             </a>
             <a href="tel:9708740612"
                class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">

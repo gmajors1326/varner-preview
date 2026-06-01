@@ -41,8 +41,8 @@
 ## Theme ZIP Packaging Rule (Important)
 
 - Both ZIPs must be rebuilt after **every** theme file change.
-- Each ZIP must contain a top-level `varner-equipment-theme/` folder.
-- `style.css` must be inside that folder: `varner-equipment-theme/style.css`.
+- Each ZIP must contain its respective top-level theme folder (`varner-v23` or `varner-lite`).
+- `style.css` must be inside that folder: e.g., `varner-v23/style.css` or `varner-lite/style.css`.
 - Do not ZIP only the folder contents (that causes WordPress theme install/load errors).
 - When editing files, always edit in the versioned source folder first, then sync to the lite folder, then rebuild both ZIPs.
 
@@ -90,7 +90,9 @@ Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-
 
 # 3. Zip plugin
 Remove-Item '.\varner-os-plugin-v23.zip' -Force -ErrorAction SilentlyContinue
-Compress-Archive -Path '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23' -DestinationPath '.\varner-os-plugin-v23.zip'
+Push-Location 'varner-os-plugin-v23-unpacked'
+tar -a -c -f ../varner-os-plugin-v23.zip varner-os-plugin-v23
+Pop-Location
 ```
 
 ## Plugin Install or Update

@@ -23,7 +23,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Settings, Zap, Menu, Image as ImageIcon, Smartphone, Eye,
   ArrowUpRight, BarChart3, Users, Wrench, Clock, ShieldCheck, Camera, Loader2,
   ScanText, List, Search, Edit2, X, TrendingUp, Activity, DollarSign, History,
-  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download
+  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download, ChevronUp, ChevronDown, Mail
 } from 'lucide-react';
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
@@ -72,6 +72,7 @@ const defaultEmptyUnit = {
   color: '', length: '', meter: '', meterType: 'Hours', intakeDate: '', description: '',
   featured: false, showOnWebsite: true, images: [], image_ids: [], attachments: [],
   sellerInfo: '<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>',
+  hasAttachments: false, attachmentDetails: '', engineHorsepower: '', drive: '',
 };
 
 // Map API unit → local unit shape used by the editor
@@ -98,6 +99,10 @@ function apiToLocal(u) {
     sellerInfo: u.seller_info,
     featured: u.featured ?? false,
     showOnWebsite: u.show_on_website ?? true,
+    hasAttachments: u.has_attachments ?? false,
+    attachmentDetails: u.attachment_details ?? '',
+    engineHorsepower: u.engine_horsepower ?? '',
+    drive: u.drive ?? '',
     images: u.images ?? [],
     image_ids: u.image_ids ?? [],
     attachments: (u.implements ?? []).map(imp => ({
@@ -121,6 +126,31 @@ function getCategoryLabel(cat) {
 }
 
 // Map inventory list item shape for the table
+function getDaysInStock(item) {
+  const dateStr = item.intakeDate || item.createdAt;
+  if (!dateStr) return '-';
+  try {
+    const datePart = dateStr.split(' ')[0];
+    const parts = datePart.split('-');
+    if (parts.length < 3) return '-';
+    
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    
+    const itemDate = new Date(year, month, day);
+    const today = new Date();
+    itemDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = today.getTime() - itemDate.getTime();
+    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    return `${diffDays} Day${diffDays !== 1 ? 's' : ''}`;
+  } catch (e) {
+    return '-';
+  }
+}
+
 function apiToListItem(u) {
   return {
     id: String(u.id),
@@ -145,7 +175,13 @@ function apiToListItem(u) {
       price: imp.price,
       description: imp.description,
     })),
+    hasAttachments: u.has_attachments ?? false,
+    attachmentDetails: u.attachment_details ?? '',
+    engineHorsepower: u.engine_horsepower ?? '',
+    drive: u.drive ?? '',
     deleted_at: u.deleted_at ?? '',
+    intakeDate: u.intake_date,
+    createdAt: u.created_at,
   };
 }
 
@@ -377,6 +413,10 @@ const App = () => {
         seller_info:  unitData.sellerInfo,
         featured:     unitData.featured ?? false,
         show_on_website: unitData.showOnWebsite ?? true,
+        has_attachments: unitData.hasAttachments ?? false,
+        attachment_details: unitData.attachmentDetails || '',
+        engine_horsepower: unitData.engineHorsepower || '',
+        drive: unitData.drive || '',
         image_ids:    unitData.image_ids ?? [],
         implements:   (unitData.attachments ?? []).map(a => ({
           title:       a.title,
@@ -731,7 +771,7 @@ const App = () => {
                     {isLoading ? (
                       <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Loading inventory…</div>
                     ) : (
-                      <table className="w-full text-left border-collapse min-w-[800px]">
+                      <table className="w-full text-left border-collapse min-w-[1400px]">
                         <thead>
                           <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
                             <th className="px-6 py-5 w-24">STOCK #</th>
@@ -741,6 +781,7 @@ const App = () => {
                             <th className="px-6 py-5 text-center w-32">CONDITION</th>
                             <th className="px-6 py-5 w-32">PRICE (USD)</th>
                              <th className="px-6 py-5 w-40">STATUS</th>
+                              <th className="px-6 py-5 text-center w-36">DAYS IN STOCK</th>
                              <th className="px-6 py-5 text-center w-28">WEBSITE</th>
                              <th className="px-6 py-5 text-center w-28">FEATURED</th>
                              <th className="px-6 py-5 text-right w-32">ACTIONS</th>
@@ -748,7 +789,7 @@ const App = () => {
                          </thead>
                          <tbody className="divide-y divide-slate-50">
                            {filteredInventory.length === 0 ? (
-                             <tr><td colSpan="10" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
+                             <tr><td colSpan="11" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
                            ) : filteredInventory.map(item => (
                              <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleFullEdit(item.wpId)}>
                                <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
@@ -778,7 +819,12 @@ const App = () => {
                                    {item.status}
                                  </span>
                                </td>
-                               <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
+                               <td className="px-6 py-5 text-center">
+                                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200/50 shadow-sm">
+                                    {getDaysInStock(item)}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                                  <div className="flex justify-center">
                                    <button onClick={() => handleToggleBoolean(item, 'show_on_website')} 
                                      className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}>
@@ -926,6 +972,41 @@ const App = () => {
                           {fieldErrors.title && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.title}</p>}
                         </div>
                       </div>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1"><SelectField label="Stock Status" options={['In Stock','Pending Sale','Sold','Draft']} value={unitData.stockStatus} onChange={v => handleInputChange('stockStatus', v)} error={fieldErrors.stockStatus}/></div>
+                        <div className="flex-1"><SelectField label="Condition" options={['New','Used']} value={unitData.condition} onChange={v => handleInputChange('condition', v)} error={fieldErrors.condition}/></div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1">
+                          <SelectField 
+                            label="Color" 
+                            placeholder="Choose Color"
+                            options={[
+                              'Black', 'Red', 'Green', 'Green/Yellow', 'Brown', 
+                              'Orange', 'Blue', 'Yellow', 'Gray', 'Silver', 'White', 
+                              'Red/White', 'Blue/Black', 'Orange/Black', 
+                              'Black/Gray', 'Gray/Black', 'Red/Black', 'Silver/Black', 'Yellow/Black'
+                            ]} 
+                            value={unitData.color} 
+                            onChange={v => handleInputChange('color', v)} 
+                            error={fieldErrors.color}
+                          />
+                        </div>
+                        <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)} error={fieldErrors.length}/></div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
+                        <div className="flex-1"><InputField label="Hours" value={unitData.meter} onChange={v => handleInputChange('meter', v)} error={fieldErrors.meter} placeholder="e.g. 250"/></div>
+                        <div className="flex-1"><InputField label="Drive" value={unitData.drive} onChange={v => handleInputChange('drive', v)} error={fieldErrors.drive} placeholder="e.g. 4WD / 2WD"/></div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
+                        <div className="flex-1"><InputField label="Engine Horsepower" value={unitData.engineHorsepower} onChange={v => handleInputChange('engineHorsepower', v)} error={fieldErrors.engineHorsepower} placeholder="e.g. 25 HP"/></div>
+                        <div className="flex-1"><SelectField label="Attachments" options={['No','Yes']} value={unitData.hasAttachments ? 'Yes' : 'No'} onChange={v => handleInputChange('hasAttachments', v === 'Yes')}/></div>
+                      </div>
+                      {unitData.hasAttachments && (
+                        <div className="md:col-span-2">
+                          <InputField label="Attachment Details" value={unitData.attachmentDetails} onChange={v => handleInputChange('attachmentDetails', v)} placeholder="Describe the included attachment(s)..."/>
+                        </div>
+                      )}
                       <div className="md:col-span-2 border-y border-slate-50 py-6 my-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                         <div className="space-y-3">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">VIN / SERIAL NUMBER</label>
@@ -962,14 +1043,7 @@ const App = () => {
                           {fieldErrors.price && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.price}</p>}
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1"><SelectField label="Stock Status" options={['In Stock','Pending Sale','Sold','Draft']} value={unitData.stockStatus} onChange={v => handleInputChange('stockStatus', v)} error={fieldErrors.stockStatus}/></div>
-                        <div className="flex-1"><SelectField label="Condition" options={['New','Used']} value={unitData.condition} onChange={v => handleInputChange('condition', v)} error={fieldErrors.condition}/></div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1"><InputField label="Color" value={unitData.color} onChange={v => handleInputChange('color', v)} error={fieldErrors.color}/></div>
-                        <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)} error={fieldErrors.length}/></div>
-                      </div>
+
                       <div className="md:col-span-2 space-y-4">
                         <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                           <div className="flex items-center gap-4">
@@ -1074,7 +1148,7 @@ const App = () => {
             )}
 
             {activeTab === 'marketplace' && <MarketplaceTab/>}
-            {activeTab === 'settings'    && <SettingsTab users={[]}/>}
+            {activeTab === 'settings'    && <SettingsTab showToast={showToast}/>}
             {activeTab === 'mobile'      && <MobileAccessTab/>}
             {activeTab === 'history'     && (
               <HistoryTab
@@ -1565,20 +1639,625 @@ const MobileAccessTab = () => {
   );
 };
 
-const SettingsTab = ({ users }) => (
-  <div className="max-w-4xl mx-auto space-y-8 sm:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 text-slate-900">
-    <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-10 border border-slate-200/60 shadow-xl">
-      <h3 className="font-black text-[12px] uppercase tracking-widest text-slate-400 mb-10 flex items-center gap-3"><ShieldCheck size={20}/> Technical Permissions</h3>
-      {users.length === 0 ? (
-        <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl"><Users size={40} className="mx-auto text-slate-200 mb-4"/><p className="text-slate-400 uppercase text-[10px] font-black tracking-widest">No active users detected</p></div>
-      ) : users.map((u,i) => (
-        <div key={i} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-lg transition-all group">
-          <div className="flex items-center gap-5"><div className="w-12 h-12 rounded-xl bg-slate-950 text-white flex items-center justify-center font-black text-xl">{u.name.charAt(0)}</div><div><p className="font-black text-lg leading-none mb-1.5">{u.name}</p><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{u.role} • {u.device}</p></div></div>
-          <span className={`px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest border ${u.status==='Inactive'?'bg-slate-100 text-slate-400 border-slate-200':'bg-green-100 text-green-700 border-green-200'}`}>{u.status}</span>
+const SettingsTab = ({ showToast }) => {
+  const [settings, setSettings] = useState({
+    hero_title: '',
+    hero_subtitle: '',
+    hero_button1_text: '',
+    hero_button1_link: '',
+    hero_button2_text: '',
+    hero_button2_link: '',
+    hero_video_url: '',
+    support_hub_service_link: '',
+    support_hub_parts_link: '',
+    support_hub_finance_link: '',
+    youtube_tagline: '',
+    youtube_title: '',
+    youtube_paragraph: '',
+    youtube_channel_url: '',
+    youtube_video_id: '',
+    youtube_custom_thumbnail: '',
+    cta_title: '',
+    cta_text: '',
+    cta_button_text: '',
+    cta_button_link: '',
+    about_why_choose_us_title: '',
+    about_why_choose_us_bullets: [],
+    contact_email: '',
+    contact_phone: '',
+    contact_phone_raw: '',
+    contact_address_line1: '',
+    contact_address_line2: '',
+    contact_map_link: '',
+    contact_map_embed_url: '',
+    hours_mon_fri: '',
+    hours_sat: '',
+    hours_sun: '',
+    social_facebook: '',
+    social_youtube: '',
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const thumbnailInputRef = React.useRef(null);
+
+  const [openSections, setOpenSections] = useState({
+    hero: true,
+    support: false,
+    youtube: false,
+    contact: false,
+    hours: false,
+    about: false,
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setIsLoading(true);
+      try {
+        const data = await apiFetch('/settings');
+        setSettings(data);
+      } catch (err) {
+        showToast('Failed to load settings: ' + err.message, 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSettings();
+  }, [showToast]);
+
+  const handleFieldChange = (key, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingThumbnail(true);
+    try {
+      const result = await uploadFile(file);
+      handleFieldChange('youtube_custom_thumbnail', result.url);
+      showToast('Custom thumbnail uploaded successfully!');
+    } catch (err) {
+      showToast('Thumbnail upload failed: ' + err.message, 'error');
+    } finally {
+      setIsUploadingThumbnail(false);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = null;
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    handleFieldChange('youtube_custom_thumbnail', '');
+    showToast('Custom thumbnail removed.');
+  };
+
+  const handleAddBullet = () => {
+    handleFieldChange('about_why_choose_us_bullets', [
+      ...settings.about_why_choose_us_bullets,
+      ''
+    ]);
+  };
+
+  const handleUpdateBullet = (index, value) => {
+    const updated = [...settings.about_why_choose_us_bullets];
+    updated[index] = value;
+    handleFieldChange('about_why_choose_us_bullets', updated);
+  };
+
+  const handleRemoveBullet = (index) => {
+    const updated = settings.about_why_choose_us_bullets.filter((_, i) => i !== index);
+    handleFieldChange('about_why_choose_us_bullets', updated);
+  };
+
+  const handleMoveBulletUp = (index) => {
+    if (index === 0) return;
+    const updated = [...settings.about_why_choose_us_bullets];
+    const temp = updated[index];
+    updated[index] = updated[index - 1];
+    updated[index - 1] = temp;
+    handleFieldChange('about_why_choose_us_bullets', updated);
+  };
+
+  const handleMoveBulletDown = (index) => {
+    if (index === settings.about_why_choose_us_bullets.length - 1) return;
+    const updated = [...settings.about_why_choose_us_bullets];
+    const temp = updated[index];
+    updated[index] = updated[index + 1];
+    updated[index + 1] = temp;
+    handleFieldChange('about_why_choose_us_bullets', updated);
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      const result = await apiFetch('/settings', {
+        method: 'POST',
+        body: JSON.stringify(settings),
+      });
+      if (result.success) {
+        setSettings(result.settings);
+        showToast('Settings saved successfully!');
+      }
+    } catch (err) {
+      showToast('Failed to save settings: ' + err.message, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">
+        Loading configuration settings…
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-slate-900 pb-16">
+      
+      {/* 1. HERO SECTION */}
+      <CollapsiblePanel
+        title="Hero Section"
+        icon={<Sparkles size={20} />}
+        isOpen={openSections.hero}
+        onToggle={() => toggleSection('hero')}
+      >
+        <div className="space-y-4">
+          <TextAreaField
+            label="Hero Title"
+            value={settings.hero_title}
+            onChange={v => handleFieldChange('hero_title', v)}
+          />
+
+          <TextAreaField
+            label="Hero Subtitle"
+            value={settings.hero_subtitle}
+            onChange={v => handleFieldChange('hero_subtitle', v)}
+          />
+
+          <InputField
+            label="Custom Hero Video URL (Optional)"
+            value={settings.hero_video_url}
+            onChange={v => handleFieldChange('hero_video_url', v)}
+            placeholder="e.g. /wp-content/uploads/... or leave blank for default"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Primary Button Text"
+              value={settings.hero_button1_text}
+              onChange={v => handleFieldChange('hero_button1_text', v)}
+            />
+            <InputField
+              label="Primary Button Link"
+              value={settings.hero_button1_link}
+              onChange={v => handleFieldChange('hero_button1_link', v)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Secondary Button Text"
+              value={settings.hero_button2_text}
+              onChange={v => handleFieldChange('hero_button2_text', v)}
+            />
+            <InputField
+              label="Secondary Button Link"
+              value={settings.hero_button2_link}
+              onChange={v => handleFieldChange('hero_button2_link', v)}
+            />
+          </div>
         </div>
-      ))}
+      </CollapsiblePanel>
+
+      {/* 2. SUPPORT HUB & CALL TO ACTIONS */}
+      <CollapsiblePanel
+        title="Support Hub & CTAs"
+        icon={<Wrench size={20} />}
+        isOpen={openSections.support}
+        onToggle={() => toggleSection('support')}
+      >
+        <div className="space-y-6">
+          <div className="border-b border-slate-100 pb-6">
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Support Hub Grid Buttons</h5>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InputField
+                label="Request Service Button Link"
+                value={settings.support_hub_service_link}
+                onChange={v => handleFieldChange('support_hub_service_link', v)}
+              />
+              <InputField
+                label="Order Parts Button Link"
+                value={settings.support_hub_parts_link}
+                onChange={v => handleFieldChange('support_hub_parts_link', v)}
+              />
+              <InputField
+                label="Financing Button Link"
+                value={settings.support_hub_finance_link}
+                onChange={v => handleFieldChange('support_hub_finance_link', v)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">To-Do Block Call-To-Action (CTA)</h5>
+            <div className="space-y-4">
+              <TextAreaField
+                label="CTA Title"
+                value={settings.cta_title}
+                onChange={v => handleFieldChange('cta_title', v)}
+              />
+
+              <TextAreaField
+                label="CTA Text Description"
+                value={settings.cta_text}
+                onChange={v => handleFieldChange('cta_text', v)}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputField
+                  label="CTA Button Text"
+                  value={settings.cta_button_text}
+                  onChange={v => handleFieldChange('cta_button_text', v)}
+                />
+                <InputField
+                  label="CTA Button Link"
+                  value={settings.cta_button_link}
+                  onChange={v => handleFieldChange('cta_button_link', v)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsiblePanel>
+
+      {/* 3. YOUTUBE MEDIA SECTION */}
+      <CollapsiblePanel
+        title="YouTube Media Section"
+        icon={<ImageIcon size={20} />}
+        isOpen={openSections.youtube}
+        onToggle={() => toggleSection('youtube')}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="YouTube Tagline"
+              value={settings.youtube_tagline}
+              onChange={v => handleFieldChange('youtube_tagline', v)}
+            />
+            <InputField
+              label="YouTube Channel URL"
+              value={settings.youtube_channel_url}
+              onChange={v => handleFieldChange('youtube_channel_url', v)}
+            />
+          </div>
+
+          <TextAreaField
+            label="Section Title"
+            value={settings.youtube_title}
+            onChange={v => handleFieldChange('youtube_title', v)}
+          />
+
+          <TextAreaField
+            label="Description Paragraph"
+            value={settings.youtube_paragraph}
+            onChange={v => handleFieldChange('youtube_paragraph', v)}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <InputField
+              label="YouTube Video ID (e.g. goF_3TspZ6k)"
+              value={settings.youtube_video_id}
+              onChange={v => handleFieldChange('youtube_video_id', v)}
+            />
+
+            <div>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 mb-2">YouTube Custom Thumbnail</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={thumbnailInputRef}
+                onChange={handleThumbnailUpload}
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  disabled={isUploadingThumbnail}
+                  className="bg-slate-950 text-white px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2"
+                >
+                  {isUploadingThumbnail ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  Upload Custom Image
+                </button>
+                {settings.youtube_custom_thumbnail && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveThumbnail}
+                    className="bg-red-50 text-red-600 border border-red-100 px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-red-100 transition-all flex items-center gap-2"
+                  >
+                    <Trash2 size={16} />
+                    Revert To Default
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* YouTube Thumbnail Preview */}
+          <div className="mt-4">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 pl-1">Thumbnail Preview</p>
+            <div className="relative aspect-video max-w-md bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-lg">
+              <img
+                src={settings.youtube_custom_thumbnail || `https://img.youtube.com/vi/${settings.youtube_video_id || 'goF_3TspZ6k'}/maxresdefault.jpg`}
+                alt="YouTube Thumbnail"
+                className="w-full h-full object-cover"
+                onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl">
+                  <PlayIcon className="ml-1 w-6 h-6 fill-current text-white" />
+                </div>
+              </div>
+              <div className="absolute bottom-3 left-3 bg-slate-900/90 text-white text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest">
+                {settings.youtube_custom_thumbnail ? 'CUSTOM THUMBNAIL' : 'YOUTUBE DEFAULT'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsiblePanel>
+
+      {/* 4. BUSINESS DETAILS & CONTACTS */}
+      <CollapsiblePanel
+        title="Business Details & Contacts"
+        icon={<Mail size={20} />}
+        isOpen={openSections.contact}
+        onToggle={() => toggleSection('contact')}
+      >
+        <div className="space-y-4">
+          <div>
+            <InputField
+              label="Primary Notification Email Address"
+              value={settings.contact_email}
+              onChange={v => handleFieldChange('contact_email', v)}
+            />
+            <p className="text-[10px] font-bold text-slate-400 pl-1 mt-1.5 uppercase tracking-wide">
+              * Critical: This email receives all submissions from the frontend Chatbox, Contact Form, Parts Request, and Service Request forms.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Display Phone Number"
+              value={settings.contact_phone}
+              onChange={v => handleFieldChange('contact_phone', v)}
+              placeholder="e.g. (970) 874-0612"
+            />
+            <InputField
+              label="Raw Phone Digits (for calling links)"
+              value={settings.contact_phone_raw}
+              onChange={v => handleFieldChange('contact_phone_raw', v)}
+              placeholder="e.g. 9708740612"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Address Line 1"
+              value={settings.contact_address_line1}
+              onChange={v => handleFieldChange('contact_address_line1', v)}
+            />
+            <InputField
+              label="Address Line 2"
+              value={settings.contact_address_line2}
+              onChange={v => handleFieldChange('contact_address_line2', v)}
+            />
+          </div>
+
+          <InputField
+            label="Google Maps Navigation Directions URL"
+            value={settings.contact_map_link}
+            onChange={v => handleFieldChange('contact_map_link', v)}
+          />
+
+          <InputField
+            label="Google Maps Embed Iframe URL"
+            value={settings.contact_map_embed_url}
+            onChange={v => handleFieldChange('contact_map_embed_url', v)}
+          />
+        </div>
+      </CollapsiblePanel>
+
+      {/* 5. DEALER HOURS & SOCIALS */}
+      <CollapsiblePanel
+        title="Dealer Hours & Socials"
+        icon={<Clock size={20} />}
+        isOpen={openSections.hours}
+        onToggle={() => toggleSection('hours')}
+      >
+        <div className="space-y-6">
+          <div>
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Dealership Business Hours</h5>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InputField
+                label="Monday - Friday Hours"
+                value={settings.hours_mon_fri}
+                onChange={v => handleFieldChange('hours_mon_fri', v)}
+              />
+              <InputField
+                label="Saturday Hours"
+                value={settings.hours_sat}
+                onChange={v => handleFieldChange('hours_sat', v)}
+              />
+              <InputField
+                label="Sunday Hours"
+                value={settings.hours_sun}
+                onChange={v => handleFieldChange('hours_sun', v)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Social Media Profile Links</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField
+                label="Facebook Page URL"
+                value={settings.social_facebook}
+                onChange={v => handleFieldChange('social_facebook', v)}
+              />
+              <InputField
+                label="YouTube Channel URL"
+                value={settings.social_youtube}
+                onChange={v => handleFieldChange('social_youtube', v)}
+              />
+            </div>
+          </div>
+        </div>
+      </CollapsiblePanel>
+
+      {/* 6. WHY CHOOSE US (BULLETS) */}
+      <CollapsiblePanel
+        title="Why Choose Us Bullets"
+        icon={<Info size={20} />}
+        isOpen={openSections.about}
+        onToggle={() => toggleSection('about')}
+      >
+        <div className="space-y-6">
+          <InputField
+            label="Section Title"
+            value={settings.about_why_choose_us_title}
+            onChange={v => handleFieldChange('about_why_choose_us_title', v)}
+          />
+
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 mb-3">Bullet Points List</label>
+            
+            <div className="space-y-3">
+              {settings.about_why_choose_us_bullets && settings.about_why_choose_us_bullets.map((bullet, idx) => (
+                <div key={idx} className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
+                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-xs select-none">
+                    {idx + 1}
+                  </div>
+                  
+                  <input
+                    type="text"
+                    value={bullet}
+                    onChange={e => handleUpdateBullet(idx, e.target.value)}
+                    className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:border-red-500 transition-colors"
+                    placeholder="Enter bullet text..."
+                  />
+
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveBulletUp(idx)}
+                      disabled={idx === 0}
+                      className="p-2 text-slate-400 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-400"
+                      title="Move Up"
+                    >
+                      <ChevronUp size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveBulletDown(idx)}
+                      disabled={idx === settings.about_why_choose_us_bullets.length - 1}
+                      className="p-2 text-slate-400 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-400"
+                      title="Move Down"
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBullet(idx)}
+                      className="p-2 text-slate-300 hover:text-red-600 transition-colors"
+                      title="Remove Bullet"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {(!settings.about_why_choose_us_bullets || settings.about_why_choose_us_bullets.length === 0) && (
+                <div className="p-8 text-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                  No bullet points added
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddBullet}
+              className="mt-4 bg-slate-50 border border-slate-200 text-slate-600 px-6 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center gap-2 active:scale-95 shadow-sm"
+            >
+              <Plus size={14} />
+              Add New Bullet
+            </button>
+          </div>
+        </div>
+      </CollapsiblePanel>
+
+      {/* SAVE BUTTON */}
+      <div className="bg-white rounded-[2rem] p-6 shadow-xl border border-slate-200/60 flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-sm uppercase tracking-tight text-slate-900">Save Configuration</h4>
+          <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Saves all theme settings dynamically to options table.</p>
+        </div>
+        <button
+          onClick={handleSaveSettings}
+          disabled={isSaving}
+          className="bg-red-600 text-white px-8 py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] flex items-center gap-2.5 hover:bg-red-700 active:scale-95 transition-all border-b-4 border-red-800 disabled:opacity-50 shadow-xl shadow-red-200"
+        >
+          {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {isSaving ? 'SAVING CHANGES…' : 'SAVE CONFIGURATION'}
+        </button>
+      </div>
+
     </div>
+  );
+};
+
+const CollapsiblePanel = ({ title, icon, isOpen, onToggle, children }) => (
+  <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200/60 overflow-hidden transition-all duration-300">
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between p-6 sm:p-8 text-left hover:bg-slate-50/50 transition-colors"
+    >
+      <div className="flex items-center gap-4">
+        <div className="bg-red-50 text-red-600 p-3 rounded-2xl">
+          {icon}
+        </div>
+        <div>
+          <h4 className="font-black text-base uppercase tracking-tight text-slate-900">{title}</h4>
+        </div>
+      </div>
+      <span className="text-slate-400 font-black text-lg select-none mr-2">
+        {isOpen ? '−' : '+'}
+      </span>
+    </button>
+    {isOpen && (
+      <div className="p-6 sm:p-8 border-t border-slate-100 bg-white space-y-6">
+        {children}
+      </div>
+    )}
   </div>
+);
+
+const PlayIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24">
+    <path d="M8 5v14l11-7z" fill="currentColor" />
+  </svg>
 );
 
 const FBPreviewModal = ({ unitData, onClose }) => (

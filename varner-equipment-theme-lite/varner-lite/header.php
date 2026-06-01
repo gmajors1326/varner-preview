@@ -61,13 +61,13 @@
 
     <div class="sticky top-0 z-[100] w-full flex flex-col shadow-xl">
         <?php 
-            $ann_1 = get_field('announcement_text_1', 'option') ?: 'Mon-Fri: 8am - 5pm';
-            $ann_2 = get_field('announcement_text_2', 'option') ?: 'Sat: 9am - Noon';
-            $ann_3 = get_field('announcement_text_3', 'option') ?: 'Sun: Closed';
-            $phone = get_field('phone_number', 'option') ?: '(970) 874-0612';
-            $phone_tel = preg_replace('/[^0-9]/', '', $phone);
-            $addr_1 = get_field('address_line_1', 'option') ?: '1375 US-50';
-            $addr_2 = get_field('address_line_2', 'option') ?: 'Delta, CO 81416';
+            $ann_1 = 'Mon-Fri: ' . varner_get_theme_setting( 'hours_mon_fri', '8am - 5pm' );
+            $ann_2 = 'Sat: ' . varner_get_theme_setting( 'hours_sat', '9am - Noon' );
+            $ann_3 = 'Sun: ' . varner_get_theme_setting( 'hours_sun', 'Closed' );
+            $phone = varner_get_theme_setting( 'contact_phone', '(970) 874-0612' );
+            $phone_tel = varner_get_theme_setting( 'contact_phone_raw', '9708740612' );
+            $addr_1 = varner_get_theme_setting( 'contact_address_line1', '1375 US-50' );
+            $addr_2 = varner_get_theme_setting( 'contact_address_line2', 'Delta, CO 81416' );
         ?>
         <!-- TOP ANNOUNCEMENT BAR -->
         <div class="bg-slate-950 text-white py-2 px-4 border-b border-white/10 relative z-20">
@@ -114,7 +114,7 @@
 
                 <!-- CENTERED ADDRESS -->
                 <div class="flex justify-center text-center w-full lg:w-auto">
-                    <a href="#varner-map" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto">
                         <svg class="w-6 h-6 lg:w-8 lg:h-8 text-red-600 group-hover:text-slate-900 transition-colors shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         <div class="flex flex-col text-center">
                             <span class="font-black text-slate-900 uppercase tracking-tighter text-lg lg:text-xl xl:text-2xl leading-none whitespace-nowrap"><?php echo esc_html($addr_1); ?></span>
@@ -240,7 +240,7 @@
                             </div>
                         </div>
 
-                        <a href="https://www.allpartsstore.com/index.htm?customernumber=CO0612" target="_blank" rel="noopener" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
+                        <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
                         <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
                         
                         <div class="group relative">
@@ -318,12 +318,12 @@
                             <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div class="hidden bg-white/5 py-2">
-                            <a href="<?php echo esc_url( home_url( '/service-request' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Service Request</a>
-                            <a href="<?php echo esc_url( home_url( '/parts-request' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Parts Request</a>
+                            <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Service Request</a>
+                            <a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Parts Request</a>
                         </div>
                     </div>
 
-                    <a href="https://www.allpartsstore.com/index.htm?customernumber=CO0612" target="_blank" rel="noopener" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
                     <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Product Videos</a>
                     
                     <div class="border-b border-white/5">
@@ -332,9 +332,9 @@
                             <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div class="hidden bg-white/5 py-2">
-                            <a href="<?php echo esc_url( home_url( '/about-us' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">About Us</a>
-                            <a href="<?php echo esc_url( home_url( '/our-team' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Our Team</a>
-                            <a href="<?php echo esc_url( home_url( '/employment' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Employment</a>
+                            <a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">About Us</a>
+                            <a href="<?php echo esc_url( home_url( '/dealer-info/our-team' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Our Team</a>
+                            <a href="<?php echo esc_url( home_url( '/dealer-info/employment' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Employment</a>
                         </div>
                     </div>
 

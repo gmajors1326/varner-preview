@@ -7,7 +7,7 @@ get_header();
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
                 <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">The People Behind The Machines</div>
-                <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php the_title(); ?></h1>
+                <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php echo esc_html( get_the_title() ?: 'Our Team' ); ?></h1>
                 <div class="w-24 h-2 bg-red-600 mx-auto"></div>
             </div>
             

@@ -89,9 +89,18 @@ Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-
 if (Test-Path '.\varner-equipment-theme-v23.zip')      { Remove-Item '.\varner-equipment-theme-v23.zip'      -Force }
 if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
 if (Test-Path '.\varner-os-plugin-v23.zip')            { Remove-Item '.\varner-os-plugin-v23.zip'            -Force }
-Compress-Archive -Path '.\varner-equipment-theme-v23\varner-equipment-theme'  -DestinationPath '.\varner-equipment-theme-v23.zip'
-Compress-Archive -Path '.\varner-equipment-theme-lite\varner-equipment-theme' -DestinationPath '.\varner-equipment-theme-v23-lite.zip'
-Compress-Archive -Path '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23' -DestinationPath '.\varner-os-plugin-v23.zip'
+
+Push-Location "varner-equipment-theme-v23"
+tar -a -c -f ../varner-equipment-theme-v23.zip varner-v23
+Pop-Location
+
+Push-Location "varner-equipment-theme-lite"
+tar -a -c -f ../varner-equipment-theme-v23-lite.zip varner-lite
+Pop-Location
+
+Push-Location "varner-os-plugin-v23-unpacked"
+tar -a -c -f ../varner-os-plugin-v23.zip varner-os-plugin-v23
+Pop-Location
 ```
 
 ---
