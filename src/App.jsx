@@ -228,6 +228,37 @@ const MobileAppLayout = ({
   handleDeleteUnit,
   showToast
 }) => {
+  const [isStandalone, setIsStandalone] = useState(true);
+
+  useEffect(() => {
+    const isM = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    setIsStandalone(!!isM);
+  }, []);
+
+  const renderInstallBanner = () => {
+    if (isStandalone) return null;
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    return (
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-950 border-b border-blue-800 px-4 py-3 flex items-start gap-3 shrink-0 shadow-lg text-white">
+        <div className="bg-blue-600/30 p-2 rounded-xl text-blue-400 shrink-0">
+          <Smartphone size={18} />
+        </div>
+        <div className="flex-1">
+          <h4 className="font-black text-[11px] uppercase tracking-widest text-blue-300">Install as App</h4>
+          {isiOS ? (
+            <p className="text-[10px] font-bold text-slate-200 mt-0.5 leading-normal">
+              Tap the share button (square with arrow up) at the bottom, then scroll and select <span className="text-blue-400 font-black">"Add to Home Screen"</span> to download this companion app.
+            </p>
+          ) : (
+            <p className="text-[10px] font-bold text-slate-200 mt-0.5 leading-normal">
+              Tap the browser menu <span className="font-black">(three dots)</span> and select <span className="text-blue-400 font-black">"Install App"</span> or <span className="text-blue-400 font-black">"Add to Home Screen"</span> to download this companion app.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -320,6 +351,7 @@ const MobileAppLayout = ({
             {toast.msg}
           </div>
         )}
+        {renderInstallBanner()}
         <div className="flex-1 flex flex-col justify-center items-center px-6 py-12">
           <div className="w-full max-w-sm space-y-8">
             <div className="text-center">
@@ -378,7 +410,7 @@ const MobileAppLayout = ({
           {toast.msg}
         </div>
       )}
-
+      {renderInstallBanner()}
       <header className="bg-slate-900 text-white px-4 py-3.5 flex items-center justify-between shadow-md shrink-0 safe-top">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
