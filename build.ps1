@@ -1,34 +1,81 @@
-# Varner Equipment - Theme Build Script
-# Using tar -a for maximum compatibility (standard ZIP format with forward slashes)
+# Varner Equipment - Unified Build & Packaging Script
+# Compiles React, syncs assets, auto-bumps plugin version, and packages plugin + themes.
 
 $root = Get-Location
 
-Write-Host "Building Varner Equipment Theme Packages..." -ForegroundColor Cyan
+Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host "Starting Varner Equipment Unified Build..." -ForegroundColor Cyan
+Write-Host "=============================================" -ForegroundColor Cyan
 
-# 1. Compile Tailwind CSS
-Write-Host "Compiling Tailwind CSS..." -ForegroundColor Yellow
+# 1. Compile React Application
+Write-Host "`n[1/5] Building React Application..." -ForegroundColor Yellow
+npm run build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "React build failed! Aborting." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
+# 2. Sync React Build to Plugin Folder
+Write-Host "`n[2/5] Syncing React build into plugin..." -ForegroundColor Yellow
+$pluginFolder = "varner-os-plugin-v23-unpacked\varner-os-plugin-v23"
+Remove-Item "$pluginFolder\dist" -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item ".\dist" "$pluginFolder\" -Recurse -Force
+
+# 3. Auto-Increment Plugin Version (Busts CDN/WP Cache & Forces Overwrite Prompt)
+Write-Host "`n[3/5] Auto-incrementing plugin version..." -ForegroundColor Yellow
+$pluginFile = "$pluginFolder\varner-os-plugin-v23.php"
+if (Test-Path $pluginFile) {
+    $pluginContent = Get-Content $pluginFile -Raw
+    if ($pluginContent -match 'Version:\s*(\d+)\.(\d+)\.(\d+)') {
+        $major = $Matches[1]
+        $minor = $Matches[2]
+        $patch = [int]$Matches[3] + 1
+        $newVer = "$major.$minor.$patch"
+        
+        # Replace version numbers in header
+        $pluginContent = $pluginContent -replace 'Version:\s*\d+\.\d+\.\d+', "Version: $newVer"
+        $pluginContent = $pluginContent -replace 'Version\s*\d+\.\d+\.\d+\s*-\s*React-powered', "Version $newVer - React-powered"
+        Set-Content $pluginFile $pluginContent -NoNewline
+        Write-Host "Plugin version bumped to: $newVer" -ForegroundColor Green
+    } else {
+        Write-Host "Warning: Could not match version regex in plugin header!" -ForegroundColor Red
+    }
+} else {
+    Write-Host "Error: Plugin entry file not found at $pluginFile" -ForegroundColor Red
+}
+
+# 4. Package Plugin Zip
+Write-Host "`n[4/5] Zipping Varner OS Plugin..." -ForegroundColor Yellow
+$pluginZip = Join-Path $root "varner-os-plugin-v23.zip"
+if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
+Push-Location "varner-os-plugin-v23-unpacked"
+tar -a -c -f $pluginZip varner-os-plugin-v23
+Pop-Location
+Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
+
+# 5. Compile Tailwind CSS & Package Themes
+Write-Host "`n[5/5] Compiling Tailwind CSS & Zipping Themes..." -ForegroundColor Yellow
 Push-Location "varner-equipment-theme-v23\varner-v23"
 npx tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --minify
 Pop-Location
 Copy-Item "varner-equipment-theme-v23\varner-v23\assets\css\tailwind.css" -Destination "varner-equipment-theme-lite\varner-lite\assets\css\tailwind.css" -Force
 
-# 2. Full Theme (v23)
-Write-Host "Zipping Full Theme (v23)..."
+# Full Theme (v23)
 $v23Zip = Join-Path $root "varner-equipment-theme-v23.zip"
 if (Test-Path $v23Zip) { Remove-Item $v23Zip -Force }
 Push-Location "varner-equipment-theme-v23"
 tar -a -c -f $v23Zip varner-v23
 Pop-Location
+Write-Host "Full Theme packaged -> $v23Zip" -ForegroundColor Green
 
-# 2. Lite Theme
-Write-Host "Zipping Lite Theme..."
+# Lite Theme
 $liteZip = Join-Path $root "varner-equipment-theme-v23-lite.zip"
 if (Test-Path $liteZip) { Remove-Item $liteZip -Force }
 Push-Location "varner-equipment-theme-lite"
 tar -a -c -f $liteZip varner-lite
 Pop-Location
+Write-Host "Lite Theme packaged -> $liteZip" -ForegroundColor Green
 
-Write-Host "Build Complete!" -ForegroundColor Green
-Write-Host "Artifacts generated:"
-Write-Host " - $v23Zip"
-Write-Host " - $liteZip"
+Write-Host "`n=============================================" -ForegroundColor Green
+Write-Host "Unified Build Complete! All ZIP files updated." -ForegroundColor Green
+Write-Host "=============================================" -ForegroundColor Green

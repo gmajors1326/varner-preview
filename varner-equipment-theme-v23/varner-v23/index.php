@@ -1,68 +1,182 @@
-<?php get_header(); ?>
+<?php 
+    get_header();
+?>
 
     <!-- HERO SECTION -->
-    <section id="hero-parallax" class="relative h-[85vh] bg-slate-950 flex items-center overflow-hidden">
+    <section id="hero-parallax" class="relative min-h-[85vh] lg:h-[85vh] bg-slate-950 flex flex-col justify-center overflow-hidden pb-32 lg:pb-0">
         <div id="hero-parallax-media" class="absolute inset-0 z-0">
             <div class="absolute inset-0 w-full h-full scale-105">
                 <!-- CINEMATIC VIDEO BACKGROUND -->
-                <video autoplay muted loop playsinline preload="auto" class="w-full h-full object-cover opacity-70">
+                <video id="hero-video" muted loop playsinline webkit-playsinline
+                       class="absolute inset-0 w-full h-full object-cover opacity-70"
+                       style="min-width:100%;min-height:100%;">
+                </video>
+                <script>
+                (function(){
+                    var v = document.getElementById('hero-video');
+                    if(!v) return;
                     <?php 
                     $hero_vid = varner_get_theme_setting( 'hero_video_url', '' );
                     $hero_vid_url = $hero_vid ? esc_url( $hero_vid ) : get_template_directory_uri() . '/assets/VEHeroVid.mp4';
                     ?>
-                    <source src="<?php echo $hero_vid_url; ?>" type="video/mp4">
-                </video>
+                    var src = '<?php echo $hero_vid_url; ?>';
+                    v.muted = true;
+                    v.setAttribute('muted','');
+                    v.setAttribute('playsinline','');
+
+                    function loadAndPlay() {
+                        if (!v.querySelector('source')) {
+                            var s = document.createElement('source');
+                            s.src = src;
+                            s.type = 'video/mp4';
+                            v.appendChild(s);
+                            v.load();
+                        }
+                        v.play().catch(function(){});
+                    }
+
+                    // Desktop: load immediately
+                    if (window.innerWidth >= 1024) {
+                        v.setAttribute('preload','auto');
+                        v.setAttribute('autoplay','');
+                        loadAndPlay();
+                    } else {
+                        // Mobile: load on first interaction
+                        v.setAttribute('preload','none');
+                        var loaded = false;
+                        ['touchstart','touchend','click','scroll'].forEach(function(evt){
+                            document.addEventListener(evt, function(){
+                                if(!loaded){ loaded=true; loadAndPlay(); }
+                            }, {once:true, passive:true});
+                        });
+                    }
+
+                    // Retry for desktop
+                    var t = 0;
+                    var ri = setInterval(function(){
+                        if(!v.paused || ++t >= 20) clearInterval(ri);
+                        else v.play().catch(function(){});
+                    }, 500);
+                })();
+                </script>
                 <!-- 40% DARK BLUE OVERLAY -->
                 <div class="absolute inset-0 bg-blue-950/40"></div>
                 <div class="absolute inset-0 hero-gradient"></div>
             </div>
         </div>
 
-        <div class="relative z-10 max-w-7xl mx-auto px-4 w-full pb-12">
+        <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 pb-12">
             <div class="max-w-3xl space-y-8">
-                <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl">
+                <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_title' ) ); ?>
                 </h1>
-                <p class="text-xl text-slate-200 font-bold max-w-xl leading-relaxed drop-shadow-md">
-                    <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?> 
+                <p class="text-xl text-slate-200 font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300">
+                    <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
                 </p>
-                <div class="flex flex-col sm:flex-row gap-4 pt-6 items-start">
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory' ) ) ); ?>" class="bg-white text-slate-900 px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
+                <div class="grid grid-cols-2 sm:flex sm:flex-row flex-wrap gap-3 sm:gap-4 pt-6 items-start">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/service-request' ) ) ); ?>" class="bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-500">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
+                    </a>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
+                        Online Parts
                     </a>
                 </div>
             </div>
         </div>
 
         <!-- QUICK SEARCH UTILITY (Bottom of Hero) -->
-        <div class="absolute bottom-12 left-0 right-0 z-30">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="bg-white p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-2 border-slate-100 flex flex-col lg:flex-row gap-3 items-center">
+        <div class="relative lg:absolute bottom-0 lg:bottom-12 left-0 right-0 z-30 reveal-on-scroll delay-1000 mt-8 lg:mt-0 w-full">
+            <div class="max-w-7xl mx-auto px-4 py-6 lg:py-0">
+                <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/30 flex flex-col lg:flex-row gap-3 items-center">
                     <div class="flex-1 w-full">
-                        <input type="text" placeholder="Search Model, VIN, or Type..." class="w-full h-[30px] px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
+                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-[30px] px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
                     </div>
                     <div class="w-full lg:w-40">
-                        <select class="w-full h-[30px] px-3 bg-slate-50 rounded-lg font-black uppercase text-[10px] tracking-widest border border-transparent outline-none cursor-pointer">
-                            <option>All Types</option>
-                            <option>Tractors</option>
-                            <option>Trailers</option>
+                        <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-[30px] px-3 bg-slate-50 rounded-lg font-black uppercase text-[10px] tracking-widest border border-transparent outline-none cursor-pointer">
+                            <option value="" disabled selected hidden>Select Type</option>
+                            <option value="all">All Types</option>
+                            <option value="__new__">New</option>
+                            <option value="__used__">Used</option>
+                            <option value="Tractors">Tractors</option>
+                            <option value="Trailers">Trailers</option>
+                            <option value="Attachments">Attachments</option>
+                            <option value="Hay Equipment">Hay Equipment</option>
                         </select>
                     </div>
-                    <button class="w-full lg:w-auto h-[30px] bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">
+                    <button type="submit" class="w-full lg:w-auto h-12 lg:h-[30px] bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">
                         Find Machines
                     </button>
-                </div>
+                </form>
+                <p id="hero-search-error" class="mt-2 text-xs font-bold uppercase tracking-widest text-red-600 hidden"></p>
             </div>
         </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('hero-quick-search');
+            const queryInput = document.getElementById('hero-search-input');
+            const categorySelect = document.getElementById('hero-search-category');
+            const errorEl = document.getElementById('hero-search-error');
+
+            if (!form || !queryInput || !categorySelect || !errorEl) return;
+
+            form.addEventListener('submit', function(e) {
+                const query = queryInput.value.trim();
+                const categoryRaw = categorySelect.value.trim();
+                const hasCategory = categoryRaw !== '';
+                const categoryIsAll = categoryRaw === 'all';
+                const categoryIsNew = categoryRaw === '__new__';
+                const categoryIsUsed = categoryRaw === '__used__';
+                const categoryForFilter = (categoryIsAll || categoryIsNew || categoryIsUsed) ? '' : categoryRaw;
+                let message = '';
+
+                if (!query && !hasCategory) {
+                    message = 'Please enter a model, brand, VIN, or type and select a type.';
+                } else if (query && !hasCategory) {
+                    message = 'Please select a type.';
+                } else if (!query && hasCategory) {
+                    message = 'Please enter a model, brand, VIN, or type.';
+                }
+
+                if (message) {
+                    e.preventDefault();
+                    errorEl.textContent = message;
+                    errorEl.classList.remove('hidden');
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // Reset dynamic fields
+                    categorySelect.name = 'category[]';
+                    const existingCondition = form.querySelector('input[name="condition[]"]');
+                    if (existingCondition) existingCondition.remove();
+
+                    if (categoryIsAll) {
+                        categorySelect.name = '';
+                        categorySelect.value = '';
+                    } else if (categoryIsNew || categoryIsUsed) {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'condition[]';
+                        hidden.value = categoryIsNew ? 'New' : 'Used';
+                        form.appendChild(hidden);
+                        categorySelect.name = '';
+                    } else {
+                        categorySelect.value = categoryForFilter;
+                    }
+
+                    errorEl.classList.add('hidden');
+                    errorEl.textContent = '';
+                }
+            });
+        });
+        </script>
     </section>
 
     <!-- BRAND TICKER -->
     <section class="bg-white py-0">
-        <div class="w-full h-[50px] sm:h-[100px] md:h-[140px] bg-red-600 flex items-center relative overflow-hidden">
-            <div class="flex animate-[scroll_70s_linear_infinite] hover:[animation-play-state:paused] w-max will-change-transform">
+        <div id="brand-ticker" class="w-full h-auto min-h-[80px] sm:min-h-[120px] md:min-h-[160px] bg-red-600 flex items-center relative overflow-hidden py-[20px]">
+            <div class="brand-ticker-track flex w-max will-change-transform" style="animation: scroll 35s linear infinite;">
                 <div class="flex items-center shrink-0">
                     <?php 
                     $uploads = wp_get_upload_dir();
@@ -71,35 +185,47 @@
                     $theme_path_base = get_template_directory() . '/assets/';
 
                     $logos = array(
-                        'BigTex_white.png', 'CMTruckbeds_white.png', 'DuetzFahr_white.png', 
-                        'KRONE_white.png', 'MacDon_white.png', 'Mahindra_white.png', 
-                        'McHALE_white.png', 'ROXR_white.png', 'TitanTrailersMFG_white.png', 
-                        'Triton_white.png', 'TYM_white.png', 'Zetor_white.png'
+                        'BigTex_white.png' => 'big-tex',
+                        'CMTruckbeds_white.png' => 'cm-truck-beds',
+                        'DuetzFahr_white.png' => 'deutz-fahr', 
+                        'KRONE_white.png' => 'krone',
+                        'MacDon_white.png' => 'macdon',
+                        'Mahindra_white.png' => 'mahindra', 
+                        'McHALE_white.png' => 'mchale',
+                        'ROXR_white.png' => 'roxr',
+                        'TitanTrailersMFG_white.png' => 'titan-mfg', 
+                        'Triton_white.png' => 'triton',
+                        'TYM_white.png' => 'tym',
+                        'Zetor_white.png' => 'zetor'
                     );
                     
-                    foreach ($logos as $logo) {
+                    foreach ($logos as $logo => $slug) {
                         $extraClasses = ($logo === 'CMTruckbeds_white.png') ? ' scale-90 ' : ' ';
                         $logo_path = $theme_path_base . $logo;
                         $logo_url = file_exists($logo_path) ? ($theme_base . $logo) : ($upload_base . '/' . $logo);
                         $logo_version = file_exists($logo_path) ? filemtime($logo_path) : time();
+                        $brand_name = str_replace(['_white.png', 'MFG_white.png'], '', $logo);
+                        $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
-                        echo '<div class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300 hover:scale-105' . $extraClasses . '">'
-                            . '</div>';
+                        echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
+                            . '</a>';
                     }
                     ?>
                 </div>
                 <div class="flex items-center shrink-0">
                     <?php 
-                    foreach ($logos as $logo) {
+                    foreach ($logos as $logo => $slug) {
                         $extraClasses = ($logo === 'CMTruckbeds_white.png') ? ' scale-90 ' : ' ';
                         $logo_path = $theme_path_base . $logo;
                         $logo_url = file_exists($logo_path) ? ($theme_base . $logo) : ($upload_base . '/' . $logo);
                         $logo_version = file_exists($logo_path) ? filemtime($logo_path) : time();
+                        $brand_name = str_replace(['_white.png', 'MFG_white.png'], '', $logo);
+                        $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
-                        echo '<div class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="Brand Logo" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300 hover:scale-105' . $extraClasses . '">'
-                            . '</div>';
+                        echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
+                            . '</a>';
                     }
                     ?>
                 </div>
@@ -107,16 +233,17 @@
         </div>
         <style>
             @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+            #brand-ticker:hover .brand-ticker-track { animation-play-state: paused !important; }
         </style>
     </section>
 
     <!-- SUPPORT HUB BAR (Under Hero) -->
-    <section class="py-12 bg-white relative z-20 overflow-hidden">
+    <section class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-                <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_service_link', '/service-request' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
+                <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_service_link', '/services/service-request' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
                     <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 group-hover:text-red-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.15.14a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0"/><path d="m2 22 5-5"/><path d="M9.5 14.5 16 8"/><path d="m17 2 5 5"/><path d="m3.5 14.5 4 4"/><path d="m10.5 7.5 4 4"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.15.14a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0"/></svg>
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1">Request Service</div>
@@ -134,7 +261,7 @@
                     </div>
                 </a>
 
-                <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_finance_link', '/contact' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-900 text-white hover:bg-red-600 hover:translate-y-[-2px] transition-all group shadow-xl shadow-slate-200">
+                <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_finance_link', '/finance' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-900 text-white hover:bg-red-600 hover:translate-y-[-2px] transition-all group shadow-xl shadow-slate-200">
                     <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
@@ -148,43 +275,73 @@
     </section>
 
     <!-- CATEGORY GRID -->
-    <section class="pt-32 pb-24 bg-slate-100">
+    <section class="pt-32 pb-24 bg-slate-100 reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
-                    <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Operations Segments</div>
+                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Operations Segments</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Browse by Category</h2>
                 </div>
-                <a href="<?php echo esc_url( home_url( '/inventory' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
             </div>
             <?php
-            $tractor_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Compact Tractors', 'post_status' => 'publish'));
-            $trailer_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Commercial Trailers', 'post_status' => 'publish'));
-            $attachment_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Implements', 'post_status' => 'publish'));
+            $segment_filters = array(
+                'tractors'      => varner_get_segment_seo('tractors'),
+                'trailers'      => varner_get_segment_seo('trailers'),
+                'attachments'   => varner_get_segment_seo('attachments'),
+                'hay-equipment' => varner_get_segment_seo('hay-equipment'),
+            );
+
+            $count_categories = function( $categories ) {
+                if ( empty( $categories ) ) {
+                    return 0;
+                }
+
+                $query = new WP_Query(array(
+                    'post_type'      => 'equipment',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => 1,
+                    'fields'         => 'ids',
+                    'meta_query'     => array(
+                        array(
+                            'key'     => 'category',
+                            'value'   => $categories,
+                            'compare' => 'IN',
+                        ),
+                    ),
+                ));
+
+                return intval( $query->found_posts );
+            };
+
+            $tractor_count     = $count_categories( $segment_filters['tractors']['filter']['category'] ?? array() );
+            $trailer_count     = $count_categories( $segment_filters['trailers']['filter']['category'] ?? array() );
+            $attachment_count  = $count_categories( $segment_filters['attachments']['filter']['category'] ?? array() );
+            $hay_count         = $count_categories( $segment_filters['hay-equipment']['filter']['category'] ?? array() );
+
             $used_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'condition', 'meta_value' => 'Used', 'post_status' => 'publish'));
-            $new_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'condition', 'meta_value' => 'New', 'post_status' => 'publish'));
-            $hay_count = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'category', 'meta_value' => 'Hay Equipment', 'post_status' => 'publish'));
+            $new_count  = new WP_Query(array('post_type' => 'equipment', 'meta_key' => 'condition', 'meta_value' => 'New',  'post_status' => 'publish'));
 
             $browse_cards = array(
-                array('label' => 'New', 'icon' => 'VE_New_Icon.png', 'meta' => $new_count->found_posts . ' Units'),
-                array('label' => 'Used', 'icon' => 'VE_Used_Icon.png', 'meta' => $used_count->found_posts . ' Units'),
-                array('label' => 'Tractors', 'icon' => 'VE_Tractor_Icon.png', 'meta' => $tractor_count->found_posts . ' Units'),
-                array('label' => 'Trailers', 'icon' => 'VE_Trailer_Icon.png', 'meta' => $trailer_count->found_posts . ' Units'),
-                array('label' => 'Attachments', 'icon' => 'VE_Attachment_Icon-300x300.png', 'meta' => $attachment_count->found_posts . ' Units'),
-                array('label' => 'Hay Equipment', 'icon' => 'VE_Hay_Icon.png', 'meta' => $hay_count->found_posts . ' Units'),
+                array('label' => 'New', 'icon' => 'VE_New_Icon.png', 'meta' => $new_count->found_posts . ' Units', 'url' => home_url('/inventory/new')),
+                array('label' => 'Used', 'icon' => 'VE_Used_Icon.png', 'meta' => $used_count->found_posts . ' Units', 'url' => home_url('/inventory/used')),
+                array('label' => 'Tractors', 'icon' => 'VE_Tractor_Icon.png', 'meta' => $tractor_count . ' Units', 'url' => home_url('/inventory/tractors')),
+                array('label' => 'Trailers', 'icon' => 'VE_Trailer_Icon.png', 'meta' => $trailer_count . ' Units', 'url' => home_url('/inventory/trailers')),
+                array('label' => 'Attachments', 'icon' => 'VE_Attachment_Icon-300x300.png', 'meta' => $attachment_count . ' Units', 'url' => home_url('/inventory/attachments')),
+                array('label' => 'Hay Equipment', 'icon' => 'VE_Hay_Icon.png', 'meta' => $hay_count . ' Units', 'url' => home_url('/inventory/hay-equipment')),
             );
             ?>
-            <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-6 lg:gap-6 lg:overflow-visible lg:pb-0">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
                 <?php foreach ( $browse_cards as $card ) : ?>
-                    <div class="flex flex-col items-center justify-start gap-3 text-slate-900 snap-start shrink-0 lg:shrink">
-                        <button type="button" class="w-[200px] h-[200px] rounded-2xl bg-white border border-slate-200 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden">
-                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[180px] h-[180px] object-contain" loading="lazy" decoding="async" />
-                        </button>
+                    <a href="<?php echo esc_url( $card['url'] ); ?>" class="flex flex-col items-center justify-start gap-3 text-slate-900 group">
+                        <div class="w-full aspect-square max-w-[200px] mx-auto rounded-2xl bg-white border border-slate-200 shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden">
+                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[85%] h-[85%] object-contain" loading="lazy" decoding="async" />
+                        </div>
                         <div class="text-center flex flex-col items-center">
-                            <div class="font-black text-2xl uppercase tracking-tighter leading-tight"><?php echo esc_html( $card['label'] ); ?></div>
+                            <div class="font-black text-2xl uppercase tracking-tighter leading-tight group-hover:text-red-600 transition-colors"><?php echo esc_html( $card['label'] ); ?></div>
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1"><?php echo esc_html( $card['meta'] ); ?></div>
                         </div>
-                    </div>
+                    </a>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -193,69 +350,16 @@
     <!-- INVENTORY SECTION -->
     <section id="inventory" class="py-24 bg-slate-50 border-y border-slate-200">
         <div class="max-w-7xl mx-auto px-4">
-            <!-- Recently Added Carousel -->
             <?php 
-            $recent_inventory = new WP_Query(array(
-                'post_type' => 'equipment',
-                'post_status' => 'publish',
-                'posts_per_page' => 6,
-                'orderby' => 'date',
-                'order' => 'DESC',
-            ));
+            // Removed Live Inventory Pulse block per request
+            ?>
 
-            $counts = wp_count_posts('equipment');
-            $total_units = isset($counts->publish) ? (int) $counts->publish : 0;
-            $featured_count_query = new WP_Query(array(
-                'post_type' => 'equipment',
-                'post_status' => 'publish',
-                'meta_key' => 'featured',
-                'meta_value' => '1',
-                'posts_per_page' => 1,
-            ));
-            $featured_total = (int) $featured_count_query->found_posts;
-            $recent_count_query = new WP_Query(array(
-                'post_type' => 'equipment',
-                'post_status' => 'publish',
-                'date_query' => array(
-                    array('after' => '30 days ago'),
-                ),
-                'posts_per_page' => 1,
-            ));
-            $recent_total = (int) $recent_count_query->found_posts;
-            $instock_query = new WP_Query(array(
-                'post_type' => 'equipment',
-                'post_status' => 'publish',
-                'meta_key' => 'stock_status',
-                'meta_value' => 'In Stock',
-                'posts_per_page' => 1,
-            ));
-            $instock_total = (int) $instock_query->found_posts;
-        ?>
-            <div class="mb-12">
-                <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Live Stock Ledger</div>
-                <div class="flex flex-wrap gap-3 items-center bg-white border border-slate-200 rounded-2xl shadow-sm px-5 py-4">
-                    <span class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">Live Inventory Pulse</span>
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[11px] font-black uppercase tracking-widest">
-                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <?php echo esc_html( $instock_total ); ?> In Stock
-                    </span>
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-black uppercase tracking-widest">
-                        ★ <?php echo esc_html( $featured_total ); ?> Featured
-                    </span>
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-black uppercase tracking-widest">
-                        +<?php echo esc_html( $recent_total ); ?> New (30d)
-                    </span>
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-black uppercase tracking-widest">
-                        Total <?php echo esc_html( $total_units ); ?> Units
-                    </span>
-                </div>
-            </div>
-
-            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
+                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Hand-Picked Inventory Ledger</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Featured Inventory</h2>
                 </div>
-                <a href="<?php echo esc_url( home_url( '/inventory' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -354,6 +458,5 @@
             </div>
         </div>
     </section>
-    <div class="h-2 bg-red-600"></div>
 
 <?php get_footer(); ?>

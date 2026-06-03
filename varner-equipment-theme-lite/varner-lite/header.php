@@ -343,7 +343,7 @@
             </div>
         </header>
     </div>
-    <?php if ( function_exists('varner_render_breadcrumbs') ) varner_render_breadcrumbs(); ?>
+    <?php get_template_part( 'partials/breadcrumb' ); ?>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {

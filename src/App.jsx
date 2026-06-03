@@ -20,7 +20,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
   LayoutDashboard, Box, Truck, Facebook, Save, Copy, CheckCircle2, AlertCircle,
-  ChevronLeft, ChevronRight, Plus, Settings, Zap, Menu, Image as ImageIcon, Smartphone, Eye,
+  ChevronLeft, ChevronRight, Plus, Settings, Sliders, Zap, Menu, Image as ImageIcon, Smartphone, Eye,
   ArrowUpRight, BarChart3, Users, Wrench, Clock, ShieldCheck, Camera, Loader2,
   ScanText, List, Search, Edit2, X, TrendingUp, Activity, DollarSign, History,
   Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download, ChevronUp, ChevronDown, Mail, LogOut
@@ -1046,6 +1046,9 @@ const App = () => {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [isPublicMode, setIsPublicMode]       = useState(false);
   const [fieldErrors, setFieldErrors]         = useState({});
+  const [currentUser, setCurrentUser]         = useState(null);
+  const [sessionList, setSessionList]         = useState([]);
+  const [isSessionsLoading, setIsSessionsLoading] = useState(false);
 
   useEffect(() => {
     setIsPublicMode(!!document.querySelector('.varner-public-showroom'));
@@ -1076,6 +1079,25 @@ const App = () => {
     }
   }, []);
 
+  const loadSessions = useCallback(async (activeOnly = true) => {
+    setIsSessionsLoading(true);
+    try {
+      const url = `/sessions?per_page=50${activeOnly ? '&active_only=true' : ''}`;
+      const data = await apiFetch(url);
+      setSessionList(data.items || []);
+    } catch (e) {
+      showToast('Failed to load session audits: ' + e.message, 'error');
+    } finally {
+      setIsSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'config') {
+      loadSessions(true);
+    }
+  }, [activeTab, loadSessions]);
+
   useEffect(() => {
     const isVarnerOSPage = window.location.search.includes('page=varner-os');
     const isEquipmentEdit = window.location.pathname.includes('post.php') || window.location.pathname.includes('post-new.php');
@@ -1086,6 +1108,7 @@ const App = () => {
     }
 
     loadInventory();
+    apiFetch('/me').then(setCurrentUser).catch(() => {});
     apiFetch('/brands').then(setBrands).catch(() => {});
     apiFetch('/categories').then(setCategories).catch(() => {});
   }, [loadInventory]);
@@ -1410,7 +1433,8 @@ const App = () => {
       case 'marketplace':   return 'Meta Commerce Sync';
       case 'history':       return 'Deletion History / Recycle Bin';
       case 'mobile':        return 'Mobile Companion Access';
-      case 'settings':      return 'System Configuration';
+      case 'settings':      return 'Page Editor';
+      case 'config':        return 'System Settings & Audit';
       default:              return 'Varner OS';
     }
   };
@@ -1556,8 +1580,8 @@ const App = () => {
           </div>
         </header>
 
-        <div className={`flex-1 overflow-y-auto bg-slate-50/50 no-scrollbar ${activeTab === 'all-inventory' ? 'px-2 py-4 sm:px-3 sm:py-6' : 'p-4 sm:p-6 lg:p-8'}`}>
-          <div className="max-w-7xl mx-auto pb-10">
+        <div className={`flex-1 overflow-y-auto bg-slate-50/50 no-scrollbar ${activeTab === 'all-inventory' || activeTab === 'history' ? 'px-2 py-4 sm:px-3 sm:py-6' : 'p-4 sm:p-6 lg:p-8'}`}>
+          <div className={`${activeTab === 'all-inventory' || activeTab === 'history' ? 'max-w-none px-4 sm:px-6 lg:px-8' : 'max-w-7xl'} mx-auto pb-10`}>
 
             {/* DASHBOARD */}
             {activeTab === 'dashboard' && (
@@ -1639,7 +1663,7 @@ const App = () => {
                       {filteredInventory.length} Unit{filteredInventory.length !== 1 ? 's' : ''} Found
                     </span>
                   </div>
-                  <div className="overflow-x-auto p-2 no-scrollbar">
+                  <div className="overflow-x-auto p-2">
                     {isLoading ? (
                       <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Loading inventory…</div>
                     ) : (
@@ -1744,18 +1768,20 @@ const App = () => {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between pl-1">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Equipment Category</label>
-                            <button type="button" onClick={() => setShowCategoriesModal(true)}
-                              className="text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700 flex items-center gap-1">
-                              <Settings size={10}/> Manage Categories
-                            </button>
                           </div>
-                          <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                            <select value={unitData.category} onChange={e => handleInputChange('category', e.target.value)}
-                              className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none">
-                              <option value="">— Select Category —</option>
-                              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                            <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+                              <select value={unitData.category} onChange={e => handleInputChange('category', e.target.value)}
+                                className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none">
+                                <option value="">— Select Category —</option>
+                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
+                            </div>
+                            <button type="button" onClick={() => setShowCategoriesModal(true)}
+                              className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
+                              <Settings size={14}/> Manage Categories
+                            </button>
                           </div>
                           {fieldErrors.category && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.category}</p>}
                         </div>
@@ -1764,24 +1790,26 @@ const App = () => {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between pl-1">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Brand / Manufacturer</label>
-                            <button type="button" onClick={() => setShowBrandsModal(true)}
-                              className="text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700 flex items-center gap-1">
-                              <Settings size={10}/> Manage Brands
-                            </button>
                           </div>
-                          <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                            <select value={unitData.make} 
-                              onChange={e => {
-                                const v = e.target.value;
-                                handleInputChange('make', v);
-                                const newTitle = `${unitData.year} ${v} ${unitData.model}`.trim();
-                                handleInputChange('title', newTitle);
-                              }}
-                              className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none">
-                              <option value="">— Select Brand —</option>
-                              {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                            <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+                              <select value={unitData.make} 
+                                onChange={e => {
+                                  const v = e.target.value;
+                                  handleInputChange('make', v);
+                                  const newTitle = `${unitData.year} ${v} ${unitData.model}`.trim();
+                                  handleInputChange('title', newTitle);
+                                }}
+                                className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none">
+                                <option value="">— Select Brand —</option>
+                                {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                              </select>
+                              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90"/></div>
+                            </div>
+                            <button type="button" onClick={() => setShowBrandsModal(true)}
+                              className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
+                              <Settings size={14}/> Manage Brands
+                            </button>
                           </div>
                           {fieldErrors.make && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.make}</p>}
                         </div>
@@ -2022,6 +2050,15 @@ const App = () => {
             {activeTab === 'marketplace' && <MarketplaceTab/>}
             {activeTab === 'settings'    && <SettingsTab showToast={showToast}/>}
             {activeTab === 'mobile'      && <MobileAccessTab/>}
+            {activeTab === 'config'      && (
+              <ConfigurationTab
+                showToast={showToast}
+                currentUser={currentUser}
+                sessionList={sessionList}
+                isLoading={isSessionsLoading}
+                loadSessions={loadSessions}
+              />
+            )}
             {activeTab === 'history'     && (
               <HistoryTab
                 deletedItems={deletedHistory}
@@ -2059,10 +2096,11 @@ const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav }) => 
       <NavItem icon={<Box size={20}/>}             label="Add / Edit"     active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
       <NavItem icon={<Facebook size={20}/>}        label="Meta Sync"      active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
       <NavItem icon={<History size={20}/>}         label="History"        active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
+      <NavItem icon={<Sliders size={20}/>}         label="Page Editor"    active={activeTab==='settings'}      onClick={() => onNav('settings')} />
       <NavItem icon={<Smartphone size={20}/>}      label="Mobile Companion" active={activeTab==='mobile'}        onClick={() => onNav('mobile')} />
     </nav>
     <div className="mt-auto pt-4 border-t border-slate-800">
-      <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='settings'} onClick={() => onNav('settings')} />
+      <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='config'} onClick={() => onNav('config')} />
     </div>
   </>
 );
@@ -3537,6 +3575,222 @@ const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, on
           </div>
         )}
 
+
+      </div>
+    </div>
+  );
+};
+
+const ConfigurationTab = ({ showToast, currentUser, sessionList, isLoading, loadSessions }) => {
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
+
+  return (
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 text-slate-900 pb-16">
+      
+      {/* HEADER WELCOME BANNER */}
+      <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 text-white shadow-2xl flex items-center justify-between relative overflow-hidden">
+        <div className="relative z-10">
+          <h3 className="text-xl sm:text-3xl font-black tracking-tighter mb-2 uppercase leading-none text-white">System Settings & Audit</h3>
+          <p className="text-indigo-400 font-bold uppercase tracking-[0.3em] text-[10px]">
+            Current User ID: {currentUser ? `#${currentUser.id}` : 'Loading...'}
+          </p>
+        </div>
+        <Sliders size={80} className="absolute -right-4 -bottom-4 sm:-right-8 sm:-bottom-8 opacity-10 rotate-12 sm:w-[120px] sm:h-[120px]"/>
+      </div>
+
+      {/* TWO-COLUMN GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        
+        {/* LEFT COLUMN: USER PROFILE DETAILS */}
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 shadow-2xl border border-slate-200/60 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-4 mb-8 border-b border-slate-50 pb-6">
+              <Users size={22} className="text-indigo-600"/>
+              <h4 className="font-black text-xs uppercase tracking-widest text-slate-900">User Profile</h4>
+            </div>
+            
+            <div className="flex flex-col items-center text-center space-y-4 mb-8">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-black shadow-lg">
+                {currentUser?.initials || '?'}
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-slate-900 leading-tight">{currentUser?.display_name || 'Loading...'}</h2>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Logged In User</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-slate-100 pt-6">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">User ID</span>
+                <span className="font-black text-slate-800">{currentUser?.id || '—'}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Role</span>
+                <div className="flex gap-1">
+                  {currentUser?.roles ? (
+                    currentUser.roles.map(role => (
+                      <span key={role} className="bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-wider border border-indigo-100">
+                        {role}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-slate-400 font-black text-xs">—</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">First Name</span>
+                <span className="font-black text-slate-800">{currentUser?.first_name || '—'}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Last Name</span>
+                <span className="font-black text-slate-800">{currentUser?.last_name || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-6 border-t border-slate-100">
+            <button
+              onClick={async () => {
+                if (window.confirm('Are you sure you want to end your session and sign out?')) {
+                  try {
+                    await apiFetch('/logout', { method: 'POST' });
+                    showToast('Signed out successfully.');
+                    localStorage.removeItem('varner_mobile_token');
+                    window.location.reload();
+                  } catch(e) {
+                    showToast('Failed to logout: ' + e.message, 'error');
+                  }
+                }
+              }}
+              className="w-full bg-red-50 text-red-600 hover:bg-red-100 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 border border-red-100"
+            >
+              <LogOut size={16}/>
+              Sign Out Session
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: SECURITY & AUDIT LOG */}
+        <div className="lg:col-span-2 bg-white rounded-[2rem] p-6 sm:p-8 shadow-2xl border border-slate-200/60 flex flex-col">
+          <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-6">
+            <div className="flex items-center gap-4">
+              <ShieldCheck size={22} className="text-indigo-600"/>
+              <div>
+                <h4 className="font-black text-xs uppercase tracking-widest text-slate-900">
+                  {showActiveOnly ? 'Active Logged In Users' : 'Security & Session Audits'}
+                </h4>
+                <p className="text-[9px] text-slate-400 font-bold mt-0.5">
+                  {showActiveOnly ? 'Users currently connected to the Varner OS console' : 'Recent system logins and event logs'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => loadSessions(showActiveOnly)}
+              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-indigo-100"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+              Refresh
+            </button>
+          </div>
+
+          {/* TOGGLE BUTTONS */}
+          <div className="flex gap-2 mb-6 border-b border-slate-100 pb-5">
+            <button 
+              onClick={() => { setShowActiveOnly(true); loadSessions(true); }}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border leading-none ${showActiveOnly ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-slate-100'}`}
+            >
+              Logged In Users
+            </button>
+            <button 
+              onClick={() => { setShowActiveOnly(false); loadSessions(false); }}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border leading-none ${!showActiveOnly ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200/60 hover:bg-slate-100'}`}
+            >
+              Session History
+            </button>
+          </div>
+
+          {isLoading && sessionList.length === 0 ? (
+            <div className="py-20 text-center text-slate-400 font-black uppercase text-xs tracking-widest flex flex-col items-center justify-center gap-3">
+              <Loader2 className="animate-spin text-indigo-600" size={24} />
+              Loading sessions...
+            </div>
+          ) : sessionList.length === 0 ? (
+            <div className="py-20 text-center text-slate-400 font-black uppercase text-xs tracking-widest">
+              {showActiveOnly ? 'No active users logged in.' : 'No session logs found.'}
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1 no-scrollbar">
+              {sessionList.map((session) => {
+                const isActive = !session.logout_at;
+                let loginTimeStr = 'Unknown';
+                try {
+                  if (session.login_at) {
+                    const d = new Date(session.login_at.replace(/-/g, '/'));
+                    loginTimeStr = d.toLocaleString();
+                  }
+                } catch (err) {}
+
+                let endedStr = '';
+                if (!isActive && session.logout_at) {
+                  try {
+                    const d = new Date(session.logout_at.replace(/-/g, '/'));
+                    endedStr = d.toLocaleString();
+                  } catch (err) {}
+                }
+
+                let device = 'Desktop / Browser';
+                const ua = session.user_agent || '';
+                if (/mobile/i.test(ua)) {
+                  device = 'Mobile Device';
+                  if (/iphone/i.test(ua)) device = 'Apple iPhone';
+                  else if (/android/i.test(ua)) device = 'Android Device';
+                } else if (/ipad/i.test(ua)) {
+                  device = 'iPad Tablet';
+                }
+
+                return (
+                  <div key={session.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-slate-50/50 rounded-2xl border-2 border-white hover:bg-white transition-all shadow-sm group">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-500 text-xs shrink-0">
+                        {session.initials || '??'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-slate-800 truncate">{session.display_name || 'System User'}</span>
+                          <span className="text-[10px] text-slate-400 font-bold truncate">({session.ip || 'Unknown IP'})</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-bold mt-0.5 truncate flex items-center gap-1.5">
+                          <span>{device}</span>
+                          <span className="text-slate-300">•</span>
+                          <span>Logged in: {loginTimeStr}</span>
+                        </div>
+                        {!isActive && endedStr && (
+                          <div className="text-[9px] text-slate-400 mt-0.5 font-bold">
+                            Logged out: {endedStr} {session.ended_reason ? `(${session.ended_reason})` : ''}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3 sm:mt-0 self-end sm:self-center shrink-0">
+                      {isActive ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-[9px] font-black uppercase tracking-wider border border-green-150">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                          Active Session
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-wider border border-slate-200">
+                          Ended
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

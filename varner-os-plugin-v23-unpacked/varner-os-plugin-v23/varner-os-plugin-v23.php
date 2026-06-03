@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.0 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.0
+ * Description: Version 1.23.2 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.2
  * Author: hwy559.com
  */
 
@@ -273,42 +273,44 @@ function varner_render_configuration_page() {
  */
 function varner_enqueue_react_assets()
 {
-    $dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
+    $html_file = plugin_dir_path(__FILE__) . 'dist/index.html';
+    if (!file_exists($html_file)) {
+        error_log("Varner OS: dist/index.html not found.");
+        return;
+    }
+
+    $html = file_get_contents($html_file);
+    
+    $js_file = '';
+    if (preg_match('/src="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $html, $matches)) {
+        $js_file = $matches[1];
+    }
+
+    $css_file = '';
+    if (preg_match('/href="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $html, $matches)) {
+        $css_file = $matches[1];
+    }
+
     $dist_url = plugin_dir_url(__FILE__) . 'dist/assets/';
+    $dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
 
-    $js_files = glob($dist_path . '*.js');
-    $css_files = glob($dist_path . '*.css');
-
-    $pick_latest = function($files) {
-        if (empty($files)) return null;
-        usort($files, function($a, $b) { return filemtime($b) <=> filemtime($a); });
-        // Prefer main.* when present
-        foreach ($files as $f) {
-            if (strpos(basename($f), 'main.') === 0) return $f;
-        }
-        return $files[0];
-    };
-
-    $js = $pick_latest($js_files);
-    $css = $pick_latest($css_files);
-
-    if ($js) {
-        $ver = filemtime($js);
-        wp_enqueue_script('varner-react-app', $dist_url . basename($js), array(), $ver, true);
+    if ($js_file && file_exists($dist_path . $js_file)) {
+        $ver = filemtime($dist_path . $js_file);
+        wp_enqueue_script('varner-react-app', $dist_url . $js_file, array(), $ver, true);
         wp_localize_script('varner-react-app', 'varnerData', array(
             'post_id' => get_the_ID(),
             'nonce' => wp_create_nonce('wp_rest'),
             'rest_url' => esc_url_raw(rest_url())
         ));
     } else {
-        error_log("Varner OS: JS assets not found in " . $dist_path);
+        error_log("Varner OS: JS asset not found or not matched. js_file: " . $js_file);
     }
-    
-    if ($css) {
-        $ver = filemtime($css);
-        wp_enqueue_style('varner-tailwind', $dist_url . basename($css), array(), $ver);
+
+    if ($css_file && file_exists($dist_path . $css_file)) {
+        $ver = filemtime($dist_path . $css_file);
+        wp_enqueue_style('varner-tailwind', $dist_url . $css_file, array(), $ver);
     } else {
-        error_log("Varner OS: CSS assets not found in " . $dist_path);
+        error_log("Varner OS: CSS asset not found or not matched. css_file: " . $css_file);
     }
 }
 
@@ -555,29 +557,27 @@ function varner_os_mobile_pwa_router() {
                 }
             </script>
             <?php
-            $dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
-            $dist_url = plugin_dir_url(__FILE__) . 'dist/assets/';
-
-            $js_files = glob($dist_path . '*.js');
-            $css_files = glob($dist_path . '*.css');
-
-            $pick_latest = function($files) {
-                if (empty($files)) return null;
-                usort($files, function($a, $b) { return filemtime($b) <=> filemtime($a); });
-                foreach ($files as $f) {
-                    if (strpos(basename($f), 'main.') === 0) return $f;
+            $html_file = plugin_dir_path(__FILE__) . 'dist/index.html';
+            $js_file = '';
+            $css_file = '';
+            if (file_exists($html_file)) {
+                $html = file_get_contents($html_file);
+                if (preg_match('/src="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $html, $matches)) {
+                    $js_file = $matches[1];
                 }
-                return $files[0];
-            };
+                if (preg_match('/href="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $html, $matches)) {
+                    $css_file = $matches[1];
+                }
+            }
 
-            $js = $pick_latest($js_files);
-            $css = $pick_latest($css_files);
+            $dist_url = plugin_dir_url(__FILE__) . 'dist/assets/';
+            $dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
 
-            if ($js && $css) {
-                $ver = filemtime($js);
-                $css_ver = filemtime($css);
+            if ($js_file && $css_file && file_exists($dist_path . $js_file) && file_exists($dist_path . $css_file)) {
+                $ver = filemtime($dist_path . $js_file);
+                $css_ver = filemtime($dist_path . $css_file);
                 ?>
-                <link rel="stylesheet" href="<?php echo $dist_url . basename($css) . '?ver=' . $css_ver; ?>">
+                <link rel="stylesheet" href="<?php echo $dist_url . $css_file . '?ver=' . $css_ver; ?>">
                 <script>
                     window.varnerData = {
                         post_id: 0,
@@ -586,7 +586,7 @@ function varner_os_mobile_pwa_router() {
                         is_mobile_app: true
                     };
                 </script>
-                <script type="module" src="<?php echo $dist_url . basename($js) . '?ver=' . $ver; ?>"></script>
+                <script type="module" src="<?php echo $dist_url . $js_file . '?ver=' . $ver; ?>"></script>
                 <?php
             } else {
                 echo '<div style="padding:20px;text-align:center;color:red;">Error: React build assets not found. Please build the application first.</div>';

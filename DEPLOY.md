@@ -38,28 +38,22 @@
 - Do not create or use temporary theme/plugin folders (for example: `temp-theme` or `temp-plugin`).
 - Make all edits directly in the versioned source/artifact folders (for example: `varner-equipment-theme-v23/`) and then rebuild the deployment ZIP.
 
-## Theme ZIP Packaging Rule (Important)
+## Theme & Plugin ZIP Packaging (Unified Script)
 
-- Both ZIPs must be rebuilt after **every** theme file change.
-- Each ZIP must contain its respective top-level theme folder (`varner-v23` or `varner-lite`).
-- `style.css` must be inside that folder: e.g., `varner-v23/style.css` or `varner-lite/style.css`.
-- Do not ZIP only the folder contents (that causes WordPress theme install/load errors).
-- When editing files, always edit in the versioned source folder first, then sync to the lite folder, then rebuild both ZIPs.
+We use a unified PowerShell script `build.ps1` to compile Tailwind CSS, build the React inventory app, auto-increment the plugin version, sync assets, and package both the themes and plugin into standard compatibility ZIP archives.
 
-### Source folders
-| ZIP | Source folder |
-|-----|--------------|
-| `varner-equipment-theme-v23.zip` | `varner-equipment-theme-v23/varner-v23/` |
-| `varner-equipment-theme-v23-lite.zip` | `varner-equipment-theme-lite/varner-lite/` |
-
-### Automated Build
-To rebuild **both** ZIPs automatically in one step:
+### Automated Unified Build (Recommended)
+To rebuild **both** themes and the plugin automatically in one step:
 ```powershell
 .\build.ps1
 ```
+> [!TIP]
+> Each time you run `.\build.ps1`, the script automatically increments the patch version number (e.g. `1.23.1` → `1.23.2`) in `varner-os-plugin-v23.php`. This forces WordPress to prompt you to overwrite the active plugin when you upload the ZIP and breaks browser/CDN caching for enqueued scripts on WP Engine.
 
-### Manual Sync & Rebuild
+### Manual Sync & Rebuild (For Debugging)
 If you prefer to run commands manually:
+
+#### Theme Manual Rebuild:
 ```powershell
 # Sync changed files from full → lite
 Copy-Item '.\varner-equipment-theme-v23\varner-v23\functions.php'  '.\varner-equipment-theme-lite\varner-lite\functions.php'  -Force
@@ -76,17 +70,14 @@ if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-e
 cmd /c "cd varner-equipment-theme-lite && tar -a -c -f ../varner-equipment-theme-v23-lite.zip varner-lite"
 ```
 
-## Plugin React Build (when src/App.jsx changes)
-
-Any time `src/App.jsx` is edited, the React app must be rebuilt and the dist files copied into the plugin before zipping.
-
+#### Plugin Manual Rebuild:
 ```powershell
-# 1. Build
+# 1. Build React
 npm run build
 
-# 2. Copy built files into plugin (keeps existing jpg assets)
-Copy-Item '.\dist\index.html' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\index.html' -Force
-Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\assets'     -Recurse -Force
+# 2. Copy built files into plugin
+Remove-Item '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist' -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item '.\dist' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\' -Recurse -Force
 
 # 3. Zip plugin
 Remove-Item '.\varner-os-plugin-v23.zip' -Force -ErrorAction SilentlyContinue

@@ -59,8 +59,8 @@ Authorized brands are managed in three locations to ensure full integration:
 2.  Run `npm run build` from the project root.
 3.  **Sync to Plugin** (PowerShell):
     ```powershell
-    Copy-Item '.\dist\index.html' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\index.html' -Force
-    Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\assets'     -Recurse -Force
+    Remove-Item '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist' -Recurse -Force -ErrorAction SilentlyContinue
+    Copy-Item '.\dist' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\' -Recurse -Force
     ```
 4.  Rebuild the plugin ZIP. See `DEPLOY.md` for the exact command.
 
@@ -82,8 +82,8 @@ All deployment artifacts are generated as ZIP files in the root directory.
 npm run build
 
 # Sync Plugin Assets
-Copy-Item '.\dist\index.html' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\index.html' -Force
-Copy-Item '.\dist\assets'     '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist\assets'     -Recurse -Force
+Remove-Item '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist' -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item '.\dist' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\' -Recurse -Force
 
 # Package Everything
 if (Test-Path '.\varner-equipment-theme-v23.zip')      { Remove-Item '.\varner-equipment-theme-v23.zip'      -Force }
