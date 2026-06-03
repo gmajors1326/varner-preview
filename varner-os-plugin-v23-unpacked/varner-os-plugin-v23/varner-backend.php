@@ -266,6 +266,12 @@ function varner_register_rest_routes() {
         'permission_callback' => function() { return current_user_can('manage_options'); },
     ));
 
+    register_rest_route($ns, '/ledger', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_global_ledger',
+        'permission_callback' => function() { return current_user_can('manage_options'); },
+    ));
+
     register_rest_route($ns, '/me', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_me',
@@ -832,6 +838,66 @@ function varner_api_get_sessions(WP_REST_Request $request) {
         $u = $row['user_id'] ? get_user_by('id', $row['user_id']) : null;
         $row['display_name'] = $u ? $u->display_name : '';
         $row['initials']     = $u ? varner_os_user_initials($u) : '';
+    }
+
+    return rest_ensure_response(array(
+        'items'    => $items,
+        'total'    => intval($total),
+        'page'     => $page,
+        'per_page' => $per_page,
+    ));
+}
+
+function varner_api_get_global_ledger(WP_REST_Request $request) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_inventory_ledger';
+
+    $page        = max(1, intval($request->get_param('page') ?: 1));
+    $per_page    = min(100, max(1, intval($request->get_param('per_page') ?: 20)));
+    $offset      = ($page - 1) * $per_page;
+
+    $wheres = array();
+    $params = array();
+
+    $action = sanitize_text_field($request->get_param('action'));
+    if ($action) {
+        $wheres[] = 'l.action = %s';
+        $params[] = $action;
+    }
+
+    $user_id = intval($request->get_param('user_id'));
+    if ($user_id > 0) {
+        $wheres[] = 'l.user_id = %d';
+        $params[] = $user_id;
+    }
+
+    $where_sql = $wheres ? ('WHERE ' . implode(' AND ', $wheres)) : '';
+
+    $sql = "SELECT l.id, l.post_id, l.action, l.user_id, l.display_name, l.initials, l.summary, l.details, l.request_id, l.created_at, p.post_title 
+            FROM {$table} l 
+            LEFT JOIN {$wpdb->posts} p ON l.post_id = p.ID 
+            {$where_sql} 
+            ORDER BY l.created_at DESC 
+            LIMIT %d OFFSET %d";
+
+    $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
+
+    $count_sql = "SELECT COUNT(*) FROM {$table} l {$where_sql}";
+    $total = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
+
+    foreach ($items as &$row) {
+        if ($row['details']) {
+            $row['details'] = json_decode($row['details'], true);
+        }
+        // If post_title is empty or missing, fetch stock number as fallback
+        if (empty($row['post_title']) && $row['post_id'] > 0) {
+            $stock = get_post_meta($row['post_id'], '_stock_number', true);
+            if ($stock) {
+                $row['post_title'] = 'Unit Stock #' . $stock;
+            } else {
+                $row['post_title'] = 'Deleted Unit (ID #' . $row['post_id'] . ')';
+            }
+        }
     }
 
     return rest_ensure_response(array(
