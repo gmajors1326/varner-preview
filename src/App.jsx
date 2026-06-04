@@ -3367,15 +3367,11 @@ const SettingsTab = ({ showToast }) => {
         </div>
 
         {/* STATIONARY SAVE CONFIGURATION BAR */}
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 flex items-center justify-between mt-8 shadow-xl">
-          <div className="hidden sm:block">
-            <h4 className="font-black text-xs uppercase tracking-tight text-slate-900">Save Configuration</h4>
-            <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Saves all theme settings live.</p>
-          </div>
+        <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 flex items-center justify-center mt-8 shadow-xl">
           <button
             onClick={handleSaveSettings}
             disabled={isSaving}
-            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-10 py-6 rounded-2xl font-black text-xs uppercase tracking-[0.25em] flex items-center justify-center gap-3 active:scale-95 transition-all border-b-4 border-red-800 disabled:opacity-50 shadow-xl shadow-red-200"
+            className="w-full bg-red-600 hover:bg-red-700 text-white px-10 py-6 rounded-2xl font-black text-xs uppercase tracking-[0.25em] flex items-center justify-center gap-3 active:scale-95 transition-all border-b-4 border-red-800 disabled:opacity-50 shadow-xl shadow-red-200"
           >
             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             {isSaving ? 'SAVING CHANGES…' : 'SAVE CONFIGURATION'}
