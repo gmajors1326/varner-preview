@@ -260,6 +260,25 @@ function varner_register_rest_routes() {
         array('methods' => 'POST', 'callback' => 'varner_api_save_categories', 'permission_callback' => $auth),
     ));
 
+    register_rest_route($ns, '/videos', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_videos',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_create_video', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/videos/(?P<id>\d+)', array(
+        array('methods' => 'PATCH',  'callback' => 'varner_api_update_video', 'permission_callback' => $auth),
+        array('methods' => 'DELETE', 'callback' => 'varner_api_delete_video', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/video-categories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_video_categories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_create_video_category', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/video-categories/(?P<id>\d+)', array(
+        array('methods' => 'DELETE', 'callback' => 'varner_api_delete_video_category', 'permission_callback' => $auth),
+    ));
+
     register_rest_route($ns, '/sessions', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_sessions',
@@ -1015,6 +1034,7 @@ function varner_backend_get_settings_defaults() {
         'hours_sun'                  => "Closed",
         'social_facebook'            => "https://www.facebook.com/varnerequipment",
         'social_youtube'             => "https://www.youtube.com/@VarnerEquipment",
+        'social_custom_links'        => array(),
         'employment_tagline'         => 'Join The Crew',
         'employment_headline'        => 'Careers at Varner',
         'employment_intro'           => 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.',
@@ -1078,6 +1098,19 @@ function varner_api_save_settings(WP_REST_Request $request) {
                     }
                 }
                 $sanitized[$key] = $jobs;
+            } else if ($key === 'social_custom_links') {
+                $links = array();
+                if (is_array($params[$key])) {
+                    foreach ($params[$key] as $link) {
+                        if (!is_array($link)) continue;
+                        $links[] = array(
+                            'platform' => sanitize_text_field($link['platform'] ?? 'custom'),
+                            'url'      => esc_url_raw($link['url'] ?? ''),
+                            'label'    => sanitize_text_field($link['label'] ?? ''),
+                        );
+                    }
+                }
+                $sanitized[$key] = $links;
             } else if (is_array($default_val)) {
                 $sanitized[$key] = array_map('sanitize_text_field', (array)$params[$key]);
             } else if (is_bool($default_val)) {
@@ -1125,6 +1158,19 @@ function varner_api_save_preview_settings(WP_REST_Request $request) {
                     }
                 }
                 $sanitized[$key] = $jobs;
+            } else if ($key === 'social_custom_links') {
+                $links = array();
+                if (is_array($params[$key])) {
+                    foreach ($params[$key] as $link) {
+                        if (!is_array($link)) continue;
+                        $links[] = array(
+                            'platform' => sanitize_text_field($link['platform'] ?? 'custom'),
+                            'url'      => esc_url_raw($link['url'] ?? ''),
+                            'label'    => sanitize_text_field($link['label'] ?? ''),
+                        );
+                    }
+                }
+                $sanitized[$key] = $links;
             } else if (is_array($default_val)) {
                 $sanitized[$key] = array_map('sanitize_text_field', (array)$params[$key]);
             } else if (is_bool($default_val)) {
@@ -1347,5 +1393,168 @@ function varner_update_session_activity() {
             array('%d', '%s', '%s', '%s', '%s', '%s')
         );
     }
+}
+
+// ─── 8. VIDEOS & VIDEO CATEGORIES REST HANDLERS ──────────────────────────────
+
+function varner_extract_youtube_url($embed_html) {
+    if (preg_match('/src="([^"]+)"/', $embed_html, $match)) {
+        $src = $match[1];
+        if (preg_match('/embed\/([^?&"]+)/', $src, $id_match)) {
+            return 'https://www.youtube.com/watch?v=' . $id_match[1];
+        }
+        return $src;
+    }
+    return $embed_html;
+}
+
+function varner_get_youtube_embed_html($url) {
+    if (strpos($url, '<iframe') !== false) {
+        return $url;
+    }
+    
+    $video_id = '';
+    if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|win/.+/|shorte.t/.+/|user/.+/|embed/|vne/)|youtu\.be/)([^"&?/ ]{11})%i', $url, $match)) {
+        $video_id = $match[1];
+    }
+    
+    if ($video_id) {
+        return '<iframe width="560" height="315" src="https://www.youtube.com/embed/' . esc_attr($video_id) . '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+    }
+    
+    return $url;
+}
+
+function varner_save_video_fields($post_id, $youtube_url, $category_id) {
+    $embed_html = varner_get_youtube_embed_html($youtube_url);
+    if (function_exists('update_field')) {
+        update_field('youtube_link', $embed_html, $post_id);
+    } else {
+        update_post_meta($post_id, 'youtube_link', $embed_html);
+    }
+    
+    if ($category_id) {
+        wp_set_post_terms($post_id, array(intval($category_id)), 'video_category');
+    } else {
+        wp_set_post_terms($post_id, array(), 'video_category');
+    }
+}
+
+function varner_api_get_videos() {
+    $posts = get_posts(array(
+        'post_type'      => 'video',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+    ));
+
+    $videos = array();
+    foreach ($posts as $p) {
+        $cats = wp_get_post_terms($p->ID, 'video_category');
+        $cat_id = !empty($cats) ? $cats[0]->term_id : 0;
+        $cat_name = !empty($cats) ? $cats[0]->name : 'Uncategorized';
+        
+        $videos[] = array(
+            'id'            => $p->ID,
+            'title'         => $p->post_title,
+            'youtube_link'  => varner_extract_youtube_url(get_post_meta($p->ID, 'youtube_link', true) ?: (function_exists('get_field') ? get_field('youtube_link', $p->ID) : '')),
+            'category_id'   => $cat_id,
+            'category_name' => $cat_name,
+        );
+    }
+    return rest_ensure_response($videos);
+}
+
+function varner_api_create_video(WP_REST_Request $request) {
+    $data = $request->get_json_params();
+    $post_id = wp_insert_post(array(
+        'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Video'),
+        'post_type'   => 'video',
+        'post_status' => 'publish',
+    ));
+    if (is_wp_error($post_id)) {
+        return new WP_Error('create_failed', $post_id->get_error_message(), array('status' => 500));
+    }
+    
+    $youtube_link = sanitize_text_field($data['youtube_link'] ?? '');
+    $category_id = intval($data['category_id'] ?? 0);
+    varner_save_video_fields($post_id, $youtube_link, $category_id);
+    
+    return rest_ensure_response(array('success' => true, 'id' => $post_id));
+}
+
+function varner_api_update_video(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    $data = $request->get_json_params();
+    if (!get_post($post_id)) {
+        return new WP_Error('not_found', 'Video not found.', array('status' => 404));
+    }
+    
+    $update_args = array('ID' => $post_id);
+    if (isset($data['title'])) {
+        $update_args['post_title'] = sanitize_text_field($data['title']);
+    }
+    wp_update_post($update_args);
+    
+    $youtube_link = sanitize_text_field($data['youtube_link'] ?? '');
+    $category_id = intval($data['category_id'] ?? 0);
+    varner_save_video_fields($post_id, $youtube_link, $category_id);
+    
+    return rest_ensure_response(array('success' => true));
+}
+
+function varner_api_delete_video(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    if (!get_post($post_id)) {
+        return new WP_Error('not_found', 'Video not found.', array('status' => 404));
+    }
+    wp_delete_post($post_id, true);
+    return rest_ensure_response(array('success' => true));
+}
+
+function varner_api_get_video_categories() {
+    $terms = get_terms(array(
+        'taxonomy'   => 'video_category',
+        'hide_empty' => false,
+    ));
+    if (is_wp_error($terms)) {
+        return new WP_Error('terms_failed', $terms->get_error_message(), array('status' => 500));
+    }
+    
+    $categories = array();
+    foreach ($terms as $t) {
+        $categories[] = array(
+            'id'          => $t->term_id,
+            'name'        => $t->name,
+            'slug'        => $t->slug,
+            'description' => $t->description,
+        );
+    }
+    return rest_ensure_response($categories);
+}
+
+function varner_api_create_video_category(WP_REST_Request $request) {
+    $data = $request->get_json_params();
+    $name = sanitize_text_field($data['name'] ?? '');
+    if (empty($name)) {
+        return new WP_Error('missing_name', 'Category name is required.', array('status' => 400));
+    }
+    
+    $term = wp_insert_term($name, 'video_category', array(
+        'description' => sanitize_text_field($data['description'] ?? ''),
+    ));
+    if (is_wp_error($term)) {
+        return new WP_Error('insert_failed', $term->get_error_message(), array('status' => 500));
+    }
+    
+    return rest_ensure_response(array('success' => true, 'id' => $term['term_id']));
+}
+
+function varner_api_delete_video_category(WP_REST_Request $request) {
+    $term_id = intval($request->get_param('id'));
+    $result = wp_delete_term($term_id, 'video_category');
+    if (is_wp_error($result)) {
+        return new WP_Error('delete_failed', $result->get_error_message(), array('status' => 500));
+    }
+    return rest_ensure_response(array('success' => true));
 }
 

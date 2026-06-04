@@ -1,6 +1,8 @@
 # Varner Equipment - Unified Build & Packaging Script
 # Compiles React, syncs assets, auto-bumps plugin version, and packages plugin + themes.
 
+$ErrorActionPreference = 'Stop'
+
 $root = Get-Location
 
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -54,11 +56,34 @@ Pop-Location
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
 # 5. Compile Tailwind CSS & Package Themes
-Write-Host "`n[5/5] Compiling Tailwind CSS & Zipping Themes..." -ForegroundColor Yellow
-Push-Location "varner-equipment-theme-v23\varner-v23"
+Write-Host "`n[5/5] Compiling Tailwind CSS, Syncing, & Packaging Themes..." -ForegroundColor Yellow
+
+$themeV23Path = "varner-equipment-theme-v23\varner-v23"
+$themeLitePath = "varner-equipment-theme-lite\varner-lite"
+
+# Sync PHP template files and style.css from V23 to Lite theme to ensure compatibility
+Write-Host "Syncing PHP templates and style.css to Lite theme..." -ForegroundColor Cyan
+Get-ChildItem -Path "$themeV23Path\*.php" | ForEach-Object {
+    Copy-Item $_.FullName -Destination "$themeLitePath\" -Force
+}
+Copy-Item "$themeV23Path\style.css" -Destination "$themeLitePath\" -Force
+
+# Sync partials and acf-json directories
+Remove-Item "$themeLitePath\partials" -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item "$themeV23Path\partials" -Destination "$themeLitePath\partials" -Recurse -Force
+
+Remove-Item "$themeLitePath\acf-json" -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item "$themeV23Path\acf-json" -Destination "$themeLitePath\acf-json" -Recurse -Force
+
+# Compile Tailwind CSS in the full theme
+Write-Host "Compiling Tailwind CSS..." -ForegroundColor Cyan
+Push-Location $themeV23Path
 npx tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --minify
 Pop-Location
-Copy-Item "varner-equipment-theme-v23\varner-v23\assets\css\tailwind.css" -Destination "varner-equipment-theme-lite\varner-lite\assets\css\tailwind.css" -Force
+
+# Copy compiled tailwind.css to the Lite theme
+Copy-Item "$themeV23Path\assets\css\tailwind.css" -Destination "$themeLitePath\assets\css\tailwind.css" -Force
+
 
 # Full Theme (v23)
 $v23Zip = Join-Path $root "varner-equipment-theme-v23.zip"

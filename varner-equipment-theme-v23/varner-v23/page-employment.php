@@ -7,27 +7,6 @@ $headline = function_exists('varner_get_theme_setting') ? varner_get_theme_setti
 $intro    = function_exists('varner_get_theme_setting') ? varner_get_theme_setting('employment_intro', 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.') : 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.';
 $jobs     = function_exists('varner_get_theme_setting') ? varner_get_theme_setting('employment_jobs') : array();
 
-if ( empty( $jobs ) ) {
-    $jobs = array(
-        array(
-            'job_title'       => 'Heavy Equipment Mechanic',
-            'job_type'        => 'Full-Time',
-            'job_location'    => 'Delta, CO',
-            'job_description' => 'Looking for an experienced mechanic specializing in tractors, trailers, and agricultural equipment. Must have own tools and reliable transportation.',
-            'job_show_badge'  => true,
-            'job_badge_text'  => 'Urgently Hiring',
-        ),
-        array(
-            'job_title'       => 'Parts Counter Sales',
-            'job_type'        => 'Full-Time',
-            'job_location'    => 'Delta, CO',
-            'job_description' => 'Assist customers in finding and ordering the right parts for their equipment. Previous parts or agricultural knowledge preferred.',
-            'job_show_badge'  => false,
-            'job_badge_text'  => '',
-        ),
-    );
-}
-
 $submitted = isset( $_GET['application'] ) && $_GET['application'] === 'sent';
 
 get_header();
@@ -47,28 +26,43 @@ get_header();
                 <div class="space-y-6">
                     <h3 class="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-8">Current Openings</h3>
 
-                    <?php foreach ( $jobs as $job ) :
-                        $title       = esc_html( $job['job_title'] );
-                        $type        = esc_html( $job['job_type'] ?: 'Full-Time' );
-                        $location    = esc_html( $job['job_location'] ?: 'Delta, CO' );
-                        $description = esc_html( $job['job_description'] );
-                        $show_badge  = ! empty( $job['job_show_badge'] );
-                        $badge_text  = esc_html( $job['job_badge_text'] ?: 'Urgently Hiring' );
-                    ?>
-                    <div class="bg-white p-8 rounded-3xl shadow-lg border-2 border-slate-100 hover:border-red-600 transition-colors">
-                        <div class="flex justify-between items-start mb-4">
-                          <div>
-                                <h4 class="text-xl font-black text-slate-900 uppercase tracking-tighter"><?php echo $title; ?></h4>
-                                <div class="text-xs font-bold text-slate-500 mt-1"><?php echo $type; ?> &bull; <?php echo $location; ?></div>
-                            </div>
-                            <?php if ( $show_badge ) : ?>
-                            <span class="bg-red-100 text-red-600 text-[9px] font-black uppercase px-3 py-1.5 rounded-lg"><?php echo $badge_text; ?></span>
-                            <?php endif; ?>
+                    <?php if ( empty( $jobs ) ) : ?>
+                    <div class="bg-white p-8 rounded-3xl shadow-lg border-2 border-dashed border-slate-200 text-center py-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
                         </div>
-                        <p class="text-sm font-bold text-slate-600 mb-6 leading-relaxed"><?php echo nl2br( esc_html( $description ) ); ?></p>
-                        <a href="#apply" class="inline-block bg-slate-900 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-colors">Apply Now</a>
+                        <h4 class="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">No Open Positions</h4>
+                        <p class="text-sm font-bold text-slate-500 leading-relaxed max-w-md mx-auto mb-6">
+                            We are not currently hiring, but we are always looking for hardworking, reliable individuals to join our crew. Please feel free to submit a general application below or check back later!
+                        </p>
+                        <a href="#apply" class="inline-block bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 transition-colors shadow-md">Submit General Application</a>
                     </div>
-                    <?php endforeach; ?>
+                    <?php else : ?>
+                        <?php foreach ( $jobs as $job ) :
+                            $title       = esc_html( $job['job_title'] );
+                            $type        = esc_html( $job['job_type'] ?: 'Full-Time' );
+                            $location    = esc_html( $job['job_location'] ?: 'Delta, CO' );
+                            $description = esc_html( $job['job_description'] );
+                            $show_badge  = ! empty( $job['job_show_badge'] );
+                            $badge_text  = esc_html( $job['job_badge_text'] ?: 'Urgently Hiring' );
+                        ?>
+                        <div class="bg-white p-8 rounded-3xl shadow-lg border-2 border-slate-100 hover:border-red-600 transition-colors">
+                            <div class="flex justify-between items-start mb-4">
+                              <div>
+                                    <h4 class="text-xl font-black text-slate-900 uppercase tracking-tighter"><?php echo $title; ?></h4>
+                                    <div class="text-xs font-bold text-slate-500 mt-1"><?php echo $type; ?> &bull; <?php echo $location; ?></div>
+                                </div>
+                                <?php if ( $show_badge ) : ?>
+                                <span class="bg-red-100 text-red-600 text-[9px] font-black uppercase px-3 py-1.5 rounded-lg"><?php echo $badge_text; ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <p class="text-sm font-bold text-slate-600 mb-6 leading-relaxed"><?php echo nl2br( esc_html( $description ) ); ?></p>
+                            <a href="#apply" class="inline-block bg-slate-900 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-colors">Apply Now</a>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Application Form -->
