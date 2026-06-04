@@ -289,6 +289,12 @@ function varner_register_rest_routes() {
         array('methods' => 'POST', 'callback' => 'varner_api_save_settings', 'permission_callback' => $auth),
     ));
 
+    register_rest_route($ns, '/settings/preview', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_save_preview_settings',
+        'permission_callback' => $auth,
+    ));
+
     register_rest_route($ns, '/mobile/token', array(
         'methods'             => 'POST',
         'callback'            => 'varner_api_generate_mobile_token',
@@ -810,6 +816,63 @@ function varner_api_get_sessions(WP_REST_Request $request) {
     global $wpdb;
     $table = $wpdb->prefix . 'varner_user_sessions';
 
+    // ─── On-the-fly verification of all active sessions ────────────────────
+    $active_sessions = $wpdb->get_results("SELECT id, user_id, session_token, login_at, last_activity_at FROM {$table} WHERE logout_at IS NULL");
+
+    if ($active_sessions) {
+        foreach ($active_sessions as $sess) {
+            $is_valid = true;
+            $reason = 'expired';
+            $is_mobile_token = (strlen($sess->session_token) === 16 && ctype_xdigit($sess->session_token));
+
+            if (empty($sess->session_token)) {
+                $is_valid = false;
+                $reason = 'expired';
+            } elseif ($is_mobile_token) {
+                $stored_user_id = get_transient('varner_mobile_token_' . $sess->session_token);
+                if (!$stored_user_id) {
+                    $is_valid = false;
+                    $reason = 'expired';
+                } else {
+                    $now = current_time('timestamp');
+                    $last_act = $sess->last_activity_at ? strtotime($sess->last_activity_at) : strtotime($sess->login_at);
+                    if ($now - $last_act > 1800) { // 30 mins timeout
+                        $is_valid = false;
+                        $reason = 'timeout';
+                        delete_transient('varner_mobile_token_' . $sess->session_token);
+                    }
+                }
+            } else {
+                $manager = WP_Session_Tokens::get_instance($sess->user_id);
+                if (!$manager->verify($sess->session_token)) {
+                    $is_valid = false;
+                    $reason = 'expired';
+                } else {
+                    $now = current_time('timestamp');
+                    $last_act = $sess->last_activity_at ? strtotime($sess->last_activity_at) : strtotime($sess->login_at);
+                    if ($now - $last_act > 7200) { // 2 hours timeout
+                        $is_valid = false;
+                        $reason = 'timeout';
+                        $manager->destroy($sess->session_token);
+                    }
+                }
+            }
+
+            if (!$is_valid) {
+                $wpdb->update(
+                    $table,
+                    array(
+                        'logout_at'    => current_time('mysql'),
+                        'ended_reason' => $reason
+                    ),
+                    array('id' => $sess->id),
+                    array('%s', '%s'),
+                    array('%d')
+                );
+            }
+        }
+    }
+
     $active_only = filter_var($request->get_param('active_only'), FILTER_VALIDATE_BOOLEAN);
     $user_id     = intval($request->get_param('user_id'));
     $page        = max(1, intval($request->get_param('page') ?: 1));
@@ -827,7 +890,7 @@ function varner_api_get_sessions(WP_REST_Request $request) {
     }
     $where_sql = $wheres ? ('WHERE ' . implode(' AND ', $wheres)) : '';
 
-    $sql = "SELECT id, user_id, session_token, login_at, logout_at, ip, user_agent, ended_reason FROM {$table} {$where_sql} ORDER BY login_at DESC LIMIT %d OFFSET %d";
+    $sql = "SELECT id, user_id, session_token, login_at, logout_at, last_activity_at, ip, user_agent, ended_reason FROM {$table} {$where_sql} ORDER BY login_at DESC LIMIT %d OFFSET %d";
     $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
 
     $count_sql = "SELECT COUNT(*) FROM {$table} {$where_sql}";
@@ -998,6 +1061,37 @@ function varner_api_save_settings(WP_REST_Request $request) {
     return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
 }
 
+function varner_api_save_preview_settings(WP_REST_Request $request) {
+    $params = $request->get_json_params();
+    if (!is_array($params)) {
+        return new WP_Error('invalid_data', 'Invalid settings data', array('status' => 400));
+    }
+    
+    $defaults = varner_backend_get_settings_defaults();
+    $sanitized = array();
+    
+    foreach ($defaults as $key => $default_val) {
+        if (isset($params[$key])) {
+            if (is_array($default_val)) {
+                $sanitized[$key] = array_map('sanitize_text_field', (array)$params[$key]);
+            } else if (is_bool($default_val)) {
+                $sanitized[$key] = (bool)$params[$key];
+            } else {
+                if (in_array($key, array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text'), true)) {
+                    $sanitized[$key] = wp_kses_post($params[$key]);
+                } else {
+                    $sanitized[$key] = sanitize_text_field($params[$key]);
+                }
+            }
+        } else {
+            $sanitized[$key] = $default_val;
+        }
+    }
+    
+    update_option('varner_theme_settings_preview', $sanitized);
+    return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
+}
+
 // ─── MOBILE COMPANION SECURE AUTHENTICATION & TOKEN SERVICES ──────────────────
 
 function varner_api_generate_mobile_token() {
@@ -1080,5 +1174,125 @@ function varner_authenticate_mobile_token($user_id) {
     }
     
     return $user_id;
+}
+
+/**
+ * Tracks session activity and handles mobile session lifecycle (deduplication, auto-supersede)
+ */
+add_action('init', 'varner_update_session_activity');
+function varner_update_session_activity() {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_user_sessions';
+
+    $token = '';
+    $is_mobile = false;
+
+    // Check if it's a mobile request using token
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token = sanitize_text_field($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']);
+        $is_mobile = true;
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'];
+        if (preg_match('/Bearer\s+(.+)/i', $auth_header, $matches)) {
+            $token = sanitize_text_field($matches[1]);
+            $is_mobile = true;
+        }
+    } elseif (isset($_GET['mobile_token'])) {
+        $token = sanitize_text_field($_GET['mobile_token']);
+        $is_mobile = true;
+    }
+
+    // If not mobile, get standard WP session token
+    if (empty($token)) {
+        $token = wp_get_session_token();
+    }
+
+    if (empty($token)) {
+        return;
+    }
+
+    // Check if this session already exists in DB
+    $session = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, last_activity_at, logout_at FROM {$table} WHERE session_token = %s",
+        $token
+    ));
+
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+    $agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
+
+    if ($session) {
+        if ($session->logout_at !== null) {
+            // Re-activate session if it is actively being used
+            $wpdb->update(
+                $table,
+                array(
+                    'logout_at'        => null,
+                    'ended_reason'     => null,
+                    'last_activity_at' => current_time('mysql')
+                ),
+                array('id' => $session->id),
+                array('%s', '%s', '%s'),
+                array('%d')
+            );
+        } else {
+            // Throttle database writes: update last_activity_at only once per 60 seconds
+            $now = current_time('timestamp');
+            $last_act = $session->last_activity_at ? strtotime($session->last_activity_at) : 0;
+            if ($now - $last_act > 60) {
+                $wpdb->update(
+                    $table,
+                    array('last_activity_at' => current_time('mysql')),
+                    array('id' => $session->id),
+                    array('%s'),
+                    array('%d')
+                );
+            }
+        }
+    } else {
+        // This is a new session. If it's a mobile session, auto-supersede existing mobile sessions for this user.
+        if ($is_mobile) {
+            $active_mobile_sessions = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, session_token FROM {$table} WHERE user_id = %d AND logout_at IS NULL AND session_token != %s",
+                $user_id,
+                $token
+            ));
+
+            foreach ($active_mobile_sessions as $old_sess) {
+                // Confirm it is indeed a mobile session (16-char hex string)
+                if (strlen($old_sess->session_token) === 16 && ctype_xdigit($old_sess->session_token)) {
+                    $wpdb->update(
+                        $table,
+                        array(
+                            'logout_at'    => current_time('mysql'),
+                            'ended_reason' => 'superseded'
+                        ),
+                        array('id' => $old_sess->id),
+                        array('%s', '%s'),
+                        array('%d')
+                    );
+                    delete_transient('varner_mobile_token_' . $old_sess->session_token);
+                }
+            }
+        }
+
+        // Insert new session row
+        $wpdb->insert(
+            $table,
+            array(
+                'user_id'          => $user_id,
+                'session_token'    => $token,
+                'login_at'         => current_time('mysql'),
+                'last_activity_at' => current_time('mysql'),
+                'ip'               => $ip,
+                'user_agent'       => $agent,
+            ),
+            array('%d', '%s', '%s', '%s', '%s', '%s')
+        );
+    }
 }
 

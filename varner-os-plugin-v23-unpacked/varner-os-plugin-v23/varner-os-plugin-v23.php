@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.3 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.3
+ * Description: Version 1.23.9 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.9
  * Author: hwy559.com
  */
 
@@ -11,6 +11,17 @@ if (!defined('ABSPATH'))
 
 // Include backend CPT and ACF registrations
 require_once plugin_dir_path(__FILE__) . 'varner-backend.php';
+
+// ─── Database Version & Auto-Upgrade ──────────────────────────────────────────
+define('VARNER_OS_DB_VERSION', '1.23.7');
+
+add_action('plugins_loaded', 'varner_os_db_check');
+function varner_os_db_check() {
+    if (get_option('varner_os_db_version') !== VARNER_OS_DB_VERSION) {
+        varner_os_activate();
+        update_option('varner_os_db_version', VARNER_OS_DB_VERSION);
+    }
+}
 
 // ─── Activation: create audit tables ────────────────────────────────────────
 
@@ -29,11 +40,13 @@ function varner_os_activate() {
         session_token varchar(191) NOT NULL DEFAULT '',
         login_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
         logout_at datetime DEFAULT NULL,
+        last_activity_at datetime DEFAULT NULL,
         ip varchar(45) DEFAULT NULL,
         user_agent text DEFAULT NULL,
         ended_reason varchar(32) DEFAULT NULL,
         PRIMARY KEY (id),
-        KEY user_login_idx (user_id, login_at)
+        KEY user_login_idx (user_id, login_at),
+        KEY session_token_idx (session_token)
     ) {$charset};
 
     CREATE TABLE {$ledger} (
@@ -97,7 +110,26 @@ function varner_os_record_logout() {
     global $wpdb;
     $table = $wpdb->prefix . 'varner_user_sessions';
     $user  = wp_get_current_user();
-    $token = wp_get_session_token();
+    
+    // Check if it's a mobile logout or standard web session logout
+    $token = '';
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token = sanitize_text_field($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']);
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'];
+        if (preg_match('/Bearer\s+(.+)/i', $auth_header, $matches)) {
+            $token = sanitize_text_field($matches[1]);
+        }
+    } elseif (isset($_GET['mobile_token'])) {
+        $token = sanitize_text_field($_GET['mobile_token']);
+    }
+
+    if ($token && strlen($token) === 16 && ctype_xdigit($token)) {
+        // Clear mobile token transient
+        delete_transient('varner_mobile_token_' . $token);
+    } else {
+        $token = wp_get_session_token();
+    }
 
     // Find the most recent open session for this token/user
     $where_sql = $token ? 'session_token = %s AND logout_at IS NULL' : 'user_id = %d AND logout_at IS NULL';
@@ -300,7 +332,8 @@ function varner_enqueue_react_assets()
         wp_localize_script('varner-react-app', 'varnerData', array(
             'post_id' => get_the_ID(),
             'nonce' => wp_create_nonce('wp_rest'),
-            'rest_url' => esc_url_raw(rest_url())
+            'rest_url' => esc_url_raw(rest_url()),
+            'site_url' => esc_url_raw(home_url('/')),
         ));
     } else {
         error_log("Varner OS: JS asset not found or not matched. js_file: " . $js_file);
@@ -583,6 +616,7 @@ function varner_os_mobile_pwa_router() {
                         post_id: 0,
                         nonce: '<?php echo wp_create_nonce('wp_rest'); ?>',
                         rest_url: '<?php echo esc_url_raw(rest_url()); ?>',
+                        site_url: '<?php echo esc_url_raw(home_url('/')); ?>',
                         is_mobile_app: true
                     };
                 </script>

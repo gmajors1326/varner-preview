@@ -799,7 +799,15 @@ function varner_get_theme_settings_defaults() {
  * Retrieve a theme setting with visual-safe fallback.
  */
 function varner_get_theme_setting($key, $default = null) {
-    $settings = get_option('varner_theme_settings', array());
+    if (isset($_GET['varner_preview'])) {
+        $settings = get_option('varner_theme_settings_preview', array());
+        if (empty($settings)) {
+            $settings = get_option('varner_theme_settings', array());
+        }
+    } else {
+        $settings = get_option('varner_theme_settings', array());
+    }
+    
     if (isset($settings[$key])) {
         return $settings[$key];
     }
