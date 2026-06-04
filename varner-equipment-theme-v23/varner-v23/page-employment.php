@@ -2,10 +2,10 @@
 /* Template Name: Employment */
 if ( ! session_id() ) { session_start(); }
 
-$tagline  = get_field('employment_tagline')  ?: 'Join The Crew';
-$headline = get_field('employment_headline') ?: 'Careers at Varner';
-$intro    = get_field('employment_intro')    ?: 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.';
-$jobs     = get_field('employment_jobs');
+$tagline  = function_exists('varner_get_theme_setting') ? varner_get_theme_setting('employment_tagline', 'Join The Crew') : 'Join The Crew';
+$headline = function_exists('varner_get_theme_setting') ? varner_get_theme_setting('employment_headline', 'Careers at Varner') : 'Careers at Varner';
+$intro    = function_exists('varner_get_theme_setting') ? varner_get_theme_setting('employment_intro', 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.') : 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.';
+$jobs     = function_exists('varner_get_theme_setting') ? varner_get_theme_setting('employment_jobs') : array();
 
 if ( empty( $jobs ) ) {
     $jobs = array(
@@ -39,7 +39,7 @@ get_header();
                 <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4"><?php echo esc_html( $tagline ); ?></div>
                 <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php echo esc_html( $headline ); ?></h1>
                 <div class="w-24 h-2 bg-red-600 mx-auto mb-8"></div>
-                <p class="text-lg font-bold text-slate-600"><?php echo wp_kses_post( nl2br( esc_html( $intro ) ) ); ?></p>
+                <div class="text-lg font-bold text-slate-600 leading-relaxed"><?php echo wp_kses_post( $intro ); ?></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -57,7 +57,7 @@ get_header();
                     ?>
                     <div class="bg-white p-8 rounded-3xl shadow-lg border-2 border-slate-100 hover:border-red-600 transition-colors">
                         <div class="flex justify-between items-start mb-4">
-                            <div>
+                          <div>
                                 <h4 class="text-xl font-black text-slate-900 uppercase tracking-tighter"><?php echo $title; ?></h4>
                                 <div class="text-xs font-bold text-slate-500 mt-1"><?php echo $type; ?> &bull; <?php echo $location; ?></div>
                             </div>
@@ -65,7 +65,7 @@ get_header();
                             <span class="bg-red-100 text-red-600 text-[9px] font-black uppercase px-3 py-1.5 rounded-lg"><?php echo $badge_text; ?></span>
                             <?php endif; ?>
                         </div>
-                        <p class="text-sm font-bold text-slate-600 mb-6"><?php echo $description; ?></p>
+                        <p class="text-sm font-bold text-slate-600 mb-6 leading-relaxed"><?php echo nl2br( esc_html( $description ) ); ?></p>
                         <a href="#apply" class="inline-block bg-slate-900 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-colors">Apply Now</a>
                     </div>
                     <?php endforeach; ?>

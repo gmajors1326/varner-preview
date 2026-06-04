@@ -23,7 +23,7 @@ import {
   ChevronLeft, ChevronRight, Plus, Settings, Sliders, Zap, Menu, Image as ImageIcon, Smartphone, Eye,
   ArrowUpRight, BarChart3, Users, Wrench, Clock, ShieldCheck, Camera, Loader2,
   ScanText, List, Search, Edit2, X, TrendingUp, Activity, DollarSign, History,
-  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download, ChevronUp, ChevronDown, Mail, LogOut
+  Sparkles, Info, Trash2, RotateCcw, Star, Upload, Download, ChevronUp, ChevronDown, Mail, LogOut, Briefcase
 } from 'lucide-react';
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
@@ -2611,6 +2611,10 @@ const SettingsTab = ({ showToast }) => {
     hours_sun: '',
     social_facebook: '',
     social_youtube: '',
+    employment_tagline: '',
+    employment_headline: '',
+    employment_intro: '',
+    employment_jobs: [],
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -2625,6 +2629,7 @@ const SettingsTab = ({ showToast }) => {
     contact: false,
     hours: false,
     about: false,
+    careers: false,
   });
 
   const toggleSection = (key) => {
@@ -3200,6 +3205,218 @@ const SettingsTab = ({ showToast }) => {
                 >
                   <Plus size={14} />
                   Add New Bullet
+                </button>
+              </div>
+            </div>
+          </CollapsiblePanel>
+        </div>
+
+        {/* 7. EMPLOYMENT & CAREERS */}
+        <div id="editor-section-careers">
+          <CollapsiblePanel
+            title="Employment & Careers"
+            icon={<Briefcase size={20} />}
+            isOpen={openSections.careers}
+            onToggle={() => toggleSection('careers')}
+          >
+            <div className="space-y-6">
+              <InputField
+                label="Careers Page Tagline"
+                value={settings.employment_tagline}
+                onChange={v => handleFieldChange('employment_tagline', v)}
+              />
+
+              <InputField
+                label="Careers Page Headline"
+                value={settings.employment_headline}
+                onChange={v => handleFieldChange('employment_headline', v)}
+              />
+
+              <TextAreaField
+                label="Careers Page Introduction Text"
+                value={settings.employment_intro}
+                onChange={v => handleFieldChange('employment_intro', v)}
+              />
+
+              <div className="border-t border-slate-100 pt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Current Job Openings</label>
+                  <span className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase italic px-3 py-1.5 rounded-full border border-slate-100 tracking-widest shadow-sm">
+                    {settings.employment_jobs ? settings.employment_jobs.length : 0} Openings
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {settings.employment_jobs && settings.employment_jobs.map((job, idx) => (
+                    <div key={idx} className="bg-slate-50 rounded-[1.5rem] p-6 border-2 border-slate-100 space-y-4 relative group">
+                      <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (idx === 0) return;
+                            const updated = [...settings.employment_jobs];
+                            const temp = updated[idx];
+                            updated[idx] = updated[idx - 1];
+                            updated[idx - 1] = temp;
+                            handleFieldChange('employment_jobs', updated);
+                          }}
+                          disabled={idx === 0}
+                          className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
+                          title="Move Up"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (idx === settings.employment_jobs.length - 1) return;
+                            const updated = [...settings.employment_jobs];
+                            const temp = updated[idx];
+                            updated[idx] = updated[idx + 1];
+                            updated[idx + 1] = temp;
+                            handleFieldChange('employment_jobs', updated);
+                          }}
+                          disabled={idx === settings.employment_jobs.length - 1}
+                          className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
+                          title="Move Down"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = settings.employment_jobs.filter((_, i) => i !== idx);
+                            handleFieldChange('employment_jobs', updated);
+                          }}
+                          className="bg-white border border-slate-200 text-red-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-100"
+                          title="Delete Job Opening"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Job Title</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Heavy Equipment Mechanic"
+                            value={job.job_title || ''}
+                            onChange={e => {
+                              const updated = [...settings.employment_jobs];
+                              updated[idx] = { ...updated[idx], job_title: e.target.value };
+                              handleFieldChange('employment_jobs', updated);
+                            }}
+                            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Job Type</label>
+                          <select
+                            value={job.job_type || 'Full-Time'}
+                            onChange={e => {
+                              const updated = [...settings.employment_jobs];
+                              updated[idx] = { ...updated[idx], job_type: e.target.value };
+                              handleFieldChange('employment_jobs', updated);
+                            }}
+                            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm appearance-none cursor-pointer"
+                          >
+                            <option value="Full-Time">Full-Time</option>
+                            <option value="Part-Time">Part-Time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Temporary">Temporary</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Location</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Delta, CO"
+                            value={job.job_location || ''}
+                            onChange={e => {
+                              const updated = [...settings.employment_jobs];
+                              updated[idx] = { ...updated[idx], job_location: e.target.value };
+                              handleFieldChange('employment_jobs', updated);
+                            }}
+                            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Job Description</label>
+                          <textarea
+                            placeholder="Detail job requirements, responsibilities, and benefits..."
+                            value={job.job_description || ''}
+                            onChange={e => {
+                              const updated = [...settings.employment_jobs];
+                              updated[idx] = { ...updated[idx], job_description: e.target.value };
+                              handleFieldChange('employment_jobs', updated);
+                            }}
+                            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm h-24 resize-none"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 flex items-center gap-4 bg-white p-4 rounded-xl border border-slate-150">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={!!job.job_show_badge}
+                              onChange={e => {
+                                const updated = [...settings.employment_jobs];
+                                updated[idx] = { ...updated[idx], job_show_badge: e.target.checked };
+                                handleFieldChange('employment_jobs', updated);
+                              }}
+                              className="w-4 h-4 accent-red-600 cursor-pointer"
+                            />
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Show Status Badge</span>
+                          </label>
+                          
+                          {job.job_show_badge && (
+                            <input
+                              type="text"
+                              placeholder="e.g. Urgently Hiring"
+                              value={job.job_badge_text || ''}
+                              onChange={e => {
+                                const updated = [...settings.employment_jobs];
+                                updated[idx] = { ...updated[idx], job_badge_text: e.target.value };
+                                handleFieldChange('employment_jobs', updated);
+                              }}
+                              className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-lg p-2 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-xs"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(!settings.employment_jobs || settings.employment_jobs.length === 0) && (
+                    <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                      No job openings listed.
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const jobs = settings.employment_jobs || [];
+                    handleFieldChange('employment_jobs', [
+                      ...jobs,
+                      {
+                        job_title: '',
+                        job_type: 'Full-Time',
+                        job_location: 'Delta, CO',
+                        job_description: '',
+                        job_show_badge: false,
+                        job_badge_text: 'Urgently Hiring'
+                      }
+                    ]);
+                  }}
+                  className="mt-4 w-full py-4 border-2 border-dashed border-slate-200 rounded-[1.5rem] text-slate-400 font-black uppercase tracking-widest text-[10px] hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} /> Add Job Opening
                 </button>
               </div>
             </div>

@@ -792,6 +792,27 @@ function varner_get_theme_settings_defaults() {
         'hours_sun'                  => "Closed",
         'social_facebook'            => "https://www.facebook.com/varnerequipment",
         'social_youtube'             => "https://www.youtube.com/@VarnerEquipment",
+        'employment_tagline'         => 'Join The Crew',
+        'employment_headline'        => 'Careers at Varner',
+        'employment_intro'           => 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.',
+        'employment_jobs'            => array(
+            array(
+                'job_title'       => 'Heavy Equipment Mechanic',
+                'job_type'        => 'Full-Time',
+                'job_location'    => 'Delta, CO',
+                'job_description' => 'Looking for an experienced mechanic specializing in tractors, trailers, and agricultural equipment. Must have own tools and reliable transportation.',
+                'job_show_badge'  => true,
+                'job_badge_text'  => 'Urgently Hiring',
+            ),
+            array(
+                'job_title'       => 'Parts Counter Sales',
+                'job_type'        => 'Full-Time',
+                'job_location'    => 'Delta, CO',
+                'job_description' => 'Assist customers in finding and ordering the right parts for their equipment. Previous parts or agricultural knowledge preferred.',
+                'job_show_badge'  => false,
+                'job_badge_text'  => '',
+            ),
+        ),
     );
 }
 

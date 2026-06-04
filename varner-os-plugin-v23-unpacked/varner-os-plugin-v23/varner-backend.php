@@ -1015,6 +1015,27 @@ function varner_backend_get_settings_defaults() {
         'hours_sun'                  => "Closed",
         'social_facebook'            => "https://www.facebook.com/varnerequipment",
         'social_youtube'             => "https://www.youtube.com/@VarnerEquipment",
+        'employment_tagline'         => 'Join The Crew',
+        'employment_headline'        => 'Careers at Varner',
+        'employment_intro'           => 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.',
+        'employment_jobs'            => array(
+            array(
+                'job_title'       => 'Heavy Equipment Mechanic',
+                'job_type'        => 'Full-Time',
+                'job_location'    => 'Delta, CO',
+                'job_description' => 'Looking for an experienced mechanic specializing in tractors, trailers, and agricultural equipment. Must have own tools and reliable transportation.',
+                'job_show_badge'  => true,
+                'job_badge_text'  => 'Urgently Hiring',
+            ),
+            array(
+                'job_title'       => 'Parts Counter Sales',
+                'job_type'        => 'Full-Time',
+                'job_location'    => 'Delta, CO',
+                'job_description' => 'Assist customers in finding and ordering the right parts for their equipment. Previous parts or agricultural knowledge preferred.',
+                'job_show_badge'  => false,
+                'job_badge_text'  => '',
+            ),
+        ),
     );
 }
 
@@ -1041,12 +1062,28 @@ function varner_api_save_settings(WP_REST_Request $request) {
     
     foreach ($defaults as $key => $default_val) {
         if (isset($params[$key])) {
-            if (is_array($default_val)) {
+            if ($key === 'employment_jobs') {
+                $jobs = array();
+                if (is_array($params[$key])) {
+                    foreach ($params[$key] as $job) {
+                        if (!is_array($job)) continue;
+                        $jobs[] = array(
+                            'job_title'       => sanitize_text_field($job['job_title'] ?? ''),
+                            'job_type'        => sanitize_text_field($job['job_type'] ?? 'Full-Time'),
+                            'job_location'    => sanitize_text_field($job['job_location'] ?? 'Delta, CO'),
+                            'job_description' => sanitize_textarea_field($job['job_description'] ?? ''),
+                            'job_show_badge'  => filter_var($job['job_show_badge'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                            'job_badge_text'  => sanitize_text_field($job['job_badge_text'] ?? ''),
+                        );
+                    }
+                }
+                $sanitized[$key] = $jobs;
+            } else if (is_array($default_val)) {
                 $sanitized[$key] = array_map('sanitize_text_field', (array)$params[$key]);
             } else if (is_bool($default_val)) {
                 $sanitized[$key] = (bool)$params[$key];
             } else {
-                if (in_array($key, array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text'), true)) {
+                if (in_array($key, array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text', 'employment_intro'), true)) {
                     $sanitized[$key] = wp_kses_post($params[$key]);
                 } else {
                     $sanitized[$key] = sanitize_text_field($params[$key]);
@@ -1072,12 +1109,28 @@ function varner_api_save_preview_settings(WP_REST_Request $request) {
     
     foreach ($defaults as $key => $default_val) {
         if (isset($params[$key])) {
-            if (is_array($default_val)) {
+            if ($key === 'employment_jobs') {
+                $jobs = array();
+                if (is_array($params[$key])) {
+                    foreach ($params[$key] as $job) {
+                        if (!is_array($job)) continue;
+                        $jobs[] = array(
+                            'job_title'       => sanitize_text_field($job['job_title'] ?? ''),
+                            'job_type'        => sanitize_text_field($job['job_type'] ?? 'Full-Time'),
+                            'job_location'    => sanitize_text_field($job['job_location'] ?? 'Delta, CO'),
+                            'job_description' => sanitize_textarea_field($job['job_description'] ?? ''),
+                            'job_show_badge'  => filter_var($job['job_show_badge'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                            'job_badge_text'  => sanitize_text_field($job['job_badge_text'] ?? ''),
+                        );
+                    }
+                }
+                $sanitized[$key] = $jobs;
+            } else if (is_array($default_val)) {
                 $sanitized[$key] = array_map('sanitize_text_field', (array)$params[$key]);
             } else if (is_bool($default_val)) {
                 $sanitized[$key] = (bool)$params[$key];
             } else {
-                if (in_array($key, array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text'), true)) {
+                if (in_array($key, array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text', 'employment_intro'), true)) {
                     $sanitized[$key] = wp_kses_post($params[$key]);
                 } else {
                     $sanitized[$key] = sanitize_text_field($params[$key]);
