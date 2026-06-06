@@ -180,7 +180,7 @@ $total_units = count( get_posts( $count_args ) );
 
 $query_args = varner_build_inventory_query( array( $brand_meta ), 12 );
 $brand_query = new WP_Query( $query_args );
-$current_page = max( 1, get_query_var('paged') );
+$current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
 ?>
 
 <section class="py-16 bg-slate-950 text-white min-h-[400px] flex items-center relative overflow-hidden">
@@ -276,18 +276,19 @@ $current_page = max( 1, get_query_var('paged') );
                         endwhile; wp_reset_postdata(); ?>
                     </div>
                     <?php 
-                        $pagination_args = $_GET; unset( $pagination_args['paged'] );
-                        $pagination_args = array_map( function( $v ) { return is_array( $v ) ? array_map( 'sanitize_text_field', $v ) : sanitize_text_field( $v ); }, $pagination_args );
                         $pagination = paginate_links( array(
-                            'total'   => max( 1, $brand_query->max_num_pages ),
-                            'current' => $current_page,
-                            'type'    => 'list',
-                            'add_args'=> $pagination_args,
+                            'base'      => add_query_arg( 'paged', '%#%' ),
+                            'format'    => '',
+                            'total'     => max( 1, $brand_query->max_num_pages ),
+                            'current'   => $current_page,
+                            'type'      => 'list',
+                            'prev_text' => '&lt; Previous',
+                            'next_text' => 'Next &gt;',
                         ) );
                     ?>
                     <?php if ( $pagination ) : ?>
                     <div class="mt-12 flex justify-center">
-                        <div class="prose prose-sm max-w-none">
+                        <div class="varner-pagination">
                             <?php echo $pagination; ?>
                         </div>
                     </div>

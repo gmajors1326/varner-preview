@@ -74,3 +74,102 @@ body {
     margin-bottom: 0.25rem !important;
 }
 
+/* Hero subtitle styling overrides */
+.hero-subtitle-container {
+    color: #ffffff !important;
+}
+.hero-subtitle-container p,
+.hero-subtitle-container a,
+.hero-subtitle-container strong,
+.hero-subtitle-container em {
+    color: #ffffff;
+}
+
+/* Modern Pagination Styling */
+.varner-pagination ul.page-numbers {
+    display: inline-flex !important;
+    align-items: center;
+    background-color: #ffffff !important;
+    border: 1px solid #d1d5db !important; /* light gray border */
+    border-radius: 0.5rem !important; /* rounded-lg */
+    padding: 0 !important;
+    margin: 2rem 0 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    overflow: hidden;
+    list-style: none !important;
+}
+
+.varner-pagination ul.page-numbers li {
+    list-style-type: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+}
+
+.varner-pagination ul.page-numbers li::before {
+    content: none !important;
+}
+
+/* Individual page number styles */
+.varner-pagination .page-numbers {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #4b5563 !important; /* gray-600 */
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* Hover state for page numbers (except active page and dots) */
+.varner-pagination a.page-numbers:hover {
+    color: #111827 !important; /* gray-900 */
+    background-color: #f3f4f6 !important; /* gray-100 */
+}
+
+/* Active page (highlighted square inside pagination bar) */
+.varner-pagination .page-numbers.current {
+    font-weight: 700;
+    color: #111827 !important; /* gray-900 */
+    background-color: #ffffff !important;
+    border: 1px solid #111827 !important; /* dark slate border */
+    border-radius: 0.25rem !important; /* small rounded corners for the active square */
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    margin: 0 0.25rem !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    cursor: default !important;
+}
+
+/* Prev and Next buttons styling */
+.varner-pagination .page-numbers.prev {
+    font-weight: 600;
+    color: #4b5563 !important;
+    padding: 0 1.25rem !important;
+    border-right: 1px solid #d1d5db !important;
+}
+
+.varner-pagination .page-numbers.next {
+    font-weight: 600;
+    color: #4b5563 !important;
+    padding: 0 1.25rem !important;
+    border-left: 1px solid #d1d5db !important;
+}
+
+/* Ellipsis / Dots styling */
+.varner-pagination .dots {
+    color: #9ca3af !important; /* gray-400 */
+    cursor: default !important;
+    padding: 0 0.75rem !important;
+}
+
+

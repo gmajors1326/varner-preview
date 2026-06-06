@@ -167,18 +167,24 @@
                                  JOIN {$wpdb->posts} p ON p.ID = pm.post_id
                                  WHERE pm.meta_key = 'make' AND pm.meta_value != ''
                                    AND p.post_type = 'equipment' AND p.post_status = 'publish'
+                                   AND p.ID NOT IN (
+                                       SELECT post_id FROM {$wpdb->postmeta}
+                                       WHERE meta_key = 'show_on_website' AND meta_value = '0'
+                                   )
                                  GROUP BY LOWER(pm.meta_value)"
                             );
                             $brand_counts = array();
                             foreach ( $rows as $row ) {
-                                $brand_counts[ $row->make ] = (int) $row->cnt;
+                                $normalized_key = preg_replace( '/[^a-z0-9]/', '', $row->make );
+                                $brand_counts[ $normalized_key ] = (int) $row->cnt;
                             }
                             set_transient( 'varner_brand_counts', $brand_counts, HOUR_IN_SECONDS );
                         }
 
                         if ( ! function_exists( 'varner_brand_link_nav' ) ) {
                             function varner_brand_link_nav( $brand, $brand_counts, $external_url = '' ) {
-                                $count  = $brand_counts[ strtolower( $brand ) ] ?? 0;
+                                $normalized_lookup = preg_replace( '/[^a-z0-9]/', '', strtolower( $brand ) );
+                                $count  = $brand_counts[ $normalized_lookup ] ?? 0;
                                 $slug   = sanitize_title( $brand );
                                 $href   = $external_url ?: home_url( '/brands/' . $slug );
                                 $target = $external_url ? ' target="_blank" rel="noopener"' : '';
@@ -202,13 +208,13 @@
                             <div class="absolute left-0 lg:-left-48 top-full mt-2 w-[90vw] max-w-5xl bg-white border-t-4 border-red-600 shadow-[0_20px_50px_rgba(0,0,0,0.2)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-4 p-8 rounded-b-2xl">
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-1">
                                     <div class="flex flex-col">
-                                        <?php foreach ( ['Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Brush Chief', 'CM Truck Beds', 'Custom Made'] as $brand ) { varner_brand_link_nav( $brand, $brand_counts ); } ?>
+                                        <?php foreach ( ['Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief', 'CM Truck Beds', 'Custom Made'] as $brand ) { varner_brand_link_nav( $brand, $brand_counts ); } ?>
                                     </div>
                                     <div class="flex flex-col">
                                         <?php foreach ( ['Danuser', 'Degelman', 'Deutz Fahr', 'Donahue', 'Enorossi', 'Hackett', 'Interstate', 'Krone'] as $brand ) { $ext = $brand === 'Interstate' ? 'https://www.interstatebatteries.com' : ''; varner_brand_link_nav( $brand, $brand_counts, $ext ); } ?>
                                     </div>
                                     <div class="flex flex-col">
-                                        <?php foreach ( ['Legend', 'Macdon', 'Mahindra', 'Maschio', 'Massey Ferguson', 'Maxon', 'MK Martin'] as $brand ) { varner_brand_link_nav( $brand, $brand_counts ); } ?>
+                                        <?php foreach ( ['Legend', 'Macdon', 'Mahindra', 'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin'] as $brand ) { varner_brand_link_nav( $brand, $brand_counts ); } ?>
                                     </div>
                                     <div class="flex flex-col">
                                         <?php foreach ( ['RC Trailers', 'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor'] as $brand ) { varner_brand_link_nav( $brand, $brand_counts ); } ?>
@@ -283,9 +289,10 @@
                         </button>
                         <div class="hidden bg-white/5 py-2 px-8 flex flex-col">
                             <?php 
-                            $all_brands = ['Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Brush Chief', 'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue', 'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra', 'Maschio', 'Massey Ferguson', 'Maxon', 'MK Martin', 'RC Trailers', 'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor'];
+                            $all_brands = ['Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief', 'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue', 'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra', 'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers', 'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor'];
                             foreach ( $all_brands as $brand ) {
-                                $count  = $brand_counts[ strtolower( $brand ) ] ?? 0;
+                                $normalized_lookup = preg_replace( '/[^a-z0-9]/', '', strtolower( $brand ) );
+                                $count  = $brand_counts[ $normalized_lookup ] ?? 0;
                                 $slug   = sanitize_title( $brand );
                                 $ext    = $brand === 'Interstate' ? 'https://www.interstatebatteries.com' : '';
                                 $href   = $ext ?: home_url( '/brands/' . $slug );

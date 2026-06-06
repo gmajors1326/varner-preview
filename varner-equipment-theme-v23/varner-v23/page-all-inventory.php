@@ -38,7 +38,7 @@ $total = count(get_posts($count_args));
                 <?php 
                     $query_args = varner_build_inventory_query(array(), 12);
                     $inventory_query = new WP_Query( $query_args );
-                    $current_page = max( 1, intval( get_query_var('paged') ?: 1 ) );
+                    $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
                     $total_found  = intval( $inventory_query->found_posts );
                     $reset_url    = strtok( get_permalink(), '?' );
                     $pagination_args = $_GET;
@@ -80,15 +80,18 @@ $total = count(get_posts($count_args));
                 <!-- Pagination -->
                 <?php 
                     $pagination = paginate_links( array(
-                        'total'   => max( 1, $inventory_query->max_num_pages ),
-                        'current' => $current_page,
-                        'type'    => 'list',
-                        'add_args'=> $pagination_args,
+                        'base'      => add_query_arg( 'paged', '%#%' ),
+                        'format'    => '',
+                        'total'     => max( 1, $inventory_query->max_num_pages ),
+                        'current'   => $current_page,
+                        'type'      => 'list',
+                        'prev_text' => '&lt; Previous',
+                        'next_text' => 'Next &gt;',
                     ) );
                 ?>
                 <?php if ( $pagination ) : ?>
                 <div class="mt-12 flex justify-center">
-                    <div class="prose prose-sm max-w-none">
+                    <div class="varner-pagination">
                         <?php echo $pagination; ?>
                     </div>
                 </div>

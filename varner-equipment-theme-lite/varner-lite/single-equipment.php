@@ -22,7 +22,6 @@ $description     = get_field( 'description',  $post_id );
 $stock_status    = get_field( 'stock_status', $post_id );
 $has_attachments = get_field( 'has_attachments', $post_id );
 $attachment_details = get_field( 'attachment_details', $post_id );
-$engine_horsepower = get_field( 'engine_horsepower', $post_id );
 $drive           = get_field( 'drive', $post_id );
 $images          = varner_get_card_images( $post_id );
 
@@ -56,7 +55,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
             <div class="w-full lg:w-[520px] shrink-0">
 
                 <!-- Main image carousel -->
-                <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3" id="vne-detail-carousel">
+                <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3 cursor-zoom-in" id="vne-detail-carousel">
                     <?php foreach ( $images as $i => $img_url ) : ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
                          alt="<?php echo esc_attr( $title_text ); ?>"
@@ -212,7 +211,6 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                             'Color'        => array( 'text', $color ),
                             'Length'       => array( 'text', $length ),
                             'Hours'        => array( 'text', $meter ? $meter . ' ' . $meter_type : '' ),
-                            'Engine Horsepower' => array( 'text', $engine_horsepower ),
                             'Drive'        => array( 'text', $drive ),
                             'Attachments'  => array( 'text', $has_attachments ? ('Yes' . ($attachment_details ? ' — ' . $attachment_details : '')) : 'No' ),
                             'Description'  => array( 'html', $description ),
@@ -247,6 +245,50 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     </div><!-- /max-w-7xl -->
 </section>
 
+<!-- Lightbox Modal Overlay -->
+<div id="vne-lightbox" class="fixed inset-0 z-[1000] bg-slate-950/95 backdrop-blur-lg flex flex-col justify-between items-center opacity-0 pointer-events-none transition-opacity duration-300 py-6">
+    <!-- Close Button -->
+    <button id="lightbox-close" class="absolute top-6 right-6 text-white/70 hover:text-white hover:scale-110 active:scale-95 transition-all p-3 z-50 rounded-full bg-slate-900/60" aria-label="Close Lightbox">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <!-- Navigation Buttons -->
+    <?php if ( count( $images ) > 1 ) : ?>
+    <button id="lightbox-prev" class="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-slate-900/60 text-white/70 hover:text-white hover:bg-slate-800 transition-all flex items-center justify-center shadow-2xl z-40 border border-white/10" aria-label="Previous">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button id="lightbox-next" class="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-slate-900/60 text-white/70 hover:text-white hover:bg-slate-800 transition-all flex items-center justify-center shadow-2xl z-40 border border-white/10" aria-label="Next">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <?php endif; ?>
+
+    <!-- Empty Spacer at top to keep layout balanced -->
+    <div class="h-10"></div>
+
+    <!-- Image Wrapper -->
+    <div id="lightbox-img-wrapper" class="relative max-w-5xl w-full px-12 flex-1 flex items-center justify-center">
+        <img id="lightbox-img" src="" alt="Detail view" class="max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl border border-white/5 transition-all duration-300 transform scale-95 opacity-0 select-none">
+    </div>
+
+    <!-- Bottom Caption & Thumbnail Strip -->
+    <div class="w-full max-w-4xl px-6 flex flex-col items-center gap-4">
+        <div id="lightbox-caption" class="text-white font-black uppercase tracking-widest text-xs sm:text-sm text-center"></div>
+        
+        <?php if ( count( $images ) > 1 ) : ?>
+        <div class="flex gap-2.5 overflow-x-auto max-w-full pb-2 px-4 justify-center" style="scrollbar-width: none;">
+            <?php foreach ( $images as $idx => $img_url ) : ?>
+            <button class="lightbox-thumb shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 opacity-60 hover:opacity-100"
+                    style="border-color: transparent;"
+                    data-index="<?php echo $idx; ?>"
+                    aria-label="Lightbox Photo <?php echo $idx + 1; ?>">
+                <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy" class="w-full h-full object-cover">
+            </button>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <script>
 (function () {
     var wrap   = document.getElementById('vne-detail-carousel');
@@ -255,10 +297,10 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     var thumbs = document.querySelectorAll('.vne-thumb');
     var prev   = wrap.querySelector('.vne-prev');
     var next   = wrap.querySelector('.vne-next');
-    if (slides.length <= 1) return;
     var cur = 0;
 
     function go(i) {
+        if (slides.length <= 1) return;
         slides[cur].style.opacity = '0';
         if (thumbs[cur]) thumbs[cur].style.borderColor = 'rgb(226,232,240)';
         cur = ((i % slides.length) + slides.length) % slides.length;
@@ -268,17 +310,139 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
         if (thumbs[cur]) thumbs[cur].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
-    thumbs.forEach(function (t, i) { t.addEventListener('click', function () { go(i); }); });
-    if (prev) prev.addEventListener('click', function () { go(cur - 1); });
-    if (next) next.addEventListener('click', function () { go(cur + 1); });
+    if (slides.length > 1) {
+        thumbs.forEach(function (t, i) { t.addEventListener('click', function () { go(i); }); });
+        if (prev) prev.addEventListener('click', function () { go(cur - 1); });
+        if (next) next.addEventListener('click', function () { go(cur + 1); });
 
-    // Swipe support
-    var startX = 0;
-    wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
-    wrap.addEventListener('touchend',   function (e) {
-        var dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) go(dx < 0 ? cur + 1 : cur - 1);
-    }, { passive: true });
+        // Swipe support
+        var startX = 0;
+        wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
+        wrap.addEventListener('touchend',   function (e) {
+            var dx = e.changedTouches[0].clientX - startX;
+            if (Math.abs(dx) > 40) go(dx < 0 ? cur + 1 : cur - 1);
+        }, { passive: true });
+    }
+
+    // Lightbox Functionality
+    var lightbox = document.getElementById('vne-lightbox');
+    if (lightbox) {
+        var lightboxImg = document.getElementById('lightbox-img');
+        var lightboxCaption = document.getElementById('lightbox-caption');
+        var lightboxClose = document.getElementById('lightbox-close');
+        var lightboxPrev = document.getElementById('lightbox-prev');
+        var lightboxNext = document.getElementById('lightbox-next');
+        var lightboxThumbs = lightbox.querySelectorAll('.lightbox-thumb');
+        
+        var imagesArray = <?php echo json_encode( $images ); ?>;
+        var titleText = <?php echo json_encode( $title_text ); ?>;
+        
+        function openLightbox(index) {
+            document.body.style.overflow = 'hidden'; // Prevent page scroll
+            lightbox.classList.remove('pointer-events-none', 'opacity-0');
+            lightbox.classList.add('opacity-100');
+            updateLightboxImage(index);
+        }
+        
+        function closeLightbox() {
+            document.body.style.overflow = '';
+            lightbox.classList.add('pointer-events-none', 'opacity-0');
+            lightbox.classList.remove('opacity-100');
+            lightboxImg.classList.add('scale-95', 'opacity-0');
+        }
+        
+        function updateLightboxImage(index) {
+            // Fade out current image
+            lightboxImg.classList.add('opacity-0', 'scale-95');
+            
+            setTimeout(function() {
+                var targetIdx = ((index % imagesArray.length) + imagesArray.length) % imagesArray.length;
+                cur = targetIdx; // sync main gallery carousel with lightbox
+                
+                // Sync the main desktop carousel page as well
+                if (slides.length > 1) {
+                    slides.forEach(function(s, sIdx) {
+                        s.style.opacity = sIdx === targetIdx ? '1' : '0';
+                    });
+                    thumbs.forEach(function(t, tIdx) {
+                        t.style.borderColor = tIdx === targetIdx ? 'rgb(220,38,38)' : 'rgb(226,232,240)';
+                    });
+                }
+                
+                lightboxImg.src = imagesArray[targetIdx];
+                lightboxCaption.textContent = titleText + ' (Photo ' + (targetIdx + 1) + ' of ' + imagesArray.length + ')';
+                
+                // Update active thumbnail border in lightbox
+                lightboxThumbs.forEach(function(th, idx) {
+                    if (idx === targetIdx) {
+                        th.style.borderColor = 'rgb(220,38,38)';
+                        th.classList.remove('opacity-60');
+                        th.classList.add('opacity-100');
+                        th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    } else {
+                        th.style.borderColor = 'transparent';
+                        th.classList.remove('opacity-100');
+                        th.classList.add('opacity-60');
+                    }
+                });
+                
+                // Fade in new image
+                lightboxImg.onload = function() {
+                    lightboxImg.classList.remove('opacity-0', 'scale-95');
+                };
+            }, 150);
+        }
+        
+        // Open lightbox when clicking main image carousel (but not on nav buttons)
+        wrap.addEventListener('click', function(e) {
+            if (e.target.closest('.vne-prev') || e.target.closest('.vne-next')) {
+                return;
+            }
+            openLightbox(cur);
+        });
+        
+        // Lightbox controls (stopPropagation prevents backdrop click handler from closing lightbox)
+        if (lightboxClose) {
+            lightboxClose.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeLightbox();
+            });
+        }
+        if (lightboxPrev) {
+            lightboxPrev.addEventListener('click', function(e) {
+                e.stopPropagation();
+                updateLightboxImage(cur - 1);
+            });
+        }
+        if (lightboxNext) {
+            lightboxNext.addEventListener('click', function(e) {
+                e.stopPropagation();
+                updateLightboxImage(cur + 1);
+            });
+        }
+        
+        lightboxThumbs.forEach(function(thumb, idx) {
+            thumb.addEventListener('click', function(e) {
+                e.stopPropagation();
+                updateLightboxImage(idx);
+            });
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (lightbox.classList.contains('opacity-0')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft' && imagesArray.length > 1) updateLightboxImage(cur - 1);
+            if (e.key === 'ArrowRight' && imagesArray.length > 1) updateLightboxImage(cur + 1);
+        });
+
+        // Close when clicking empty space on backdrop or image wrapper margins only
+        lightbox.addEventListener('click', function(e) {
+            if (e.target === lightbox || e.target.id === 'lightbox-img-wrapper') {
+                closeLightbox();
+            }
+        });
+    }
 })();
 </script>
 

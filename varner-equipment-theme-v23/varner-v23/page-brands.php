@@ -15,6 +15,10 @@ $brands = $wpdb->get_results(
          JOIN {$wpdb->posts} p ON p.ID = pm.post_id
          WHERE pm.meta_key = %s AND pm.meta_value != ''
            AND p.post_type = %s AND p.post_status = 'publish'
+           AND p.ID NOT IN (
+               SELECT post_id FROM {$wpdb->postmeta}
+               WHERE meta_key = 'show_on_website' AND meta_value = '0'
+           )
          GROUP BY pm.meta_value
          ORDER BY pm.meta_value ASC",
         'make',

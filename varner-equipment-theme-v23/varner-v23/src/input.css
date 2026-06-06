@@ -1,3 +1,73 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Modern Pagination Styling */
+.varner-pagination ul.page-numbers {
+    display: flex !important;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 2rem 0 !important;
+}
+
+.varner-pagination ul.page-numbers li {
+    list-style-type: none !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+}
+
+.varner-pagination ul.page-numbers li::before {
+    content: none !important;
+}
+
+.varner-pagination .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #0f172a !important; /* slate-900 */
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0; /* slate-200 */
+    border-radius: 0.75rem; /* rounded-xl */
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+.varner-pagination a.page-numbers:hover {
+    color: #ffffff !important;
+    background-color: #dc2626; /* red-600 */
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.15), 0 2px 4px -2px rgba(220, 38, 38, 0.15);
+}
+
+.varner-pagination a.page-numbers:active {
+    transform: translateY(0);
+}
+
+.varner-pagination .page-numbers.current {
+    color: #ffffff !important;
+    background-color: #0f172a; /* slate-900 */
+    border-color: #0f172a;
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.15), 0 2px 4px -2px rgba(15, 23, 42, 0.15);
+    cursor: default;
+}
+
+.varner-pagination .dots {
+    color: #64748b !important; /* slate-500 */
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    cursor: default;
+}

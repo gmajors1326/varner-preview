@@ -31,6 +31,78 @@ function varner_register_equipment_cpt() {
     ));
 }
 
+/**
+ * Register Video Custom Post Type and Taxonomy
+ */
+if ( ! function_exists( 'varner_register_video_cpt' ) ) {
+    function varner_register_video_cpt() {
+        $labels = array(
+            "name" => __( "Videos", "varner-os" ),
+            "singular_name" => __( "Video", "varner-os" ),
+            "menu_name" => __( "Videos", "varner-os" ),
+            "all_items" => __( "All Videos", "varner-os" ),
+            "add_new" => __( "Add New Video", "varner-os" ),
+            "add_new_item" => __( "Add New Video", "varner-os" ),
+            "edit_item" => __( "Edit Video", "varner-os" ),
+            "new_item" => __( "New Video", "varner-os" ),
+            "view_item" => __( "View Video", "varner-os" ),
+            "search_items" => __( "Search Videos", "varner-os" ),
+            "not_found" => __( "No Videos Found", "varner-os" ),
+        );
+
+        $args = array(
+            "label" => __( "Videos", "varner-os" ),
+            "labels" => $labels,
+            "description" => "",
+            "public" => true,
+            "publicly_queryable" => true,
+            "show_ui" => true,
+            "show_in_rest" => true,
+            "rest_base" => "",
+            "rest_controller_class" => "WP_REST_Posts_Controller",
+            "has_archive" => false,
+            "show_in_menu" => false,
+            "show_in_nav_menus" => true,
+            "delete_with_user" => false,
+            "exclude_from_search" => false,
+            "capability_type" => "post",
+            "map_meta_cap" => true,
+            "hierarchical" => false,
+            "rewrite" => array( "slug" => "video", "with_front" => true ),
+            "query_var" => true,
+            "menu_icon" => "dashicons-video-alt3",
+            "supports" => array( "title" ),
+        );
+
+        register_post_type( "video", $args );
+
+        $tax_labels = array(
+            "name" => __( "Video Categories", "varner-os" ),
+            "singular_name" => __( "Video Category", "varner-os" ),
+        );
+
+        $tax_args = array(
+            "label" => __( "Video Categories", "varner-os" ),
+            "labels" => $tax_labels,
+            "public" => true,
+            "publicly_queryable" => true,
+            "hierarchical" => true,
+            "show_ui" => true,
+            "show_in_menu" => false,
+            "show_in_nav_menus" => true,
+            "query_var" => true,
+            "rewrite" => array( "slug" => "video_category", "with_front" => true ),
+            "show_admin_column" => true,
+            "show_in_rest" => true,
+            "rest_base" => "video_category",
+            "rest_controller_class" => "WP_REST_Terms_Controller",
+            "show_in_quick_edit" => false,
+        );
+        register_taxonomy( "video_category", array( "video" ), $tax_args );
+    }
+}
+add_action( "init", "varner_register_video_cpt" );
+
 // ─── 2. ACF JSON SYNC ───────────────────────────────────────────────────────
 
 add_filter('acf/settings/save_json', function() {
@@ -58,7 +130,7 @@ acf_add_local_field_group(array(
             'ui' => 1, 'allow_null' => 1,
             'choices' => array(
                 'Bale King'=>'Bale King','Baumalight'=>'Baumalight','Beaver Valley'=>'Beaver Valley',
-                'Big Tex'=>'Big Tex','Bison'=>'Bison','Brush Chief'=>'Brush Chief',
+                'Big Tex'=>'Big Tex','Bison'=>'Bison','Branson'=>'Branson','Brush Chief'=>'Brush Chief',
                 'CM Truck Beds'=>'CM Truck Beds','Custom Made'=>'Custom Made',
                 'Danuser'=>'Danuser','Degelman'=>'Degelman','Deutz Fahr'=>'Deutz Fahr','Donahue'=>'Donahue',
                 'Enorossi'=>'Enorossi','Hackett'=>'Hackett','Interstate'=>'Interstate','Krone'=>'Krone',
@@ -110,6 +182,8 @@ acf_add_local_field_group(array(
                 'Other' => 'Other'
             ),
         ),
+        array('key' => 'field_varner_subcategory',    'label' => 'Subcategory',  'name' => 'subcategory',   'type' => 'text'),
+        array('key' => 'field_varner_sub_subcategory','label' => 'Sub-Subcategory', 'name' => 'sub_subcategory', 'type' => 'text'),
 
         // Meter & intake
         array('key' => 'field_varner_meter',       'label' => 'Meter Reading', 'name' => 'meter',        'type' => 'text'),
@@ -221,6 +295,7 @@ function varner_register_rest_routes() {
         'permission_callback' => $auth,
     ));
 
+
     register_rest_route($ns, '/inventory/(?P<id>\d+)', array(
         array('methods' => 'PATCH',  'callback' => 'varner_api_update_unit',   'permission_callback' => $auth),
         array('methods' => 'DELETE', 'callback' => 'varner_api_soft_delete',   'permission_callback' => $auth),
@@ -258,6 +333,16 @@ function varner_register_rest_routes() {
     register_rest_route($ns, '/categories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
         array('methods' => 'POST', 'callback' => 'varner_api_save_categories', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/subcategories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_subcategories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_subcategories', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/sub-subcategories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_sub_subcategories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_sub_subcategories', 'permission_callback' => $auth),
     ));
 
     register_rest_route($ns, '/videos', array(
@@ -323,7 +408,7 @@ function varner_register_rest_routes() {
 
 function varner_api_get_brands() {
     $default = array(
-        'Bale King','Baumalight','Beaver Valley','Big Tex','Bison','Brush Chief',
+        'Bale King','Baumalight','Beaver Valley','Big Tex','Bison','Branson','Brush Chief',
         'CM Truck Beds','Custom Made','Danuser','Degelman','Deutz Fahr','Donahue',
         'Enorossi','Hackett','Interstate','Krone','Legend','Macdon','Mahindra',
         'Maschio','Massey Ferguson','Maxon','McHale','MK Martin','RC Trailers',
@@ -379,6 +464,18 @@ function varner_api_get_categories() {
 }
 
 function varner_api_save_categories(WP_REST_Request $r) { return varner_api_save_list('categories', 'varner_categories', $r); }
+
+function varner_api_get_subcategories() {
+    return rest_ensure_response(get_option('varner_subcategories', array()));
+}
+
+function varner_api_save_subcategories(WP_REST_Request $r) { return varner_api_save_list('subcategories', 'varner_subcategories', $r); }
+
+function varner_api_get_sub_subcategories() {
+    return rest_ensure_response(get_option('varner_sub_subcategories', array()));
+}
+
+function varner_api_save_sub_subcategories(WP_REST_Request $r) { return varner_api_save_list('sub-subcategories', 'varner_sub_subcategories', $r); }
 
 function varner_os_user_initials(WP_User $user) {
     $first = $user->first_name ?: '';
@@ -534,6 +631,8 @@ function varner_get_equipment_fields_config() {
         'condition'      => array('type' => 'text', 'default' => 'New'),
         'stock_status'   => array('type' => 'text', 'default' => 'Draft'),
         'category'       => array('type' => 'text'),
+        'subcategory'     => array('type' => 'text'),
+        'sub_subcategory' => array('type' => 'text'),
         'color'          => array('type' => 'text'),
         'length'         => array('type' => 'text'),
         'meter'          => array('type' => 'text'),
@@ -545,7 +644,6 @@ function varner_get_equipment_fields_config() {
         'show_on_website'=> array('type' => 'bool', 'default' => true),
         'has_attachments'=> array('type' => 'bool', 'default' => false),
         'attachment_details' => array('type' => 'text'),
-        'engine_horsepower' => array('type' => 'text'),
         'drive'          => array('type' => 'text'),
     );
 }
@@ -555,16 +653,18 @@ function varner_format_unit($post_id) {
     if (!$post) return null;
 
     $config = varner_get_equipment_fields_config();
+    $fields = function_exists('get_fields') ? get_fields($post_id) : array();
+    
     $data   = array(
         'id'    => $post_id,
         'title' => $post->post_title,
     );
 
     foreach ($config as $key => $meta) {
-        $val = get_field($key, $post_id);
+        $val = isset($fields[$key]) ? $fields[$key] : null;
         
         if ($meta['type'] === 'bool') {
-            $data[$key] = (bool) ( $val !== false ? $val : ($meta['default'] ?? false) );
+            $data[$key] = (bool) ( $val !== false && $val !== null ? $val : ($meta['default'] ?? false) );
         } elseif ($meta['type'] === 'number') {
             $data[$key] = (string) ($val ?? '');
         } else {
@@ -576,8 +676,8 @@ function varner_format_unit($post_id) {
         }
     }
 
-    // Gallery
-    $gallery = get_field('gallery', $post_id);
+    // Gallery (already in $fields)
+    $gallery = isset($fields['gallery']) ? $fields['gallery'] : array();
     $data['images']    = array();
     $data['image_ids'] = array();
     if (!empty($gallery)) {
@@ -592,11 +692,11 @@ function varner_format_unit($post_id) {
         }
     }
 
-    // Implements
-    $raw = get_field('implements', $post_id);
+    // Implements (already in $fields)
+    $raw_implements = isset($fields['implements']) ? $fields['implements'] : array();
     $data['implements'] = array();
-    if (!empty($raw)) {
-        foreach ($raw as $imp) {
+    if (!empty($raw_implements)) {
+        foreach ($raw_implements as $imp) {
             $img_url = '';
             $img_id  = 0;
             if (!empty($imp['implement_image'])) {
@@ -675,7 +775,7 @@ function varner_save_unit_fields($post_id, $data) {
 function varner_api_get_inventory() {
     $args = array(
         'post_type'      => 'equipment',
-        'post_status'    => 'publish',
+        'post_status'    => current_user_can('edit_posts') ? array('publish', 'draft') : 'publish',
         'posts_per_page' => -1,
         'orderby'        => 'date',
         'order'          => 'DESC',
@@ -688,7 +788,7 @@ function varner_api_get_inventory() {
             array(
                 'key'     => 'show_on_website',
                 'value'   => '1',
-                'compare' => '==',
+                'compare' => '=',
             ),
             // Also include if the field hasn't been set yet (defaults to true)
             array(
@@ -713,12 +813,14 @@ function varner_api_get_deleted() {
     return rest_ensure_response(array_map(function($p) { return varner_format_unit($p->ID); }, $posts));
 }
 
+
 function varner_api_create_unit(WP_REST_Request $request) {
     $data    = $request->get_json_params();
+    $status  = (isset($data['stock_status']) && $data['stock_status'] === 'Draft') ? 'draft' : 'publish';
     $post_id = wp_insert_post(array(
         'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Unit'),
         'post_type'   => 'equipment',
-        'post_status' => 'publish',
+        'post_status' => $status,
     ));
     if (is_wp_error($post_id)) {
         return new WP_Error('create_failed', $post_id->get_error_message(), array('status' => 500));
@@ -739,9 +841,18 @@ function varner_api_update_unit(WP_REST_Request $request) {
         return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
     }
     $before = varner_format_unit($post_id);
+    
+    $post_updates = array('ID' => $post_id);
     if (isset($data['title'])) {
-        wp_update_post(array('ID' => $post_id, 'post_title' => sanitize_text_field($data['title'])));
+        $post_updates['post_title'] = sanitize_text_field($data['title']);
     }
+    if (isset($data['stock_status'])) {
+        $post_updates['post_status'] = ($data['stock_status'] === 'Draft') ? 'draft' : 'publish';
+    }
+    if (count($post_updates) > 1) {
+        wp_update_post($post_updates);
+    }
+    
     varner_save_unit_fields($post_id, $data);
     $after = varner_format_unit($post_id);
 
@@ -768,6 +879,13 @@ function varner_api_soft_delete(WP_REST_Request $request) {
 function varner_api_restore_unit(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
     wp_untrash_post($post_id);
+    
+    // Explicitly update post status to 'publish' so it is visible in the API queries
+    wp_update_post(array(
+        'ID'          => $post_id,
+        'post_status' => 'publish',
+    ));
+    
     delete_post_meta($post_id, '_varner_deleted_at');
     $rid = varner_os_request_id($request);
     varner_os_log_ledger($post_id, 'restore', 'restore unit', array(), $rid);
@@ -991,12 +1109,9 @@ function varner_api_get_global_ledger(WP_REST_Request $request) {
 }
 
 function varner_backend_get_settings_defaults() {
-    if (function_exists('varner_get_theme_settings_defaults')) {
-        return varner_get_theme_settings_defaults();
-    }
     return array(
         'hero_title'                 => "Beyond the <br />\n<span class=\"text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600\">Standard.</span>",
-        'hero_subtitle'              => "Colorado's high-performance source for Mahindra, Big Tex, and Deutz-Fahr.",
+        'hero_subtitle'              => "Your trusted local source for Mahindra tractors, Big Tex trailers, Deutz-Fahr machinery, and many more to choose from. Discover heavy-duty solutions built for your toughest jobs.",
         'hero_button1_text'          => "Shop Inventory",
         'hero_button1_link'          => "/inventory",
         'hero_button2_text'          => "Book Service",
@@ -1057,6 +1172,18 @@ function varner_backend_get_settings_defaults() {
             ),
         ),
     );
+}
+
+/**
+ * Get default theme settings values.
+ */
+if ( ! function_exists( 'varner_get_theme_settings_defaults' ) ) {
+    function varner_get_theme_settings_defaults() {
+        if (function_exists('varner_backend_get_settings_defaults')) {
+            return varner_backend_get_settings_defaults();
+        }
+        return array();
+    }
 }
 
 function varner_api_get_settings() {

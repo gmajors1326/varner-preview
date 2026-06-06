@@ -48,10 +48,11 @@ if (Test-Path $pluginFile) {
 
 # 4. Package Plugin Zip
 Write-Host "`n[4/5] Zipping Varner OS Plugin..." -ForegroundColor Yellow
-$pluginZip = Join-Path $root "varner-os-plugin-v23.zip"
+$pluginZipName = "varner-os-plugin-v23.zip"
+$pluginZip = Join-Path $root $pluginZipName
 if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
 Push-Location "varner-os-plugin-v23-unpacked"
-tar -a -c -f $pluginZip varner-os-plugin-v23
+tar -a -c -f "../$pluginZipName" varner-os-plugin-v23
 Pop-Location
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
@@ -86,18 +87,20 @@ Copy-Item "$themeV23Path\assets\css\tailwind.css" -Destination "$themeLitePath\a
 
 
 # Full Theme (v23)
-$v23Zip = Join-Path $root "varner-equipment-theme-v23.zip"
+$v23ZipName = "varner-equipment-theme-v23.zip"
+$v23Zip = Join-Path $root $v23ZipName
 if (Test-Path $v23Zip) { Remove-Item $v23Zip -Force }
 Push-Location "varner-equipment-theme-v23"
-tar -a -c -f $v23Zip varner-v23
+tar -a -c -f "../$v23ZipName" varner-v23
 Pop-Location
 Write-Host "Full Theme packaged -> $v23Zip" -ForegroundColor Green
 
 # Lite Theme
-$liteZip = Join-Path $root "varner-equipment-theme-v23-lite.zip"
+$liteZipName = "varner-equipment-theme-v23-lite.zip"
+$liteZip = Join-Path $root $liteZipName
 if (Test-Path $liteZip) { Remove-Item $liteZip -Force }
 Push-Location "varner-equipment-theme-lite"
-tar -a -c -f $liteZip varner-lite
+tar -a -c -f "../$liteZipName" varner-lite
 Pop-Location
 Write-Host "Lite Theme packaged -> $liteZip" -ForegroundColor Green
 

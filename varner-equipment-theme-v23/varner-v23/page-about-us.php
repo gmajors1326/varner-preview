@@ -19,7 +19,10 @@ get_header();
                     <p>Service is the heart of Varner Equipment. Our technicians handle maintenance, repairs, and parts requests quickly to keep downtime low and your operation profitable. Call, visit the yard, or browse online—when you’re ready to work, we’re here to help.</p>
                 </div>
                 
-                <div class="w-full md:w-1/2">
+                <div class="w-full md:w-1/2 space-y-8">
+                    <div class="rounded-[2rem] overflow-hidden shadow-xl border-4 border-slate-100">
+                        <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/varner-yard.jpg' ); ?>" alt="Varner Equipment Yard" class="w-full h-auto object-cover" />
+                    </div>
                     <div class="bg-white p-8 rounded-[2rem] shadow-xl border-4 border-slate-100 relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -mr-16 -mt-16 z-0"></div>
                         <h3 class="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-6 relative z-10"><?php echo esc_html( varner_get_theme_setting( 'about_why_choose_us_title', 'Why Choose Us?' ) ); ?></h3>

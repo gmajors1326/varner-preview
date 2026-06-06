@@ -70,9 +70,9 @@
                 <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_title' ) ); ?>
                 </h1>
-                <p class="text-xl text-slate-200 font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300">
+                <div class="text-xl text-white font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300 hero-subtitle-container">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
-                </p>
+                </div>
                 <div class="grid grid-cols-2 sm:flex sm:flex-row flex-wrap gap-3 sm:gap-4 pt-6 items-start">
                     <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>

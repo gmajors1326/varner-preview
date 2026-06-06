@@ -335,7 +335,11 @@ function varner_get_filter_data() {
              JOIN {$wpdb->posts} p ON p.ID = pm.post_id
              WHERE p.post_type = 'equipment'
                AND p.post_status = 'publish'
-               AND pm.meta_value != ''";
+               AND pm.meta_value != ''
+               AND p.ID NOT IN (
+                   SELECT post_id FROM {$wpdb->postmeta}
+                   WHERE meta_key = 'show_on_website' AND meta_value = '0'
+               )";
 
     $makes = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'make'
@@ -482,7 +486,7 @@ function varner_include_equipment_card( $post_id = null ) {
 function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1 ) {
     $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
 
-    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( $_GET['paged'] ?? 1 ) ) );
+    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
 
     $filters = array(
         'category'  => array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) ),
@@ -555,7 +559,8 @@ function varner_search_meta_fields( $search, $wp_query ) {
 
     foreach ( (array) $q['search_terms'] as $term ) {
         $term = esc_sql( $wpdb->esc_like( $term ) );
-        $search .= "{$search_and}(($wpdb->posts.post_title LIKE '{$n}{$term}{$n}') OR ($wpdb->posts.post_content LIKE '{$n}{$term}{$n}') OR (EXISTS (SELECT 1 FROM {$wpdb->postmeta} WHERE post_id = {$wpdb->posts}.ID AND meta_key IN ('make','model','category','sub-category','sub-sub-category','stock_number','vin') AND meta_value LIKE '{$n}{$term}{$n}')))";
+        $search .= "{$search_and}(($wpdb->posts.post_title LIKE '{$n}{$term}{$n}') OR ($wpdb->posts.post_content LIKE '{$n}{$term}{$n}') OR (EXISTS (SELECT 1 FROM {$wpdb->postmeta} WHERE post_id = {$wpdb->posts}.ID AND meta_key IN ('make','model','category','stock_number','vin') AND meta_value LIKE '{$n}{$term}{$n}')))";
+
         $search_and = ' AND ';
     }
 
@@ -679,143 +684,18 @@ add_action( 'wp_footer', function () {
 
 
 /**
- * Register Video Custom Post Type and Taxonomy
+ * Theme Setup
  */
-function varner_register_video_cpt() {
-    $labels = array(
-        "name" => __( "Videos", "varner-v23" ),
-        "singular_name" => __( "Video", "varner-v23" ),
-        "menu_name" => __( "Videos", "varner-v23" ),
-        "all_items" => __( "All Videos", "varner-v23" ),
-        "add_new" => __( "Add New Video", "varner-v23" ),
-        "add_new_item" => __( "Add New Video", "varner-v23" ),
-        "edit_item" => __( "Edit Video", "varner-v23" ),
-        "new_item" => __( "New Video", "varner-v23" ),
-        "view_item" => __( "View Video", "varner-v23" ),
-        "search_items" => __( "Search Videos", "varner-v23" ),
-        "not_found" => __( "No Videos Found", "varner-v23" ),
-    );
-
-    $args = array(
-        "label" => __( "Videos", "varner-v23" ),
-        "labels" => $labels,
-        "description" => "",
-        "public" => true,
-        "publicly_queryable" => true,
-        "show_ui" => true,
-        "show_in_rest" => true,
-        "rest_base" => "",
-        "rest_controller_class" => "WP_REST_Posts_Controller",
-        "has_archive" => false,
-        "show_in_menu" => false,
-        "show_in_nav_menus" => true,
-        "delete_with_user" => false,
-        "exclude_from_search" => false,
-        "capability_type" => "post",
-        "map_meta_cap" => true,
-        "hierarchical" => false,
-        "rewrite" => array( "slug" => "video", "with_front" => true ),
-        "query_var" => true,
-        "menu_icon" => "dashicons-video-alt3",
-        "supports" => array( "title" ),
-    );
-
-    register_post_type( "video", $args );
-
-    $tax_labels = array(
-        "name" => __( "Video Categories", "varner-v23" ),
-        "singular_name" => __( "Video Category", "varner-v23" ),
-    );
-
-    $tax_args = array(
-        "label" => __( "Video Categories", "varner-v23" ),
-        "labels" => $tax_labels,
-        "public" => true,
-        "publicly_queryable" => true,
-        "hierarchical" => true,
-        "show_ui" => true,
-        "show_in_menu" => false,
-        "show_in_nav_menus" => true,
-        "query_var" => true,
-        "rewrite" => array( "slug" => "video_category", "with_front" => true ),
-        "show_admin_column" => true,
-        "show_in_rest" => true,
-        "rest_base" => "video_category",
-        "rest_controller_class" => "WP_REST_Terms_Controller",
-        "show_in_quick_edit" => false,
-    );
-    register_taxonomy( "video_category", array( "video" ), $tax_args );
-}
-add_action( "init", "varner_register_video_cpt" );
 
 /**
- * Get default theme settings values.
+ * Fallback for theme settings defaults if the plugin is not active.
  */
-function varner_get_theme_settings_defaults() {
-    return array(
-        'hero_title'                 => "Beyond the <br />\n<span class=\"text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600\">Standard.</span>",
-        'hero_subtitle'              => "Colorado's high-performance source for Mahindra, Big Tex, and Deutz-Fahr.",
-        'hero_button1_text'          => "Shop Inventory",
-        'hero_button1_link'          => "/inventory",
-        'hero_button2_text'          => "Book Service",
-        'hero_button2_link'          => "/service-request",
-        'hero_video_url'             => "",
-        'support_hub_service_link'   => "/service-request",
-        'support_hub_parts_link'     => "https://www.allpartsstore.com/index.htm?customernumber=CO0612",
-        'support_hub_finance_link'   => "/contact",
-        'youtube_tagline'            => "Varner Equipment Media",
-        'youtube_title'              => "See Our Machines<br class=\"hidden sm:block\"/><span class=\"text-red-500 sm:inline block\">In Action</span>",
-        'youtube_paragraph'          => "Subscribe to our YouTube channel for walkthroughs, reviews, and heavy-duty demonstrations right here in Colorado.",
-        'youtube_channel_url'        => "https://www.youtube.com/@VarnerEquipment",
-        'youtube_video_id'           => "goF_3TspZ6k",
-        'youtube_custom_thumbnail'   => "",
-        'cta_title'                  => "What's Next On<br class=\"hidden sm:block\" />\nYour To-Do List?",
-        'cta_text'                   => "Varner Equipment is a family owned and operated tractor and trailer dealership. We are your one stop for equipment that you can rely on.",
-        'cta_button_text'            => "Learn more",
-        'cta_button_link'            => "/dealer-info/about-us",
-        'about_why_choose_us_title'  => "Why Choose Us?",
-        'about_why_choose_us_bullets'=> array(
-            "Family Owned & Operated",
-            "Expert Service Department",
-            "Extensive Parts Inventory",
-            "Top-Tier Equipment Brands"
-        ),
-        'contact_email'              => "ashley@varnerequipment.com",
-        'contact_phone'              => "(970) 874-0612",
-        'contact_phone_raw'          => "9708740612",
-        'contact_address_line1'      => "1375 US-50",
-        'contact_address_line2'      => "Delta, CO 81416",
-        'contact_map_link'           => "https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9",
-        'contact_map_embed_url'      => "https://www.google.com/maps?q=Varner%20Equipment%2C%201375%20US-50%2C%20Delta%2C%20CO%2081416&z=8&output=embed",
-        'hours_mon_fri'              => "8am - 5pm",
-        'hours_sat'                  => "9am - Noon",
-        'hours_sun'                  => "Closed",
-        'social_facebook'            => "https://www.facebook.com/varnerequipment",
-        'social_youtube'             => "https://www.youtube.com/@VarnerEquipment",
-        'social_custom_links'        => array(),
-        'employment_tagline'         => 'Join The Crew',
-        'employment_headline'        => 'Careers at Varner',
-        'employment_intro'           => 'We are always looking for hardworking, reliable individuals to join our team in Delta, Colorado. If you have a passion for heavy equipment and a dedication to customer service, we want to hear from you.',
-        'employment_jobs'            => array(
-            array(
-                'job_title'       => 'Heavy Equipment Mechanic',
-                'job_type'        => 'Full-Time',
-                'job_location'    => 'Delta, CO',
-                'job_description' => 'Looking for an experienced mechanic specializing in tractors, trailers, and agricultural equipment. Must have own tools and reliable transportation.',
-                'job_show_badge'  => true,
-                'job_badge_text'  => 'Urgently Hiring',
-            ),
-            array(
-                'job_title'       => 'Parts Counter Sales',
-                'job_type'        => 'Full-Time',
-                'job_location'    => 'Delta, CO',
-                'job_description' => 'Assist customers in finding and ordering the right parts for their equipment. Previous parts or agricultural knowledge preferred.',
-                'job_show_badge'  => false,
-                'job_badge_text'  => '',
-            ),
-        ),
-    );
+if ( ! function_exists( 'varner_get_theme_settings_defaults' ) ) {
+    function varner_get_theme_settings_defaults() {
+        return array();
+    }
 }
+
 
 /**
  * Retrieve a theme setting with visual-safe fallback.
@@ -843,4 +723,52 @@ function varner_get_theme_setting($key, $default = null) {
     return '';
 }
 
+/**
+ * Clear brand counts transient on equipment save, trash, untrash, or deletion.
+ */
+function varner_clear_brand_transient( $post_id ) {
+    if ( get_post_type( $post_id ) === 'equipment' ) {
+        delete_transient( 'varner_brand_counts' );
+    }
+}
+add_action( 'save_post_equipment', 'varner_clear_brand_transient' );
+add_action( 'deleted_post', 'varner_clear_brand_transient' );
+add_action( 'trashed_post', 'varner_clear_brand_transient' );
+add_action( 'untrashed_post', 'varner_clear_brand_transient' );
 
+/**
+ * Exclude hidden equipment from frontend loops.
+ */
+function varner_filter_equipment_visibility( $query ) {
+    if ( is_admin() ) {
+        return;
+    }
+    // Check if REST API and user has capability to edit posts (so the editor app can see everything)
+    if ( defined('REST_REQUEST') && REST_REQUEST && current_user_can('edit_posts') ) {
+        return;
+    }
+
+    $post_types = $query->get('post_type');
+    if ( $post_types === 'equipment' || ( is_array( $post_types ) && in_array( 'equipment', $post_types ) ) ) {
+        $meta_query = $query->get('meta_query');
+        if ( ! is_array( $meta_query ) ) {
+            $meta_query = array();
+        }
+
+        $meta_query[] = array(
+            'relation' => 'OR',
+            array(
+                'key'     => 'show_on_website',
+                'value'   => '1',
+                'compare' => '=',
+            ),
+            array(
+                'key'     => 'show_on_website',
+                'compare' => 'NOT EXISTS',
+            ),
+        );
+
+        $query->set('meta_query', $meta_query);
+    }
+}
+add_action( 'pre_get_posts', 'varner_filter_equipment_visibility' );
