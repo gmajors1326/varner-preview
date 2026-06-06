@@ -88,14 +88,38 @@ Pop-Location
 
 ## Plugin Install or Update
 
-1. Upload/install `varner-os-plugin-v23.zip`.
-2. Activate the plugin.
-3. Deactivate and reactivate once to run `dbDelta` and schedule the daily session cleanup cron.
+> [!IMPORTANT]
+> **WP Engine Ephemeral Filesystem Constraint**:
+> The WP Engine SSH gateway uses ephemeral container sessions. Any files written to `/home/wpe-user` or `/tmp` are destroyed as soon as the SSH connection closes.
+> Only the shared WordPress site folder `/sites/varnerequipdev` (and its subdirectories) is persistent.
+> Because SCP/SFTP subsystems are disabled on the gateway, files must be streamed in binary mode over SSH to the persistent volume.
+
+### 1. Stream the Plugin ZIP to Remote Persistent Storage
+Run this Python command from the local workspace root:
+```powershell
+python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/varner-os-plugin-v23.zip'], stdin=open('varner-os-plugin-v23.zip', 'rb'))"
+```
+
+### 2. Install/Update via Remote WP-CLI
+Connect to the server and trigger the installation pointing to the persistent ZIP path:
+```powershell
+ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp plugin install /sites/varnerequipdev/varner-os-plugin-v23.zip --force --path=/sites/varnerequipdev"
+```
+
+### 3. Clean up the Remote ZIP
+```powershell
+ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "rm /sites/varnerequipdev/varner-os-plugin-v23.zip"
+```
+
+### 4. Activate & Run dbDelta
+If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path=/sites/varnerequipdev`. Deactivate and reactivate once to run `dbDelta` and schedule the daily session cleanup cron.
 
 ## Theme Install or Update
 
-1. Upload/install `varner-equipment-theme-v23.zip`.
-2. Confirm `style.css` is at the theme root (already fixed in v23 package).
+1. Stream the theme ZIP in the same manner as the plugin ZIP (using `/sites/varnerequipdev/varner-equipment-theme-v23.zip`).
+2. Run `wp theme install /sites/varnerequipdev/varner-equipment-theme-v23.zip --force --path=/sites/varnerequipdev`.
+3. Confirm `style.css` is at the theme root.
+4. Clean up the theme ZIP on the remote server.
 
 ## Post-Install Checks
 
