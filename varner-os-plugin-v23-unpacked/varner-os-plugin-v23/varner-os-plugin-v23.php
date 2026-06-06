@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.67 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.67
+ * Description: Version 1.23.68 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.68
  * Author: hwy559.com
  */
 
@@ -334,6 +334,7 @@ function varner_enqueue_react_assets()
             'nonce' => wp_create_nonce('wp_rest'),
             'rest_url' => esc_url_raw(rest_url()),
             'site_url' => esc_url_raw(home_url('/')),
+            'logo_url' => function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '',
         ));
     } else {
         error_log("Varner OS: JS asset not found or not matched. js_file: " . $js_file);
@@ -617,7 +618,8 @@ function varner_os_mobile_pwa_router() {
                         nonce: '<?php echo wp_create_nonce('wp_rest'); ?>',
                         rest_url: '<?php echo esc_url_raw(rest_url()); ?>',
                         site_url: '<?php echo esc_url_raw(home_url('/')); ?>',
-                        is_mobile_app: true
+                        is_mobile_app: true,
+                        logo_url: '<?php echo function_exists("varner_get_brand_logo_url") ? esc_url(varner_get_brand_logo_url("white")) : ""; ?>'
                     };
                 </script>
                 <script type="module" src="<?php echo $dist_url . $js_file . '?ver=' . $ver; ?>"></script>

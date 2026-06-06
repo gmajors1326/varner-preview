@@ -3,15 +3,31 @@ import {
   Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings
 } from 'lucide-react';
 
-export const SidebarLogo = () => (
-  <div className="flex items-center gap-3">
-    <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
-    <div>
-      <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
-      <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+export const SidebarLogo = () => {
+  const logoUrl = window.varnerData?.logo_url;
+  
+  if (logoUrl) {
+    return (
+      <div className="flex items-center justify-start py-1">
+        <img 
+          src={logoUrl} 
+          alt="Varner Equipment" 
+          className="h-9 w-auto object-contain brightness-100 hover:brightness-110 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
+      <div>
+        <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
+        <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const NavItem = ({ icon, label, active = false, badge = null, onClick }) => (
   <div 
