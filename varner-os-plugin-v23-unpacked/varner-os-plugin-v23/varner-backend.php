@@ -456,7 +456,10 @@ function varner_api_save_list(string $param, string $option, WP_REST_Request $re
     return rest_ensure_response($items);
 }
 
-function varner_api_save_brands(WP_REST_Request $r)     { return varner_api_save_list('brands',     'varner_brands',     $r); }
+function varner_api_save_brands(WP_REST_Request $r) {
+    delete_transient('varner_brand_counts');
+    return varner_api_save_list('brands', 'varner_brands', $r);
+}
 
 function varner_api_get_categories() {
     $default = array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements');

@@ -93,6 +93,9 @@ export async function uploadFile(file) {
     headers,
     body: form,
   });
-  if (!res.ok) throw new Error('Upload failed');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? `Upload failed: ${res.status}`);
+  }
   return res.json(); // { id, url }
 }

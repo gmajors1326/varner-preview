@@ -32,7 +32,8 @@ if ( $brand_slug ) {
 $brand_norm   = sanitize_title( $brand_name );
 
 // Inventory filter data
-$filter_data = varner_get_filter_data();
+$selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
+$filter_data = varner_get_filter_data( array(), $selected_categories );
 
 // Attempt to locate a brand logo from the media library
 if ( ! function_exists( 'varner_find_brand_logo_url' ) ) {

@@ -29,6 +29,7 @@ export const MobileAppLayout = ({
   setSubSubcategories,
   handleSave,
   isSaving,
+  isUploadingImages,
   fieldErrors,
   setFieldErrors,
   handleInputChange,
@@ -782,17 +783,21 @@ export const MobileAppLayout = ({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
+                    disabled={isUploadingImages}
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow"
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow"
                   >
-                    <Camera size={14}/> Take Photo
+                    {isUploadingImages ? <Loader2 className="animate-spin" size={14}/> : <Camera size={14}/>}
+                    {isUploadingImages ? 'Uploading...' : 'Take Photo'}
                   </button>
                   <button
                     type="button"
+                    disabled={isUploadingImages}
                     onClick={() => galleryInputRef.current?.click()}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
                   >
-                    <ImageIcon size={14}/> Add Gallery
+                    {isUploadingImages ? <Loader2 className="animate-spin text-red-600" size={14}/> : <ImageIcon size={14}/>}
+                    {isUploadingImages ? 'Uploading...' : 'Add Gallery'}
                   </button>
                 </div>
 

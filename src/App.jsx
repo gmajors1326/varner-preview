@@ -17,7 +17,7 @@ import {
   getCategoryLabel
 } from './constants/inventoryConstants';
 
-import { apiFetch } from './utils/api';
+import { apiFetch, uploadFile } from './utils/api';
 import { apiToLocal, apiToListItem, getDaysInStock } from './utils/helpers';
 
 import { SidebarLogo, SidebarContent, FilterTag, MappingRow } from './components/Common/Navigation';
@@ -36,6 +36,7 @@ import { VideosTab } from './components/Tabs/VideosTab';
 import { MobileAccessTab } from './components/Tabs/MobileAccessTab';
 import { ConfigurationTab } from './components/Tabs/ConfigurationTab';
 import { HistoryTab } from './components/Tabs/HistoryTab';
+import { MigrationTab } from './components/Tabs/MigrationTab';
 
 import { MobileAppLayout } from './components/MobileAppLayout';
 
@@ -91,6 +92,7 @@ const App = () => {
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [activityList, setActivityList] = useState([]);
   const [isActivityLoading, setIsActivityLoading] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const handleCategorySelectChange = (val) => {
     setUnitData(prev => ({
@@ -249,12 +251,22 @@ const App = () => {
 
   // Image upload — sends file to WP Media Library, stores id + url
   const handleAddImages = async (files) => {
-    const results = await Promise.all(files.map(uploadFile));
-    setUnitData(prev => ({
-      ...prev,
-      images: [...prev.images, ...results.map(r => r.url)],
-      image_ids: [...prev.image_ids, ...results.map(r => r.id)],
-    }));
+    if (!files || !files.length) return;
+    setIsUploadingImages(true);
+    showToast('Uploading images...', 'info');
+    try {
+      const results = await Promise.all(files.map(uploadFile));
+      setUnitData(prev => ({
+        ...prev,
+        images: [...prev.images, ...results.map(r => r.url)],
+        image_ids: [...prev.image_ids, ...results.map(r => r.id)],
+      }));
+      showToast('Images uploaded successfully!');
+    } catch (err) {
+      showToast('Image upload failed: ' + err.message, 'error');
+    } finally {
+      setIsUploadingImages(false);
+    }
   };
 
   const handleRemoveImage = (index) => {
@@ -538,6 +550,7 @@ const App = () => {
         </span>
       );
       case 'marketplace': return 'Meta Commerce Sync';
+      case 'migration': return 'CSV Import Assistant';
       case 'history': return 'Deletion History / Recycle Bin';
       case 'mobile': return 'Mobile Companion Access';
       case 'settings': return 'Page Editor';
@@ -570,6 +583,7 @@ const App = () => {
         setSubSubcategories={setSubSubcategories}
         handleSave={handleSave}
         isSaving={isSaving}
+        isUploadingImages={isUploadingImages}
         fieldErrors={fieldErrors}
         setFieldErrors={setFieldErrors}
         handleInputChange={handleInputChange}
@@ -1183,7 +1197,7 @@ const App = () => {
                     </div>
                   </div>
 
-                  <MediaSection title="High-Resolution Media" images={unitData.images} onAddFiles={handleAddImages} onRemove={handleRemoveImage} onReorder={handleReorderImages} />
+                  <MediaSection title="High-Resolution Media" images={unitData.images} onAddFiles={handleAddImages} onRemove={handleRemoveImage} onReorder={handleReorderImages} isUploading={isUploadingImages} />
                   <AttachmentsSection attachments={unitData.attachments} onAdd={handleAddImplement} onChange={handleUpdateImplement} onRemove={handleRemoveImplement} onImageUpload={handleImplementImageUpload} />
 
                   {/* BOTTOM ACTION BUTTONS */}
@@ -1247,6 +1261,7 @@ const App = () => {
             )}
 
             {activeTab === 'marketplace' && <MarketplaceTab />}
+            {activeTab === 'migration' && <MigrationTab showToast={showToast} />}
             {activeTab === 'settings' && <SettingsTab showToast={showToast} />}
             {activeTab === 'videos' && <VideosTab showToast={showToast} />}
             {activeTab === 'mobile' && <MobileAccessTab />}

@@ -8,7 +8,8 @@ if ( ! function_exists('get_field') ) {
     return;
 }
 
-$filter_data = varner_get_filter_data();
+$selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
+$filter_data = varner_get_filter_data( array(), $selected_categories );
 
 // Safer count query
 $count_args = varner_build_inventory_query(array(), -1);

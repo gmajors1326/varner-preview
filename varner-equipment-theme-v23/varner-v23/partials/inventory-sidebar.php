@@ -10,7 +10,8 @@ $uid = uniqid('vfilter_');
 $reset_path = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
 $reset_url  = $reset_path ? home_url( $reset_path ) : get_permalink();
 
-$selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
+$selected_categories    = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
+$selected_subcategories = array_map( 'sanitize_text_field', (array) ( $_GET['subcategory'] ?? array() ) );
 $selected_makes      = isset( $selected_makes_override )
     ? array_map( 'sanitize_text_field', (array) $selected_makes_override )
     : array_map( 'sanitize_text_field', (array) ( $_GET['make'] ?? array() ) );
@@ -23,7 +24,7 @@ $price_max_value     = sanitize_text_field( $_GET['price_max'] ?? '' );
 $year_min_value      = sanitize_text_field( $_GET['year_min'] ?? '' );
 $year_max_value      = sanitize_text_field( $_GET['year_max'] ?? '' );
 
-$has_filters = $search_value || $stock_number_value || $vin_value || $selected_categories || $selected_makes || $selected_condition || $price_min_value || $price_max_value || $year_min_value || $year_max_value;
+$has_filters = $search_value || $stock_number_value || $vin_value || $selected_categories || $selected_subcategories || $selected_makes || $selected_condition || $price_min_value || $price_max_value || $year_min_value || $year_max_value;
 
 $year_min_bound  = isset( $filter_data['year_range']->min_year ) ? intval( $filter_data['year_range']->min_year ) : 1980;
 $year_max_bound  = isset( $filter_data['year_range']->max_year ) ? intval( $filter_data['year_range']->max_year ) : intval( date('Y') );
@@ -47,6 +48,9 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
             <div class="flex flex-wrap gap-2">
                 <?php foreach ( $selected_categories as $v ) : ?>
                     <a href="<?php echo esc_url( varner_remove_filter( 'category', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
+                <?php endforeach; ?>
+                <?php foreach ( $selected_subcategories as $v ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_filter( 'subcategory', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
                 <?php endforeach; ?>
                 <?php foreach ( $selected_makes as $v ) : ?>
                     <a href="<?php echo esc_url( varner_remove_filter( 'make', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
@@ -111,6 +115,26 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                             <?php endforeach; ?>
                         </div>
                     </div>
+
+                    <?php 
+                    $fallback_subcategories = isset( $filter_data['subcategories'] ) ? $filter_data['subcategories'] : array();
+                    if ( ! empty( $fallback_subcategories ) ) : 
+                    ?>
+                    <div>
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Subcategory</h3>
+                        <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+                            <?php foreach ( $fallback_subcategories as $subcat_key => $subcat_obj ) : ?>
+                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <span class="flex items-center gap-2">
+                                        <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" />
+                                        <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $subcat_key ); ?></span>
+                                    </span>
+                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($subcat_obj->cnt); ?>)</span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div>
                         <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</h3>

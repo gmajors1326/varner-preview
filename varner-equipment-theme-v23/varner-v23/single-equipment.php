@@ -18,6 +18,25 @@ $length          = get_field( 'length',       $post_id );
 $color           = get_field( 'color',        $post_id );
 $meter           = get_field( 'meter',        $post_id );
 $meter_type      = get_field( 'meter_type',   $post_id ) ?: 'Hours';
+
+// Format meter label and value to support singular/plural
+$meter_label = 'Hours';
+$meter_val   = '';
+if ( $meter ) {
+    $display_meter_type = $meter_type;
+    if ( (float) $meter === 1.0 ) {
+        if ( strcasecmp( $meter_type, 'hours' ) === 0 ) {
+            $display_meter_type = 'Hour';
+        } elseif ( strcasecmp( $meter_type, 'miles' ) === 0 ) {
+            $display_meter_type = 'Mile';
+        } elseif ( strcasecmp( $meter_type, 'acres' ) === 0 ) {
+            $display_meter_type = 'Acre';
+        }
+    }
+    $meter_label = $display_meter_type;
+    $meter_val   = $meter . ' ' . $display_meter_type;
+}
+
 $description     = get_field( 'description',  $post_id );
 $stock_status    = get_field( 'stock_status', $post_id );
 $has_attachments = get_field( 'has_attachments', $post_id );
@@ -210,7 +229,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                             'Stock Status' => array( 'text', $stock_status ),
                             'Color'        => array( 'text', $color ),
                             'Length'       => array( 'text', $length ),
-                            'Hours'        => array( 'text', $meter ? $meter . ' ' . $meter_type : '' ),
+                            $meter_label   => array( 'text', $meter_val ),
                             'Drive'        => array( 'text', $drive ),
                             'Attachments'  => array( 'text', $has_attachments ? ('Yes' . ($attachment_details ? ' — ' . $attachment_details : '')) : 'No' ),
                             'Description'  => array( 'html', $description ),

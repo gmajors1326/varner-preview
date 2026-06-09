@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.68 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.68
+ * Description: Version 1.23.85 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.85
  * Author: hwy559.com
  */
 
@@ -460,6 +460,192 @@ function varner_os_mobile_pwa_router() {
         } else {
             $icon_url = varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png');
         }
+    }
+
+    // Handle facebook-catalog.csv
+    if ($path === 'facebook-catalog.csv') {
+        // Query all active listings of CPT 'equipment'
+        $args = array(
+            'post_type'      => 'equipment',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_query'     => array(
+                'relation' => 'OR',
+                array(
+                    'key'     => 'show_on_website',
+                    'value'   => '1',
+                    'compare' => '=',
+                ),
+                array(
+                    'key'     => 'show_on_website',
+                    'compare' => 'NOT EXISTS',
+                ),
+            ),
+        );
+        
+        $posts = get_posts($args);
+        
+        // Open memory stream to write CSV
+        $out = fopen('php://temp', 'w+');
+        
+        // Headers for Facebook Product Catalog (E-Commerce)
+        $headers = array(
+            'id', 
+            'title', 
+            'description', 
+            'link', 
+            'image_link', 
+            'additional_image_link',
+            'availability',
+            'condition',
+            'price',
+            'brand',
+            'custom_label_0', // category
+            'custom_label_1', // stock_number
+            'custom_label_2', // year
+            'custom_label_3', // make/brand
+            'custom_label_4'  // model
+        );
+        fputcsv($out, $headers);
+        
+        foreach ($posts as $post) {
+            $post_id = $post->ID;
+            
+            // Format fields using ACF helper (or basic get_post_meta for performance & reliability)
+            $fields = function_exists('get_fields') ? get_fields($post_id) : array();
+            
+            // Filter out Draft status in stock_status meta field (different from WP post_status)
+            $stock_status = isset($fields['stock_status']) ? $fields['stock_status'] : get_post_meta($post_id, 'stock_status', true);
+            if ($stock_status === 'Draft') {
+                continue;
+            }
+            
+            $title = $post->post_title;
+            
+            $desc_raw = isset($fields['description']) ? $fields['description'] : get_post_meta($post_id, 'description', true);
+            $desc = wp_strip_all_tags($desc_raw);
+            $desc = str_replace(array("\r", "\n", "\t"), " ", $desc); // Strip all newlines, carriage returns, and tabs
+            $desc = preg_replace('/\s+/', ' ', $desc); // Collapse multiple spaces
+            $desc = trim($desc);
+            if (empty($desc)) {
+                $desc = $title;
+            }
+            // Truncate description to 4900 characters (Facebook limit is 5000)
+            if (strlen($desc) > 4900) {
+                $desc = mb_strimwidth($desc, 0, 4900, '...');
+            }
+            
+            $url = get_permalink($post_id);
+            
+            // Images
+            $image_0_url = '';
+            $additional_images = array();
+            
+            $gallery = isset($fields['gallery']) ? $fields['gallery'] : get_post_meta($post_id, 'gallery', true);
+            if (!empty($gallery) && is_array($gallery)) {
+                $img_count = 0;
+                foreach ($gallery as $img) {
+                    $img_url = '';
+                    if (is_array($img)) {
+                        $img_url = $img['url'] ?? '';
+                    } elseif (is_numeric($img)) {
+                        $img_url = wp_get_attachment_url($img);
+                    }
+                    if ($img_url) {
+                        if ($img_count === 0) {
+                            $image_0_url = $img_url;
+                        } else {
+                            $additional_images[] = $img_url;
+                        }
+                        $img_count++;
+                    }
+                }
+            }
+            
+            // Fallback image link to Featured Image
+            if (empty($image_0_url)) {
+                $feat_id = get_post_thumbnail_id($post_id);
+                if ($feat_id) {
+                    $image_0_url = wp_get_attachment_url($feat_id);
+                }
+            }
+            
+            $additional_image_link = implode(',', $additional_images);
+            
+            // Brand / Make
+            $make = isset($fields['make']) ? $fields['make'] : get_post_meta($post_id, 'make', true);
+            if (empty($make)) {
+                $make = 'Varner Equipment';
+            }
+            
+            // Model
+            $model = isset($fields['model']) ? $fields['model'] : get_post_meta($post_id, 'model', true);
+            if (empty($model)) {
+                $model = 'Equipment';
+            }
+            
+            // Year
+            $year = isset($fields['year']) ? $fields['year'] : get_post_meta($post_id, 'year', true);
+            if (empty($year)) {
+                $year = get_the_date('Y', $post_id) ?: '2026';
+            }
+            
+            // E-commerce Condition: new, used, refurbished
+            $cond_raw = isset($fields['condition']) ? $fields['condition'] : get_post_meta($post_id, 'condition', true);
+            $condition = (strtolower($cond_raw) === 'used') ? 'used' : 'new';
+            
+            // E-commerce Availability: in stock, out of stock
+            if ($stock_status === 'In Stock') {
+                $availability = 'in stock';
+            } else {
+                $availability = 'out of stock';
+            }
+            
+            // Price (Must be present and positive, otherwise default to 0 USD for Call for Price)
+            $price_val = isset($fields['price']) ? $fields['price'] : get_post_meta($post_id, 'price', true);
+            $call_for_price = isset($fields['call_for_price']) ? (bool)$fields['call_for_price'] : (bool)get_post_meta($post_id, 'call_for_price', true);
+            if ($call_for_price || empty($price_val) || floatval($price_val) <= 0) {
+                $price = '0 USD';
+            } else {
+                $price = floatval($price_val) . ' USD';
+            }
+            
+            // Custom Labels & Categories
+            $category = isset($fields['category']) ? $fields['category'] : get_post_meta($post_id, 'category', true);
+            $stock_number = isset($fields['stock_number']) ? $fields['stock_number'] : get_post_meta($post_id, 'stock_number', true);
+            
+            fputcsv($out, array(
+                $post_id,
+                $title,
+                $desc,
+                $url,
+                $image_0_url,
+                $additional_image_link,
+                $availability,
+                $condition,
+                $price,
+                $make,
+                $category,
+                $stock_number,
+                $year,
+                $make,
+                $model
+            ));
+        }
+        
+        rewind($out);
+        $csv_data = stream_get_contents($out);
+        fclose($out);
+        
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="facebook-catalog.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Cache-Control: post-check=0, pre-check=0', false);
+        header('Pragma: no-cache');
+        echo $csv_data;
+        exit;
     }
 
     // Handle manifest.json

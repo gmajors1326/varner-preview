@@ -2,6 +2,11 @@
 
 ## Workspace Rules (User Instructions)
 > [!IMPORTANT]
+> - **Pre-emptive Remote Server Connection**: At the start of the session, immediately verify SSH connectivity and readiness to the WP staging server (`varnerequipdev@varnerequipdev.ssh.wpengine.net` using key `C:\Users\Greg\.ssh\id_ed25519_wpe`) to prevent any wait times during deployments.
+> - **SSH File Deployment — Always use PowerShell pipeline**: When streaming files to WP Engine over SSH, always use the PowerShell `Get-Content | ssh` pipeline method. Do NOT use `python subprocess` with stdin, `scp`, or base64 tricks — they hang or fail on WP Engine. The correct pattern is:
+>   ```powershell
+>   Get-Content "local\path\file.php" -Raw -Encoding UTF8 | ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /remote/path/file.php"
+>   ```
 > - **Do Not add extra code, functions, text, images unless approved.**
 > - **Make suggestions** on how to improve code, functions, text, and images.
 > - **Do Not delete** any code, functions, text, and images directly without approval.

@@ -328,14 +328,27 @@ add_action( 'parse_request', function( $wp ) {
  * Returns distinct makes, categories, conditions (with counts), and
  * min/max year + price for all published equipment.
  */
-function varner_get_filter_data() {
+function varner_get_filter_data( $segment_categories = array(), $active_categories = array() ) {
     global $wpdb;
+
+    // Clause for segment categories (scopes categories, makes, conditions, years, prices)
+    $segment_clause = '';
+    if ( ! empty( $segment_categories ) ) {
+        $escaped_cats = array_map( function($c) use ($wpdb) {
+            return $wpdb->prepare('%s', $c);
+        }, $segment_categories );
+        $segment_clause = " AND p.ID IN (
+            SELECT post_id FROM {$wpdb->postmeta}
+            WHERE meta_key = 'category' AND meta_value IN (" . implode( ',', $escaped_cats ) . ")
+        )";
+    }
 
     $base = "FROM {$wpdb->postmeta} pm
              JOIN {$wpdb->posts} p ON p.ID = pm.post_id
              WHERE p.post_type = 'equipment'
                AND p.post_status = 'publish'
                AND pm.meta_value != ''
+               $segment_clause
                AND p.ID NOT IN (
                    SELECT post_id FROM {$wpdb->postmeta}
                    WHERE meta_key = 'show_on_website' AND meta_value = '0'
@@ -371,7 +384,42 @@ function varner_get_filter_data() {
          $base AND pm.meta_key = 'price'"
     );
 
-    return compact( 'makes', 'categories', 'conditions', 'year_range', 'price_range' );
+    // Subcategories should be filtered by the active checked categories if any,
+    // or by the segment categories if none are checked.
+    $sub_cat_filter = ! empty( $active_categories ) ? $active_categories : $segment_categories;
+    $sub_cat_clause = '';
+    if ( ! empty( $sub_cat_filter ) ) {
+        $escaped_sub_cats = array_map( function($c) use ($wpdb) {
+            return $wpdb->prepare('%s', $c);
+        }, $sub_cat_filter );
+        $sub_cat_clause = " AND p.ID IN (
+            SELECT post_id FROM {$wpdb->postmeta}
+            WHERE meta_key = 'category' AND meta_value IN (" . implode( ',', $escaped_sub_cats ) . ")
+        )";
+    }
+
+    $sub_base = "FROM {$wpdb->postmeta} pm
+                 JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                 WHERE p.post_type = 'equipment'
+                   AND p.post_status = 'publish'
+                   AND pm.meta_value != ''
+                   $segment_clause
+                   $sub_cat_clause
+                   AND p.ID NOT IN (
+                       SELECT post_id FROM {$wpdb->postmeta}
+                       WHERE meta_key = 'show_on_website' AND meta_value = '0'
+                   )";
+
+    $subcategories = array();
+    if ( ! empty( $sub_cat_filter ) ) {
+        $subcategories = $wpdb->get_results(
+            "SELECT pm.meta_value AS val, COUNT(*) AS cnt $sub_base AND pm.meta_key = 'subcategory'
+             GROUP BY pm.meta_value ORDER BY cnt DESC",
+            OBJECT_K
+        );
+    }
+
+    return compact( 'makes', 'categories', 'subcategories', 'conditions', 'year_range', 'price_range' );
 }
 
 /**
@@ -489,9 +537,10 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
     $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
 
     $filters = array(
-        'category'  => array_map( 'sanitize_text_field', (array) ( $_GET['category']  ?? [] ) ),
-        'make'      => array_map( 'sanitize_text_field', (array) ( $_GET['make']      ?? [] ) ),
-        'condition' => array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? [] ) ),
+        'category'    => array_map( 'sanitize_text_field', (array) ( $_GET['category']    ?? [] ) ),
+        'subcategory' => array_map( 'sanitize_text_field', (array) ( $_GET['subcategory'] ?? [] ) ),
+        'make'        => array_map( 'sanitize_text_field', (array) ( $_GET['make']        ?? [] ) ),
+        'condition'   => array_map( 'sanitize_text_field', (array) ( $_GET['condition']   ?? [] ) ),
     );
 
     foreach ( $filters as $key => $vals ) {

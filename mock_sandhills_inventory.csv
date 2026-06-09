@@ -1,0 +1,5 @@
+ControlNumber,StockNumber,SerialNumber,Year,Manufacturer,Model,Category,Price,Description,PhotoURLs
+1001,M1234,M1234-SER,2022,Mahindra,2638 HST,Tractors - Less than 40 HP,19500,Excellent condition compact utility tractor. Loaded with features.,https://images.unsplash.com/photo-1594495894542-a46cc73e081a http://example.com/pic2.jpg
+1002,D9988,D9988-SER,,Big Tex,14LP,Dump Trailers,12400,Heavy duty dump trailer with ramps and tarp.,https://images.unsplash.com/photo-1594495894542-a46cc73e081a
+1003,FE887,FE887-SER,,,Hay bale feeder,Attachments / Implements,850,Custom fabricated round bale hay feeder. Heavy steel construction.,
+1004,T4432,T4432-SER,2021,,,Utility Trailers - Open,2400,Single axle open utility trailer with gate.,http://example.com/utility1.jpg

@@ -28,7 +28,9 @@ if (!$seo) {
 }
 
 // 2. Build Query
-$filter_data = varner_get_filter_data();
+$segment_categories = $seo['filter']['category'] ?? array();
+$selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
+$filter_data = varner_get_filter_data( $segment_categories, $selected_categories );
 $base_meta = array();
 
 // Apply the hard-coded segment filters (e.g. category => Tractors)

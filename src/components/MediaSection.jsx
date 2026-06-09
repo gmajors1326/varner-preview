@@ -14,7 +14,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, X, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon, X, Plus, Loader2 } from 'lucide-react';
 
 export const MiniCarousel = ({ images = [], alt = '' }) => {
   const [idx, setIdx] = useState(0);
@@ -106,7 +106,7 @@ export const SortableImage = ({ img, i, onRemove }) => {
   );
 };
 
-export const MediaSection = ({ title, images, onAddFiles, onRemove, onReorder }) => {
+export const MediaSection = ({ title, images, onAddFiles, onRemove, onReorder, isUploading }) => {
   const ref = useRef(null);
   
   const sensors = useSensors(
@@ -165,13 +165,13 @@ export const MediaSection = ({ title, images, onAddFiles, onRemove, onReorder })
           </SortableContext>
           
           <div 
-            onClick={() => ref.current?.click()} 
-            className="aspect-[4/3] border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50/20 transition-all cursor-pointer bg-white group"
+            onClick={() => !isUploading && ref.current?.click()} 
+            className={`aspect-[4/3] border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center transition-all bg-white group ${isUploading ? 'cursor-not-allowed text-slate-300 opacity-60' : 'text-slate-300 hover:text-red-600 hover:bg-red-50/20 cursor-pointer'}`}
           >
-            <div className="bg-white p-3 rounded-full shadow-lg mb-2 border border-slate-50 group-hover:scale-110 transition-transform">
-              <Plus size={28}/>
+            <div className="bg-white p-3 rounded-full shadow-lg mb-2 border border-slate-50 group-hover:scale-110 transition-transform flex items-center justify-center">
+              {isUploading ? <Loader2 className="animate-spin text-red-600" size={28} /> : <Plus size={28}/>}
             </div>
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Add Images</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em]">{isUploading ? 'Uploading...' : 'Add Images'}</span>
           </div>
         </div>
       </DndContext>
