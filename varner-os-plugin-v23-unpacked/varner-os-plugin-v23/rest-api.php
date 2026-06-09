@@ -1,0 +1,1012 @@
+<?php
+/**
+ * Varner OS — REST API Routes & Handlers
+ *
+ * All /varner/v1/* endpoints, mobile auth filters, session tracking,
+ * video management, and settings API.
+ */
+
+defined('ABSPATH') || exit;
+
+// ─── 1. ROUTE REGISTRATION ───────────────────────────────────────────────────
+
+add_action('rest_api_init', 'varner_register_rest_routes');
+function varner_register_rest_routes(): void {
+    $ns   = 'varner/v1';
+    $auth = function (): bool { return current_user_can('edit_posts'); };
+
+    register_rest_route($ns, '/inventory', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_inventory',  'permission_callback' => '__return_true'),
+        array('methods' => 'POST', 'callback' => 'varner_api_create_unit',    'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/inventory/deleted', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_deleted',
+        'permission_callback' => $auth,
+    ));
+    register_rest_route($ns, '/inventory/(?P<id>\d+)', array(
+        array('methods' => 'PATCH',  'callback' => 'varner_api_update_unit',   'permission_callback' => $auth),
+        array('methods' => 'DELETE', 'callback' => 'varner_api_soft_delete',   'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/inventory/(?P<id>\d+)/restore', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_restore_unit',
+        'permission_callback' => $auth,
+    ));
+    register_rest_route($ns, '/inventory/(?P<id>\d+)/permanent', array(
+        'methods'             => 'DELETE',
+        'callback'            => 'varner_api_permanent_delete',
+        'permission_callback' => $auth,
+    ));
+    register_rest_route($ns, '/inventory/(?P<id>\d+)/ledger', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_ledger',
+        'permission_callback' => $auth,
+    ));
+
+    register_rest_route($ns, '/media', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_upload_media',
+        'permission_callback' => $auth,
+    ));
+
+    register_rest_route($ns, '/brands', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_brands',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_brands', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/categories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_categories', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/subcategories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_subcategories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_subcategories', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/sub-subcategories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_sub_subcategories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_sub_subcategories', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/videos', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_videos',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_create_video', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/videos/(?P<id>\d+)', array(
+        array('methods' => 'PATCH',  'callback' => 'varner_api_update_video', 'permission_callback' => $auth),
+        array('methods' => 'DELETE', 'callback' => 'varner_api_delete_video', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/video-categories', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_video_categories',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_create_video_category', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/video-categories/(?P<id>\d+)', array(
+        array('methods' => 'DELETE', 'callback' => 'varner_api_delete_video_category', 'permission_callback' => $auth),
+    ));
+
+    register_rest_route($ns, '/sessions', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_sessions',
+        'permission_callback' => function (): bool { return current_user_can('manage_options'); },
+    ));
+    register_rest_route($ns, '/ledger', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_global_ledger',
+        'permission_callback' => function (): bool { return current_user_can('manage_options'); },
+    ));
+
+    register_rest_route($ns, '/me', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_me',
+        'permission_callback' => 'is_user_logged_in',
+    ));
+    register_rest_route($ns, '/logout', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_logout',
+        'permission_callback' => 'is_user_logged_in',
+    ));
+    register_rest_route($ns, '/mobile/token', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_generate_mobile_token',
+        'permission_callback' => $auth,
+    ));
+
+    register_rest_route($ns, '/settings', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_settings',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_settings', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/settings/preview', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_save_preview_settings',
+        'permission_callback' => $auth,
+    ));
+}
+
+// ─── 2. TAXONOMY HANDLERS ────────────────────────────────────────────────────
+
+function varner_api_get_brands(): WP_REST_Response {
+    $default = array(
+        'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson',
+        'Brush Chief', 'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman',
+        'Deutz Fahr', 'Donahue', 'Enorossi', 'Hackett', 'Interstate', 'Krone',
+        'Legend', 'Macdon', 'Mahindra', 'Maschio', 'Massey Ferguson', 'Maxon',
+        'McHale', 'MK Martin', 'RC Trailers', 'Speeco', 'Tar River', 'Tidenberg',
+        'Titan MFG', 'Triton', 'TYM', 'Worksaver',
+    );
+    return rest_ensure_response(get_option('varner_brands', $default));
+}
+
+function varner_api_save_list(string $param, string $option, WP_REST_Request $request): WP_REST_Response {
+    $payload = $request->get_json_params();
+    if (!is_array($payload)) {
+        $payload = array();
+    }
+
+    $raw_items = $request->get_param($param);
+
+    if (null === $raw_items) {
+        $singular = rtrim($param, 's');
+        foreach (array($singular, 'item', 'name', 'value') as $alt_key) {
+            if ($request->get_param($alt_key) !== null) {
+                $raw_items = $request->get_param($alt_key);
+                break;
+            }
+            if (array_key_exists($alt_key, $payload)) {
+                $raw_items = $payload[$alt_key];
+                break;
+            }
+        }
+    }
+
+    if (is_string($raw_items)) {
+        $existing = get_option($option, array());
+        if (!is_array($existing)) {
+            $existing = array();
+        }
+        $raw_items = array_merge($existing, array($raw_items));
+    }
+
+    $items = array_values(array_unique(array_filter(array_map('sanitize_text_field', (array) $raw_items))));
+    sort($items);
+    update_option($option, $items);
+    return rest_ensure_response($items);
+}
+
+function varner_api_save_brands(WP_REST_Request $r): WP_REST_Response {
+    delete_transient('varner_brand_counts');
+    return varner_api_save_list('brands', 'varner_brands', $r);
+}
+
+function varner_api_get_categories(): WP_REST_Response {
+    $default = array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements');
+    return rest_ensure_response(get_option('varner_categories', $default));
+}
+
+function varner_api_save_categories(WP_REST_Request $r): WP_REST_Response {
+    return varner_api_save_list('categories', 'varner_categories', $r);
+}
+
+function varner_api_get_subcategories(): WP_REST_Response {
+    return rest_ensure_response(get_option('varner_subcategories', array()));
+}
+
+function varner_api_save_subcategories(WP_REST_Request $r): WP_REST_Response {
+    return varner_api_save_list('subcategories', 'varner_subcategories', $r);
+}
+
+function varner_api_get_sub_subcategories(): WP_REST_Response {
+    return rest_ensure_response(get_option('varner_sub_subcategories', array()));
+}
+
+function varner_api_save_sub_subcategories(WP_REST_Request $r): WP_REST_Response {
+    return varner_api_save_list('sub-subcategories', 'varner_sub_subcategories', $r);
+}
+
+// ─── 3. INVENTORY CRUD ───────────────────────────────────────────────────────
+
+/**
+ * GET /varner/v1/inventory
+ *
+ * Returns flat array (backward compatible). Pass ?per_page=N&page=N
+ * for paginated { items, total, page, per_page }.
+ */
+function varner_api_get_inventory(WP_REST_Request $request) {
+    $page     = max(1, intval($request->get_param('page') ?: 1));
+    $per_page = intval($request->get_param('per_page') ?: -1);
+    $paginate = $per_page > 0;
+
+    $args = array(
+        'post_type'      => 'equipment',
+        'post_status'    => current_user_can('edit_posts') ? array('publish', 'draft') : 'publish',
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+    );
+
+    if (!current_user_can('edit_posts')) {
+        $args['meta_query'] = array(
+            'relation' => 'OR',
+            array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
+            array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
+        );
+    }
+
+    if ($paginate) {
+        $args['posts_per_page'] = min(100, $per_page);
+        $args['paged']          = $page;
+    } else {
+        $args['posts_per_page'] = -1;
+    }
+
+    $query = new WP_Query($args);
+    $items = array_map(function (WP_Post $p): array {
+        return varner_format_unit($p->ID);
+    }, $query->posts);
+
+    if ($paginate) {
+        return rest_ensure_response(array(
+            'items'    => $items,
+            'total'    => intval($query->found_posts),
+            'page'     => $page,
+            'per_page' => $per_page,
+        ));
+    }
+
+    return rest_ensure_response($items);
+}
+
+function varner_api_get_deleted(): WP_REST_Response {
+    $posts = get_posts(array(
+        'post_type'      => 'equipment',
+        'post_status'    => 'trash',
+        'posts_per_page' => -1,
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+    ));
+    return rest_ensure_response(array_map(function (WP_Post $p): array {
+        return varner_format_unit($p->ID);
+    }, $posts));
+}
+
+function varner_api_create_unit(WP_REST_Request $request) {
+    $data    = $request->get_json_params();
+    $status  = (isset($data['stock_status']) && $data['stock_status'] === 'Draft') ? 'draft' : 'publish';
+    $post_id = wp_insert_post(array(
+        'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Unit'),
+        'post_type'   => 'equipment',
+        'post_status' => $status,
+    ));
+    if (is_wp_error($post_id)) {
+        return new WP_Error('create_failed', $post_id->get_error_message(), array('status' => 500));
+    }
+    varner_save_unit_fields($post_id, $data);
+    $unit = varner_format_unit($post_id);
+
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'create', 'created unit', array('after' => $unit), $rid);
+
+    return rest_ensure_response($unit);
+}
+
+function varner_api_update_unit(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    $data    = $request->get_json_params();
+    if (!get_post($post_id)) {
+        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    }
+    $before = varner_format_unit($post_id);
+
+    $post_updates = array('ID' => $post_id);
+    if (isset($data['title'])) {
+        $post_updates['post_title'] = sanitize_text_field($data['title']);
+    }
+    if (isset($data['stock_status'])) {
+        $post_updates['post_status'] = ($data['stock_status'] === 'Draft') ? 'draft' : 'publish';
+    }
+    if (count($post_updates) > 1) {
+        wp_update_post($post_updates);
+    }
+
+    varner_save_unit_fields($post_id, $data);
+    $after = varner_format_unit($post_id);
+
+    $diff    = varner_os_diff_unit($before ?: array(), $after ?: array());
+    $summary = $before ? varner_os_diff_summary($diff) : 'updated unit';
+    $rid     = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'update', $summary, array('diff' => $diff, 'before' => $before, 'after' => $after), $rid);
+
+    return rest_ensure_response($after);
+}
+
+function varner_api_soft_delete(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    if (!get_post($post_id)) {
+        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    }
+    update_post_meta($post_id, '_varner_deleted_at', current_time('c'));
+    wp_trash_post($post_id);
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'delete', 'soft delete', array('deleted_at' => current_time('mysql')), $rid);
+    return rest_ensure_response(array('success' => true, 'id' => $post_id));
+}
+
+function varner_api_restore_unit(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    wp_untrash_post($post_id);
+    wp_update_post(array('ID' => $post_id, 'post_status' => 'publish'));
+    delete_post_meta($post_id, '_varner_deleted_at');
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'restore', 'restore unit', array(), $rid);
+    return rest_ensure_response(varner_format_unit($post_id));
+}
+
+function varner_api_permanent_delete(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    wp_delete_post($post_id, true);
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger($post_id, 'permanent_delete', 'permanent delete', array(), $rid);
+    return rest_ensure_response(array('success' => true, 'id' => $post_id));
+}
+
+// ─── 4. MEDIA ─────────────────────────────────────────────────────────────────
+
+function varner_api_upload_media(WP_REST_Request $request) {
+    if (empty($_FILES['file'])) {
+        return new WP_Error('no_file', 'No file uploaded.', array('status' => 400));
+    }
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+
+    $attachment_id = media_handle_upload('file', 0);
+    if (is_wp_error($attachment_id)) {
+        return new WP_Error('upload_failed', $attachment_id->get_error_message(), array('status' => 500));
+    }
+    return rest_ensure_response(array(
+        'id'  => $attachment_id,
+        'url' => wp_get_attachment_url($attachment_id),
+    ));
+}
+
+// ─── 5. LEDGER ───────────────────────────────────────────────────────────────
+
+function varner_api_get_ledger(WP_REST_Request $request) {
+    global $wpdb;
+    $post_id = intval($request->get_param('id'));
+    $post    = get_post($post_id);
+    if (!$post || $post->post_type !== 'equipment') {
+        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    }
+
+    $page     = max(1, intval($request->get_param('page') ?: 1));
+    $per_page = min(50, max(1, intval($request->get_param('per_page') ?: 20)));
+    $offset   = ($page - 1) * $per_page;
+
+    $table = $wpdb->prefix . 'varner_inventory_ledger';
+
+    $items = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, action, user_id, display_name, initials, summary, details, request_id, created_at FROM {$table} WHERE post_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
+        $post_id,
+        $per_page,
+        $offset
+    ), ARRAY_A);
+
+    $total = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE post_id = %d", $post_id));
+
+    return rest_ensure_response(array(
+        'items'    => $items,
+        'total'    => intval($total),
+        'page'     => $page,
+        'per_page' => $per_page,
+    ));
+}
+
+// ─── 6. SESSIONS ─────────────────────────────────────────────────────────────
+
+function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_user_sessions';
+
+    $active_sessions = $wpdb->get_results("SELECT id, user_id, session_token, login_at, last_activity_at FROM {$table} WHERE logout_at IS NULL");
+
+    if ($active_sessions) {
+        foreach ($active_sessions as $sess) {
+            $is_valid          = true;
+            $reason            = 'expired';
+            $is_mobile_token   = strlen($sess->session_token) === 16 && ctype_xdigit($sess->session_token);
+
+            if (empty($sess->session_token)) {
+                $is_valid = false;
+                $reason   = 'expired';
+            } elseif ($is_mobile_token) {
+                $stored_user_id = get_transient('varner_mobile_token_' . $sess->session_token);
+                if (!$stored_user_id) {
+                    $is_valid = false;
+                    $reason   = 'expired';
+                } else {
+                    $now      = current_time('timestamp');
+                    $last_act = $sess->last_activity_at ? strtotime($sess->last_activity_at) : strtotime($sess->login_at);
+                    if ($now - $last_act > 1800) {
+                        $is_valid = false;
+                        $reason   = 'timeout';
+                        delete_transient('varner_mobile_token_' . $sess->session_token);
+                    }
+                }
+            } else {
+                $manager  = WP_Session_Tokens::get_instance($sess->user_id);
+                if (!$manager->verify($sess->session_token)) {
+                    $is_valid = false;
+                    $reason   = 'expired';
+                } else {
+                    $now      = current_time('timestamp');
+                    $last_act = $sess->last_activity_at ? strtotime($sess->last_activity_at) : strtotime($sess->login_at);
+                    if ($now - $last_act > 7200) {
+                        $is_valid = false;
+                        $reason   = 'timeout';
+                        $manager->destroy($sess->session_token);
+                    }
+                }
+            }
+
+            if (!$is_valid) {
+                $wpdb->update(
+                    $table,
+                    array('logout_at' => current_time('mysql'), 'ended_reason' => $reason),
+                    array('id' => $sess->id),
+                    array('%s', '%s'),
+                    array('%d')
+                );
+            }
+        }
+    }
+
+    $active_only = filter_var($request->get_param('active_only'), FILTER_VALIDATE_BOOLEAN);
+    $user_id     = intval($request->get_param('user_id'));
+    $page        = max(1, intval($request->get_param('page') ?: 1));
+    $per_page    = min(100, max(1, intval($request->get_param('per_page') ?: 20)));
+    $offset      = ($page - 1) * $per_page;
+
+    $wheres = array();
+    $params = array();
+    if ($active_only) {
+        $wheres[] = 'logout_at IS NULL';
+    }
+    if ($user_id > 0) {
+        $wheres[] = 'user_id = %d';
+        $params[] = $user_id;
+    }
+    $where_sql = $wheres ? 'WHERE ' . implode(' AND ', $wheres) : '';
+
+    $sql   = "SELECT id, user_id, session_token, login_at, logout_at, last_activity_at, ip, user_agent, ended_reason FROM {$table} {$where_sql} ORDER BY login_at DESC LIMIT %d OFFSET %d";
+    $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
+
+    $count_sql = "SELECT COUNT(*) FROM {$table} {$where_sql}";
+    $total     = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
+
+    foreach ($items as &$row) {
+        $u                  = $row['user_id'] ? get_user_by('id', $row['user_id']) : null;
+        $row['display_name'] = $u ? $u->display_name : '';
+        $row['initials']     = $u ? varner_os_user_initials($u) : '';
+    }
+
+    return rest_ensure_response(array(
+        'items'    => $items,
+        'total'    => intval($total),
+        'page'     => $page,
+        'per_page' => $per_page,
+    ));
+}
+
+function varner_api_get_global_ledger(WP_REST_Request $request): WP_REST_Response {
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_inventory_ledger';
+
+    $page     = max(1, intval($request->get_param('page') ?: 1));
+    $per_page = min(100, max(1, intval($request->get_param('per_page') ?: 20)));
+    $offset   = ($page - 1) * $per_page;
+
+    $wheres = array();
+    $params = array();
+
+    $action = sanitize_text_field($request->get_param('action'));
+    if ($action) {
+        $wheres[] = 'l.action = %s';
+        $params[] = $action;
+    }
+
+    $user_id = intval($request->get_param('user_id'));
+    if ($user_id > 0) {
+        $wheres[] = 'l.user_id = %d';
+        $params[] = $user_id;
+    }
+
+    $where_sql = $wheres ? 'WHERE ' . implode(' AND ', $wheres) : '';
+
+    $sql   = "SELECT l.id, l.post_id, l.action, l.user_id, l.display_name, l.initials, l.summary, l.details, l.request_id, l.created_at, p.post_title 
+              FROM {$table} l 
+              LEFT JOIN {$wpdb->posts} p ON l.post_id = p.ID 
+              {$where_sql} 
+              ORDER BY l.created_at DESC 
+              LIMIT %d OFFSET %d";
+    $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
+
+    $count_sql = "SELECT COUNT(*) FROM {$table} l {$where_sql}";
+    $total     = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
+
+    foreach ($items as &$row) {
+        if ($row['details']) {
+            $row['details'] = json_decode($row['details'], true);
+        }
+        if (empty($row['post_title']) && $row['post_id'] > 0) {
+            $stock = get_post_meta($row['post_id'], '_stock_number', true);
+            if ($stock) {
+                $row['post_title'] = 'Unit Stock #' . $stock;
+            } else {
+                $row['post_title'] = 'Deleted Unit (ID #' . $row['post_id'] . ')';
+            }
+        }
+    }
+
+    return rest_ensure_response(array(
+        'items'    => $items,
+        'total'    => intval($total),
+        'page'     => $page,
+        'per_page' => $per_page,
+    ));
+}
+
+// ─── 7. AUTH / USER ──────────────────────────────────────────────────────────
+
+function varner_api_me() {
+    $user = wp_get_current_user();
+    if (!$user || !$user->exists()) {
+        return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
+    }
+
+    return rest_ensure_response(array(
+        'id'           => $user->ID,
+        'display_name' => $user->display_name,
+        'first_name'   => $user->first_name,
+        'last_name'    => $user->last_name,
+        'initials'     => varner_os_user_initials($user),
+        'roles'        => array_values($user->roles),
+    ));
+}
+
+function varner_api_logout() {
+    if (!is_user_logged_in()) {
+        return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
+    }
+
+    if (function_exists('varner_os_record_logout')) {
+        varner_os_record_logout();
+    }
+
+    wp_logout();
+    return rest_ensure_response(array('success' => true));
+}
+
+// ─── 8. SETTINGS ─────────────────────────────────────────────────────────────
+
+function _varner_sanitize_settings_data(array $params, array $defaults): array {
+    $sanitized = array();
+
+    foreach ($defaults as $key => $default_val) {
+        if (!isset($params[$key])) {
+            $sanitized[$key] = $default_val;
+            continue;
+        }
+
+        if ($key === 'employment_jobs') {
+            $jobs = array();
+            if (is_array($params[$key])) {
+                foreach ($params[$key] as $job) {
+                    if (!is_array($job)) continue;
+                    $jobs[] = array(
+                        'job_title'       => sanitize_text_field($job['job_title'] ?? ''),
+                        'job_type'        => sanitize_text_field($job['job_type'] ?? 'Full-Time'),
+                        'job_location'    => sanitize_text_field($job['job_location'] ?? 'Delta, CO'),
+                        'job_description' => sanitize_textarea_field($job['job_description'] ?? ''),
+                        'job_show_badge'  => filter_var($job['job_show_badge'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'job_badge_text'  => sanitize_text_field($job['job_badge_text'] ?? ''),
+                    );
+                }
+            }
+            $sanitized[$key] = $jobs;
+        } elseif ($key === 'social_custom_links') {
+            $links = array();
+            if (is_array($params[$key])) {
+                foreach ($params[$key] as $link) {
+                    if (!is_array($link)) continue;
+                    $links[] = array(
+                        'platform' => sanitize_text_field($link['platform'] ?? 'custom'),
+                        'url'      => esc_url_raw($link['url'] ?? ''),
+                        'label'    => sanitize_text_field($link['label'] ?? ''),
+                    );
+                }
+            }
+            $sanitized[$key] = $links;
+        } elseif (is_array($default_val)) {
+            $sanitized[$key] = array_map('sanitize_text_field', (array) $params[$key]);
+        } elseif (is_bool($default_val)) {
+            $sanitized[$key] = (bool) $params[$key];
+        } else {
+            $html_fields = array('hero_title', 'hero_subtitle', 'youtube_title', 'youtube_paragraph', 'cta_title', 'cta_text', 'employment_intro');
+            if (in_array($key, $html_fields, true)) {
+                $sanitized[$key] = wp_kses_post($params[$key]);
+            } else {
+                $sanitized[$key] = sanitize_text_field($params[$key]);
+            }
+        }
+    }
+
+    return $sanitized;
+}
+
+function varner_api_get_settings(): WP_REST_Response {
+    $settings = get_option('varner_theme_settings', array());
+    $defaults = varner_backend_get_settings_defaults();
+
+    $merged = array();
+    foreach ($defaults as $key => $default_val) {
+        $merged[$key] = isset($settings[$key]) ? $settings[$key] : $default_val;
+    }
+
+    return rest_ensure_response($merged);
+}
+
+function varner_api_save_settings(WP_REST_Request $request) {
+    $params    = $request->get_json_params();
+    if (!is_array($params)) {
+        return new WP_Error('invalid_data', 'Invalid settings data', array('status' => 400));
+    }
+
+    $sanitized = _varner_sanitize_settings_data($params, varner_backend_get_settings_defaults());
+    update_option('varner_theme_settings', $sanitized);
+    return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
+}
+
+function varner_api_save_preview_settings(WP_REST_Request $request) {
+    $params    = $request->get_json_params();
+    if (!is_array($params)) {
+        return new WP_Error('invalid_data', 'Invalid settings data', array('status' => 400));
+    }
+
+    $sanitized = _varner_sanitize_settings_data($params, varner_backend_get_settings_defaults());
+    update_option('varner_theme_settings_preview', $sanitized);
+    return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
+}
+
+// ─── 9. MOBILE TOKEN ─────────────────────────────────────────────────────────
+
+function varner_api_generate_mobile_token() {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
+    }
+
+    $token = strtoupper(bin2hex(random_bytes(8)));
+    set_transient('varner_mobile_token_' . $token, $user_id, 1800);
+
+    $site_url    = site_url();
+    $path_prefix = parse_url($site_url, PHP_URL_PATH);
+    $path_prefix = $path_prefix ? '/' . trim($path_prefix, '/') : '';
+    $is_https    = is_ssl() || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    $protocol    = $is_https ? 'https://' : 'http://';
+    $host        = $_SERVER['HTTP_HOST'] ?? 'varnerequipment.com';
+    $url         = $protocol . $host . $path_prefix . '/mobile-app/?token=' . $token;
+
+    return rest_ensure_response(array(
+        'token'      => $token,
+        'expires_in' => 1800,
+        'url'        => $url,
+    ));
+}
+
+// ─── 10. MOBILE AUTH FILTERS ─────────────────────────────────────────────────
+
+add_filter('rest_authentication_errors', function ($result) {
+    $token = '';
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token = sanitize_text_field($matches[1]);
+    }
+    if ($token && get_transient('varner_mobile_token_' . $token)) {
+        return true;
+    }
+    return $result;
+}, 9);
+
+add_filter('determine_current_user', 'varner_authenticate_mobile_token', 15);
+function varner_authenticate_mobile_token(int $user_id): int {
+    if ($user_id) {
+        return $user_id;
+    }
+
+    $token = '';
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token = sanitize_text_field($matches[1]);
+    } elseif (isset($_GET['mobile_token'])) {
+        $token = sanitize_text_field(wp_unslash($_GET['mobile_token']));
+    }
+
+    if (empty($token)) {
+        return $user_id;
+    }
+
+    $stored_user_id = get_transient('varner_mobile_token_' . $token);
+    if ($stored_user_id) {
+        set_transient('varner_mobile_token_' . $token, $stored_user_id, 1800);
+        return intval($stored_user_id);
+    }
+
+    return $user_id;
+}
+
+// ─── 11. SESSION ACTIVITY TRACKER ────────────────────────────────────────────
+
+add_action('init', 'varner_update_session_activity');
+function varner_update_session_activity(): void {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_user_sessions';
+
+    $token     = '';
+    $is_mobile = false;
+
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token     = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
+        $is_mobile = true;
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token     = sanitize_text_field($matches[1]);
+        $is_mobile = true;
+    } elseif (isset($_GET['mobile_token'])) {
+        $token     = sanitize_text_field(wp_unslash($_GET['mobile_token']));
+        $is_mobile = true;
+    }
+
+    if (empty($token)) {
+        $token = wp_get_session_token();
+    }
+
+    if (empty($token)) {
+        return;
+    }
+
+    $session = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, last_activity_at, logout_at FROM {$table} WHERE session_token = %s",
+        $token
+    ));
+
+    $ip    = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+    $agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
+
+    if ($session) {
+        if ($session->logout_at !== null) {
+            $wpdb->update(
+                $table,
+                array('logout_at' => null, 'ended_reason' => null, 'last_activity_at' => current_time('mysql')),
+                array('id' => $session->id),
+                array('%s', '%s', '%s'),
+                array('%d')
+            );
+        } else {
+            $now      = current_time('timestamp');
+            $last_act = $session->last_activity_at ? strtotime($session->last_activity_at) : 0;
+            if ($now - $last_act > 60) {
+                $wpdb->update(
+                    $table,
+                    array('last_activity_at' => current_time('mysql')),
+                    array('id' => $session->id),
+                    array('%s'),
+                    array('%d')
+                );
+            }
+        }
+    } else {
+        if ($is_mobile) {
+            $active_mobile = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, session_token FROM {$table} WHERE user_id = %d AND logout_at IS NULL AND session_token != %s",
+                $user_id,
+                $token
+            ));
+
+            foreach ($active_mobile as $old_sess) {
+                if (strlen($old_sess->session_token) === 16 && ctype_xdigit($old_sess->session_token)) {
+                    $wpdb->update(
+                        $table,
+                        array('logout_at' => current_time('mysql'), 'ended_reason' => 'superseded'),
+                        array('id' => $old_sess->id),
+                        array('%s', '%s'),
+                        array('%d')
+                    );
+                    delete_transient('varner_mobile_token_' . $old_sess->session_token);
+                }
+            }
+        }
+
+        $wpdb->insert(
+            $table,
+            array(
+                'user_id'          => $user_id,
+                'session_token'    => $token,
+                'login_at'         => current_time('mysql'),
+                'last_activity_at' => current_time('mysql'),
+                'ip'               => $ip,
+                'user_agent'       => $agent,
+            ),
+            array('%d', '%s', '%s', '%s', '%s', '%s')
+        );
+    }
+}
+
+// ─── 12. VIDEOS ──────────────────────────────────────────────────────────────
+
+function varner_extract_youtube_url(string $embed_html): string {
+    if (preg_match('/src="([^"]+)"/', $embed_html, $match)) {
+        $src = $match[1];
+        if (preg_match('/embed\/([^?&"]+)/', $src, $id_match)) {
+            return 'https://www.youtube.com/watch?v=' . $id_match[1];
+        }
+        return $src;
+    }
+    return $embed_html;
+}
+
+function varner_get_youtube_embed_html(string $url): string {
+    if (strpos($url, '<iframe') !== false) {
+        return $url;
+    }
+
+    $video_id = '';
+    if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|win/.+/|shorte.t/.+/|user/.+/|embed/|vne/)|youtu\.be/)([^"&?/ ]{11})%i', $url, $match)) {
+        $video_id = $match[1];
+    }
+
+    if ($video_id) {
+        return '<iframe width="560" height="315" src="https://www.youtube.com/embed/' . esc_attr($video_id) . '" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+    }
+
+    return $url;
+}
+
+function varner_save_video_fields(int $post_id, string $youtube_url, int $category_id): void {
+    $embed_html = varner_get_youtube_embed_html($youtube_url);
+    if (function_exists('update_field')) {
+        update_field('youtube_link', $embed_html, $post_id);
+    } else {
+        update_post_meta($post_id, 'youtube_link', $embed_html);
+    }
+
+    if ($category_id) {
+        wp_set_post_terms($post_id, array($category_id), 'video_category');
+    } else {
+        wp_set_post_terms($post_id, array(), 'video_category');
+    }
+}
+
+function varner_api_get_videos(): WP_REST_Response {
+    $posts = get_posts(array(
+        'post_type'      => 'video',
+        'post_status'    => 'publish',
+        'posts_per_page' => -1,
+    ));
+
+    $videos = array();
+    foreach ($posts as $p) {
+        $cats     = wp_get_post_terms($p->ID, 'video_category');
+        $cat_id   = !empty($cats) ? $cats[0]->term_id : 0;
+        $cat_name = !empty($cats) ? $cats[0]->name : 'Uncategorized';
+
+        $videos[] = array(
+            'id'            => $p->ID,
+            'title'         => $p->post_title,
+            'youtube_link'  => varner_extract_youtube_url(
+                get_post_meta($p->ID, 'youtube_link', true)
+                ?: (function_exists('get_field') ? get_field('youtube_link', $p->ID) : '')
+            ),
+            'category_id'   => $cat_id,
+            'category_name' => $cat_name,
+        );
+    }
+    return rest_ensure_response($videos);
+}
+
+function varner_api_create_video(WP_REST_Request $request) {
+    $data    = $request->get_json_params();
+    $post_id = wp_insert_post(array(
+        'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Video'),
+        'post_type'   => 'video',
+        'post_status' => 'publish',
+    ));
+    if (is_wp_error($post_id)) {
+        return new WP_Error('create_failed', $post_id->get_error_message(), array('status' => 500));
+    }
+
+    $youtube_link = sanitize_text_field($data['youtube_link'] ?? '');
+    $category_id  = intval($data['category_id'] ?? 0);
+    varner_save_video_fields($post_id, $youtube_link, $category_id);
+
+    return rest_ensure_response(array('success' => true, 'id' => $post_id));
+}
+
+function varner_api_update_video(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    $data    = $request->get_json_params();
+    if (!get_post($post_id)) {
+        return new WP_Error('not_found', 'Video not found.', array('status' => 404));
+    }
+
+    $update_args = array('ID' => $post_id);
+    if (isset($data['title'])) {
+        $update_args['post_title'] = sanitize_text_field($data['title']);
+    }
+    wp_update_post($update_args);
+
+    $youtube_link = sanitize_text_field($data['youtube_link'] ?? '');
+    $category_id  = intval($data['category_id'] ?? 0);
+    varner_save_video_fields($post_id, $youtube_link, $category_id);
+
+    return rest_ensure_response(array('success' => true));
+}
+
+function varner_api_delete_video(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    if (!get_post($post_id)) {
+        return new WP_Error('not_found', 'Video not found.', array('status' => 404));
+    }
+    wp_delete_post($post_id, true);
+    return rest_ensure_response(array('success' => true));
+}
+
+function varner_api_get_video_categories() {
+    $terms = get_terms(array(
+        'taxonomy'   => 'video_category',
+        'hide_empty' => false,
+    ));
+    if (is_wp_error($terms)) {
+        return new WP_Error('terms_failed', $terms->get_error_message(), array('status' => 500));
+    }
+
+    $categories = array();
+    foreach ($terms as $t) {
+        $categories[] = array(
+            'id'          => $t->term_id,
+            'name'        => $t->name,
+            'slug'        => $t->slug,
+            'description' => $t->description,
+        );
+    }
+    return rest_ensure_response($categories);
+}
+
+function varner_api_create_video_category(WP_REST_Request $request) {
+    $data = $request->get_json_params();
+    $name = sanitize_text_field($data['name'] ?? '');
+    if (empty($name)) {
+        return new WP_Error('missing_name', 'Category name is required.', array('status' => 400));
+    }
+
+    $term = wp_insert_term($name, 'video_category', array(
+        'description' => sanitize_text_field($data['description'] ?? ''),
+    ));
+    if (is_wp_error($term)) {
+        return new WP_Error('insert_failed', $term->get_error_message(), array('status' => 500));
+    }
+
+    return rest_ensure_response(array('success' => true, 'id' => $term['term_id']));
+}
+
+function varner_api_delete_video_category(WP_REST_Request $request) {
+    $term_id = intval($request->get_param('id'));
+    $result  = wp_delete_term($term_id, 'video_category');
+    if (is_wp_error($result)) {
+        return new WP_Error('delete_failed', $result->get_error_message(), array('status' => 500));
+    }
+    return rest_ensure_response(array('success' => true));
+}
