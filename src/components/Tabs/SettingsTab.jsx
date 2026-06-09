@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Sparkles, Image as ImageIcon, Loader2, Upload, Trash2, Mail, Clock, Plus,
   Briefcase, ChevronUp, ChevronDown, Save
@@ -61,6 +61,8 @@ export const SettingsTab = ({ showToast }) => {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   const thumbnailInputRef = useRef(null);
 
+  const iframeRef = useRef(null);
+
   const [openSections, setOpenSections] = useState({
     hero: false,
     support: false,
@@ -71,11 +73,33 @@ export const SettingsTab = ({ showToast }) => {
     careers: false,
   });
 
+  // Section key → anchor ID on the live site
+  const SECTION_ANCHORS = {
+    hero:    'hero',
+    support: 'support-hub',
+    youtube: 'youtube-section',
+    contact: 'contact',
+    hours:   'hours',
+    about:   'about',
+    careers: 'careers',
+  };
+
   const toggleSection = (key) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+    setOpenSections(prev => {
+      const isOpening = !prev[key];
+      if (isOpening && iframeRef.current) {
+        const anchor = SECTION_ANCHORS[key];
+        if (anchor) {
+          try {
+            iframeRef.current.contentWindow?.postMessage(
+              { type: 'varner_scroll_to', anchor },
+              '*'
+            );
+          } catch (e) { /* cross-origin fallback: ignore */ }
+        }
+      }
+      return { ...prev, [key]: isOpening };
+    });
   };
 
   const [previewUrl, setPreviewUrl] = useState('');
@@ -780,6 +804,7 @@ export const SettingsTab = ({ showToast }) => {
         <div className="flex-1 bg-slate-950 relative overflow-hidden">
           {previewUrl ? (
             <iframe 
+              ref={iframeRef}
               src={previewUrl} 
               className="w-full h-full border-none bg-white"
               title="Varner Equipment Site Preview"

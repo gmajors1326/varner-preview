@@ -369,6 +369,20 @@
         })();
     </script>
 
+    <script>
+        // Admin page editor: scroll preview to section when panel is opened
+        if (window !== window.top) {
+            window.addEventListener('message', function(e) {
+                if (!e.data || e.data.type !== 'varner_scroll_to') return;
+                var anchor = e.data.anchor;
+                var el = document.getElementById(anchor);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+    </script>
+
     <?php wp_footer(); ?>
 </body>
 </html>
