@@ -11,6 +11,18 @@ defined('ABSPATH') || exit;
 require_once plugin_dir_path(__FILE__) . 'varner-backend.php';
 require_once plugin_dir_path(__FILE__) . 'rest-api.php';
 
+// ─── Security Helper ─────────────────────────────────────────────────────────
+
+/**
+ * One-way hash a raw session token for safe storage in the custom sessions table.
+ * Uses HMAC-SHA256 keyed with SECURE_AUTH_KEY so the stored value cannot be
+ * reversed into a usable WP session cookie even if the table is breached.
+ */
+function varner_os_hash_session_token( string $token ): string {
+    $key = defined('SECURE_AUTH_KEY') && SECURE_AUTH_KEY ? SECURE_AUTH_KEY : wp_salt('secure_auth');
+    return hash_hmac( 'sha256', $token, $key );
+}
+
 // ─── Database Version & Auto-Upgrade ─────────────────────────────────────────
 
 define('VARNER_OS_DB_VERSION', '1.23.7');
@@ -92,7 +104,7 @@ function varner_os_record_login(string $user_login, WP_User $user): void {
         $table,
         array(
             'user_id'       => $user->ID,
-            'session_token' => $token ?: '',
+            'session_token' => $token ? varner_os_hash_session_token($token) : '',
             'login_at'      => current_time('mysql'),
             'ip'            => $ip,
             'user_agent'    => $agent,
@@ -117,9 +129,9 @@ function varner_os_record_logout(): void {
         if (preg_match('/Bearer\s+(.+)/i', $auth_header, $matches)) {
             $token = sanitize_text_field($matches[1]);
         }
-    } elseif (isset($_GET['mobile_token'])) {
-        $token = sanitize_text_field(wp_unslash($_GET['mobile_token']));
     }
+    // Note: $_GET['mobile_token'] intentionally removed — tokens must arrive via
+    // HTTP headers only. GET params appear in server logs and Referer headers.
 
     if ($token && strlen($token) === 16 && ctype_xdigit($token)) {
         delete_transient('varner_mobile_token_' . $token);
@@ -127,8 +139,9 @@ function varner_os_record_logout(): void {
         $token = wp_get_session_token();
     }
 
-    $where_sql = $token ? 'session_token = %s AND logout_at IS NULL' : 'user_id = %d AND logout_at IS NULL';
-    $param     = $token ?: $user->ID;
+    $hashed    = $token ? varner_os_hash_session_token($token) : '';
+    $where_sql = $hashed ? 'session_token = %s AND logout_at IS NULL' : 'user_id = %d AND logout_at IS NULL';
+    $param     = $hashed ?: $user->ID;
     $open_id   = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE {$where_sql} ORDER BY login_at DESC LIMIT 1", $param));
 
     if ($open_id) {
@@ -199,9 +212,8 @@ function varner_authenticate_mobile_token(int $user_id): int {
         $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
     } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
         $token = sanitize_text_field($matches[1]);
-    } elseif (isset($_GET['mobile_token'])) {
-        $token = sanitize_text_field(wp_unslash($_GET['mobile_token']));
     }
+    // Note: $_GET['mobile_token'] intentionally removed — GET params leak into logs.
 
     if (empty($token)) {
         return $user_id;
@@ -244,10 +256,8 @@ function varner_update_session_activity(): void {
     } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
         $token     = sanitize_text_field($matches[1]);
         $is_mobile = true;
-    } elseif (isset($_GET['mobile_token'])) {
-        $token     = sanitize_text_field(wp_unslash($_GET['mobile_token']));
-        $is_mobile = true;
     }
+    // Note: $_GET['mobile_token'] intentionally removed — GET params leak into logs.
 
     if (empty($token)) {
         $token = wp_get_session_token();
@@ -257,9 +267,11 @@ function varner_update_session_activity(): void {
         return;
     }
 
+    $hashed_token = varner_os_hash_session_token($token);
+
     $session = $wpdb->get_row($wpdb->prepare(
         "SELECT id, last_activity_at, logout_at FROM {$table} WHERE session_token = %s",
-        $token
+        $hashed_token
     ));
 
     $ip    = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
@@ -309,7 +321,7 @@ function varner_update_session_activity(): void {
             $table,
             array(
                 'user_id'          => $user_id,
-                'session_token'    => $token,
+                'session_token'    => varner_os_hash_session_token($token),
                 'login_at'         => current_time('mysql'),
                 'last_activity_at' => current_time('mysql'),
                 'ip'               => $ip,
@@ -817,12 +829,29 @@ self.addEventListener('fetch', (e) => {
         $css_ver = filemtime($dist_path . $css_file);
         ?><link rel="stylesheet" href="<?php echo esc_url( $dist_url . $css_file . '?ver=' . $css_ver ); ?>">
 <script>
+<?php
+// Fix 3B: Resolve handoff nonce to actual mobile token and embed it in-page.
+// The nonce is single-use (deleted after first read) with a 2-minute TTL.
+// This keeps the raw auth token out of server logs, browser history, and Referer headers.
+$mobile_token_for_page = '';
+if (!empty($_GET['handoff'])) {
+    $handoff_nonce = sanitize_text_field(wp_unslash($_GET['handoff']));
+    if (strlen($handoff_nonce) === 16 && ctype_xdigit($handoff_nonce)) {
+        $resolved = get_transient('varner_handoff_' . $handoff_nonce);
+        if ($resolved) {
+            $mobile_token_for_page = $resolved;
+            delete_transient('varner_handoff_' . $handoff_nonce); // one-time use
+        }
+    }
+}
+?>
 window.varnerData = {
     post_id: 0,
     nonce: '<?php echo wp_create_nonce('wp_rest'); ?>',
     rest_url: '<?php echo esc_url_raw(rest_url()); ?>',
     site_url: '<?php echo esc_url_raw(home_url('/')); ?>',
     is_mobile_app: true,
+    mobile_token: '<?php echo esc_js($mobile_token_for_page); ?>',
     logo_url: '<?php echo function_exists('varner_get_brand_logo_url') ? esc_url(varner_get_brand_logo_url('white')) : ''; ?>'
 };
 </script>

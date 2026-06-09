@@ -483,8 +483,11 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
                     }
                 }
             } else {
-                $manager  = WP_Session_Tokens::get_instance($sess->user_id);
-                if (!$manager->verify($sess->session_token)) {
+                // WP session: the stored token is now an HMAC hash, so we can't
+                // pass it to verify(). Instead check if the user has any valid
+                // WP sessions at all (they're the source of truth for WP auth).
+                $manager = WP_Session_Tokens::get_instance($sess->user_id);
+                if (count($manager->get_all()) === 0) {
                     $is_valid = false;
                     $reason   = 'expired';
                 } else {
@@ -493,7 +496,8 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
                     if ($now - $last_act > 7200) {
                         $is_valid = false;
                         $reason   = 'timeout';
-                        $manager->destroy($sess->session_token);
+                        // Can't call manager->destroy() without the raw token.
+                        // WP's own session expiry will clean it up.
                     }
                 }
             }
@@ -736,16 +740,38 @@ function varner_api_generate_mobile_token() {
         return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
     }
 
-    $token = strtoupper(bin2hex(random_bytes(8)));
-    set_transient('varner_mobile_token_' . $token, $user_id, 1800);
+    // Fix 4: 60-second cooldown between token generations per user.
+    $cooldown_key = 'varner_token_cooldown_' . $user_id;
+    if (get_transient($cooldown_key)) {
+        return new WP_Error('rate_limited', 'Please wait before generating another token.', array('status' => 429));
+    }
 
-    $site_url    = site_url();
-    $path_prefix = parse_url($site_url, PHP_URL_PATH);
-    $path_prefix = $path_prefix ? '/' . trim($path_prefix, '/') : '';
-    $is_https    = is_ssl() || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
-    $protocol    = $is_https ? 'https://' : 'http://';
-    $host        = $_SERVER['HTTP_HOST'] ?? 'varnerequipment.com';
-    $url         = $protocol . $host . $path_prefix . '/mobile-app/?token=' . $token;
+    // Fix 4: Max 3 active tokens per user — revoke oldest if over limit.
+    $active_key    = 'varner_active_tokens_' . $user_id;
+    $active_tokens = get_transient($active_key) ?: array();
+    // Remove any already-expired tokens from the tracking list.
+    $active_tokens = array_values(array_filter($active_tokens, function ($t) {
+        return (bool) get_transient('varner_mobile_token_' . $t);
+    }));
+    if (count($active_tokens) >= 3) {
+        $oldest = array_shift($active_tokens);
+        delete_transient('varner_mobile_token_' . $oldest);
+    }
+
+    // Generate the auth token (30-minute transient) and a one-time handoff nonce (2 minutes).
+    $token  = strtoupper(bin2hex(random_bytes(8)));  // 16-char hex mobile auth token
+    $nonce  = bin2hex(random_bytes(8));              // 16-char hex one-time handoff nonce
+    set_transient('varner_mobile_token_' . $token, $user_id, 1800);
+    set_transient('varner_handoff_' . $nonce, $token, 120); // nonce expires in 2 minutes
+
+    // Track active tokens and set cooldown.
+    $active_tokens[] = $token;
+    set_transient($active_key, $active_tokens, 1800);
+    set_transient($cooldown_key, 1, 60);
+
+    // Fix 2: Use home_url() — never $_SERVER['HTTP_HOST'] (host header injection risk).
+    // Fix 3B: Put handoff nonce in URL, NOT the raw token.
+    $url = esc_url_raw(home_url('/mobile-app/?handoff=' . $nonce));
 
     return rest_ensure_response(array(
         'token'      => $token,
