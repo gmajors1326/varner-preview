@@ -144,6 +144,8 @@ function varner_handle_chatbox_submit() {
     $msg     = sanitize_textarea_field( $_POST['message'] ?? '' );
 
     $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    $subject   = sanitize_text_field( "Chatbox Inquiry [{$dept}]: {$name}" );
+    $body      = "Department: {$dept}\nName: {$name}\nMobile: {$mobile}\n\nMessage:\n{$msg}";
     wp_mail( $recipient, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( wp_get_referer() ?: home_url() );
@@ -168,7 +170,7 @@ function varner_handle_contact_form_submit() {
     $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
     wp_mail( $recipient, 'General Website Inquiry: ' . $name, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
-    wp_safe_redirect( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) );
+    wp_safe_redirect( esc_url_raw( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) ) );
     exit;
 }
 
@@ -181,10 +183,10 @@ add_action( 'admin_post_varner_contact_form_submit', 'varner_handle_contact_form
 function varner_handle_parts_request_submit() {
     varner_verify_form_submission( 'varner_parts_nonce', 'varner_parts_request_submit', 'varner_parts_captcha' );
 
-    $fname = sanitize_text_field( $_POST['first_name'] );
-    $lname = sanitize_text_field( $_POST['last_name'] );
-    $make  = sanitize_text_field( $_POST['make'] );
-    $model = sanitize_text_field( $_POST['model'] );
+    $fname = sanitize_text_field( $_POST['first_name'] ?? '' );
+    $lname = sanitize_text_field( $_POST['last_name']  ?? '' );
+    $make  = sanitize_text_field( $_POST['make']        ?? '' );
+    $model = sanitize_text_field( $_POST['model']       ?? '' );
 
     $body = "CUSTOMER INFORMATION:\n"
           . "Name: $fname $lname\n"
@@ -213,10 +215,10 @@ add_action( 'admin_post_varner_parts_request_submit', 'varner_handle_parts_reque
 function varner_handle_service_request_submit() {
     varner_verify_form_submission( 'varner_service_nonce', 'varner_service_request_submit', 'varner_captcha' );
 
-    $fname = sanitize_text_field( $_POST['first_name'] );
-    $lname = sanitize_text_field( $_POST['last_name'] );
-    $make  = sanitize_text_field( $_POST['make'] );
-    $model = sanitize_text_field( $_POST['model'] );
+    $fname = sanitize_text_field( $_POST['first_name'] ?? '' );
+    $lname = sanitize_text_field( $_POST['last_name']  ?? '' );
+    $make  = sanitize_text_field( $_POST['make']        ?? '' );
+    $model = sanitize_text_field( $_POST['model']       ?? '' );
 
     $body = "CUSTOMER INFORMATION:\n"
           . "Name: $fname $lname\n"
@@ -259,7 +261,14 @@ function varner_handle_employment_submit() {
     $attachments = array();
     if ( ! empty( $_FILES['resume']['name'] ) ) {
         require_once ABSPATH . 'wp-admin/includes/file.php';
-        $uploaded = wp_handle_upload( $_FILES['resume'], array( 'test_form' => false ) );
+        $uploaded = wp_handle_upload( $_FILES['resume'], array(
+            'test_form' => false,
+            'mimes'     => array(
+                'pdf'  => 'application/pdf',
+                'doc'  => 'application/msword',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ),
+        ) );
         if ( isset( $uploaded['file'] ) ) {
             $attachments[] = $uploaded['file'];
         }
@@ -271,7 +280,7 @@ function varner_handle_employment_submit() {
         wp_delete_file( $attachments[0] );
     }
 
-    wp_safe_redirect( add_query_arg( 'application', 'sent', wp_get_referer() ?: home_url() ) );
+    wp_safe_redirect( esc_url_raw( add_query_arg( 'application', 'sent', wp_get_referer() ?: home_url() ) ) );
     exit;
 }
 
@@ -630,7 +639,8 @@ function varner_search_meta_fields( $search, $wp_query ) {
  */
 function varner_remove_filter( $key, $value = null ) {
     global $wp;
-    $current = $_GET;
+    // Sanitize all keys and values from $_GET before building the URL.
+    $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
     unset( $current['paged'] );
     if ( $value === null ) {
         unset( $current[ $key ] );
@@ -639,9 +649,8 @@ function varner_remove_filter( $key, $value = null ) {
         $arr     = array_values( array_filter( $arr, function ( $v ) use ( $value ) { return $v !== $value; } ) );
         if ( empty( $arr ) ) { unset( $current[ $key ] ); } else { $current[ $key ] = $arr; }
     }
-    
     $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) );
-    return $base_url . ( $current ? '?' . http_build_query( $current ) : '' );
+    return esc_url( $base_url . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
 /**
@@ -649,9 +658,9 @@ function varner_remove_filter( $key, $value = null ) {
  */
 function varner_remove_range_filter( $key1, $key2 ) {
     global $wp;
-    $current = $_GET;
+    $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
     unset( $current[ $key1 ], $current[ $key2 ], $current['paged'] );
-    return ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' );
+    return esc_url( ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
 // ─── EQUIPMENT CARD HELPERS ──────────────────────────────────────────────────

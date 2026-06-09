@@ -16,13 +16,29 @@ function varner_register_rest_routes(): void {
     $auth = function (): bool { return current_user_can('edit_posts'); };
 
     register_rest_route($ns, '/inventory', array(
-        array('methods' => 'GET',  'callback' => 'varner_api_get_inventory',  'permission_callback' => '__return_true'),
-        array('methods' => 'POST', 'callback' => 'varner_api_create_unit',    'permission_callback' => $auth),
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'varner_api_get_inventory',
+            'permission_callback' => '__return_true',
+            'args'                => array(
+                'page'     => array('type' => 'integer', 'minimum' => 1, 'default' => 1,  'sanitize_callback' => 'absint'),
+                'per_page' => array('type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20, 'sanitize_callback' => 'absint'),
+            ),
+        ),
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'varner_api_create_unit',
+            'permission_callback' => $auth,
+        ),
     ));
     register_rest_route($ns, '/inventory/deleted', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_deleted',
         'permission_callback' => $auth,
+        'args'                => array(
+            'page'     => array('type' => 'integer', 'minimum' => 1, 'default' => 1,  'sanitize_callback' => 'absint'),
+            'per_page' => array('type' => 'integer', 'minimum' => 1, 'maximum' => 200, 'default' => 50, 'sanitize_callback' => 'absint'),
+        ),
     ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)', array(
         array('methods' => 'PATCH',  'callback' => 'varner_api_update_unit',   'permission_callback' => $auth),
@@ -87,11 +103,23 @@ function varner_register_rest_routes(): void {
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_sessions',
         'permission_callback' => function (): bool { return current_user_can('manage_options'); },
+        'args'                => array(
+            'page'        => array('type' => 'integer', 'minimum' => 1, 'default' => 1,  'sanitize_callback' => 'absint'),
+            'per_page'    => array('type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20, 'sanitize_callback' => 'absint'),
+            'user_id'     => array('type' => 'integer', 'minimum' => 0, 'default' => 0,  'sanitize_callback' => 'absint'),
+            'active_only' => array('type' => 'boolean', 'default' => false),
+        ),
     ));
     register_rest_route($ns, '/ledger', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_global_ledger',
         'permission_callback' => function (): bool { return current_user_can('manage_options'); },
+        'args'                => array(
+            'page'     => array('type' => 'integer', 'minimum' => 1, 'default' => 1,  'sanitize_callback' => 'absint'),
+            'per_page' => array('type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20, 'sanitize_callback' => 'absint'),
+            'user_id'  => array('type' => 'integer', 'minimum' => 0, 'default' => 0,  'sanitize_callback' => 'absint'),
+            'action'   => array('type' => 'string',  'default' => '', 'sanitize_callback' => 'sanitize_text_field'),
+        ),
     ));
 
     register_rest_route($ns, '/me', array(
@@ -483,9 +511,9 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
     }
 
     $active_only = filter_var($request->get_param('active_only'), FILTER_VALIDATE_BOOLEAN);
-    $user_id     = intval($request->get_param('user_id'));
-    $page        = max(1, intval($request->get_param('page') ?: 1));
-    $per_page    = min(100, max(1, intval($request->get_param('per_page') ?: 20)));
+    $user_id     = absint($request->get_param('user_id'));
+    $page        = max(1, absint($request->get_param('page') ?: 1));
+    $per_page    = min(100, max(1, absint($request->get_param('per_page') ?: 20)));
     $offset      = ($page - 1) * $per_page;
 
     $wheres = array();
@@ -499,10 +527,11 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
     }
     $where_sql = $wheres ? 'WHERE ' . implode(' AND ', $wheres) : '';
 
-    $sql   = "SELECT id, user_id, session_token, login_at, logout_at, last_activity_at, ip, user_agent, ended_reason FROM {$table} {$where_sql} ORDER BY login_at DESC LIMIT %d OFFSET %d";
+    $safe_sessions_table = esc_sql( $table );
+    $sql   = "SELECT id, user_id, session_token, login_at, logout_at, last_activity_at, ip, user_agent, ended_reason FROM {$safe_sessions_table} {$where_sql} ORDER BY login_at DESC LIMIT %d OFFSET %d";
     $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
 
-    $count_sql = "SELECT COUNT(*) FROM {$table} {$where_sql}";
+    $count_sql = "SELECT COUNT(*) FROM {$safe_sessions_table} {$where_sql}";
     $total     = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
 
     foreach ($items as &$row) {
@@ -523,8 +552,8 @@ function varner_api_get_global_ledger(WP_REST_Request $request): WP_REST_Respons
     global $wpdb;
     $table = $wpdb->prefix . 'varner_inventory_ledger';
 
-    $page     = max(1, intval($request->get_param('page') ?: 1));
-    $per_page = min(100, max(1, intval($request->get_param('per_page') ?: 20)));
+    $page     = max(1, absint($request->get_param('page') ?: 1));
+    $per_page = min(100, max(1, absint($request->get_param('per_page') ?: 20)));
     $offset   = ($page - 1) * $per_page;
 
     $wheres = array();
@@ -536,7 +565,7 @@ function varner_api_get_global_ledger(WP_REST_Request $request): WP_REST_Respons
         $params[] = $action;
     }
 
-    $user_id = intval($request->get_param('user_id'));
+    $user_id = absint($request->get_param('user_id'));
     if ($user_id > 0) {
         $wheres[] = 'l.user_id = %d';
         $params[] = $user_id;
@@ -544,15 +573,16 @@ function varner_api_get_global_ledger(WP_REST_Request $request): WP_REST_Respons
 
     $where_sql = $wheres ? 'WHERE ' . implode(' AND ', $wheres) : '';
 
+    $safe_ledger_table = esc_sql( $table );
     $sql   = "SELECT l.id, l.post_id, l.action, l.user_id, l.display_name, l.initials, l.summary, l.details, l.request_id, l.created_at, p.post_title 
-              FROM {$table} l 
+              FROM {$safe_ledger_table} l 
               LEFT JOIN {$wpdb->posts} p ON l.post_id = p.ID 
               {$where_sql} 
               ORDER BY l.created_at DESC 
               LIMIT %d OFFSET %d";
     $items = $wpdb->get_results($wpdb->prepare($sql, array_merge($params, array($per_page, $offset))), ARRAY_A);
 
-    $count_sql = "SELECT COUNT(*) FROM {$table} l {$where_sql}";
+    $count_sql = "SELECT COUNT(*) FROM {$safe_ledger_table} l {$where_sql}";
     $total     = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
 
     foreach ($items as &$row) {

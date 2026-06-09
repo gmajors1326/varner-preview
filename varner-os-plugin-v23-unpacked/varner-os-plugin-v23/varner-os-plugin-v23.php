@@ -719,7 +719,7 @@ function varner_os_mobile_pwa_router(): void {
         $home_url = esc_url_raw(home_url('/mobile-app/'));
         ?>
 const CACHE_NAME = 'varner-mobile-cache-v1';
-const ASSETS = ['<?php echo $home_url; ?>'];
+const ASSETS = ['<?php echo esc_js( $home_url ); ?>'];
 
 self.addEventListener('install', (e) => {
     e.waitUntil(
@@ -752,7 +752,7 @@ self.addEventListener('fetch', (e) => {
             });
         }).catch(() => {
             if (e.request.headers.get('accept').includes('text/html')) {
-                return caches.match('<?php echo $home_url; ?>');
+                return caches.match('<?php echo esc_js( $home_url ); ?>');
             }
         })
     );
@@ -815,7 +815,7 @@ self.addEventListener('fetch', (e) => {
     if ($js_file && $css_file && file_exists($dist_path . $js_file) && file_exists($dist_path . $css_file)) {
         $ver     = filemtime($dist_path . $js_file);
         $css_ver = filemtime($dist_path . $css_file);
-        ?><link rel="stylesheet" href="<?php echo $dist_url . $css_file . '?ver=' . $css_ver; ?>">
+        ?><link rel="stylesheet" href="<?php echo esc_url( $dist_url . $css_file . '?ver=' . $css_ver ); ?>">
 <script>
 window.varnerData = {
     post_id: 0,
@@ -826,7 +826,7 @@ window.varnerData = {
     logo_url: '<?php echo function_exists('varner_get_brand_logo_url') ? esc_url(varner_get_brand_logo_url('white')) : ''; ?>'
 };
 </script>
-<script type="module" src="<?php echo $dist_url . $js_file . '?ver=' . $ver; ?>"></script>
+<script type="module" src="<?php echo esc_url( $dist_url . $js_file . '?ver=' . $ver ); ?>"></script>
 <?php
     } else {
         echo '<div style="padding:20px;text-align:center;color:red;">Error: React build assets not found. Please build the application first.</div>';
