@@ -62,6 +62,8 @@ export const SettingsTab = ({ showToast }) => {
   const thumbnailInputRef = useRef(null);
 
   const iframeRef = useRef(null);
+  const iframeReady = useRef(false);
+  const pendingScroll = useRef(null);
 
   const [openSections, setOpenSections] = useState({
     hero: false,
@@ -73,31 +75,35 @@ export const SettingsTab = ({ showToast }) => {
     careers: false,
   });
 
-  // Section key → anchor ID on the live site
+  // Section key → anchor ID on the live site (must match id= in index.php)
   const SECTION_ANCHORS = {
-    hero:    'hero',
-    support: 'support-hub',
-    youtube: 'youtube-section',
-    contact: 'contact',
-    hours:   'hours',
-    about:   'about',
-    careers: 'careers',
+    hero:    'hero-parallax',
+    support: 'section-support',
+    youtube: 'section-youtube',
+    contact: 'varner-map',       // contact/map is in footer.php
+    hours:   'varner-map',       // same section — hours live near the map
+    about:   'section-cta',
+    careers: 'section-cta',     // careers page is separate; scroll to CTA as closest
+  };
+
+  const scrollIframeTo = (anchor) => {
+    if (!anchor || !iframeRef.current) return;
+    if (iframeReady.current) {
+      try {
+        iframeRef.current.contentWindow?.postMessage(
+          { type: 'varner_scroll_to', anchor },
+          '*'
+        );
+      } catch (e) { /* cross-origin — ignore */ }
+    } else {
+      pendingScroll.current = anchor; // fire it once iframe finishes loading
+    }
   };
 
   const toggleSection = (key) => {
     setOpenSections(prev => {
       const isOpening = !prev[key];
-      if (isOpening && iframeRef.current) {
-        const anchor = SECTION_ANCHORS[key];
-        if (anchor) {
-          try {
-            iframeRef.current.contentWindow?.postMessage(
-              { type: 'varner_scroll_to', anchor },
-              '*'
-            );
-          } catch (e) { /* cross-origin fallback: ignore */ }
-        }
-      }
+      if (isOpening) scrollIframeTo(SECTION_ANCHORS[key]);
       return { ...prev, [key]: isOpening };
     });
   };
@@ -121,6 +127,7 @@ export const SettingsTab = ({ showToast }) => {
 
   useEffect(() => {
     if (!isLoading) {
+      iframeReady.current = false;
       const baseUrl = window.varnerData?.site_url || '/';
       setPreviewUrl(`${baseUrl}?varner_preview=1`);
     }
@@ -134,6 +141,7 @@ export const SettingsTab = ({ showToast }) => {
           method: 'POST',
           body: JSON.stringify(settings),
         });
+        iframeReady.current = false;
         const baseUrl = window.varnerData?.site_url || '/';
         setPreviewUrl(`${baseUrl}?varner_preview=1&t=${Date.now()}`);
       } catch (err) {
@@ -808,6 +816,13 @@ export const SettingsTab = ({ showToast }) => {
               src={previewUrl} 
               className="w-full h-full border-none bg-white"
               title="Varner Equipment Site Preview"
+              onLoad={() => {
+                iframeReady.current = true;
+                if (pendingScroll.current) {
+                  scrollIframeTo(pendingScroll.current);
+                  pendingScroll.current = null;
+                }
+              }}
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-3">

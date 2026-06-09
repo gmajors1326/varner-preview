@@ -238,7 +238,7 @@
     </section>
 
     <!-- SUPPORT HUB BAR (Under Hero) -->
-    <section class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
+    <section id="section-support" class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
                 <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_service_link', '/services/service-request' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
@@ -275,7 +275,7 @@
     </section>
 
     <!-- CATEGORY GRID -->
-    <section class="pt-32 pb-24 bg-slate-100 reveal-on-scroll">
+    <section id="section-categories" class="pt-32 pb-24 bg-slate-100 reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
@@ -400,7 +400,7 @@
     </section>
 
     <!-- YOUTUBE / VIDEO SECTION -->
-    <section class="py-16 md:py-24 bg-slate-950 border-y border-slate-900 overflow-hidden">
+    <section id="section-youtube" class="py-16 md:py-24 bg-slate-950 border-y border-slate-900 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex flex-col md:flex-row gap-10 lg:gap-20 items-center">
                 <div class="w-full md:w-1/2 space-y-6 text-white text-center md:text-left">
@@ -439,7 +439,7 @@
     </section>
 
     <!-- TO-DO LIST CTA SECTION -->
-    <section class="py-16 md:py-24 bg-white border-b border-slate-200 overflow-hidden">
+    <section id="section-cta" class="py-16 md:py-24 bg-white border-b border-slate-200 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex flex-col md:flex-row gap-10 lg:gap-16 items-center">
                 <div class="w-full md:w-7/12 text-center md:text-left">

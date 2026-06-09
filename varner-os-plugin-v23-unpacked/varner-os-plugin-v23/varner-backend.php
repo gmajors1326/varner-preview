@@ -1,13 +1,10 @@
 <?php
 /**
  * Varner Equipment - Backend Registration
- * CPT, ACF fields, helpers, and REST API include.
+ * CPT, ACF fields, and helpers.
  */
 
 defined('ABSPATH') || exit;
-
-// Load REST API handlers
-require_once __DIR__ . '/rest-api.php';
 
 // ─── 1. CUSTOM POST TYPES ────────────────────────────────────────────────────
 
