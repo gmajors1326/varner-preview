@@ -53,7 +53,7 @@ if (!function_exists('varner_register_video_cpt')) {
             'publicly_queryable'  => true,
             'show_ui'             => true,
             'show_in_rest'        => true,
-            'rest_base'           => '',
+            'rest_base'           => 'videos',
             'rest_controller_class' => 'WP_REST_Posts_Controller',
             'has_archive'         => false,
             'show_in_menu'        => false,
@@ -253,9 +253,9 @@ function varner_get_equipment_fields_config(): array {
         'seller_info'       => array('type' => 'wysiwyg'),
         'featured'          => array('type' => 'bool'),
         'show_on_website'   => array('type' => 'bool', 'default' => true),
-        'has_attachments'   => array('type' => 'bool', 'default' => false),
-        'attachment_details'=> array('type' => 'text'),
-        'drive'             => array('type' => 'text'),
+        // Note: has_attachments, attachment_details, and drive are intentionally
+        // omitted — they have no corresponding ACF field in the field group and
+        // update_field() for unknown keys is a silent no-op.
     );
 }
 
@@ -547,11 +547,6 @@ function varner_backend_get_settings_defaults(): array {
     );
 }
 
-if (!function_exists('varner_get_theme_settings_defaults')) {
-    function varner_get_theme_settings_defaults(): array {
-        if (function_exists('varner_backend_get_settings_defaults')) {
-            return varner_backend_get_settings_defaults();
-        }
-        return array();
-    }
-}
+// Note: varner_get_theme_settings_defaults() is defined in the theme's functions.php.
+// The plugin accesses settings defaults directly via varner_backend_get_settings_defaults().
+// A second definition here was removed to prevent a PHP fatal 'Cannot redeclare function' error.

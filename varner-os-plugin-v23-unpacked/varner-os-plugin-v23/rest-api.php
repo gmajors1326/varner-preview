@@ -2,8 +2,8 @@
 /**
  * Varner OS — REST API Routes & Handlers
  *
- * All /varner/v1/* endpoints, mobile auth filters, session tracking,
- * video management, and settings API.
+ * All /varner/v1/* endpoints, video management, and settings API.
+ * Auth filters and session tracking live in varner-os-plugin-v23.php.
  */
 
 defined('ABSPATH') || exit;
@@ -210,9 +210,11 @@ function varner_api_save_sub_subcategories(WP_REST_Request $r): WP_REST_Response
  * for paginated { items, total, page, per_page }.
  */
 function varner_api_get_inventory(WP_REST_Request $request) {
-    $page     = max(1, intval($request->get_param('page') ?: 1));
-    $per_page = intval($request->get_param('per_page') ?: -1);
-    $paginate = $per_page > 0;
+    $page         = max(1, intval($request->get_param('page') ?: 1));
+    $raw_per_page = intval($request->get_param('per_page') ?: -1);
+    // Clamp to max 100 for paginated requests; -1 means "all" (flat array, backward compat)
+    $per_page     = $raw_per_page > 0 ? min(100, $raw_per_page) : -1;
+    $paginate     = $per_page > 0;
 
     $args = array(
         'post_type'      => 'equipment',
@@ -230,10 +232,44 @@ function varner_api_get_inventory(WP_REST_Request $request) {
     }
 
     if ($paginate) {
-        $args['posts_per_page'] = min(100, $per_page);
+        $args['posts_per_page'] = $per_page;
         $args['paged']          = $page;
     } else {
         $args['posts_per_page'] = -1;
+    }
+
+    $query = new WP_Query($args);
+    $items = array_map(function (WP_Post $p): array {
+        return varner_format_unit($p->ID);
+    }, $query->posts);
+
+    if ($paginate) {
+        return rest_ensure_response(array(
+            'items'    => $items,
+            'total'    => intval($query->found_posts),
+            'page'     => $page,
+            'per_page' => $per_page, // returns the clamped value
+        ));
+    }
+
+    return rest_ensure_response($items);
+}
+
+function varner_api_get_deleted(WP_REST_Request $request): WP_REST_Response {
+    $raw_per_page = intval($request->get_param('per_page') ?: -1);
+    $per_page     = $raw_per_page > 0 ? min(200, $raw_per_page) : -1;
+    $paginate     = $per_page > 0;
+    $page         = $paginate ? max(1, intval($request->get_param('page') ?: 1)) : 1;
+
+    $args = array(
+        'post_type'      => 'equipment',
+        'post_status'    => 'trash',
+        'posts_per_page' => $paginate ? $per_page : 200, // hard cap at 200 even without pagination
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+    );
+    if ($paginate) {
+        $args['paged'] = $page;
     }
 
     $query = new WP_Query($args);
@@ -250,20 +286,8 @@ function varner_api_get_inventory(WP_REST_Request $request) {
         ));
     }
 
+    // Backward-compat: flat array when no pagination params given
     return rest_ensure_response($items);
-}
-
-function varner_api_get_deleted(): WP_REST_Response {
-    $posts = get_posts(array(
-        'post_type'      => 'equipment',
-        'post_status'    => 'trash',
-        'posts_per_page' => -1,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
-    ));
-    return rest_ensure_response(array_map(function (WP_Post $p): array {
-        return varner_format_unit($p->ID);
-    }, $posts));
 }
 
 function varner_api_create_unit(WP_REST_Request $request) {
@@ -536,7 +560,7 @@ function varner_api_get_global_ledger(WP_REST_Request $request): WP_REST_Respons
             $row['details'] = json_decode($row['details'], true);
         }
         if (empty($row['post_title']) && $row['post_id'] > 0) {
-            $stock = get_post_meta($row['post_id'], '_stock_number', true);
+            $stock = get_post_meta($row['post_id'], 'stock_number', true);
             if ($stock) {
                 $row['post_title'] = 'Unit Stock #' . $stock;
             } else {
@@ -576,10 +600,9 @@ function varner_api_logout() {
         return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
     }
 
-    if (function_exists('varner_os_record_logout')) {
-        varner_os_record_logout();
-    }
-
+    // wp_logout() fires the wp_logout action, which triggers varner_os_record_logout
+    // via add_action('wp_logout', 'varner_os_record_logout') in varner-os-plugin-v23.php.
+    // Do NOT call varner_os_record_logout() directly here to avoid double-execution.
     wp_logout();
     return rest_ensure_response(array('success' => true));
 }
@@ -701,149 +724,9 @@ function varner_api_generate_mobile_token() {
     ));
 }
 
-// ─── 10. MOBILE AUTH FILTERS ─────────────────────────────────────────────────
-
-add_filter('rest_authentication_errors', function ($result) {
-    $token = '';
-    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token = sanitize_text_field($matches[1]);
-    }
-    if ($token && get_transient('varner_mobile_token_' . $token)) {
-        return true;
-    }
-    return $result;
-}, 9);
-
-add_filter('determine_current_user', 'varner_authenticate_mobile_token', 15);
-function varner_authenticate_mobile_token(int $user_id): int {
-    if ($user_id) {
-        return $user_id;
-    }
-
-    $token = '';
-    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token = sanitize_text_field($matches[1]);
-    } elseif (isset($_GET['mobile_token'])) {
-        $token = sanitize_text_field(wp_unslash($_GET['mobile_token']));
-    }
-
-    if (empty($token)) {
-        return $user_id;
-    }
-
-    $stored_user_id = get_transient('varner_mobile_token_' . $token);
-    if ($stored_user_id) {
-        set_transient('varner_mobile_token_' . $token, $stored_user_id, 1800);
-        return intval($stored_user_id);
-    }
-
-    return $user_id;
-}
-
-// ─── 11. SESSION ACTIVITY TRACKER ────────────────────────────────────────────
-
-add_action('init', 'varner_update_session_activity');
-function varner_update_session_activity(): void {
-    $user_id = get_current_user_id();
-    if (!$user_id) {
-        return;
-    }
-
-    global $wpdb;
-    $table = $wpdb->prefix . 'varner_user_sessions';
-
-    $token     = '';
-    $is_mobile = false;
-
-    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token     = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-        $is_mobile = true;
-    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token     = sanitize_text_field($matches[1]);
-        $is_mobile = true;
-    } elseif (isset($_GET['mobile_token'])) {
-        $token     = sanitize_text_field(wp_unslash($_GET['mobile_token']));
-        $is_mobile = true;
-    }
-
-    if (empty($token)) {
-        $token = wp_get_session_token();
-    }
-
-    if (empty($token)) {
-        return;
-    }
-
-    $session = $wpdb->get_row($wpdb->prepare(
-        "SELECT id, last_activity_at, logout_at FROM {$table} WHERE session_token = %s",
-        $token
-    ));
-
-    $ip    = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
-    $agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
-
-    if ($session) {
-        if ($session->logout_at !== null) {
-            $wpdb->update(
-                $table,
-                array('logout_at' => null, 'ended_reason' => null, 'last_activity_at' => current_time('mysql')),
-                array('id' => $session->id),
-                array('%s', '%s', '%s'),
-                array('%d')
-            );
-        } else {
-            $now      = current_time('timestamp');
-            $last_act = $session->last_activity_at ? strtotime($session->last_activity_at) : 0;
-            if ($now - $last_act > 60) {
-                $wpdb->update(
-                    $table,
-                    array('last_activity_at' => current_time('mysql')),
-                    array('id' => $session->id),
-                    array('%s'),
-                    array('%d')
-                );
-            }
-        }
-    } else {
-        if ($is_mobile) {
-            $active_mobile = $wpdb->get_results($wpdb->prepare(
-                "SELECT id, session_token FROM {$table} WHERE user_id = %d AND logout_at IS NULL AND session_token != %s",
-                $user_id,
-                $token
-            ));
-
-            foreach ($active_mobile as $old_sess) {
-                if (strlen($old_sess->session_token) === 16 && ctype_xdigit($old_sess->session_token)) {
-                    $wpdb->update(
-                        $table,
-                        array('logout_at' => current_time('mysql'), 'ended_reason' => 'superseded'),
-                        array('id' => $old_sess->id),
-                        array('%s', '%s'),
-                        array('%d')
-                    );
-                    delete_transient('varner_mobile_token_' . $old_sess->session_token);
-                }
-            }
-        }
-
-        $wpdb->insert(
-            $table,
-            array(
-                'user_id'          => $user_id,
-                'session_token'    => $token,
-                'login_at'         => current_time('mysql'),
-                'last_activity_at' => current_time('mysql'),
-                'ip'               => $ip,
-                'user_agent'       => $agent,
-            ),
-            array('%d', '%s', '%s', '%s', '%s', '%s')
-        );
-    }
-}
+// NOTE: Mobile auth filters (determine_current_user, rest_authentication_errors)
+// and the session activity tracker (init hook) have been moved to varner-os-plugin-v23.php
+// so they only conceptually belong with core plugin bootstrapping, not REST route registration.
 
 // ─── 12. VIDEOS ──────────────────────────────────────────────────────────────
 

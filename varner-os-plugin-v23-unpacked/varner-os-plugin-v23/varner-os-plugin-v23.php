@@ -156,6 +156,9 @@ function varner_os_record_login_failed(string $username): void {
         array(
             'user_id'       => $user ? $user->ID : 0,
             'session_token' => '',
+            // login_at and logout_at are both set to now for failed attempts.
+            // This flags a 0-duration session with ended_reason='failed_login'.
+            // logout_at is NOT null so these don't appear as 'active' sessions.
             'login_at'      => current_time('mysql'),
             'logout_at'     => current_time('mysql'),
             'ip'            => $ip,
@@ -178,6 +181,143 @@ function varner_os_cleanup_sessions(): void {
         current_time('mysql'),
         $cutoff
     ));
+}
+
+// ─── Mobile Auth Filters (moved from rest-api.php) ─────────────────────────────────
+// Note: rest_authentication_errors at priority 9 was removed. It validated the
+// transient before determine_current_user (priority 15) had set the user, making
+// it redundant. varner_authenticate_mobile_token (below) is the sole authenticator.
+
+add_filter('determine_current_user', 'varner_authenticate_mobile_token', 15);
+function varner_authenticate_mobile_token(int $user_id): int {
+    if ($user_id) {
+        return $user_id;
+    }
+
+    $token = '';
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token = sanitize_text_field($matches[1]);
+    } elseif (isset($_GET['mobile_token'])) {
+        $token = sanitize_text_field(wp_unslash($_GET['mobile_token']));
+    }
+
+    if (empty($token)) {
+        return $user_id;
+    }
+
+    $stored_user_id = get_transient('varner_mobile_token_' . $token);
+    if ($stored_user_id) {
+        set_transient('varner_mobile_token_' . $token, $stored_user_id, 1800);
+        return intval($stored_user_id);
+    }
+
+    return $user_id;
+}
+
+// ─── Session Activity Tracker (moved from rest-api.php) ────────────────────────────
+
+add_action('init', 'varner_update_session_activity');
+function varner_update_session_activity(): void {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return;
+    }
+
+    // Transient rate-limit: only update DB at most once per 60 seconds per user.
+    $rate_key = 'varner_sess_activity_' . $user_id;
+    if (get_transient($rate_key)) {
+        return;
+    }
+    set_transient($rate_key, 1, 60);
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'varner_user_sessions';
+
+    $token     = '';
+    $is_mobile = false;
+
+    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
+        $token     = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
+        $is_mobile = true;
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
+        $token     = sanitize_text_field($matches[1]);
+        $is_mobile = true;
+    } elseif (isset($_GET['mobile_token'])) {
+        $token     = sanitize_text_field(wp_unslash($_GET['mobile_token']));
+        $is_mobile = true;
+    }
+
+    if (empty($token)) {
+        $token = wp_get_session_token();
+    }
+
+    if (empty($token)) {
+        return;
+    }
+
+    $session = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, last_activity_at, logout_at FROM {$table} WHERE session_token = %s",
+        $token
+    ));
+
+    $ip    = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+    $agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
+
+    if ($session) {
+        if ($session->logout_at !== null) {
+            $wpdb->update(
+                $table,
+                array('logout_at' => null, 'ended_reason' => null, 'last_activity_at' => current_time('mysql')),
+                array('id' => $session->id),
+                array('%s', '%s', '%s'),
+                array('%d')
+            );
+        } else {
+            $wpdb->update(
+                $table,
+                array('last_activity_at' => current_time('mysql')),
+                array('id' => $session->id),
+                array('%s'),
+                array('%d')
+            );
+        }
+    } else {
+        if ($is_mobile) {
+            $active_mobile = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, session_token FROM {$table} WHERE user_id = %d AND logout_at IS NULL AND session_token != %s",
+                $user_id,
+                $token
+            ));
+
+            foreach ($active_mobile as $old_sess) {
+                if (strlen($old_sess->session_token) === 16 && ctype_xdigit($old_sess->session_token)) {
+                    $wpdb->update(
+                        $table,
+                        array('logout_at' => current_time('mysql'), 'ended_reason' => 'superseded'),
+                        array('id' => $old_sess->id),
+                        array('%s', '%s'),
+                        array('%d')
+                    );
+                    delete_transient('varner_mobile_token_' . $old_sess->session_token);
+                }
+            }
+        }
+
+        $wpdb->insert(
+            $table,
+            array(
+                'user_id'          => $user_id,
+                'session_token'    => $token,
+                'login_at'         => current_time('mysql'),
+                'last_activity_at' => current_time('mysql'),
+                'ip'               => $ip,
+                'user_agent'       => $agent,
+            ),
+            array('%d', '%s', '%s', '%s', '%s', '%s')
+        );
+    }
 }
 
 // ─── Admin Menu ──────────────────────────────────────────────────────────────
@@ -207,7 +347,8 @@ add_action('admin_menu', function (): void {
 // ─── Login Redirect ──────────────────────────────────────────────────────────
 
 add_filter('login_redirect', function (string $redirect_to, $request, $user): string {
-    if (isset($user->roles) && is_array($user->roles)) {
+    // Only redirect users who can access the Varner OS admin panel.
+    if (isset($user->roles) && is_array($user->roles) && $user->has_cap('edit_posts')) {
         return admin_url('admin.php?page=varner-os');
     }
     return $redirect_to;
@@ -251,7 +392,7 @@ function varner_render_configuration_page(): void {
             echo '<td>' . esc_html($s->login_at) . '</td>';
             echo '<td>' . esc_html($s->logout_at ?: '&mdash;') . '</td>';
             echo '<td>' . esc_html($s->ip ?: '&mdash;') . '</td>';
-            echo '<td>' . $status . '</td>';
+            echo '<td>' . esc_html($status) . '</td>';
             echo '</tr>';
         }
     } else {
@@ -271,17 +412,26 @@ function varner_enqueue_react_assets(): void {
         return;
     }
 
-    $html = file_get_contents($html_file);
-
-    $js_file = '';
-    if (preg_match('/src="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $html, $matches)) {
-        $js_file = $matches[1];
+    // Cache the parsed asset filenames keyed by file modification time.
+    // This avoids reading and regex-parsing index.html on every admin page load.
+    $cache_key = 'varner_assets_' . filemtime($html_file);
+    $assets    = get_transient($cache_key);
+    if (!$assets) {
+        $html     = file_get_contents($html_file);
+        $js_file  = '';
+        $css_file = '';
+        if (preg_match('/src="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $html, $matches)) {
+            $js_file = $matches[1];
+        }
+        if (preg_match('/href="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $html, $matches)) {
+            $css_file = $matches[1];
+        }
+        $assets = array('js_file' => $js_file, 'css_file' => $css_file);
+        set_transient($cache_key, $assets, DAY_IN_SECONDS);
     }
 
-    $css_file = '';
-    if (preg_match('/href="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $html, $matches)) {
-        $css_file = $matches[1];
-    }
+    $js_file  = $assets['js_file'];
+    $css_file = $assets['css_file'];
 
     $dist_url  = plugin_dir_url(__FILE__) . 'dist/assets/';
     $dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
@@ -485,7 +635,22 @@ function varner_os_generate_facebook_catalog(): void {
     exit;
 }
 
-// ─── PWA / Mobile Companion Router ──────────────────────────────────────────
+// Facebook Catalog — served via template_redirect to avoid 'headers already sent'.
+add_action('template_redirect', 'varner_os_facebook_catalog_endpoint');
+function varner_os_facebook_catalog_endpoint(): void {
+    $uri      = $_SERVER['REQUEST_URI'] ?? '';
+    $uri_path = trim(parse_url($uri, PHP_URL_PATH), '/');
+    $site_path = parse_url(home_url(), PHP_URL_PATH);
+    $site_path = $site_path ? trim($site_path, '/') : '';
+    $path = ($site_path !== '' && strpos($uri_path, $site_path) === 0)
+        ? trim(substr($uri_path, strlen($site_path)), '/')
+        : $uri_path;
+    if ($path === 'facebook-catalog.csv') {
+        varner_os_generate_facebook_catalog();
+    }
+}
+
+// ─── PWA / Mobile Companion Router ────────────────────────────────────────────────
 
 add_action('init', 'varner_os_mobile_pwa_router');
 function varner_os_mobile_pwa_router(): void {
@@ -501,31 +666,32 @@ function varner_os_mobile_pwa_router(): void {
         $path = $uri_path;
     }
 
-    // Facebook catalog
-    if ($path === 'facebook-catalog.csv') {
-        varner_os_generate_facebook_catalog();
-        return;
-    }
+    // Facebook catalog is now handled via template_redirect (above).
+    // Skip it here so we don't call header() before WP output buffering starts.
 
-    // Resolve icon URL
-    $icon_url = '';
-    if (file_exists(get_stylesheet_directory() . '/assets/VE_Tractor_Icon.png')) {
-        $icon_url = get_stylesheet_directory_uri() . '/assets/VE_Tractor_Icon.png';
-    } elseif (file_exists(get_template_directory() . '/assets/VE_Tractor_Icon.png')) {
-        $icon_url = get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
-    } else {
-        $upload_dir = wp_upload_dir();
-        if (file_exists($upload_dir['basedir'] . '/2026/04/VE_Tractor_Icon.png')) {
-            $icon_url = $upload_dir['baseurl'] . '/2026/04/VE_Tractor_Icon.png';
-        } else {
-            $icon_url = varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png');
-        }
-    }
-
-    // Manifest
+    // Manifest — resolve icon URL only when needed
     if ($path === 'mobile-app/manifest.json' || $path === 'manifest.json') {
+        $icon_url = '';
+        $icon_cache_key = 'varner_pwa_icon_url';
+        $icon_url = get_transient($icon_cache_key);
+        if (!$icon_url) {
+            if (file_exists(get_stylesheet_directory() . '/assets/VE_Tractor_Icon.png')) {
+                $icon_url = get_stylesheet_directory_uri() . '/assets/VE_Tractor_Icon.png';
+            } elseif (file_exists(get_template_directory() . '/assets/VE_Tractor_Icon.png')) {
+                $icon_url = get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
+            } else {
+                $upload_dir = wp_upload_dir();
+                if (file_exists($upload_dir['basedir'] . '/2026/04/VE_Tractor_Icon.png')) {
+                    $icon_url = $upload_dir['baseurl'] . '/2026/04/VE_Tractor_Icon.png';
+                } else {
+                    $icon_url = varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png');
+                }
+            }
+            set_transient($icon_cache_key, $icon_url, WEEK_IN_SECONDS);
+        }
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(array(
+
             'name'             => 'Varner OS Mobile Companion',
             'short_name'       => 'Varner Mobile',
             'description'      => 'Mobile inventory management for Varner Equipment yard crew.',
@@ -607,8 +773,9 @@ self.addEventListener('fetch', (e) => {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
-    <link rel="manifest" href="<?php echo esc_url(home_url('/manifest.json')); ?>">
-    <link rel="apple-touch-icon" href="<?php echo esc_url($icon_url); ?>">
+    <link rel="manifest" href="<?php echo esc_url(home_url('/mobile-app/manifest.json')); ?>">
+    <link rel="apple-touch-icon" href="<?php echo esc_url(get_transient('varner_pwa_icon_url') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png')); ?>">
+
     <style>
         html, body { margin:0; padding:0; width:100%; height:100%; background-color:#f8fafc; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
         #varner-inventory-app { width:100%; height:100%; overflow:hidden; }
@@ -623,12 +790,23 @@ self.addEventListener('fetch', (e) => {
     }
     </script>
     <?php
+    // Use the same transient cache as varner_enqueue_react_assets()
     $html_file = plugin_dir_path(__FILE__) . 'dist/index.html';
     $js_file = $css_file = '';
     if (file_exists($html_file)) {
-        $html = file_get_contents($html_file);
-        if (preg_match('/src="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $html, $m)) $js_file = $m[1];
-        if (preg_match('/href="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $html, $m)) $css_file = $m[1];
+        $cache_key = 'varner_assets_' . filemtime($html_file);
+        $assets    = get_transient($cache_key);
+        if (!$assets) {
+            $html     = file_get_contents($html_file);
+            $js_file  = '';
+            $css_file = '';
+            if (preg_match('/src="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $html, $m)) $js_file = $m[1];
+            if (preg_match('/href="(?:\.\/)?assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $html, $m)) $css_file = $m[1];
+            $assets = array('js_file' => $js_file, 'css_file' => $css_file);
+            set_transient($cache_key, $assets, DAY_IN_SECONDS);
+        }
+        $js_file  = $assets['js_file'];
+        $css_file = $assets['css_file'];
     }
 
     $dist_url  = plugin_dir_url(__FILE__) . 'dist/assets/';

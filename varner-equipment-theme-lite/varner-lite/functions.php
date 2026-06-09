@@ -741,9 +741,14 @@ add_action( 'wp_footer', function () {
  */
 if ( ! function_exists( 'varner_get_theme_settings_defaults' ) ) {
     function varner_get_theme_settings_defaults() {
+        // Delegate to the plugin's full defaults if the plugin is active.
+        if ( function_exists( 'varner_backend_get_settings_defaults' ) ) {
+            return varner_backend_get_settings_defaults();
+        }
         return array();
     }
 }
+
 
 
 /**
