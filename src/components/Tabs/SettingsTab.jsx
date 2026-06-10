@@ -289,6 +289,41 @@ export const SettingsTab = ({ showToast }) => {
           </CollapsiblePanel>
         </div>
 
+
+        {/* 2. SUPPORT HUB LINKS */}
+        <div id="editor-section-support">
+          <CollapsiblePanel
+            title="Support Hub Links"
+            icon={<Briefcase size={20} />}
+            isOpen={openSections.support}
+            onToggle={() => toggleSection('support')}
+          >
+            <div className="space-y-4">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide pl-1">
+                Quick-access links displayed in the Support Hub section on the homepage.
+              </p>
+              <InputField
+                label="Service Department Link"
+                value={settings.support_hub_service_link}
+                onChange={v => handleFieldChange('support_hub_service_link', v)}
+                placeholder="e.g. /service"
+              />
+              <InputField
+                label="Parts Department Link"
+                value={settings.support_hub_parts_link}
+                onChange={v => handleFieldChange('support_hub_parts_link', v)}
+                placeholder="e.g. /parts"
+              />
+              <InputField
+                label="Finance / Apply Link"
+                value={settings.support_hub_finance_link}
+                onChange={v => handleFieldChange('support_hub_finance_link', v)}
+                placeholder="e.g. /financing"
+              />
+            </div>
+          </CollapsiblePanel>
+        </div>
+
         {/* 3. YOUTUBE MEDIA SECTION */}
         <div id="editor-section-youtube">
           <CollapsiblePanel
@@ -558,6 +593,79 @@ export const SettingsTab = ({ showToast }) => {
                     </p>
                   )}
                 </div>
+              </div>
+            </div>
+          </CollapsiblePanel>
+        </div>
+
+        {/* 6. ABOUT / CTA SECTION */}
+        <div id="editor-section-about">
+          <CollapsiblePanel
+            title="About / Call-to-Action Section"
+            icon={<Sparkles size={20} />}
+            isOpen={openSections.about}
+            onToggle={() => toggleSection('about')}
+          >
+            <div className="space-y-4">
+              <TextAreaField
+                label="CTA Section Title"
+                value={settings.cta_title}
+                onChange={v => handleFieldChange('cta_title', v)}
+              />
+              <TextAreaField
+                label="CTA Body Text"
+                value={settings.cta_text}
+                onChange={v => handleFieldChange('cta_text', v)}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <InputField
+                  label="CTA Button Text"
+                  value={settings.cta_button_text}
+                  onChange={v => handleFieldChange('cta_button_text', v)}
+                  placeholder="e.g. View Inventory"
+                />
+                <InputField
+                  label="CTA Button Link"
+                  value={settings.cta_button_link}
+                  onChange={v => handleFieldChange('cta_button_link', v)}
+                  placeholder="e.g. /inventory"
+                />
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1 mb-3">Why Choose Us — Bullet Points</label>
+                {(settings.about_why_choose_us_bullets || []).map((bullet, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={bullet}
+                      onChange={e => {
+                        const updated = [...(settings.about_why_choose_us_bullets || [])];
+                        updated[idx] = e.target.value;
+                        handleFieldChange('about_why_choose_us_bullets', updated);
+                      }}
+                      placeholder={`Bullet point ${idx + 1}`}
+                      className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-xl p-3 font-bold text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = (settings.about_why_choose_us_bullets || []).filter((_, i) => i !== idx);
+                        handleFieldChange('about_why_choose_us_bullets', updated);
+                      }}
+                      className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleFieldChange('about_why_choose_us_bullets', [...(settings.about_why_choose_us_bullets || []), ''])}
+                  className="mt-2 w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-black uppercase tracking-widest text-[10px] hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={14} /> Add Bullet Point
+                </button>
               </div>
             </div>
           </CollapsiblePanel>

@@ -4,6 +4,9 @@
 
 ## Changelog
 
+### 2026-06-09
+- **varner-lite promoted to sole master theme**: `varner-equipment-theme-v23/` archived to `_archive/`. Tailwind build source (`src/input.css`, `tailwind.config.js`) migrated into `varner-lite/`. `build.ps1` updated — now produces one theme ZIP (`varner-equipment-theme-v23-lite.zip`) instead of two. No changes to deployed site (varner-lite was already the active theme).
+
 ### 2026-05-13
 - **Native Sidebar Consolidation**: Removed `facet-sidebar.php` and `filter-sidebar.php`. Created `inventory-sidebar.php` which combines native dual-range sliders with "Applied Filters" pill logic and auto-submission.
 - **Documentation Cleanup**: Removed FacetWP references from `SKILL.md` and `DEPLOY.md` to reflect the actual native implementation.
@@ -30,8 +33,9 @@
 ## Deployment Artifacts
 
 - `varner-os-plugin-v23.zip`
-- `varner-equipment-theme-v23.zip`
 - `varner-equipment-theme-v23-lite.zip`
+
+> **Note**: `varner-equipment-theme-v23.zip` is retired. `varner-lite` is the sole master theme. The old v23 source is archived under `_archive/varner-equipment-theme-v23/`.
 
 ## Workspace Rule
 
@@ -40,15 +44,17 @@
 
 ## Theme & Plugin ZIP Packaging (Unified Script)
 
-We use a unified PowerShell script `build.ps1` to compile Tailwind CSS, build the React inventory app, auto-increment the plugin version, sync assets, and package both the themes and plugin into standard compatibility ZIP archives.
+We use a unified PowerShell script `build.ps1` to compile Tailwind CSS, build the React inventory app, auto-increment the plugin version, and package the theme and plugin into ZIP archives.
+
+**`varner-lite` is the sole master theme.** All edits go directly into `varner-equipment-theme-lite/varner-lite/`. The old `varner-v23` source is archived under `_archive/`.
 
 ### Automated Unified Build (Recommended)
-To rebuild **both** themes and the plugin automatically in one step:
+To rebuild the theme and plugin in one step:
 ```powershell
 .\build.ps1
 ```
 > [!TIP]
-> Each time you run `.\build.ps1`, the script automatically increments the patch version number (e.g. `1.23.1` → `1.23.2`) in `varner-os-plugin-v23.php`. This forces WordPress to prompt you to overwrite the active plugin when you upload the ZIP and breaks browser/CDN caching for enqueued scripts on WP Engine.
+> Each run of `.\build.ps1` auto-increments the plugin patch version (e.g. `1.23.1` → `1.23.2`), forces WordPress to prompt for an overwrite, and busts CDN/browser cache for all enqueued scripts on WP Engine.
 
 ### Manual Sync & Rebuild (For Debugging)
 If you prefer to run commands manually:

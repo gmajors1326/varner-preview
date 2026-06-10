@@ -79,6 +79,17 @@ export const MobileAppLayout = ({
   const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // When apiFetch detects a 401 in mobile context it fires this event.
+  // Reset the auth gate in-place — no hard reload, no white screen.
+  useEffect(() => {
+    const onTokenExpired = () => {
+      setMobileToken('');
+      setAuthError('Your session expired. Please scan a new QR code to continue.');
+    };
+    window.addEventListener('varner:token-expired', onTokenExpired);
+    return () => window.removeEventListener('varner:token-expired', onTokenExpired);
+  }, [setMobileToken]);
   const [mobileSearch, setMobileSearch] = useState('');
   const [mobileCategoryFilter, setMobileCategoryFilter] = useState('');
   const [mobileConditionFilter, setMobileConditionFilter] = useState('');
@@ -150,6 +161,16 @@ export const MobileAppLayout = ({
       setMobileToken(tokenToVerify);
       loadInventory();
       showToast('Welcome to Mobile Companion!');
+      // Handle PWA shortcut deep links: ?action=new → edit tab, ?action=list → list tab
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get('action');
+      if (action === 'new') {
+        setUnitData(defaultEmptyUnit);
+        setFieldErrors({});
+        setMobileActiveTab('edit');
+      } else if (action === 'list') {
+        setMobileActiveTab('list');
+      }
     } catch (err) {
       localStorage.removeItem('varner_mobile_token');
       setAuthError('Authentication failed: Invalid or expired token.');
@@ -171,12 +192,13 @@ export const MobileAppLayout = ({
     verifyAndSaveToken(cleaned);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm('Are you sure you want to sign out?')) {
+      try {
+        await apiFetch('/logout', { method: 'POST' });
+      } catch (_) {}
       localStorage.removeItem('varner_mobile_token');
-      setMobileToken('');
-      setTokenInput('');
-      setAuthError('');
+      window.location.href = '/mobile-app/';
     }
   };
 
@@ -297,7 +319,7 @@ export const MobileAppLayout = ({
   ])).sort();
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <div className="flex flex-col h-dvh bg-slate-50 text-slate-900 font-sans overflow-hidden">
       {toast && (
         <div className={`fixed top-4 left-4 right-4 z-[9999] px-5 py-3 rounded-xl text-center font-black text-xs shadow-xl transition-all ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
           {toast.msg}
@@ -315,7 +337,7 @@ export const MobileAppLayout = ({
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
         {mobileActiveTab === 'dashboard' && (
           <div className="p-4 space-y-6 animate-in fade-in duration-300">
             <div>
@@ -361,7 +383,7 @@ export const MobileAppLayout = ({
                   <Plus size={14}/> Create New Listing
                 </button>
                 <button onClick={() => setMobileActiveTab('list')} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-[10px] py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
-                  <List size={14}/> View Active Stock
+                  <List size={14}/> View Active Inventory
                 </button>
               </div>
             </div>
@@ -382,7 +404,7 @@ export const MobileAppLayout = ({
           <div className="p-4 space-y-4 animate-in fade-in duration-300">
             <div>
               <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory Ledger</h2>
-              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">Active Stock</h1>
+              <h1 className="text-2xl font-black text-slate-950 uppercase tracking-tight">Active Inventory</h1>
             </div>
 
             <div className="relative">
@@ -936,9 +958,9 @@ export const MobileAppLayout = ({
             <button
               onClick={handleMobileSave}
               disabled={isSaving}
-              className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-4.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all mt-4 border-b-2 border-red-800"
+              className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-6 rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all mt-6 border-b-2 border-red-800"
             >
-              {isSaving ? <Loader2 className="animate-spin" size={16}/> : <Save size={16}/>}
+              {isSaving ? <Loader2 className="animate-spin" size={22}/> : <Save size={22}/>}
               {isSaving ? 'SAVING CHANGES…' : (unitData.id ? 'SAVE UNIT CHANGES' : 'PUBLISH NEW UNIT')}
             </button>
           </div>

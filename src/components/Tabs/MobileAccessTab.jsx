@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
-import { Smartphone, Loader2, Zap, ScanText, Clock } from 'lucide-react';
+import { Smartphone, Loader2, Zap, ScanText, Clock, ExternalLink, AlertCircle } from 'lucide-react';
 import { apiFetch } from '../../utils/api';
 
 export const MobileAccessTab = () => {
-  const [token, setToken]           = useState(null);
+  const [token, setToken]               = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [expiry, setExpiry]         = useState(null);
-  const [qrUrl, setQrUrl]           = useState('');
+  const [expiry, setExpiry]             = useState(null);
+  const [qrUrl, setQrUrl]               = useState('');
+  const [genError, setGenError]         = useState('');
 
   const generateToken = async () => {
     setIsGenerating(true);
+    setGenError('');
     try {
       const data = await apiFetch('/mobile/token', { method: 'POST' });
       setToken(data.token);
       setQrUrl(data.url);
       setExpiry(new Date(Date.now() + data.expires_in * 1000).toLocaleTimeString());
     } catch (e) {
-      alert('Failed to generate secure token: ' + e.message);
+      setGenError(e.message || 'Failed to generate token. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -36,18 +38,39 @@ export const MobileAccessTab = () => {
             <p className="text-slate-400 text-lg leading-relaxed mb-8 max-w-md font-medium">
               Provision mobile devices for field inventory audits, photo uploads, and real-time stock scanning.
             </p>
+
+            {/* Error display */}
+            {genError && (
+              <div className="flex items-start gap-3 bg-red-500/15 border border-red-500/30 rounded-2xl px-4 py-3 mb-4 text-red-300 text-xs font-bold">
+                <AlertCircle size={14} className="shrink-0 mt-0.5"/>
+                <span>{genError}</span>
+              </div>
+            )}
+
             {!token ? (
-              <button 
-                onClick={generateToken} 
-                disabled={isGenerating} 
+              <button
+                onClick={generateToken}
+                disabled={isGenerating}
                 className="mt-4 bg-blue-600 hover:bg-blue-500 text-white px-10 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl flex items-center gap-3 active:scale-95 disabled:opacity-50"
               >
                 {isGenerating ? <Loader2 className="animate-spin"/> : <Zap size={18}/>} Generate Secure Access
               </button>
             ) : (
-              <button onClick={() => setToken(null)} className="mt-4 text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest">
-                Revoke Token
-              </button>
+              <div className="space-y-3 mt-4">
+                {/* Primary CTA — tap to launch on this device */}
+                <a
+                  href={qrUrl}
+                  className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-[0.15em] text-xs shadow-2xl transition-all w-full text-center"
+                >
+                  <ExternalLink size={16}/> Launch on This Device
+                </a>
+                <button
+                  onClick={() => { setToken(null); setGenError(''); }}
+                  className="w-full text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest py-2"
+                >
+                  Revoke &amp; Reset
+                </button>
+              </div>
             )}
           </div>
           <div className="flex justify-center lg:justify-end">
@@ -64,7 +87,7 @@ export const MobileAccessTab = () => {
               </div>
               {token && (
                 <div className="mt-6 text-center">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Secure Token</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Scan to hand off to another device</p>
                   <p className="text-xl font-mono font-black text-slate-900 tracking-wider">{token}</p>
                   <div className="mt-4 flex items-center justify-center gap-2 text-amber-500">
                     <Clock size={12}/>

@@ -1,15 +1,15 @@
 # Varner Equipment OS & Theme - Master Skill
 
-This document serves as the comprehensive technical manual for the Varner Equipment digital ecosystem, including the React-powered inventory management system (Varner OS) and the dual-version WordPress themes.
+This document serves as the comprehensive technical manual for the Varner Equipment digital ecosystem, including the React-powered inventory management system (Varner OS) and the WordPress theme.
 
 ---
 
 ## 1. Architecture Overview
 The project is split into three main components that work in tandem:
 
--   **Varner OS (React Application)**: Located in the root directory. This is the front-end interface for inventory management, built with Vite, Tailwind CSS, and Lucide icons.
+-   **Varner OS (React Application)**: Located in the root directory. This is the front-end interface for inventory management, built with Vite, React, and Lucide icons.
 -   **Varner OS Plugin (`varner-os-plugin-v23`)**: The WordPress bridge. It registers the `equipment` Custom Post Type (CPT), provides the REST API endpoints for the React app, and handles ACF field registration.
--   **Varner Equipment Themes (v23 & Lite)**: The public-facing websites. They handle faceted search, inventory displays, and SEO-optimized category pages.
+-   **Varner Equipment Theme (`varner-lite`)**: The sole master theme. Handles the public-facing website: inventory displays, native filtering, SEO-optimized category pages, and all front-end pages. `varner-equipment-theme-v23` was retired June 2026 and is archived under `_archive/`.
 
 ---
 
@@ -65,9 +65,11 @@ Authorized brands are managed in three locations to ensure full integration:
 4.  Rebuild the plugin ZIP. See `DEPLOY.md` for the exact command.
 
 ### Editing Themes
-1.  Apply changes to `varner-equipment-theme-v23`.
-2.  **Mandatory Lite Sync**: Always sync modified PHP files (header, footer, functions, partials) to `varner-equipment-theme-lite`.
-3.  **Rebuild both ZIPs**: After syncing, rebuild `varner-equipment-theme-v23.zip` and `varner-equipment-theme-v23-lite.zip`. See `DEPLOY.md` for the exact commands.
+1.  Apply **all changes directly to `varner-equipment-theme-lite/varner-lite/`** — this is the sole master theme.
+2.  Compile Tailwind if CSS changes were made: `build.ps1` handles this automatically, or run manually from inside `varner-lite/`: `npx tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --minify`
+3.  Run `build.ps1` to package `varner-equipment-theme-v23-lite.zip`. See `DEPLOY.md` for deployment commands.
+
+> **Note**: `varner-equipment-theme-v23` is retired. Do not edit it. It lives in `_archive/` for reference only.
 
 ---
 
@@ -78,29 +80,16 @@ All deployment artifacts are generated as ZIP files in the root directory.
 
 ### Command Execution (PowerShell — run from project root):
 ```powershell
-# Build React
-npm run build
+# Recommended: run the unified build script
+.\build.ps1
 
-# Sync Plugin Assets
-Remove-Item '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist' -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item '.\dist' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\' -Recurse -Force
-
-# Package Everything
-if (Test-Path '.\varner-equipment-theme-v23.zip')      { Remove-Item '.\varner-equipment-theme-v23.zip'      -Force }
-if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
-if (Test-Path '.\varner-os-plugin-v23.zip')            { Remove-Item '.\varner-os-plugin-v23.zip'            -Force }
-
-Push-Location "varner-equipment-theme-v23"
-tar -a -c -f ../varner-equipment-theme-v23.zip varner-v23
-Pop-Location
-
-Push-Location "varner-equipment-theme-lite"
-tar -a -c -f ../varner-equipment-theme-v23-lite.zip varner-lite
-Pop-Location
-
-Push-Location "varner-os-plugin-v23-unpacked"
-tar -a -c -f ../varner-os-plugin-v23.zip varner-os-plugin-v23
-Pop-Location
+# This script does:
+# 1. npm run build  (React)
+# 2. Syncs dist/ into the plugin folder
+# 3. Auto-increments plugin patch version
+# 4. Compiles Tailwind CSS in varner-lite/
+# 5. Packages varner-os-plugin-v23.zip
+# 6. Packages varner-equipment-theme-v23-lite.zip
 ```
 
 ---

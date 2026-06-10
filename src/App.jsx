@@ -25,10 +25,9 @@ import { ManageListModal } from './components/Common/Modals';
 import { InputField, TextAreaField, SelectField, QUILL_STYLES } from './components/Common/FormFields';
 import { MetricCard, QuickActions, RecentActivity } from './components/Common/DashboardCards';
 
-import { MediaSection } from './components/MediaSection';
-import { AttachmentsSection } from './components/AttachmentsSection';
-import { FilterSidebar } from './components/FilterSidebar';
 import { FBPreviewModal } from './components/FBPreviewModal';
+import { InventoryTable } from './components/InventoryTable';
+import { UnitEditorPanel } from './components/UnitEditorPanel';
 
 import { MarketplaceTab } from './components/Tabs/MarketplaceTab';
 import { SettingsTab } from './components/Tabs/SettingsTab';
@@ -44,8 +43,15 @@ const defaultEmptyUnit = DEFAULT_EMPTY_UNIT;
 
 const App = () => {
   const isMobileApp = window.varnerData?.is_mobile_app || window.location.pathname.includes('/mobile-app/');
+
+  // Priority: PHP-injected auto-token â†’ URL ?token= param â†’ localStorage
+  const _varnerToken = window.varnerData?.mobile_token || '';
+  if (_varnerToken) localStorage.setItem('varner_mobile_token', _varnerToken);
+
   const [mobileToken, setMobileToken] = useState(
-    new URLSearchParams(window.location.search).get('token') || localStorage.getItem('varner_mobile_token') || ''
+    _varnerToken ||
+    new URLSearchParams(window.location.search).get('token') ||
+    localStorage.getItem('varner_mobile_token') || ''
   );
   const [mobileActiveTab, setMobileActiveTab] = useState('dashboard');
 
@@ -131,15 +137,24 @@ const App = () => {
   const loadInventory = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [active, deleted] = await Promise.all([
-        apiFetch('/inventory'),
-        apiFetch('/inventory/deleted'),
-      ]);
-      setInventoryList(active.map(apiToListItem));
-      setDeletedHistory(deleted.map(item => ({
-        ...apiToListItem(item),
-        deletedAt: item.deleted_at,
-      })));
+      // /inventory returns a flat array by default (no per_page param).
+      // Guard against paginated shape { items, total } in case server behaviour changes.
+      const activeRaw = await apiFetch('/inventory');
+      const activeItems = Array.isArray(activeRaw) ? activeRaw : (activeRaw?.items ?? []);
+      setInventoryList(activeItems.map(apiToListItem));
+
+      // Fetch deleted history separately so a permissions/nonce failure here
+      // doesn't block the main inventory list from loading.
+      try {
+        const deletedRaw = await apiFetch('/inventory/deleted');
+        const deletedItems = Array.isArray(deletedRaw) ? deletedRaw : (deletedRaw?.items ?? []);
+        setDeletedHistory(deletedItems.map(item => ({
+          ...apiToListItem(item),
+          deletedAt: item.deleted_at,
+        })));
+      } catch (delErr) {
+        console.warn('Varner OS: Could not load deleted inventory:', delErr.message);
+      }
     } catch (e) {
       showToast('Failed to load inventory: ' + e.message, 'error');
     } finally {
@@ -249,7 +264,7 @@ const App = () => {
     }
   };
 
-  // Image upload — sends file to WP Media Library, stores id + url
+  // Image upload â€” sends file to WP Media Library, stores id + url
   const handleAddImages = async (files) => {
     if (!files || !files.length) return;
     setIsUploadingImages(true);
@@ -494,11 +509,18 @@ const App = () => {
   // Fetches complete unit data from API and opens editor
   const handleFullEdit = async (wpId) => {
     setActiveTab('inventory');
+    if (!wpId) return;
     try {
-      const units = await apiFetch('/inventory');
-      const unit = units.find(u => u.id === wpId);
+      const unit = await apiFetch(`/inventory/${wpId}`);
       if (unit) setUnitData(apiToLocal(unit));
-    } catch { /* tab already switched; user will see empty editor */ }
+    } catch {
+      // Fall back to searching the list if individual endpoint fails
+      try {
+        const units = await apiFetch('/inventory');
+        const found = Array.isArray(units) ? units.find(u => u.id === wpId) : null;
+        if (found) setUnitData(apiToLocal(found));
+      } catch { /* tab already switched; user will see empty editor */ }
+    }
   };
 
   const handleClone = () => {
@@ -602,31 +624,10 @@ const App = () => {
     );
   }
 
-  const allCategories = Array.from(new Set([
-    ...Object.keys(CATEGORY_TREE),
-    ...categories,
-    ...(unitData.category ? [unitData.category] : [])
-  ])).sort();
-
-  const subTree = CATEGORY_TREE[unitData.category] || {};
-  const predefinedSubcategories = Object.keys(subTree);
-  const allSubcategories = Array.from(new Set([
-    ...predefinedSubcategories,
-    ...subcategories,
-    ...(unitData.subcategory ? [unitData.subcategory] : [])
-  ])).sort();
-
-  const predefinedSubSubcategories = (unitData.subcategory && subTree[unitData.subcategory]) || [];
-  const allSubSubcategories = Array.from(new Set([
-    ...predefinedSubSubcategories,
-    ...subSubcategories,
-    ...(unitData.sub_subcategory ? [unitData.sub_subcategory] : [])
-  ])).sort();
-
   return (
     <div className="flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 min-h-screen">
 
-      {/* Quill editor styles — injected once at app root */}
+      {/* Quill editor styles â€” injected once at app root */}
       <style dangerouslySetInnerHTML={{ __html: QUILL_STYLES }} />
 
       {/* Toast */}
@@ -735,8 +736,8 @@ const App = () => {
                 className="bg-red-600 text-white p-3 sm:px-7 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800"
               >
                 {isSaving ? <Zap className="animate-spin" size={16} /> : (activeTab === 'inventory' ? <Save size={16} /> : <Plus size={16} />)}
-                <span className="hidden sm:inline">{isSaving ? 'PUBLISHING…' : (activeTab === 'inventory' ? 'PUBLISH TO INVENTORY' : 'NEW UNIT')}</span>
-                <span className="sm:hidden">{activeTab === 'inventory' ? (isSaving ? 'PUB…' : 'PUBLISH') : 'NEW'}</span>
+                <span className="hidden sm:inline">{isSaving ? 'PUBLISHINGâ€¦' : (activeTab === 'inventory' ? 'PUBLISH TO INVENTORY' : 'NEW UNIT')}</span>
+                <span className="sm:hidden">{activeTab === 'inventory' ? (isSaving ? 'PUBâ€¦' : 'PUBLISH') : 'NEW'}</span>
               </button>
             )}
           </div>
@@ -749,10 +750,10 @@ const App = () => {
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                  <MetricCard icon={<Box size={24} />} label="Live Units" value={isLoading ? '…' : String(inventoryList.filter(i => (i.status || '').toLowerCase() === 'in stock').length)} subtext="In stock right now" color="blue" />
-                  <MetricCard icon={<TrendingUp size={24} />} label="Total Units" value={isLoading ? '…' : String(inventoryList.length)} subtext="All active listings" color="amber" />
-                  <MetricCard icon={<CheckCircle2 size={24} />} label="Sold Units" value={isLoading ? '…' : String(inventoryList.filter(i => (i.status || '').toLowerCase() === 'sold').length)} subtext="Marked as sold" color="green" />
-                  <MetricCard icon={<Clock size={24} />} label="Pending Sales" value={isLoading ? '…' : String(inventoryList.filter(i => ['sale pending', 'pending sale', 'pending'].includes((i.status || '').toLowerCase())).length)} subtext="Awaiting close" color="red" />
+                  <MetricCard icon={<Box size={24} />} label="Live Units" value={isLoading ? 'â€¦' : String(inventoryList.filter(i => (i.status || '').toLowerCase() === 'in stock').length)} subtext="In stock right now" color="blue" />
+                  <MetricCard icon={<TrendingUp size={24} />} label="Total Units" value={isLoading ? 'â€¦' : String(inventoryList.length)} subtext="All active listings" color="amber" />
+                  <MetricCard icon={<CheckCircle2 size={24} />} label="Sold Units" value={isLoading ? 'â€¦' : String(inventoryList.filter(i => (i.status || '').toLowerCase() === 'sold').length)} subtext="Marked as sold" color="green" />
+                  <MetricCard icon={<Clock size={24} />} label="Pending Sales" value={isLoading ? 'â€¦' : String(inventoryList.filter(i => ['sale pending', 'pending sale', 'pending'].includes((i.status || '').toLowerCase())).length)} subtext="Awaiting close" color="red" />
                 </div>
                 <div className="space-y-8">
                   <QuickActions onAdd={handleAddNewUnit} />
@@ -763,502 +764,56 @@ const App = () => {
 
             {/* MASTER INVENTORY */}
             {activeTab === 'all-inventory' && (
-              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-6 duration-500">
-
-                {/* Application Filter — Horizontal on desktop, above the ledger card */}
-                <div className="hidden xl:block">
-                  <FilterSidebar horizontal inventoryList={inventoryList} filters={activeFilters} searchQuery={searchQuery}
-                    onFilterChange={handleFilterChange} onKeywordSearch={setSearchQuery} onClearAll={handleClearFilters} />
-                </div>
-
-                {/* Applied Filters Bar — full width across top */}
-                {(searchQuery || Object.values(activeFilters).some(v => Array.isArray(v) ? v.length > 0 : v !== '')) && (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3 flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0 mr-1">Active Filters:</span>
-                    {searchQuery && (
-                      <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-                        <button onClick={() => setSearchQuery('')} className="font-black leading-none hover:text-red-200">×</button>
-                        {searchQuery.toUpperCase()}
-                      </span>
-                    )}
-                    {['makes', 'status', 'categories', 'models', 'conditions'].flatMap(key =>
-                      activeFilters[key].map(v => (
-                        <FilterTag key={`${key}-${v}`} label={v.toUpperCase()}
-                          onRemove={() => handleFilterChange(key, activeFilters[key].filter(x => x !== v))} />
-                      ))
-                    )}
-                    {(activeFilters.yearMin || activeFilters.yearMax) && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => { handleFilterChange('yearMin', ''); handleFilterChange('yearMax', ''); }} className="font-black leading-none hover:text-red-200">×</button>YEAR: {activeFilters.yearMin || '?'}–{activeFilters.yearMax || '?'}</span>}
-                    {(activeFilters.priceMin || activeFilters.priceMax) && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => { handleFilterChange('priceMin', ''); handleFilterChange('priceMax', ''); }} className="font-black leading-none hover:text-red-200">×</button>PRICE: ${activeFilters.priceMin || '0'}–${activeFilters.priceMax || '∞'}</span>}
-                    {activeFilters.stockSearch && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('stockSearch', '')} className="font-black leading-none hover:text-red-200">×</button>STOCK #: {activeFilters.stockSearch}</span>}
-                    {activeFilters.vinSearch && <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md"><button onClick={() => handleFilterChange('vinSearch', '')} className="font-black leading-none hover:text-red-200">×</button>VIN: {activeFilters.vinSearch}</span>}
-                    <button onClick={handleClearFilters} className="ml-auto text-xs font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors shrink-0">Clear All</button>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-3">
-                  {/* Mobile filter drawer button logic (FilterSidebar is now used in drawer for mobile) */}
-                  {showFilterPanel && (
-                    <div className="fixed inset-0 z-[9997] xl:hidden">
-                      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowFilterPanel(false)} />
-                      <div className="absolute inset-y-0 left-0 w-80 bg-white overflow-y-auto shadow-2xl">
-                        <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-                          <h3 className="font-black text-sm uppercase tracking-widest">Filters</h3>
-                          <button onClick={() => setShowFilterPanel(false)} className="p-1 text-gray-400 hover:text-gray-700"><X size={20} /></button>
-                        </div>
-                        <FilterSidebar inventoryList={inventoryList} filters={activeFilters} searchQuery={searchQuery}
-                          onFilterChange={handleFilterChange} onKeywordSearch={setSearchQuery} onClearAll={handleClearFilters} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Table / Master inventory ledger card */}
-                  <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-xl overflow-hidden" style={{ minWidth: 0 }}>
-                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between w-full">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setShowFilterPanel(true)}
-                          className="xl:hidden flex items-center gap-2 bg-white border-2 border-slate-200 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:border-red-500 transition-colors">
-                          <Search size={14} /> Filters
-                        </button>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Inventory Ledger</span>
-                      </div>
-                      <span className="bg-slate-900 text-white text-[11px] font-black px-4 py-2 rounded-full uppercase tracking-widest shrink-0">
-                        {filteredInventory.length} Unit{filteredInventory.length !== 1 ? 's' : ''} Found
-                      </span>
-                    </div>
-                    <div className="overflow-x-auto p-2">
-                      {isLoading ? (
-                        <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Loading inventory…</div>
-                      ) : (
-                        <table className="w-full text-left border-collapse min-w-[1400px]">
-                          <thead>
-                            <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
-                              <th className="px-6 py-5 w-24">STOCK #</th>
-                              <th className="px-6 py-5 w-28">PHOTO</th>
-                              <th className="px-6 py-5">YEAR / MAKE / MODEL</th>
-                              <th className="px-6 py-5">CATEGORY</th>
-                              <th className="px-6 py-5 text-center w-32">CONDITION</th>
-                              <th className="px-6 py-5 w-32">PRICE (USD)</th>
-                              <th className="px-6 py-5 w-40">STATUS</th>
-                              <th className="px-6 py-5 text-center w-36">DAYS IN STOCK</th>
-                              <th className="px-6 py-5 text-center w-28">WEBSITE</th>
-                              <th className="px-6 py-5 text-center w-28">FEATURED</th>
-                              <th className="px-6 py-5 text-right w-32">ACTIONS</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50">
-                            {filteredInventory.length === 0 ? (
-                              <tr><td colSpan="11" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
-                            ) : filteredInventory.map(item => (
-                              <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleFullEdit(item.wpId)}>
-                                <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
-                                <td className="px-4 py-3">
-                                  <div className="w-40 h-28 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                                    {item.images?.[0]
-                                      ? <img src={item.images[0]} alt={`${item.year} ${item.make} ${item.model}`} className="w-full h-full object-cover" onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }} />
-                                      : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-300" /></div>
-                                    }
-                                  </div>
-                                </td>
-                                <td className="px-6 py-5">
-                                  <p className="font-black text-base leading-tight uppercase tracking-tight">{item.year} {item.make}</p>
-                                  <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">{item.model}</p>
-                                </td>
-                                <td className="px-6 py-5">
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.category}</span>
-                                    {item.subcategory && (
-                                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                                        &raquo; {item.subcategory}
-                                        {item.sub_subcategory && ` \u203A ${item.sub_subcategory}`}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-5 text-center"><span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span></td>
-                                <td className="px-6 py-5 font-black text-base tracking-tighter">
-                                  {item.callForPrice
-                                    ? <span className="text-red-600 text-[11px] uppercase tracking-widest">Call for Price</span>
-                                    : <span className="text-slate-900">${parseInt(item.price || 0).toLocaleString()}</span>
-                                  }
-                                </td>
-                                <td className="px-6 py-5">
-                                  <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${item.status === 'In Stock' ? 'text-green-500 bg-green-50 border-green-100' : item.status === 'Pending Sale' ? 'text-amber-500 bg-amber-50 border-amber-100' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'In Stock' ? 'bg-green-500 animate-pulse' : item.status === 'Pending Sale' ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                                    {item.status}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-5 text-center">
-                                  <span className="text-xs font-black uppercase tracking-wider text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200/50 shadow-sm">
-                                    {getDaysInStock(item)}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
-                                  <div className="flex justify-center">
-                                    <button onClick={() => handleToggleBoolean(item, 'show_on_website')}
-                                      className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}>
-                                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`} />
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
-                                  <div className="flex justify-center">
-                                    <button onClick={() => handleToggleBoolean(item, 'featured')}
-                                      className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
-                                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-5 text-right">
-
-                                  <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                                    <button onClick={() => handleFullEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit"><Edit2 size={16} /></button>
-                                    <button onClick={() => handleFullEdit(item.wpId).then(handleClone)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone"><Copy size={16} /></button>
-                                    <button onClick={() => handleDeleteUnit(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete"><X size={16} /></button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <InventoryTable
+                filteredInventory={filteredInventory}
+                inventoryList={inventoryList}
+                isLoading={isLoading}
+                activeFilters={activeFilters}
+                searchQuery={searchQuery}
+                onFilterChange={handleFilterChange}
+                onSearch={setSearchQuery}
+                onClearFilters={handleClearFilters}
+                onEdit={handleFullEdit}
+                onDelete={handleDeleteUnit}
+                onClone={(wpId) => handleFullEdit(wpId).then(handleClone)}
+                onToggle={handleToggleBoolean}
+              />
             )}
 
             {/* UNIT EDITOR */}
             {activeTab === 'inventory' && (
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
-                <div className="xl:col-span-2 space-y-8">
-                  <div className="bg-white rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-xl border border-slate-200/60 relative overflow-hidden text-slate-900">
-                    <div className="flex justify-between items-center mb-6 sm:mb-8">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none"><Box size={14} className="text-red-600" /> Equipment Identity</h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="md:col-span-2 animate-in fade-in duration-300">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between pl-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Equipment Category Hierarchy</label>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Category Dropdown */}
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Category *</label>
-                              <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                                <select value={unitData.category || ''} onChange={e => handleCategorySelectChange(e.target.value)}
-                                  className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
-                                  style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                  <option value="">— Select Category —</option>
-                                  {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
-                              </div>
-                              <button type="button" onClick={() => setShowCategoriesModal(true)}
-                                className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
-                                <Settings size={14} /> Manage Categories
-                              </button>
-                            </div>
-
-                            {/* Subcategory Dropdown */}
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Subcategory</label>
-                              <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                                <select value={unitData.subcategory || ''} onChange={e => handleSubcategorySelectChange(e.target.value)}
-                                  className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
-                                  style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                  <option value="">— Select Subcategory —</option>
-                                  {allSubcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                                </select>
-                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
-                              </div>
-                              <button type="button" onClick={() => setShowSubcategoriesModal(true)}
-                                className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
-                                <Settings size={14} /> Manage Subcategories
-                              </button>
-                            </div>
-
-                            {/* Sub-Subcategory Dropdown */}
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Sub-Subcategory</label>
-                              <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                                <select value={unitData.sub_subcategory || ''} onChange={e => handleSubSubcategorySelectChange(e.target.value)}
-                                  className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
-                                  style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                  <option value="">— Select Sub-Subcategory —</option>
-                                  {allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
-                                </select>
-                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
-                              </div>
-                              <button type="button" onClick={() => setShowSubSubcategoriesModal(true)}
-                                className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
-                                <Settings size={14} /> Manage Sub-Subcategories
-                              </button>
-                            </div>
-                          </div>
-                          {fieldErrors.category && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.category}</p>}
-                        </div>
-                      </div>
-                      <div className="md:col-span-2">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between pl-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Brand / Manufacturer</label>
-                          </div>
-                          <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                              <select value={unitData.make}
-                                onChange={e => {
-                                  const v = e.target.value;
-                                  handleInputChange('make', v);
-                                  const newTitle = `${unitData.year} ${v} ${unitData.model}`.trim();
-                                  handleInputChange('title', newTitle);
-                                }}
-                                className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
-                                style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                <option value="">— Select Brand —</option>
-                                {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                              </select>
-                              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90" /></div>
-                            </div>
-                            <button type="button" onClick={() => setShowBrandsModal(true)}
-                              className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
-                              <Settings size={14} /> Manage Brands
-                            </button>
-                          </div>
-                          {fieldErrors.make && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.make}</p>}
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
-                        <div className="flex-1">
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Year</label>
-                            <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                              <select
-                                value={unitData.year}
-                                onChange={e => {
-                                  const v = e.target.value;
-                                  handleInputChange('year', v);
-                                  const newTitle = `${v} ${unitData.make} ${unitData.model}`.trim();
-                                  handleInputChange('title', newTitle);
-                                }}
-                                className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
-                                style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}
-                              >
-                                <option value="">— Select Year —</option>
-                                {Array.from({ length: 2027 - 1950 + 1 }, (_, i) => 2027 - i).map(year => (
-                                  <option key={year} value={year}>{year}</option>
-                                ))}
-                              </select>
-                              <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400">
-                                <ChevronRight size={24} className="rotate-90" />
-                              </div>
-                            </div>
-                            {fieldErrors.year && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.year}</p>}
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <InputField
-                            label="Model"
-                            value={unitData.model}
-                            onChange={v => {
-                              handleInputChange('model', v);
-                              const newTitle = `${unitData.year} ${unitData.make} ${v}`.trim();
-                              handleInputChange('title', newTitle);
-                            }}
-                            error={fieldErrors.model}
-                          />
-                        </div>
-                      </div>
-                      <div className="md:col-span-2">
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">
-                            Public Inventory Title <span className="text-red-600">(Mandatory)</span>
-                          </label>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide -mt-1 ml-1 leading-relaxed opacity-80">
-                            Main heading for website & marketplace.
-                            <span className="text-slate-500"> Include Year, Make, and Model for optimal SEO and visibility.</span>
-                          </p>
-                          <input
-                            type="text"
-                            value={unitData.title}
-                            onChange={e => handleInputChange('title', e.target.value)}
-                            className={`w-full bg-slate-50 border-2 rounded-xl p-4 font-black text-slate-900 outline-none transition-all shadow-sm text-xl leading-none min-h-[64px] ${fieldErrors.title ? 'border-red-400 focus:border-red-500 bg-red-50/40' : 'border-slate-100 focus:border-slate-300 focus:bg-white'}`}
-                          />
-                          {fieldErrors.title && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.title}</p>}
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1"><SelectField label="Stock Status" options={STATUS_OPTIONS} value={unitData.stockStatus} onChange={v => handleInputChange('stockStatus', v)} error={fieldErrors.stockStatus} /></div>
-                        <div className="flex-1"><SelectField label="Condition" options={CONDITION_OPTIONS} value={unitData.condition} onChange={v => handleInputChange('condition', v)} error={fieldErrors.condition} /></div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex-1">
-                          <SelectField
-                            label="Color"
-                            placeholder="Choose Color"
-                            options={COLOR_OPTIONS}
-                            value={unitData.color}
-                            onChange={v => handleInputChange('color', v)}
-                            error={fieldErrors.color}
-                          />
-                        </div>
-                        <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)} error={fieldErrors.length} /></div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
-                        <div className="flex-1 space-y-3">
-                          <InputField label="Meter Reading" value={unitData.meter} onChange={v => handleInputChange('meter', v)} error={fieldErrors.meter} placeholder="e.g. 250" />
-                          <SelectField label="Meter Type" options={METER_TYPE_OPTIONS} value={unitData.meterType} onChange={v => handleInputChange('meterType', v)} />
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <InputField label="Drive" value={unitData.drive} onChange={v => handleInputChange('drive', v)} error={fieldErrors.drive} placeholder="e.g. 4WD / 2WD" />
-                          <SelectField label="Attachments" options={['No', 'Yes']} value={unitData.hasAttachments ? 'Yes' : 'No'} onChange={v => handleInputChange('hasAttachments', v === 'Yes')} />
-                        </div>
-                      </div>
-                      {unitData.hasAttachments && (
-                        <div className="md:col-span-2">
-                          <InputField label="Attachment Details" value={unitData.attachmentDetails} onChange={v => handleInputChange('attachmentDetails', v)} placeholder="Describe the included attachment(s)..." />
-                        </div>
-                      )}
-                      <div className="md:col-span-2 border-y border-slate-50 py-6 my-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">VIN / SERIAL NUMBER</label>
-                          <input type="text" value={unitData.vin} onChange={e => handleInputChange('vin', e.target.value)}
-                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-xl text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase min-h-[64px]"
-                            placeholder="TYPE SERIAL..." />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Stock Number</label>
-                          <input type="text" value={unitData.stockNumber} onChange={e => handleInputChange('stockNumber', e.target.value)}
-                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-xl text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase min-h-[64px]"
-                            placeholder="STOCK #" />
-                        </div>
-                      </div>
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 px-1 items-end">
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-green-600 uppercase tracking-widest block pl-1">Retail Price (USD)</label>
-                          <label className="flex items-center gap-3 cursor-pointer group w-fit ml-1">
-                            <div className="relative flex items-center">
-                              <input type="checkbox" checked={unitData.callForPrice} onChange={e => handleInputChange('callForPrice', e.target.checked)} className="sr-only peer" />
-                              <div className="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-red-600 transition-all after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4 shadow-inner"></div>
-                            </div>
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Call For Price</span>
-                          </label>
-                          <div className={`flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px] ${unitData.callForPrice ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
-                            <div className="pl-5 pr-3 py-5 border-r border-slate-200 bg-slate-100/50 rounded-l-xl">
-                              <span className="text-green-600 font-black text-xl select-none">$</span>
-                            </div>
-                            <input type="text" value={unitData.price ? Number(unitData.price).toLocaleString() : ''}
-                              disabled={unitData.callForPrice}
-                              onChange={e => handleInputChange('price', e.target.value.replace(/[^0-9]/g, ''))}
-                              className="flex-1 bg-transparent p-4 font-black text-slate-900 outline-none text-xl leading-none" placeholder="0.00" />
-                          </div>
-                          {fieldErrors.price && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.price}</p>}
-                        </div>
-                      </div>
-
-                      <div className="md:col-span-2 space-y-4">
-                        <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl transition-all ${unitData.featured ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300'}`}>
-                              <Star size={20} fill={unitData.featured ? 'currentColor' : 'none'} />
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Featured Unit</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Display at the top of the homepage</p>
-                            </div>
-                          </div>
-                          <button type="button" onClick={() => handleInputChange('featured', !unitData.featured)}
-                            className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
-                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.featured ? 'left-8' : 'left-1'}`} />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-xl transition-all ${unitData.showOnWebsite ? 'bg-green-100 text-green-600' : 'bg-white text-slate-300'}`}>
-                              <Eye size={20} />
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Website Visibility</p>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Publicly visible on showroom pages</p>
-                            </div>
-                          </div>
-                          <button type="button" onClick={() => handleInputChange('showOnWebsite', !unitData.showOnWebsite)}
-                            className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.showOnWebsite ? 'bg-green-600' : 'bg-slate-200'}`}>
-                            <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.showOnWebsite ? 'left-8' : 'left-1'}`} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-50">
-                        <TextAreaField label="Public Description / Features" value={unitData.description} onChange={v => handleInputChange('description', v)} />
-                        <TextAreaField label="Seller Information Template" value={unitData.sellerInfo} onChange={v => handleInputChange('sellerInfo', v)} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <MediaSection title="High-Resolution Media" images={unitData.images} onAddFiles={handleAddImages} onRemove={handleRemoveImage} onReorder={handleReorderImages} isUploading={isUploadingImages} />
-                  <AttachmentsSection attachments={unitData.attachments} onAdd={handleAddImplement} onChange={handleUpdateImplement} onRemove={handleRemoveImplement} onImageUpload={handleImplementImageUpload} />
-
-                  {/* BOTTOM ACTION BUTTONS */}
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                    <button
-                      onClick={handleClone}
-                      disabled={!unitData.id}
-                      className={`flex-1 px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 border-2 shadow-xl shadow-slate-200/50 ${!unitData.id ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}
-                    >
-                      <Copy size={18} />
-                      Clone Unit
-                    </button>
-
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="flex-[2] bg-red-600 text-white px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all active:scale-95 shadow-2xl shadow-red-200 border-b-4 border-red-800 disabled:opacity-50"
-                    >
-                      {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                      {isSaving ? 'PUBLISHING…' : 'PUBLISH TO INVENTORY'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* RIGHT — MARKETPLACE WIDGET */}
-                <div className="space-y-8">
-                  <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200/60 flex flex-col">
-                    <div className="bg-slate-950 p-6 text-white flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-blue-600 p-2.5 rounded-xl"><Facebook size={20} fill="white" /></div>
-                        <div>
-                          <h4 className="font-black text-sm uppercase tracking-tight leading-none mb-1">Meta Marketplace</h4>
-                          <p className="text-[8px] text-slate-500 uppercase font-black tracking-widest">Auto-Sync Active</p>
-                        </div>
-                      </div>
-                      <button onClick={() => setSyncEnabled(!syncEnabled)} className={`w-14 h-7 rounded-full relative transition-all duration-300 ${syncEnabled ? 'bg-blue-600' : 'bg-slate-800'}`}>
-                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 ${syncEnabled ? 'left-8' : 'left-1'}`} />
-                      </button>
-                    </div>
-                    <div className="p-8 space-y-8 bg-white text-slate-900">
-                      <div className="flex items-center gap-4 p-5 bg-blue-50/40 border-2 border-blue-100 rounded-[1.5rem]">
-                        <div className="bg-white p-2 rounded-full border border-blue-200 shadow-md text-blue-600"><CheckCircle2 size={20} /></div>
-                        <div>
-                          <p className="text-[11px] font-black text-blue-950 uppercase leading-none mb-1">Facebook Catalog Synced</p>
-                          <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest italic">Refreshed 2m ago</p>
-                        </div>
-                      </div>
-                      <div className="space-y-4 px-1 font-black text-slate-900">
-                        <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Catalog Mapping Logic</h5>
-                        <MappingRow label="Vehicle Category" value="Agriculture / Tractor" />
-                        <MappingRow label="Location Tag" value="Delta, CO (150mi)" />
-                        <MappingRow label="Price Format" value="USD Fixed" />
-                      </div>
-                      <button onClick={() => setShowFBPreview(true)} className="w-full bg-slate-950 text-white py-6 rounded-[1.5rem] font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all active:scale-95 shadow-2xl shadow-slate-300 mt-2 leading-none border-b-4 border-slate-800">
-                        View Marketplace Preview <ArrowUpRight size={18} className="text-blue-400" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <UnitEditorPanel
+                unitData={unitData}
+                handleInputChange={handleInputChange}
+                handleSave={handleSave}
+                handleClone={handleClone}
+                isSaving={isSaving}
+                isUploadingImages={isUploadingImages}
+                fieldErrors={fieldErrors}
+                brands={brands}
+                categories={categories}
+                subcategories={subcategories}
+                subSubcategories={subSubcategories}
+                handleCategorySelectChange={handleCategorySelectChange}
+                handleSubcategorySelectChange={handleSubcategorySelectChange}
+                handleSubSubcategorySelectChange={handleSubSubcategorySelectChange}
+                handleAddImages={handleAddImages}
+                handleRemoveImage={handleRemoveImage}
+                handleReorderImages={handleReorderImages}
+                handleAddImplement={handleAddImplement}
+                handleUpdateImplement={handleUpdateImplement}
+                handleRemoveImplement={handleRemoveImplement}
+                handleImplementImageUpload={handleImplementImageUpload}
+                setShowBrandsModal={setShowBrandsModal}
+                setShowCategoriesModal={setShowCategoriesModal}
+                setShowSubcategoriesModal={setShowSubcategoriesModal}
+                setShowSubSubcategoriesModal={setShowSubSubcategoriesModal}
+                syncEnabled={syncEnabled}
+                setSyncEnabled={setSyncEnabled}
+                setShowFBPreview={setShowFBPreview}
+              />
             )}
+
 
             {activeTab === 'marketplace' && <MarketplaceTab />}
             {activeTab === 'migration' && <MigrationTab showToast={showToast} />}

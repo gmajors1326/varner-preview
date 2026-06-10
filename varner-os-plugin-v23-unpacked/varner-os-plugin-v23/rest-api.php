@@ -147,6 +147,116 @@ function varner_register_rest_routes(): void {
         'callback'            => 'varner_api_save_preview_settings',
         'permission_callback' => $auth,
     ));
+
+    // ── Staff User Management ─────────────────────────────────────────────────
+    $admin_auth = function (): bool { return current_user_can('manage_options'); };
+    register_rest_route($ns, '/staff', array(
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'varner_api_list_staff',
+            'permission_callback' => $admin_auth,
+        ),
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'varner_api_create_staff',
+            'permission_callback' => $admin_auth,
+            'args'                => array(
+                'first_name' => array('required' => true,  'sanitize_callback' => 'sanitize_text_field'),
+                'last_name'  => array('required' => true,  'sanitize_callback' => 'sanitize_text_field'),
+                'email'      => array('required' => true,  'sanitize_callback' => 'sanitize_email'),
+                'role'       => array('required' => true,  'sanitize_callback' => 'sanitize_text_field'),
+            ),
+        ),
+    ));
+    register_rest_route($ns, '/staff/(?P<id>\d+)', array(
+        'methods'             => 'DELETE',
+        'callback'            => 'varner_api_delete_staff',
+        'permission_callback' => $admin_auth,
+        'args'                => array(
+            'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+        ),
+    ));
+}
+
+// ─── 1B. STAFF USER MANAGEMENT HANDLERS ─────────────────────────────────────
+
+function varner_api_list_staff(): WP_REST_Response {
+    $users  = get_users(array('role__in' => array('administrator', 'editor', 'author'), 'orderby' => 'display_name', 'order' => 'ASC', 'number' => 200));
+    $cur_id = get_current_user_id();
+    $out    = array();
+    foreach ($users as $u) {
+        $fn  = (string) get_user_meta($u->ID, 'first_name', true);
+        $ln  = (string) get_user_meta($u->ID, 'last_name',  true);
+        $out[] = array(
+            'id'           => $u->ID,
+            'display_name' => $u->display_name,
+            'email'        => $u->user_email,
+            'first_name'   => $fn,
+            'last_name'    => $ln,
+            'roles'        => array_values($u->roles),
+            'initials'     => strtoupper(substr($fn ?: $u->display_name, 0, 1) . substr($ln, 0, 1)) ?: '?',
+            'registered'   => $u->user_registered,
+            'is_current'   => $u->ID === $cur_id,
+        );
+    }
+    return rest_ensure_response($out);
+}
+
+function varner_api_create_staff(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $first = $req->get_param('first_name');
+    $last  = $req->get_param('last_name');
+    $email = $req->get_param('email');
+    $role  = $req->get_param('role');
+
+    if (!in_array($role, array('administrator', 'editor'), true)) {
+        return new WP_Error('invalid_role', 'Role must be administrator or editor.', array('status' => 400));
+    }
+    if (!is_email($email)) {
+        return new WP_Error('invalid_email', 'Invalid email address.', array('status' => 400));
+    }
+    if (email_exists($email)) {
+        return new WP_Error('email_exists', 'A user with this email already exists.', array('status' => 409));
+    }
+
+    // Generate a safe username from the email local-part
+    $username = sanitize_user(strstr($email, '@', true), true);
+    if (username_exists($username)) {
+        $username .= '_' . wp_rand(100, 999);
+    }
+
+    $user_id = wp_create_user($username, wp_generate_password(24, true, true), $email);
+    if (is_wp_error($user_id)) {
+        return $user_id;
+    }
+    wp_update_user(array(
+        'ID'           => $user_id,
+        'first_name'   => $first,
+        'last_name'    => $last,
+        'display_name' => trim($first . ' ' . $last),
+        'role'         => $role,
+    ));
+    // Send WP's built-in "set your password" invite email
+    wp_new_user_notification($user_id, null, 'user');
+
+    return rest_ensure_response(array(
+        'success' => true,
+        'user_id' => $user_id,
+        'message' => 'Invitation sent to ' . $email . '. They will receive an email to set their password.',
+    ));
+}
+
+function varner_api_delete_staff(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $user_id = (int) $req->get_param('id');
+    if ($user_id === get_current_user_id()) {
+        return new WP_Error('cannot_delete_self', 'You cannot delete your own account.', array('status' => 400));
+    }
+    $user = get_userdata($user_id);
+    if (!$user) {
+        return new WP_Error('not_found', 'User not found.', array('status' => 404));
+    }
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    wp_delete_user($user_id);
+    return rest_ensure_response(array('success' => true, 'message' => $user->display_name . ' has been removed.'));
 }
 
 // ─── 2. TAXONOMY HANDLERS ────────────────────────────────────────────────────

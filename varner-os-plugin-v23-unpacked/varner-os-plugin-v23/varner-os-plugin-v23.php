@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.86 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.86
+ * Description: Version 1.23.99 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.99
  * Author: hwy559.com
  */
 
@@ -359,12 +359,215 @@ add_action('admin_menu', function (): void {
 // ─── Login Redirect ──────────────────────────────────────────────────────────
 
 add_filter('login_redirect', function (string $redirect_to, $request, $user): string {
-    // Only redirect users who can access the Varner OS admin panel.
-    if (isset($user->roles) && is_array($user->roles) && $user->has_cap('edit_posts')) {
-        return admin_url('admin.php?page=varner-os');
+    if (!($user instanceof WP_User) || !$user->has_cap('edit_posts')) {
+        return $redirect_to;
     }
-    return $redirect_to;
-}, 10, 3);
+    // If the user was trying to reach the mobile app, send them there.
+    // The auto-token logic will authenticate them silently on arrival.
+    if (!empty($redirect_to) && str_contains($redirect_to, '/mobile-app/')) {
+        return home_url('/mobile-app/');
+    }
+    // Everyone else (desktop) goes straight to Varner OS — no WP dashboard.
+    return admin_url('admin.php?page=varner-os');
+}, 999, 3);
+
+// ─── Branded Login Page ───────────────────────────────────────────────
+
+add_action('login_enqueue_scripts', function (): void {
+    $icon_url = get_transient('varner_pwa_icon_url') ?: '';
+    if (!$icon_url && file_exists(get_stylesheet_directory() . '/assets/VE_Tractor_Icon.png')) {
+        $icon_url = get_stylesheet_directory_uri() . '/assets/VE_Tractor_Icon.png';
+    } elseif (!$icon_url && file_exists(get_template_directory() . '/assets/VE_Tractor_Icon.png')) {
+        $icon_url = get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
+    }
+    $icon_esc = esc_url($icon_url);
+    ?>
+    <style>
+    body.login {
+        background:#0f172a;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        display:flex;align-items:center;justify-content:center;
+        min-height:100vh;margin:0;padding:16px;box-sizing:border-box;
+    }
+    body.login::before {
+        content:'';position:fixed;inset:0;
+        background:
+            radial-gradient(ellipse 80% 60% at 10% 20%,rgba(29,78,216,.2) 0%,transparent 60%),
+            radial-gradient(ellipse 60% 50% at 90% 80%,rgba(29,78,216,.10) 0%,transparent 60%);
+        pointer-events:none;z-index:0;
+    }
+    #login {
+        background:rgba(15,23,42,.9);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+        border:1px solid rgba(255,255,255,.08);border-radius:24px;
+        padding:44px 40px 36px;width:100%;max-width:420px;
+        box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(29,78,216,.15);
+        position:relative;z-index:1;
+    }
+    <?php if ($icon_esc): ?>
+    #login h1 {text-align:center;}
+    #login h1 a {
+        background-image:url('<?php echo $icon_esc; ?>');
+        background-size:contain;background-repeat:no-repeat;background-position:center;
+        width:72px;height:72px;display:block;margin:0 auto 8px;
+        border-radius:18px;box-shadow:0 8px 24px rgba(29,78,216,.4);
+    }
+    <?php else: ?>
+    #login h1 {text-align:center;}
+    #login h1 a {
+        background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+        width:72px;height:72px;display:block;margin:0 auto 8px;
+        border-radius:18px;box-shadow:0 8px 24px rgba(29,78,216,.4);
+    }
+    <?php endif; ?>
+    .varner-login-brand{text-align:center;margin-bottom:28px;}
+    .varner-login-brand h2{font-size:22px;font-weight:900;letter-spacing:-.03em;color:#fff;margin:0 0 4px;text-transform:uppercase;}
+    .varner-login-brand h2 span{color:#3b82f6;}
+    .varner-login-brand p{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#475569;margin:0;}
+    .login label{color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+    .login input[type=text],.login input[type=password],.login input[type=email] {
+        background:#ffffff!important;border:1px solid rgba(255,255,255,.15)!important;
+        border-radius:12px!important;color:#1e293b!important;-webkit-text-fill-color:#1e293b!important;font-size:15px!important;
+        padding:13px 16px!important;width:100%!important;box-sizing:border-box!important;
+        outline:none!important;box-shadow:none!important;height:auto!important;transition:border-color .15s,background .15s!important;
+    }
+    .login input[type=text]:-webkit-autofill,.login input[type=password]:-webkit-autofill {
+        -webkit-box-shadow:0 0 0 1000px #ffffff inset!important;
+        -webkit-text-fill-color:#1e293b!important;
+    }
+
+    .login input[type=text]:focus,.login input[type=password]:focus {
+        background:rgba(255,255,255,.08)!important;border-color:#3b82f6!important;
+        box-shadow:0 0 0 3px rgba(59,130,246,.2)!important;
+    }
+    .login #wp-submit,.login .button-primary {
+        background:#dc2626!important;border:none!important;border-radius:12px!important;
+        color:#fff!important;font-size:12px!important;font-weight:900!important;
+        letter-spacing:.15em!important;text-transform:uppercase!important;
+        padding:14px 24px!important;width:100%!important;height:auto!important;
+        margin-top:50px!important;
+        box-shadow:0 4px 16px rgba(220,38,38,.4)!important;cursor:pointer!important;
+        transition:background .15s,transform .1s,box-shadow .15s!important;
+    }
+    .login #wp-submit:hover,.login .button-primary:hover {
+        background:#b91c1c!important;box-shadow:0 6px 24px rgba(220,38,38,.5)!important;transform:translateY(-1px)!important;
+    }
+    .login #wp-submit:active{transform:translateY(0)!important;}
+    .login .forgetmenot{display:flex;align-items:center;gap:8px;}
+    .login .forgetmenot input[type=checkbox]{width:16px!important;height:16px!important;accent-color:#3b82f6;}
+    .login .forgetmenot label{color:#64748b;font-size:11px;font-weight:600;text-transform:none;letter-spacing:.05em;}
+    #login_error,.message,.success {
+        background:rgba(239,68,68,.12)!important;border:1px solid rgba(239,68,68,.25)!important;
+        border-radius:10px!important;color:#fca5a5!important;font-size:12px!important;
+        padding:12px 14px!important;margin-bottom:20px!important;box-shadow:none!important;
+    }
+    .message{background:rgba(59,130,246,.12)!important;border-color:rgba(59,130,246,.25)!important;color:#93c5fd!important;}
+    #nav,#backtoblog{text-align:center;margin-top:20px;}
+    #nav a,#backtoblog a{color:#475569!important;font-size:11px!important;font-weight:700!important;letter-spacing:.08em!important;text-decoration:none!important;text-transform:uppercase!important;}
+    #nav a:hover,#backtoblog a:hover{color:#94a3b8!important;}
+    .varner-login-footer{text-align:center;margin-top:24px;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#1e293b;}
+    .login #login_footer,.privacy-policy-page-link{display:none!important;}
+    </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        var login = document.getElementById('login');
+        if (!login) return;
+        // Brand header
+        var brand = document.createElement('div');
+        brand.className = 'varner-login-brand';
+        brand.innerHTML = '<h2>Varner Equipment <span>OS</span></h2>';
+        login.insertBefore(brand, login.firstChild);
+        // Footer
+        var footer = document.createElement('div');
+        footer.className = 'varner-login-footer';
+        footer.textContent = 'Secure Admin Access · Varner Equipment';
+        login.appendChild(footer);
+        // Fix logo title
+        var logo = login.querySelector('h1 a');
+        if (logo) logo.setAttribute('title', 'Varner Equipment OS');
+    });
+    </script>
+    <?php
+});
+
+add_filter('login_headerurl',  fn() => home_url('/'));
+add_filter('login_headertext', fn() => 'Varner Equipment');
+
+// ─── Full-Width UI for Sales Staff ───────────────────────────────────────────
+// Admins keep the WP sidebar. Editors (Sales Staff) get a clean full-width UI.
+
+add_action('admin_head', function (): void {
+    if (current_user_can('manage_options')) {
+        return; // Admins: leave sidebar intact
+    }
+    ?>
+    <style id="varner-full-width-ui">
+        /* Hide left sidebar and its toggle */
+        #adminmenuwrap,
+        #adminmenuback,
+        #collapse-button {
+            display: none !important;
+        }
+        /* Expand content area to full width */
+        #wpcontent,
+        #wpfooter {
+            margin-left: 0 !important;
+        }
+        /* Remove the top gap the sidebar normally creates */
+        #wpbody {
+            padding-top: 0 !important;
+        }
+        /* Hide the .wrap h1 page title (redundant — Varner OS has its own) */
+        .wrap > h1:first-child {
+            display: none !important;
+        }
+        /* Tighten the admin bar — keep it for logout access */
+        #wpadminbar {
+            background: #0f172a !important;
+        }
+        #wpadminbar .ab-top-menu > li > .ab-item,
+        #wpadminbar #wp-admin-bar-site-name > .ab-item {
+            color: #475569 !important;
+        }
+        #wpadminbar #wp-admin-bar-my-account .ab-item {
+            color: #94a3b8 !important;
+        }
+    </style>
+    <?php
+});
+
+// ─── Lock Raw WP Admin to Owner Only ─────────────────────────────────────────
+// Only user ID 1 (the owner) can browse raw WP pages (editor, plugins, themes, etc.).
+// All other staff — even if they have administrator role — are sent to Varner OS.
+// AJAX, REST, and Varner OS pages are always allowed through.
+
+add_action('admin_init', function (): void {
+    $owner_id = (int) get_option('varner_owner_user_id', 1);
+
+    // Owner: unrestricted
+    if (get_current_user_id() === $owner_id) {
+        return;
+    }
+
+    // Only applies to staff (edit_posts capability)
+    if (!current_user_can('edit_posts')) {
+        return;
+    }
+
+    // Never block AJAX or REST requests
+    if (wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
+        return;
+    }
+
+    // Allow Varner OS admin pages
+    $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+    if (in_array($page, ['varner-os', 'varner-os-config'], true)) {
+        return;
+    }
+
+    // Redirect everyone else straight to Varner OS
+    wp_safe_redirect(admin_url('admin.php?page=varner-os'));
+    exit;
+});
 
 // ─── Admin Page Renderers ────────────────────────────────────────────────────
 
@@ -681,11 +884,10 @@ function varner_os_mobile_pwa_router(): void {
     // Facebook catalog is now handled via template_redirect (above).
     // Skip it here so we don't call header() before WP output buffering starts.
 
-    // Manifest — resolve icon URL only when needed
+    // ── Manifest ─────────────────────────────────────────────────────────────
     if ($path === 'mobile-app/manifest.json' || $path === 'manifest.json') {
-        $icon_url = '';
         $icon_cache_key = 'varner_pwa_icon_url';
-        $icon_url = get_transient($icon_cache_key);
+        $icon_url       = get_transient($icon_cache_key);
         if (!$icon_url) {
             if (file_exists(get_stylesheet_directory() . '/assets/VE_Tractor_Icon.png')) {
                 $icon_url = get_stylesheet_directory_uri() . '/assets/VE_Tractor_Icon.png';
@@ -693,80 +895,172 @@ function varner_os_mobile_pwa_router(): void {
                 $icon_url = get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
             } else {
                 $upload_dir = wp_upload_dir();
-                if (file_exists($upload_dir['basedir'] . '/2026/04/VE_Tractor_Icon.png')) {
-                    $icon_url = $upload_dir['baseurl'] . '/2026/04/VE_Tractor_Icon.png';
-                } else {
-                    $icon_url = varner_get_brand_logo_url('red') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png');
-                }
+                $icon_url   = file_exists($upload_dir['basedir'] . '/2026/04/VE_Tractor_Icon.png')
+                    ? $upload_dir['baseurl'] . '/2026/04/VE_Tractor_Icon.png'
+                    : (varner_get_brand_logo_url('red') ?: plugin_dir_url(__FILE__) . 'dist/assets/logo.png');
             }
             set_transient($icon_cache_key, $icon_url, WEEK_IN_SECONDS);
         }
         header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: max-age=86400, public');
         echo json_encode(array(
-
-            'name'             => 'Varner OS Mobile Companion',
-            'short_name'       => 'Varner Mobile',
+            'id'               => '/mobile-app/',
+            'name'             => 'Varner OS Mobile',
+            'short_name'       => 'Varner OS',
             'description'      => 'Mobile inventory management for Varner Equipment yard crew.',
             'start_url'        => home_url('/mobile-app/'),
+            'scope'            => home_url('/mobile-app/'),
             'display'          => 'standalone',
             'orientation'      => 'any',
             'background_color' => '#0f172a',
             'theme_color'      => '#0f172a',
-            'status_bar'       => 'black-translucent',
+            'categories'       => array('business', 'productivity'),
             'icons'            => array(
+                array('src' => $icon_url, 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'),
+                array('src' => $icon_url, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'),
+            ),
+            'shortcuts' => array(
                 array(
-                    'src'     => $icon_url,
-                    'sizes'   => '192x192 512x512',
-                    'type'    => 'image/png',
-                    'purpose' => 'any maskable',
+                    'name'       => 'New Listing',
+                    'short_name' => 'Add Unit',
+                    'url'        => home_url('/mobile-app/?action=new'),
+                    'icons'      => array(array('src' => $icon_url, 'sizes' => '96x96', 'type' => 'image/png')),
+                ),
+                array(
+                    'name'       => 'View Stock',
+                    'short_name' => 'Stock',
+                    'url'        => home_url('/mobile-app/?action=list'),
+                    'icons'      => array(array('src' => $icon_url, 'sizes' => '96x96', 'type' => 'image/png')),
                 ),
             ),
-        ));
+        ), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         exit;
     }
 
-    // Service worker
+    // ── Service Worker ────────────────────────────────────────────────────────
     if ($path === 'mobile-app/sw.js' || $path === 'sw.js') {
         header('Content-Type: application/javascript; charset=utf-8');
-        $home_url = esc_url_raw(home_url('/mobile-app/'));
-        ?>
-const CACHE_NAME = 'varner-mobile-cache-v1';
-const ASSETS = ['<?php echo esc_js( $home_url ); ?>'];
+        header('Cache-Control: no-cache, no-store, must-revalidate'); // SW must never be browser-cached
 
-self.addEventListener('install', (e) => {
-    e.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+        $mobile_url = esc_url_raw(home_url('/mobile-app/'));
+
+        // Build pre-cache list from the same transient used by the HTML shell.
+        // Cache version is tied to JS asset mtime — auto-busts on every deploy.
+        $html_file  = plugin_dir_path(__FILE__) . 'dist/index.html';
+        $sw_js_url  = '';
+        $sw_css_url = '';
+        $sw_ver     = '1';
+
+        if (file_exists($html_file)) {
+            $sw_cache_key = 'varner_assets_' . filemtime($html_file);
+            $sw_assets    = get_transient($sw_cache_key);
+            if (!$sw_assets) {
+                $sw_html = file_get_contents($html_file);
+                $sw_js_f = $sw_css_f = '';
+                if (preg_match('/src="(?:\.\/)assets\/(index-[a-zA-Z0-9_\-]+\.js)"/', $sw_html, $m))  $sw_js_f  = $m[1];
+                if (preg_match('/href="(?:\.\/)assets\/(index-[a-zA-Z0-9_\-]+\.css)"/', $sw_html, $m)) $sw_css_f = $m[1];
+                $sw_assets = array('js_file' => $sw_js_f, 'css_file' => $sw_css_f);
+                set_transient($sw_cache_key, $sw_assets, DAY_IN_SECONDS);
+            }
+            $sw_dist_url  = plugin_dir_url(__FILE__)  . 'dist/assets/';
+            $sw_dist_path = plugin_dir_path(__FILE__) . 'dist/assets/';
+            if (!empty($sw_assets['js_file']) && file_exists($sw_dist_path . $sw_assets['js_file'])) {
+                $sw_ver    = (string) filemtime($sw_dist_path . $sw_assets['js_file']);
+                $sw_js_url = esc_url_raw($sw_dist_url . $sw_assets['js_file'] . '?ver=' . $sw_ver);
+            }
+            if (!empty($sw_assets['css_file']) && file_exists($sw_dist_path . $sw_assets['css_file'])) {
+                $sw_css_url = esc_url_raw($sw_dist_url . $sw_assets['css_file'] . '?ver=' . $sw_ver);
+            }
+        }
+        $sw_icon_url = esc_url_raw(get_transient('varner_pwa_icon_url') ?: '');
+        ?>
+/**
+ * Varner OS — Mobile Companion Service Worker
+ * Cache version: <?php echo esc_js($sw_ver); ?> (tied to JS asset mtime — auto-busts on every deploy)
+ */
+
+const CACHE_VERSION = '<?php echo esc_js($sw_ver); ?>';
+const CACHE_NAME    = 'varner-os-' + CACHE_VERSION;
+
+// App shell + compiled Vite dashboard assets — pre-cached at install for offline-first use
+const PRE_CACHE = [
+    '<?php echo esc_js($mobile_url); ?>'
+    <?php if ($sw_css_url): ?>, '<?php echo esc_js($sw_css_url); ?>'<?php endif; ?>
+    <?php if ($sw_js_url):  ?>, '<?php echo esc_js($sw_js_url); ?>'<?php endif; ?>
+    <?php if ($sw_icon_url): ?>, '<?php echo esc_js($sw_icon_url); ?>'<?php endif; ?>
+];
+
+// These paths must always reach the live server — auth tokens & live inventory must never be stale
+const NETWORK_ONLY = ['/wp-json/', '/varner/v1', '/wp-admin/', '/wp-login.php', '/sw.js', '/manifest.json'];
+
+// ── Install: pre-cache app shell & all compiled dashboard assets ──────────────
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then((cache) => {
+                console.log('[Varner SW] Pre-caching ' + PRE_CACHE.length + ' assets (v' + CACHE_VERSION + ')');
+                return cache.addAll(PRE_CACHE);
+            })
+            .then(() => self.skipWaiting())
     );
 });
 
-self.addEventListener('activate', (e) => {
-    e.waitUntil(
-        caches.keys().then((keys) => Promise.all(keys.map((k) => k !== CACHE_NAME ? caches.delete(k) : null)))
+// ── Activate: purge ALL stale caches from previous deploys ───────────────────
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys()
+            .then((keys) => {
+                const stale = keys.filter((k) => k !== CACHE_NAME);
+                if (stale.length) console.log('[Varner SW] Purging ' + stale.length + ' stale cache(s)');
+                return Promise.all(stale.map((k) => caches.delete(k)));
+            })
             .then(() => self.clients.claim())
     );
 });
 
-self.addEventListener('fetch', (e) => {
-    const url = new URL(e.request.url);
-    if (url.pathname.includes('/wp-json/') || url.pathname.includes('/wp-admin/')) {
-        e.respondWith(fetch(e.request));
+// ── Fetch: three-tier caching strategy ───────────────────────────────────────
+self.addEventListener('fetch', (event) => {
+    // Never intercept mutations — POST/PATCH/DELETE must always reach the server
+    if (event.request.method !== 'GET') return;
+
+    const url = new URL(event.request.url);
+
+    // Tier 1 — Network-Only: REST API, WP admin, auth endpoints, SW + manifest themselves
+    if (NETWORK_ONLY.some((p) => url.pathname.includes(p))) return;
+
+    // Tier 2 — Cache-First: Vite content-addressed static assets
+    // Hash baked into filename — safe to serve from cache indefinitely
+    if (/\.(js|css|woff2?|ttf|otf|png|webp|jpg|jpeg|gif|svg|ico)(\?.*)?$/i.test(url.pathname)) {
+        event.respondWith(
+            caches.match(event.request).then((cached) => {
+                if (cached) return cached;
+                return fetch(event.request).then((response) => {
+                    if (response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                    }
+                    return response;
+                });
+            })
+        );
         return;
     }
-    e.respondWith(
-        caches.match(e.request).then((cached) => {
-            return cached || fetch(e.request).then((response) => {
-                const mime = response.headers.get('content-type') || '';
-                if (response.status === 200 && (mime.includes('css') || mime.includes('javascript') || mime.includes('image') || mime.includes('font'))) {
+
+    // Tier 3 — Network-First with app shell fallback: HTML navigation
+    event.respondWith(
+        fetch(event.request)
+            .then((response) => {
+                if (response.ok) {
                     const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                 }
                 return response;
-            });
-        }).catch(() => {
-            if (e.request.headers.get('accept').includes('text/html')) {
-                return caches.match('<?php echo esc_js( $home_url ); ?>');
-            }
-        })
+            })
+            .catch(() =>
+                caches.match(event.request).then(
+                    (cached) => cached || caches.match('<?php echo esc_js($mobile_url); ?>')
+                )
+            )
     );
 });
         <?php
@@ -775,21 +1069,32 @@ self.addEventListener('fetch', (e) => {
 
     // Mobile app page
     if ($path === 'mobile-app') {
+        // Not logged in — send to the branded login page, then bounce back here.
+        // After login the auto-token logic will authenticate them silently.
+        if (!is_user_logged_in()) {
+            wp_redirect(wp_login_url(home_url('/mobile-app/')));
+            exit;
+        }
         status_header(200);
         ?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Varner OS Mobile Companion</title>
+    <title>Varner OS</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Varner OS">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
+    <meta name="msapplication-TileColor" content="#0f172a">
     <link rel="manifest" href="<?php echo esc_url(home_url('/mobile-app/manifest.json')); ?>">
-    <link rel="apple-touch-icon" href="<?php echo esc_url(get_transient('varner_pwa_icon_url') ?: (plugin_dir_url(__FILE__) . 'dist/assets/logo.png')); ?>">
+    <?php $pwa_icon = esc_url(get_transient('varner_pwa_icon_url') ?: plugin_dir_url(__FILE__) . 'dist/assets/logo.png'); ?>
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $pwa_icon; ?>">
+    <link rel="apple-touch-startup-image" href="<?php echo $pwa_icon; ?>">
 
     <style>
         html, body { margin:0; padding:0; width:100%; height:100%; background-color:#f8fafc; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+        body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); box-sizing:border-box; }
         #varner-inventory-app { width:100%; height:100%; overflow:hidden; }
     </style>
     <script>
@@ -830,9 +1135,8 @@ self.addEventListener('fetch', (e) => {
         ?><link rel="stylesheet" href="<?php echo esc_url( $dist_url . $css_file . '?ver=' . $css_ver ); ?>">
 <script>
 <?php
-// Fix 3B: Resolve handoff nonce to actual mobile token and embed it in-page.
+// Priority 1: Resolve handoff nonce (from "Launch on This Device" or QR scan).
 // The nonce is single-use (deleted after first read) with a 2-minute TTL.
-// This keeps the raw auth token out of server logs, browser history, and Referer headers.
 $mobile_token_for_page = '';
 if (!empty($_GET['handoff'])) {
     $handoff_nonce = sanitize_text_field(wp_unslash($_GET['handoff']));
@@ -843,6 +1147,15 @@ if (!empty($_GET['handoff'])) {
             delete_transient('varner_handoff_' . $handoff_nonce); // one-time use
         }
     }
+}
+
+// Priority 2: User is already logged into WordPress — skip the token gate entirely.
+// Generate and embed a session token automatically so they land straight in the app.
+if (!$mobile_token_for_page && is_user_logged_in() && current_user_can('edit_posts')) {
+    $wp_user_id = get_current_user_id();
+    $auto_token = strtoupper(bin2hex(random_bytes(8)));
+    set_transient('varner_mobile_token_' . $auto_token, $wp_user_id, 1800);
+    $mobile_token_for_page = $auto_token;
 }
 ?>
 window.varnerData = {

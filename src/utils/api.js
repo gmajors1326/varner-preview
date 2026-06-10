@@ -74,6 +74,12 @@ export async function apiFetch(path, options = {}) {
     ...(body ? { body } : {}),
   });
   if (!res.ok) {
+    // Mobile context: 401 means the token expired server-side.
+    // Clear it and signal the auth gate to reset — no hard page reload needed.
+    if (res.status === 401 && getMobileToken()) {
+      localStorage.removeItem('varner_mobile_token');
+      window.dispatchEvent(new CustomEvent('varner:token-expired'));
+    }
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message ?? `Request failed: ${res.status}`);
   }
