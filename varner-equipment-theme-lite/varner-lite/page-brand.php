@@ -115,6 +115,8 @@ if ( ! function_exists( 'varner_find_brand_logo_url' ) ) {
             'triton'               => 'Triton_white.png',
             'tym'                  => 'TYM_white.png',
             'zetor'                => 'Zetor_white.png',
+            'ford'                 => 'ford_white.png',
+            'fgord'                => 'ford_white.png',
             'varnerequipment'      => 'VarnerEquipment_white.png',
             'bale-king'            => 'BaleKing_white.png',
             'baumalight'           => 'Baumalight_white.png',
