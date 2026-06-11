@@ -237,7 +237,13 @@ const App = () => {
   const handleDeleteSubSubcategory = (n) => handleListDelete('sub-subcategories', subSubcategories, n, setSubSubcategories, 'sub_subcategory');
 
   const handleInputChange = (field, value) => {
-    setUnitData(prev => ({ ...prev, [field]: value }));
+    setUnitData(prev => {
+      const next = { ...prev, [field]: value };
+      if (['year', 'make', 'model'].includes(field)) {
+        next.title = `${next.year || ''} ${next.make || ''} ${next.model || ''}`.trim();
+      }
+      return next;
+    });
 
     // Clear field-level error when user edits the field
     if (fieldErrors[field]) {
@@ -504,6 +510,14 @@ const App = () => {
     }
   };
 
+  const handleNav = (tab) => {
+    if (tab === 'inventory' && activeTab !== 'inventory') {
+      setUnitData(defaultEmptyUnit);
+    }
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
   const handleAddNewUnit = () => { setUnitData(defaultEmptyUnit); setActiveTab('inventory'); };
 
   // Fetches complete unit data from API and opens editor
@@ -675,7 +689,7 @@ const App = () => {
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2"><X size={24} /></button>
             </div>
             <SidebarContent activeTab={activeTab} inventoryList={inventoryList} deletedHistory={deletedHistory}
-              onNav={tab => { setActiveTab(tab); setIsMobileMenuOpen(false); }} />
+              onNav={handleNav} />
           </aside>
         </div>
       )}
@@ -686,7 +700,7 @@ const App = () => {
           <SidebarLogo />
         </div>
         <SidebarContent activeTab={activeTab} inventoryList={inventoryList} deletedHistory={deletedHistory}
-          onNav={tab => setActiveTab(tab)} />
+          onNav={handleNav} />
       </aside>
 
       {/* MAIN */}
@@ -830,7 +844,7 @@ const App = () => {
                 activityList={activityList}
                 isActivityLoading={isActivityLoading}
                 loadActivity={loadActivity}
-                onNav={setActiveTab}
+                onNav={handleNav}
                 handleFullEdit={handleFullEdit}
               />
             )}

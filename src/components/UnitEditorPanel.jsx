@@ -86,7 +86,7 @@ export const UnitEditorPanel = ({
                       <select value={unitData.category || ''} onChange={e => handleCategorySelectChange(e.target.value)}
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                        <option value="">— Select Category —</option>
+                                                <option value="">-- Select Category --</option>
                         {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
@@ -104,7 +104,7 @@ export const UnitEditorPanel = ({
                       <select value={unitData.subcategory || ''} onChange={e => handleSubcategorySelectChange(e.target.value)}
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                        <option value="">— Select Subcategory —</option>
+                                                <option value="">-- Select Subcategory --</option>
                         {allSubcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
@@ -122,7 +122,7 @@ export const UnitEditorPanel = ({
                       <select value={unitData.sub_subcategory || ''} onChange={e => handleSubSubcategorySelectChange(e.target.value)}
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                        <option value="">— Select Sub-Subcategory —</option>
+                                                <option value="">-- Select Sub-Subcategory --</option>
                         {allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
@@ -143,7 +143,7 @@ export const UnitEditorPanel = ({
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Brand / Manufacturer</label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                    <select value={unitData.make}
+                    <select key={`brand-select-${brands.length}`} value={unitData.make}
                       onChange={e => {
                         const v = e.target.value;
                         handleInputChange('make', v);
@@ -151,7 +151,7 @@ export const UnitEditorPanel = ({
                       }}
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                      <option value="">— Select Brand —</option>
+                                            <option value="">-- Select Brand --</option>
                       {brands.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90" /></div>
@@ -179,7 +179,7 @@ export const UnitEditorPanel = ({
                       }}
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                      <option value="">— Select Year —</option>
+                                            <option value="">-- Select Year --</option>
                       {Array.from({ length: 2027 - 1950 + 1 }, (_, i) => 2027 - i).map(year => (
                         <option key={year} value={year}>{year}</option>
                       ))}

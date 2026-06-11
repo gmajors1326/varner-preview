@@ -93,7 +93,7 @@ export const TextAreaField = ({ label, value, onChange }) => (
         theme="snow" 
         value={value} 
         onChange={onChange}
-        modules={{ toolbar: [
+        modules={{ clipboard: { matchVisual: false }, toolbar: [
           [{ header: [1, 2, false] }],
           ['bold', 'italic', 'underline', 'strike'],
           [{ color: COLOR_PALETTE }, { background: COLOR_PALETTE }],

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 
 export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, onKeywordSearch, onClearAll, horizontal = false }) => {
   const [sections, setSections] = useState({
@@ -92,40 +92,55 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
           {/* Status Dropdown */}
           <div className="w-48">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Stock Status</p>
-            <select 
-              value={filters.status[0] || ""} 
-              onChange={e => onFilterChange('status', e.target.value ? [e.target.value] : [])}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
-            >
-              <option value="">All Statuses</option>
-              {allStatuses.map(s => <option key={s} value={s}>{s} ({countOf('status', s)})</option>)}
-            </select>
+            <div className="relative">
+              <select 
+                value={filters.status[0] || ""} 
+                onChange={e => onFilterChange('status', e.target.value ? [e.target.value] : [])}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 pr-10 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="">All Statuses</option>
+                {allStatuses.map(s => <option key={s} value={s}>{s} ({countOf('status', s)})</option>)}
+              </select>
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </div>
 
           {/* Category Dropdown */}
           <div className="w-56">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Category</p>
-            <select 
-              value={filters.categories[0] || ""} 
-              onChange={e => onFilterChange('categories', e.target.value ? [e.target.value] : [])}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
-            >
-              <option value="">All Categories</option>
-              {allCategories.map(cat => <option key={cat} value={cat}>{cat} ({countOf('category', cat)})</option>)}
-            </select>
+            <div className="relative">
+              <select 
+                value={filters.categories[0] || ""} 
+                onChange={e => onFilterChange('categories', e.target.value ? [e.target.value] : [])}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 pr-10 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="">All Categories</option>
+                {allCategories.map(cat => <option key={cat} value={cat}>{cat} ({countOf('category', cat)})</option>)}
+              </select>
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </div>
 
           {/* Manufacturer Dropdown */}
           <div className="w-56">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Manufacturer</p>
-            <select 
-              value={filters.makes[0] || ""} 
-              onChange={e => onFilterChange('makes', e.target.value ? [e.target.value] : [])}
-              className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
-            >
-              <option value="">All Brands</option>
-              {sortedMakes.map(make => <option key={make} value={make}>{make} ({makeCounts[make]})</option>)}
-            </select>
+            <div className="relative">
+              <select 
+                value={filters.makes[0] || ""} 
+                onChange={e => onFilterChange('makes', e.target.value ? [e.target.value] : [])}
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 pr-10 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="">All Brands</option>
+                {sortedMakes.map(make => <option key={make} value={make}>{make} ({makeCounts[make]})</option>)}
+              </select>
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </div>
 
           {/* Year Range */}
