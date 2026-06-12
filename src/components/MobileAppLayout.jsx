@@ -1128,6 +1128,7 @@ export const MobileAppLayout = ({
               {isSaving ? <Loader2 className="animate-spin" size={20}/> : <Save size={20}/>}
               {isSaving ? 'SAVING CHANGES…' : (unitData.id ? 'SAVE UNIT CHANGES' : 'PUBLISH NEW UNIT')}
             </button>
+            <div className="h-20" />
           </div>
         )}
 
@@ -1282,6 +1283,7 @@ export const MobileAppLayout = ({
                 })
               )}
             </div>
+            <div className="h-20" />
           </div>
         )}
 
@@ -1292,6 +1294,7 @@ export const MobileAppLayout = ({
             <div className={`p-4 rounded-3xl border ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
               <MarketplaceTab />
             </div>
+            <div className="h-20" />
           </div>
         )}
 
@@ -1348,6 +1351,7 @@ export const MobileAppLayout = ({
                 ))}
               </div>
             )}
+            <div className="h-20" />
           </div>
         )}
 
