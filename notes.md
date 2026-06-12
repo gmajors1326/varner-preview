@@ -1,5 +1,5 @@
 # Varner Equipment — Workspace Notes & Intelligence
-*Last updated: June 9, 2026*
+*Last updated: June 12, 2026*
 
 ---
 
@@ -47,7 +47,7 @@ Varner Equipment/
 ├── build.ps1                     ← Unified build script (React + Tailwind + ZIPs)
 ├── DEPLOY.md                     ← Deployment runbook (canonical)
 ├── SKILL.md                      ← Technical architecture reference
-└── notes.md                      ← This file
+├── └── notes.md                      ← This file
 ```
 
 ### Deployment Artifacts (produced by build.ps1)
@@ -65,7 +65,7 @@ Varner Equipment/
 - **All future theme edits go into `varner-equipment-theme-lite/varner-lite/` only.**
 - `build.ps1` compiles Tailwind directly inside varner-lite and produces one theme ZIP.
 - The `varner-lite` slug is the active WordPress theme on WP Engine.
-
+- 
 ### Plugin: varner-os-plugin-v23
 - The plugin is the **bridge** between the React app and WordPress.
 - It handles: Equipment CPT registration, REST API (`/varner/v1`), ACF field sync, asset loading, session tracking, and mobile PWA routing.
@@ -89,6 +89,7 @@ Varner Equipment/
 
 | Date | Issue | Fix |
 |---|---|---|
+| Jun 12, 2026 | PWA Redesign (Midnight V2.4) | Visual skinning for Midnight/Sunlight togglable theme, centered Varner logo PNG, 2-tab bottom nav, slide-out hamburger drawer, 100% database-backed VIN plate scanner camera, browser-based Tesseract.js OCR text pre-fill, and outline clone cards. Files: `MobileAppLayout.jsx`, `App.jsx`, `helpers.js`, `varner-backend.php`. |
 | Jun 9, 2026 | `f.map is not a function` — inventory failed to load | `apiFetch('/inventory/deleted')` failure inside `Promise.all` killed the entire load. Fixed by splitting the calls and adding defensive `Array.isArray()` checks. |
 | — | Stale nonce after long WP session | `apiFetch` throws `Request failed: 401`. User must refresh the page to get a new nonce. No code fix — WP behavior. |
 | Jun 9, 2026 | Login button styling | Changed button from blue to red (`#dc2626` / `#b91c1c` hover), added `margin-top: 50px` to space it below Remember Me. File: `varner-os-plugin-v23.php` branded login CSS. |

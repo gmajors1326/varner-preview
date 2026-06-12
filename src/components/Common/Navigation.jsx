@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings, FileText
+  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings
 } from 'lucide-react';
 
 export const SidebarLogo = () => {
@@ -53,7 +53,6 @@ export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav
       <NavItem icon={<List size={20}/>}            label="Inventory List" active={activeTab==='all-inventory'} onClick={() => onNav('all-inventory')} badge={inventoryList.length} />
       <NavItem icon={<Box size={20}/>}             label="Add / Edit"     active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
       <NavItem icon={<Facebook size={20}/>}        label="Meta Sync"      active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
-      <NavItem icon={<FileText size={20}/>}        label="CSV Import Assistant" active={activeTab==='migration'} onClick={() => onNav('migration')} />
       <NavItem icon={<History size={20}/>}         label="History"        active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
       <NavItem icon={<Sliders size={20}/>}         label="Page Editor"    active={activeTab==='settings'}      onClick={() => onNav('settings')} />
       <NavItem icon={<Camera size={20}/>}          label="Videos Manager" active={activeTab==='videos'}        onClick={() => onNav('videos')} />

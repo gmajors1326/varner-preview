@@ -1,10 +1,47 @@
-import React, { useState } from 'react';
-import { Facebook, List, CheckCircle2, BarChart3, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Facebook, List, CheckCircle2, BarChart3, Copy, Check, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../../utils/api';
 
 export const MarketplaceTab = () => {
   const [copied, setCopied] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [health, setHealth] = useState({ match_rate: 100, image_optimization: 100, sync_latency: '0.1s' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const siteUrl = window.varnerData?.site_url || '';
   const feedUrl = `${siteUrl}facebook-catalog.csv`;
+
+  const fetchData = async (showLoadingSpinner = false) => {
+    if (showLoadingSpinner) {
+      setLoading(true);
+    }
+    try {
+      const [logsData, healthData] = await Promise.all([
+        apiFetch('/meta-sync/logs'),
+        apiFetch('/meta-sync/health')
+      ]);
+      setLogs(logsData || []);
+      setHealth(healthData || { match_rate: 100, image_optimization: 100, sync_latency: '0.1s' });
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch meta sync data: ', err);
+      setError('Failed to load sync data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(true);
+    
+    // Poll for changes every 30 seconds
+    const interval = setInterval(() => fetchData(false), 30000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleCopy = async () => {
     try {
@@ -13,6 +50,26 @@ export const MarketplaceTab = () => {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy feed URL: ', err);
+    }
+  };
+
+  const getRelativeTime = (mysqlDate) => {
+    if (!mysqlDate) return 'Just now';
+    try {
+      const t = mysqlDate.split(/[- :]/);
+      const dateObj = new Date(t[0], t[1] - 1, t[2], t[3], t[4], t[5]);
+      const diffMs = new Date() - dateObj;
+      const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+      
+      if (diffSec < 60) return 'Just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHour = Math.floor(diffMin / 60);
+      if (diffHour < 24) return `${diffHour}h ago`;
+      const diffDay = Math.floor(diffHour / 24);
+      return `${diffDay}d ago`;
+    } catch (e) {
+      return 'Recent';
     }
   };
 
@@ -34,7 +91,7 @@ export const MarketplaceTab = () => {
           <h4 className="font-black text-xs uppercase tracking-widest text-slate-900">Facebook Catalog Product Feed</h4>
         </div>
         <p className="text-sm font-bold text-slate-600 mb-6 uppercase tracking-tight">
-          Use this product data feed URL to sync your inventory automatically with your Facebook Catalog / Commerce Manager Sandbox.
+          Use this product data feed URL to sync your inventory automatically with your Facebook Catalog / Commerce Manager.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 font-mono text-sm text-slate-700 break-all select-all flex items-center">
@@ -65,24 +122,53 @@ export const MarketplaceTab = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
         <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-10 shadow-2xl border border-slate-200/60">
-          <div className="flex items-center gap-4 mb-10 border-b border-slate-50 pb-6">
-            <List size={22} className="text-blue-600"/>
-            <h4 className="font-black text-xs uppercase tracking-widest text-slate-900">Sync Activity Logs</h4>
+          <div className="flex items-center justify-between mb-10 border-b border-slate-50 pb-6">
+            <div className="flex items-center gap-4">
+              <List size={22} className="text-blue-600"/>
+              <h4 className="font-black text-xs uppercase tracking-widest text-slate-900">Sync Activity Logs</h4>
+            </div>
+            <button 
+              onClick={() => fetchData(true)} 
+              disabled={loading}
+              className="p-2 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-colors cursor-pointer rounded-lg hover:bg-slate-50"
+              title="Refresh Logs"
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            </button>
           </div>
-          <div className="space-y-2">
-            {['Price Sync: Mahindra 2638 HST','New Media: Big Tex 14LP Dump','Inventory Update checked','Lead Captured: Marketplace Messenger','Batch Update: Compact Tractors','API Handshake: Success'].map((msg, i) => (
-              <div key={i} className="flex justify-between items-center p-6 bg-slate-50/50 rounded-2xl border-2 border-white mb-4 hover:bg-white transition-all shadow-sm group">
-                <div className="flex items-center gap-6">
-                  <div className="p-2.5 bg-green-100 rounded-xl">
-                    <CheckCircle2 size={20} className="text-green-600"/>
+          
+          {loading && logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <Loader2 size={32} className="animate-spin text-blue-600 mb-4" />
+              <p className="text-xs uppercase font-black tracking-widest">Loading Sync Activity...</p>
+            </div>
+          ) : error && logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-red-500">
+              <AlertCircle size={32} className="mb-4" />
+              <p className="text-xs uppercase font-black tracking-widest">{error}</p>
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <CheckCircle2 size={32} className="text-green-600 mb-4" />
+              <p className="text-xs uppercase font-black tracking-widest">No sync logs recorded yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+              {logs.map((log, i) => (
+                <div key={i} className="flex justify-between items-center p-6 bg-slate-50/50 rounded-2xl border-2 border-white mb-4 hover:bg-white transition-all shadow-sm group">
+                  <div className="flex items-center gap-6">
+                    <div className={`p-2.5 rounded-xl ${log.type === 'warning' ? 'bg-amber-100 text-amber-600' : log.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                      <CheckCircle2 size={20} />
+                    </div>
+                    <span className="text-base font-black tracking-tight leading-none text-slate-800">{log.message}</span>
                   </div>
-                  <span className="text-base font-black tracking-tight leading-none">{msg}</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0 ml-4">{getRelativeTime(log.created_at)}</span>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{['2m','14m','1h','3h','5h','12h'][i]} ago</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
+        
         <div className="space-y-8">
           <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-200/60">
             <div className="flex items-center gap-4 mb-8">
@@ -91,9 +177,9 @@ export const MarketplaceTab = () => {
             </div>
             <div className="space-y-6">
               {[
-                ['Catalog Match Rate', '98%', 'blue'],
-                ['Image Optimization', '100%', 'green'],
-                ['Sync Latency', '1.2s', 'blue']
+                ['Catalog Match Rate', `${health.match_rate}%`, 'blue'],
+                ['Image Optimization', `${health.image_optimization}%`, 'green'],
+                ['Sync Latency', health.sync_latency, 'blue']
               ].map(([l,v,c]) => (
                 <div key={l} className="space-y-2">
                   <div className="flex justify-between">

@@ -35,7 +35,6 @@ import { VideosTab } from './components/Tabs/VideosTab';
 import { MobileAccessTab } from './components/Tabs/MobileAccessTab';
 import { ConfigurationTab } from './components/Tabs/ConfigurationTab';
 import { HistoryTab } from './components/Tabs/HistoryTab';
-import { MigrationTab } from './components/Tabs/MigrationTab';
 
 import { MobileAppLayout } from './components/MobileAppLayout';
 
@@ -53,7 +52,7 @@ const App = () => {
     new URLSearchParams(window.location.search).get('token') ||
     localStorage.getItem('varner_mobile_token') || ''
   );
-  const [mobileActiveTab, setMobileActiveTab] = useState('dashboard');
+  const [mobileActiveTab, setMobileActiveTab] = useState('edit');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -586,7 +585,6 @@ const App = () => {
         </span>
       );
       case 'marketplace': return 'Meta Commerce Sync';
-      case 'migration': return 'CSV Import Assistant';
       case 'history': return 'Deletion History / Recycle Bin';
       case 'mobile': return 'Mobile Companion Access';
       case 'settings': return 'Page Editor';
@@ -634,6 +632,12 @@ const App = () => {
         handleFullEdit={handleFullEdit}
         handleDeleteUnit={handleDeleteUnit}
         showToast={showToast}
+        deletedHistory={deletedHistory}
+        handleRestoreUnit={handleRestoreUnit}
+        handlePermanentDelete={handlePermanentDelete}
+        handleBulkRestore={handleBulkRestore}
+        handleBulkPermanentDelete={handleBulkPermanentDelete}
+        handleClone={handleClone}
       />
     );
   }
@@ -830,7 +834,6 @@ const App = () => {
 
 
             {activeTab === 'marketplace' && <MarketplaceTab />}
-            {activeTab === 'migration' && <MigrationTab showToast={showToast} />}
             {activeTab === 'settings' && <SettingsTab showToast={showToast} />}
             {activeTab === 'videos' && <VideosTab showToast={showToast} />}
             {activeTab === 'mobile' && <MobileAccessTab />}
