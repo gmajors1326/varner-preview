@@ -519,6 +519,94 @@ export const MobileAppLayout = ({
             </div>
 
             <div className="space-y-5">
+              {/* Category Options (Category, then Sub, then Sub Sub) */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Category *</label>
+                  <div className="relative">
+                    <select
+                      value={unitData.category || ''}
+                      onChange={e => handleCategorySelectChange(e.target.value)}
+                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                        isSunlightMode 
+                          ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
+                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                      }`}
+                    >
+                      <option value="">Select Category</option>
+                      {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                  </div>
+                  <button type="button" onClick={() => setShowCategoriesModal(true)}
+                    className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
+                      isSunlightMode 
+                        ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
+                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
+                    }`}
+                  >
+                    <Settings size={14}/> Manage Categories
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Subcategory</label>
+                  <div className="relative">
+                    <select
+                      value={unitData.subcategory || ''}
+                      onChange={e => handleSubcategorySelectChange(e.target.value)}
+                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                        isSunlightMode 
+                          ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
+                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                      }`}
+                    >
+                      <option value="">Select Subcategory</option>
+                      {allSubcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                    </select>
+                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                  </div>
+                  <button type="button" onClick={() => setShowSubcategoriesModal(true)}
+                    className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
+                      isSunlightMode 
+                        ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
+                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
+                    }`}
+                  >
+                    <Settings size={14}/> Manage Subcategories
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Sub-Subcategory</label>
+                  <div className="relative">
+                    <select
+                      value={unitData.sub_subcategory || ''}
+                      onChange={e => handleSubSubcategorySelectChange(e.target.value)}
+                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                        isSunlightMode 
+                          ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
+                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                      }`}
+                    >
+                      <option value="">Select Sub-Subcategory</option>
+                      {allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
+                    </select>
+                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                  </div>
+                  <button type="button" onClick={() => setShowSubSubcategoriesModal(true)}
+                    className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
+                      isSunlightMode 
+                        ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
+                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
+                    }`}
+                  >
+                    <Settings size={14}/> Manage Sub-Subcategories
+                  </button>
+                </div>
+                {fieldErrors.category && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.category}</p>}
+              </div>
+
               <div>
                 <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Public Inventory Title *</label>
                 <input
@@ -686,93 +774,7 @@ export const MobileAppLayout = ({
                 </div>
               )}
 
-              {/* Category Options (Category, then Sub, then Sub Sub) */}
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Category *</label>
-                  <div className="relative">
-                    <select
-                      value={unitData.category || ''}
-                      onChange={e => handleCategorySelectChange(e.target.value)}
-                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
-                        isSunlightMode 
-                          ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
-                      }`}
-                    >
-                      <option value="">Select Category</option>
-                      {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
-                  </div>
-                  <button type="button" onClick={() => setShowCategoriesModal(true)}
-                    className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
-                      isSunlightMode 
-                        ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
-                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
-                    }`}
-                  >
-                    <Settings size={14}/> Manage Categories
-                  </button>
-                </div>
 
-                <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Subcategory</label>
-                  <div className="relative">
-                    <select
-                      value={unitData.subcategory || ''}
-                      onChange={e => handleSubcategorySelectChange(e.target.value)}
-                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
-                        isSunlightMode 
-                          ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
-                      }`}
-                    >
-                      <option value="">Select Subcategory</option>
-                      {allSubcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                    </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
-                  </div>
-                  <button type="button" onClick={() => setShowSubcategoriesModal(true)}
-                    className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
-                      isSunlightMode 
-                        ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
-                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
-                    }`}
-                  >
-                    <Settings size={14}/> Manage Subcategories
-                  </button>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Sub-Subcategory</label>
-                  <div className="relative">
-                    <select
-                      value={unitData.sub_subcategory || ''}
-                      onChange={e => handleSubSubcategorySelectChange(e.target.value)}
-                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
-                        isSunlightMode 
-                          ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
-                      }`}
-                    >
-                      <option value="">Select Sub-Subcategory</option>
-                      {allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
-                    </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
-                  </div>
-                  <button type="button" onClick={() => setShowSubSubcategoriesModal(true)}
-                    className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
-                      isSunlightMode 
-                        ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
-                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
-                    }`}
-                  >
-                    <Settings size={14}/> Manage Sub-Subcategories
-                  </button>
-                </div>
-                {fieldErrors.category && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.category}</p>}
-              </div>
 
               {/* Meter details */}
               <div className="grid grid-cols-2 gap-3">
