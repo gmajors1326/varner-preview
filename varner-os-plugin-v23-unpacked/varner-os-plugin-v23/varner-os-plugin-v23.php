@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.113 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.113
+ * Description: Version 1.23.114 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.114
  * Author: hwy559.com
  */
 
@@ -1080,9 +1080,11 @@ self.addEventListener('fetch', (event) => {
 
     // Mobile app page
     if ($path === 'mobile-app') {
-        // Not logged in — send to the branded login page, then bounce back here.
-        // After login the auto-token logic will authenticate them silently.
-        if (!is_user_logged_in()) {
+        // If they have a handoff nonce or token, let them access the PWA directly so
+        // the client-side React app can verify the token and authenticate silently.
+        // Otherwise, if they are not logged into WordPress, redirect to the login screen.
+        $has_auth_param = !empty($_GET['handoff']) || !empty($_GET['token']);
+        if (!$has_auth_param && !is_user_logged_in()) {
             wp_redirect(wp_login_url(home_url('/mobile-app/')));
             exit;
         }
