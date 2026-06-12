@@ -69,6 +69,12 @@ export const MobileAppLayout = ({
     setIsStandalone(!!isM);
   }, []);
 
+  useEffect(() => {
+    const bg = isSunlightMode ? '#f8fafc' : '#0a0a0b';
+    document.body.style.backgroundColor = bg;
+    document.documentElement.style.backgroundColor = bg;
+  }, [isSunlightMode]);
+
   const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);

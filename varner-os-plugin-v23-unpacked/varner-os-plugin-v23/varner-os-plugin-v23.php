@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.119 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.119
+ * Description: Version 1.23.120 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.120
  * Author: hwy559.com
  */
 
@@ -1129,7 +1129,7 @@ self.addEventListener('fetch', (event) => {
     <link rel="apple-touch-startup-image" href="<?php echo $pwa_icon; ?>">
 
     <style>
-        html, body { margin:0; padding:0; width:100%; height:100%; background-color:#f8fafc; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+        html, body { margin:0; padding:0; width:100%; height:100%; background-color:#0a0a0b; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
         body { padding: 0; box-sizing:border-box; }
         #varner-inventory-app { width:100%; height:100%; overflow:hidden; }
     </style>
