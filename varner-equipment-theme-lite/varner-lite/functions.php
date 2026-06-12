@@ -835,3 +835,15 @@ function varner_filter_equipment_visibility( $query ) {
     }
 }
 add_action( 'pre_get_posts', 'varner_filter_equipment_visibility' );
+
+/**
+ * Security Hardening
+ */
+// Disable XML-RPC
+add_filter( 'xmlrpc_enabled', '__return_false' );
+
+// Disable Theme and Plugin Editor in WordPress Dashboard
+if ( ! defined( 'DISALLOW_FILE_EDIT' ) ) {
+    define( 'DISALLOW_FILE_EDIT', true );
+}
+
