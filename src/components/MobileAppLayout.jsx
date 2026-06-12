@@ -1392,10 +1392,10 @@ export const MobileAppLayout = ({
           />
           
           {/* Panel Container */}
-          <aside className={`relative w-[280px] max-w-[85vw] h-full flex flex-col p-6 shadow-2xl border-r transition-transform animate-in slide-in-from-left duration-300 ${
+          <aside className={`relative w-[280px] max-w-[85vw] h-full flex flex-col pt-0 px-6 pb-6 shadow-2xl border-r transition-transform animate-in slide-in-from-left duration-300 ${
             isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0d0d0f] border-[#18181b] text-white'
           }`}>
-            <div className="flex items-center justify-between mb-8 border-b border-[#27272a]/20 pb-4">
+            <div className="flex items-center justify-between mb-8 border-b border-[#27272a]/20 pb-4 safe-top">
               <div className="flex items-center gap-2">
                 {logoUrl ? (
                   <img src={logoUrl} className="h-8 max-w-[120px] object-contain" alt="Varner OS" />
