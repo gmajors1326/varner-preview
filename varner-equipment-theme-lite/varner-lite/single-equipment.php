@@ -54,6 +54,13 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
     $n               = 60;
     $monthly_payment = $price * ( $r * pow( 1 + $r, $n ) ) / ( pow( 1 + $r, $n ) - 1 );
 }
+
+$finance_url    = add_query_arg( array(
+    'price' => is_numeric( $price ) ? $price : '',
+    'term'  => 60,
+    'apr'   => 10,
+    'down'  => 10,
+), home_url( '/finance' ) );
 ?>
 
 <section class="pt-32 pb-24 bg-slate-50 min-h-screen">
@@ -149,7 +156,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
                     <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
                     <div class="flex items-center gap-2 mt-2 text-[12px] text-slate-500 font-bold flex-wrap">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
+                        <a href="<?php echo esc_url( $finance_url ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
                         <span class="text-slate-200">|</span>
                         <span>Payments as low as <strong class="text-slate-700">USD $<?php echo number_format( $monthly_payment, 2 ); ?>*</strong></span>
                     </div>
@@ -201,7 +208,7 @@ if ( ! $call_for_price && is_numeric( $price ) && $price > 0 ) {
 
                 <!-- Financing CTA -->
                 <div class="flex flex-col gap-3">
-                    <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>"
+                    <a href="<?php echo esc_url( $finance_url ); ?>"
                        class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         *Apply for Financing

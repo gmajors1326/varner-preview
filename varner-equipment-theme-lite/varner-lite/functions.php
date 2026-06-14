@@ -31,7 +31,7 @@ if( function_exists('acf_add_options_page') ) {
         'page_title'    => 'Varner Site Settings',
         'menu_title'    => 'Site Settings',
         'menu_slug'     => 'varner-site-settings',
-        'capability'    => 'edit_posts',
+        'capability'    => 'manage_options',
         'redirect'      => false,
         'icon_url'      => 'dashicons-admin-generic',
     ));
@@ -110,25 +110,164 @@ remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
 remove_action( 'wp_print_styles', 'print_emoji_styles' );
 
 /**
- * Form Submission Helper: Verifies nonce and captcha
+ * Resolve the client IP for rate limiting.
+ *
+ * REMOTE_ADDR is the only value the client cannot forge, so it's the default.
+ * X-Forwarded-For is honored ONLY when the connection actually arrives from a
+ * trusted proxy (e.g. Cloudflare). Otherwise the header is attacker-controlled
+ * and would let a single client evade the limiter by rotating it each request.
+ *
+ * Populate $trusted_proxies with your real proxy/Cloudflare egress ranges, or
+ * leave it empty if the site is served directly (REMOTE_ADDR only).
+ */
+function varner_get_client_ip() {
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    if ( ! filter_var( $remote, FILTER_VALIDATE_IP ) ) {
+        return '';
+    }
+
+    // CIDR ranges for proxies you control. Empty = trust nothing, use REMOTE_ADDR.
+    // Cloudflare publishes its ranges at https://www.cloudflare.com/ips/
+    $trusted_proxies = array(
+        // '173.245.48.0/20',
+        // '103.21.244.0/22',
+        // ... add your proxy/CDN ranges here ...
+    );
+
+    $is_trusted = false;
+    foreach ( $trusted_proxies as $cidr ) {
+        if ( varner_ip_in_cidr( $remote, $cidr ) ) {
+            $is_trusted = true;
+            break;
+        }
+    }
+
+    if ( ! $is_trusted ) {
+        // Direct connection (or unknown proxy): only REMOTE_ADDR is trustworthy.
+        return $remote;
+    }
+
+    // Behind a trusted proxy: take the right-most XFF entry, which the trusted
+    // proxy appended. Walk right-to-left past any further trusted hops.
+    $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+    if ( $xff ) {
+        $parts = array_map( 'trim', explode( ',', $xff ) );
+        for ( $i = count( $parts ) - 1; $i >= 0; $i-- ) {
+            $candidate = $parts[ $i ];
+            if ( ! filter_var( $candidate, FILTER_VALIDATE_IP ) ) {
+                continue;
+            }
+            $candidate_is_proxy = false;
+            foreach ( $trusted_proxies as $cidr ) {
+                if ( varner_ip_in_cidr( $candidate, $cidr ) ) {
+                    $candidate_is_proxy = true;
+                    break;
+                }
+            }
+            if ( ! $candidate_is_proxy ) {
+                return $candidate; // first non-proxy hop = real client
+            }
+        }
+    }
+
+    return $remote;
+}
+
+/**
+ * Check whether an IPv4/IPv6 address falls within a CIDR range.
+ */
+function varner_ip_in_cidr( $ip, $cidr ) {
+    if ( strpos( $cidr, '/' ) === false ) {
+        return $ip === $cidr;
+    }
+    list( $subnet, $bits ) = explode( '/', $cidr, 2 );
+    $bits = (int) $bits;
+
+    $ip_bin     = @inet_pton( $ip );
+    $subnet_bin = @inet_pton( $subnet );
+    if ( $ip_bin === false || $subnet_bin === false || strlen( $ip_bin ) !== strlen( $subnet_bin ) ) {
+        return false; // mismatched family or invalid input
+    }
+
+    $bytes = intdiv( $bits, 8 );
+    $rem   = $bits % 8;
+
+    if ( $bytes > 0 && strncmp( $ip_bin, $subnet_bin, $bytes ) !== 0 ) {
+        return false;
+    }
+    if ( $rem > 0 ) {
+        $mask = chr( 0xFF << ( 8 - $rem ) & 0xFF );
+        if ( ( ord( $ip_bin[ $bytes ] ) & ord( $mask ) ) !== ( ord( $subnet_bin[ $bytes ] ) & ord( $mask ) ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Form Submission Helper: Verifies nonce and captcha, and applies IP-based rate limiting
  */
 function varner_verify_form_submission( $nonce_name, $action_name, $captcha_key = null ) {
     if ( ! session_id() ) {
         session_start();
     }
 
+    // Validate nonce FIRST — don't spend rate-limit budget on forged/expired requests.
     if ( ! isset( $_POST[$nonce_name] ) || ! wp_verify_nonce( $_POST[$nonce_name], $action_name ) ) {
         wp_safe_redirect( wp_get_referer() ?: home_url() );
         exit;
     }
 
+    $now = time();
+
+    // Rate Limiting Check using client IP and WordPress transients
+    $ip = varner_get_client_ip();
+    if ( $ip !== '' ) {
+        $transient_key = 'vne_rl_' . substr( md5( $ip ), 0, 20 );
+        $rate_data = get_transient( $transient_key );
+
+        if ( ! is_array( $rate_data ) ) {
+            $rate_data = array(
+                'last_time'  => 0,
+                'count'      => 0,
+                'first_time' => $now,
+            );
+        }
+
+        // 1. Cooldown check (e.g., 5 seconds between submissions)
+        if ( $now - $rate_data['last_time'] < 5 ) {
+            wp_die( '<h1>Too Many Requests</h1><p>Please wait a few seconds before submitting another form.</p><a href="javascript:history.back()">Go Back</a>', 'Too Many Requests', array( 'response' => 429 ) );
+        }
+
+        // 2. Hourly limit check (e.g., max 10 submissions per hour per IP)
+        if ( $now - $rate_data['first_time'] > 3600 ) {
+            $rate_data['first_time'] = $now;
+            $rate_data['count']      = 0;
+        }
+
+        if ( $rate_data['count'] >= 10 ) {
+            wp_die( '<h1>Rate Limit Exceeded</h1><p>You have reached the maximum number of submissions allowed per hour. Please try again later.</p><a href="javascript:history.back()">Go Back</a>', 'Rate Limit Exceeded', array( 'response' => 429 ) );
+        }
+
+        // Update rate limit data and set transient TTL to the remaining time in the hourly window
+        $rate_data['last_time'] = $now;
+        $rate_data['count']++;
+        $ttl = max( 1, 3600 - ( $now - $rate_data['first_time'] ) );
+        set_transient( $transient_key, $rate_data, $ttl );
+    }
+
     if ( $captcha_key ) {
         $user_ans = isset( $_POST['captcha_answer'] ) ? intval( $_POST['captcha_answer'] ) : 0;
-        $real_ans = isset( $_SESSION[$captcha_key] ) ? intval( $_SESSION[$captcha_key] ) : -1;
-        if ( $user_ans !== $real_ans ) {
+        
+        // Retrieve and immediately unset the session key to prevent replay attacks
+        $real_ans = isset( $_SESSION[$captcha_key] ) ? $_SESSION[$captcha_key] : null;
+        if ( isset( $_SESSION[$captcha_key] ) ) {
+            unset( $_SESSION[$captcha_key] );
+        }
+
+        if ( $real_ans === null || $user_ans !== intval( $real_ans ) ) {
             wp_die( '<h1>Security Verification Failed</h1><p>Incorrect sum. Please go back and try again.</p><a href="javascript:history.back()">Go Back</a>' );
         }
-        unset( $_SESSION[$captcha_key] );
     }
 }
 
@@ -143,7 +282,7 @@ function varner_handle_chatbox_submit() {
     $mobile  = sanitize_text_field( $_POST['mobile'] ?? '' );
     $msg     = sanitize_textarea_field( $_POST['message'] ?? '' );
 
-    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
     $subject   = sanitize_text_field( "Chatbox Inquiry [{$dept}]: {$name}" );
     $body      = "Department: {$dept}\nName: {$name}\nMobile: {$mobile}\n\nMessage:\n{$msg}";
     wp_mail( $recipient, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
@@ -167,7 +306,7 @@ function varner_handle_contact_form_submit() {
           . "Email: " . sanitize_email( $_POST['email'] ) . "\n"
           . "Phone: " . sanitize_text_field( $_POST['phone'] ) . "\n\n"
           . "Message:\n" . sanitize_textarea_field( $_POST['message'] ) . "\n";
-    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
     wp_mail( $recipient, 'General Website Inquiry: ' . $name, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( esc_url_raw( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) ) );
@@ -199,7 +338,7 @@ function varner_handle_parts_request_submit() {
           . "Preferred Date: " . sanitize_text_field( $_POST['appointment_date'] ) . "\nDescription: " . sanitize_textarea_field( $_POST['parts_needed'] ) . "\n\n"
           . "HISTORY:\n"
           . "Prior Customer: " . sanitize_text_field( $_POST['prior_service'] ) . "\nLast Date: " . sanitize_text_field( $_POST['last_service_date'] ) . "\nLast Work: " . sanitize_text_field( $_POST['last_service_work'] ) . "\n";
-    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
     wp_mail( $recipient, "Parts Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( home_url( '/contact?request=sent' ) );
@@ -231,7 +370,7 @@ function varner_handle_service_request_submit() {
           . "Appointment Date: " . sanitize_text_field( $_POST['appointment_date'] ) . "\nDescription: " . sanitize_textarea_field( $_POST['services_needed'] ) . "\n\n"
           . "HISTORY:\n"
           . "Prior Customer: " . sanitize_text_field( $_POST['prior_service'] ) . "\nLast Date: " . sanitize_text_field( $_POST['last_service_date'] ) . "\nLast Work: " . sanitize_text_field( $_POST['last_service_work'] ) . "\n";
-    $recipient = varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
     wp_mail( $recipient, "Service Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( home_url( '/contact?request=sent' ) );
@@ -260,6 +399,14 @@ function varner_handle_employment_submit() {
 
     $attachments = array();
     if ( ! empty( $_FILES['resume']['name'] ) ) {
+        // Enforce upload errors check and size limit of 5 MB (5 * 1024 * 1024 bytes)
+        if ( $_FILES['resume']['error'] !== UPLOAD_ERR_OK ) {
+            wp_die( '<h1>Upload Error</h1><p>There was an error uploading your resume. Please go back and try again.</p><a href="javascript:history.back()">Go Back</a>' );
+        }
+        if ( $_FILES['resume']['size'] > 5 * 1024 * 1024 ) {
+            wp_die( '<h1>File Too Large</h1><p>Your resume file is too large. Maximum size allowed is 5 MB.</p><a href="javascript:history.back()">Go Back</a>' );
+        }
+
         require_once ABSPATH . 'wp-admin/includes/file.php';
         $uploaded = wp_handle_upload( $_FILES['resume'], array(
             'test_form' => false,
@@ -274,7 +421,8 @@ function varner_handle_employment_submit() {
         }
     }
 
-    wp_mail( 'gmajors1326@gmail.com', "Job Application: $fname $lname — $pos", $body, array( 'Content-Type: text/plain; charset=UTF-8' ), $attachments );
+    $recipient = varner_get_theme_setting( 'employment_email' ) ?: varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
+    wp_mail( $recipient, "Job Application: $fname $lname — $pos", $body, array( 'Content-Type: text/plain; charset=UTF-8' ), $attachments );
 
     if ( ! empty( $attachments[0] ) && file_exists( $attachments[0] ) ) {
         wp_delete_file( $attachments[0] );
@@ -511,6 +659,13 @@ function varner_ensure_finance_page() {
     }
     if ( $page && ! is_wp_error( $page ) ) {
         update_post_meta( $page->ID, '_wp_page_template', 'page-finance.php' );
+    }
+
+    // Auto-migrate stale /contact default value in options DB to /finance
+    $settings = get_option( 'varner_theme_settings', array() );
+    if ( is_array( $settings ) && isset( $settings['support_hub_finance_link'] ) && $settings['support_hub_finance_link'] === '/contact' ) {
+        $settings['support_hub_finance_link'] = '/finance';
+        update_option( 'varner_theme_settings', $settings );
     }
 }
 add_action( 'after_switch_theme', 'varner_ensure_finance_page' );
@@ -764,7 +919,7 @@ if ( ! function_exists( 'varner_get_theme_settings_defaults' ) ) {
  * Retrieve a theme setting with visual-safe fallback.
  */
 function varner_get_theme_setting($key, $default = null) {
-    if (isset($_GET['varner_preview'])) {
+    if (isset($_GET['varner_preview']) && current_user_can('edit_posts')) {
         $settings = get_option('varner_theme_settings_preview', array());
         if (empty($settings)) {
             $settings = get_option('varner_theme_settings', array());

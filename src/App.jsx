@@ -251,12 +251,12 @@ const App = () => {
       });
     }
 
-    // Bidirectional sync: If toggling visibility or featured status in the editor,
+    // Bidirectional sync: If toggling visibility, featured status, or Meta sync in the editor,
     // update the corresponding list item and save to the database immediately.
-    if ((field === 'featured' || field === 'showOnWebsite') && unitData.id) {
+    if ((field === 'featured' || field === 'showOnWebsite' || field === 'facebookSync') && unitData.id) {
       setInventoryList(prev => prev.map(u => u.wpId === unitData.id ? { ...u, [field]: value } : u));
 
-      const wpField = field === 'showOnWebsite' ? 'show_on_website' : 'featured';
+      const wpField = field === 'showOnWebsite' ? 'show_on_website' : (field === 'facebookSync' ? 'facebook_sync' : 'featured');
       apiFetch(`/inventory/${unitData.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ [wpField]: value })
@@ -391,6 +391,7 @@ const App = () => {
         seller_info: unitData.sellerInfo,
         featured: unitData.featured ?? false,
         show_on_website: unitData.showOnWebsite ?? true,
+        facebook_sync: unitData.facebookSync ?? true,
         has_attachments: unitData.hasAttachments ?? false,
         attachment_details: unitData.attachmentDetails || '',
         drive: unitData.drive || '',
@@ -461,8 +462,14 @@ const App = () => {
   };
 
   const handleToggleBoolean = async (item, field) => {
-    const isShowOnWebsite = field === 'show_on_website';
-    const fieldKey = isShowOnWebsite ? 'showOnWebsite' : 'featured';
+    let fieldKey;
+    if (field === 'show_on_website') {
+      fieldKey = 'showOnWebsite';
+    } else if (field === 'facebook_sync') {
+      fieldKey = 'facebookSync';
+    } else {
+      fieldKey = 'featured';
+    }
     const newVal = !item[fieldKey];
 
     // Optimistic update for list
@@ -522,28 +529,37 @@ const App = () => {
   // Fetches complete unit data from API and opens editor
   const handleFullEdit = async (wpId) => {
     setActiveTab('inventory');
-    if (!wpId) return;
+    if (!wpId) return null;
     try {
       const unit = await apiFetch(`/inventory/${wpId}`);
-      if (unit) setUnitData(apiToLocal(unit));
+      if (unit) {
+        setUnitData(apiToLocal(unit));
+        return unit;
+      }
     } catch {
       // Fall back to searching the list if individual endpoint fails
       try {
         const units = await apiFetch('/inventory');
-        const found = Array.isArray(units) ? units.find(u => u.id === wpId) : null;
-        if (found) setUnitData(apiToLocal(found));
+        const list = Array.isArray(units) ? units : (units?.items ?? []);
+        const found = list.find(u => u.id === wpId);
+        if (found) {
+          setUnitData(apiToLocal(found));
+          return found;
+        }
       } catch { /* tab already switched; user will see empty editor */ }
     }
+    return null;
   };
 
-  const handleClone = () => {
-    setUnitData(prev => ({
-      ...prev,
+  const handleClone = (unitToClone = null) => {
+    const base = unitToClone ? (unitToClone.id ? apiToLocal(unitToClone) : unitToClone) : unitData;
+    setUnitData({
+      ...base,
       id: null,
-      stockNumber: prev.stockNumber + '-COPY',
-      title: prev.title + ' (Copy)',
+      stockNumber: (base.stockNumber || '') + '-COPY',
+      title: (base.title || '') + ' (Copy)',
       vin: '',
-    }));
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

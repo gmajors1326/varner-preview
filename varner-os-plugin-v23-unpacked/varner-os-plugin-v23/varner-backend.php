@@ -170,6 +170,10 @@ acf_add_local_field_group(array(
             'ui' => 1, 'ui_on_text' => 'Yes', 'ui_off_text' => 'No', 'default_value' => 1,
             'instructions' => 'If set to No, this unit will be hidden from all public-facing pages.',
         ),
+        array('key' => 'field_varner_facebook_sync', 'label' => 'Sync to Facebook', 'name' => 'facebook_sync', 'type' => 'true_false',
+            'ui' => 1, 'ui_on_text' => 'Yes', 'ui_off_text' => 'No', 'default_value' => 1,
+            'instructions' => 'If set to No, this unit will be excluded from the Facebook Catalog CSV feed.',
+        ),
         array('key' => 'field_varner_desc',            'label' => 'Public Description', 'name' => 'description',   'type' => 'wysiwyg'),
         array('key' => 'field_varner_vin_image',       'label' => 'VIN Plate Image',   'name' => 'vin_image',      'type' => 'image',
             'return_format' => 'url', 'preview_size' => 'medium',
@@ -257,6 +261,7 @@ function varner_get_equipment_fields_config(): array {
         'seller_info'       => array('type' => 'wysiwyg'),
         'featured'          => array('type' => 'bool'),
         'show_on_website'   => array('type' => 'bool', 'default' => true),
+        'facebook_sync'     => array('type' => 'bool', 'default' => true),
         // Note: has_attachments, attachment_details, and drive are intentionally
         // omitted — they have no corresponding ACF field in the field group and
         // update_field() for unknown keys is a silent no-op.
@@ -377,6 +382,10 @@ function varner_save_unit_fields(int $post_id, array $data): void {
         }
         update_field('implements', $rows, $post_id);
     }
+
+    if (function_exists('varner_os_write_facebook_catalog_file')) {
+        varner_os_write_facebook_catalog_file();
+    }
 }
 
 function varner_os_user_initials(WP_User $user): string {
@@ -496,7 +505,7 @@ function varner_backend_get_settings_defaults(): array {
         'hero_video_url'             => "",
         'support_hub_service_link'   => "/service-request",
         'support_hub_parts_link'     => "https://www.allpartsstore.com/index.htm?customernumber=CO0612",
-        'support_hub_finance_link'   => "/contact",
+        'support_hub_finance_link'   => "/finance",
         'youtube_tagline'            => "Varner Equipment Media",
         'youtube_title'              => "See Our Machines<br class=\"hidden sm:block\"/><span class=\"text-red-500 sm:inline block\">In Action</span>",
         'youtube_paragraph'          => "Subscribe to our YouTube channel for walkthroughs, reviews, and heavy-duty demonstrations right here in Colorado.",

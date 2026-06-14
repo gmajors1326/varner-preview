@@ -41,6 +41,7 @@ function varner_register_rest_routes(): void {
         ),
     ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)', array(
+        array('methods' => 'GET',    'callback' => 'varner_api_get_unit',      'permission_callback' => $auth),
         array('methods' => 'PATCH',  'callback' => 'varner_api_update_unit',   'permission_callback' => $auth),
         array('methods' => 'DELETE', 'callback' => 'varner_api_soft_delete',   'permission_callback' => $auth),
     ));
@@ -353,6 +354,14 @@ function varner_api_save_sub_subcategories(WP_REST_Request $r): WP_REST_Response
 
 // ─── 3. INVENTORY CRUD ───────────────────────────────────────────────────────
 
+function varner_api_validate_equipment($post_id) {
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'equipment') {
+        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    }
+    return $post;
+}
+
 /**
  * GET /varner/v1/inventory
  *
@@ -463,8 +472,9 @@ function varner_api_create_unit(WP_REST_Request $request) {
 function varner_api_update_unit(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
     $data    = $request->get_json_params();
-    if (!get_post($post_id)) {
-        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    $post    = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
     }
     $before = varner_format_unit($post_id);
 
@@ -492,8 +502,9 @@ function varner_api_update_unit(WP_REST_Request $request) {
 
 function varner_api_soft_delete(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
-    if (!get_post($post_id)) {
-        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    $post    = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
     }
     update_post_meta($post_id, '_varner_deleted_at', current_time('c'));
     wp_trash_post($post_id);
@@ -504,6 +515,10 @@ function varner_api_soft_delete(WP_REST_Request $request) {
 
 function varner_api_restore_unit(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
+    $post    = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
+    }
     wp_untrash_post($post_id);
     wp_update_post(array('ID' => $post_id, 'post_status' => 'publish'));
     delete_post_meta($post_id, '_varner_deleted_at');
@@ -514,9 +529,18 @@ function varner_api_restore_unit(WP_REST_Request $request) {
 
 function varner_api_permanent_delete(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
+    $post    = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
+    }
     wp_delete_post($post_id, true);
     $rid = varner_os_request_id($request);
     varner_os_log_ledger($post_id, 'permanent_delete', 'permanent delete', array(), $rid);
+
+    if (function_exists('varner_os_write_facebook_catalog_file')) {
+        varner_os_write_facebook_catalog_file();
+    }
+
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
 }
 
@@ -545,9 +569,9 @@ function varner_api_upload_media(WP_REST_Request $request) {
 function varner_api_get_ledger(WP_REST_Request $request) {
     global $wpdb;
     $post_id = intval($request->get_param('id'));
-    $post    = get_post($post_id);
-    if (!$post || $post->post_type !== 'equipment') {
-        return new WP_Error('not_found', 'Unit not found.', array('status' => 404));
+    $post    = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
     }
 
     $page     = max(1, intval($request->get_param('page') ?: 1));
@@ -1171,4 +1195,14 @@ function varner_api_get_meta_sync_health(): WP_REST_Response {
         'sync_latency'       => $latency . 's',
         'total_units'        => $total,
     ));
+}
+
+function varner_api_get_unit(WP_REST_Request $request): WP_REST_Response|WP_Error {
+    $id = intval($request->get_param('id'));
+    $post = varner_api_validate_equipment($id);
+    if (is_wp_error($post)) {
+        return $post;
+    }
+    $unit = varner_format_unit($id);
+    return rest_ensure_response($unit);
 }

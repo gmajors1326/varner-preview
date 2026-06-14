@@ -126,6 +126,7 @@ export const InventoryTable = ({
                     <th className="px-6 py-5 w-40">STATUS</th>
                     <th className="px-6 py-5 text-center w-36">DAYS IN STOCK</th>
                     <th className="px-6 py-5 text-center w-28">WEBSITE</th>
+                    <th className="px-6 py-5 text-center w-28">META SYNC</th>
                     <th className="px-6 py-5 text-center w-28">FEATURED</th>
                     <th className="px-6 py-5 text-right w-32">ACTIONS</th>
                   </tr>
@@ -192,6 +193,14 @@ export const InventoryTable = ({
                           <button onClick={() => onToggle(item, 'show_on_website')}
                             className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}>
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-center">
+                          <button onClick={() => onToggle(item, 'facebook_sync')}
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.facebookSync ? 'left-7' : 'left-1'}`} />
                           </button>
                         </div>
                       </td>

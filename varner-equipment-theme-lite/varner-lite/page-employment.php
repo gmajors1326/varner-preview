@@ -132,8 +132,8 @@ get_header();
                         <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                             <div class="bg-slate-800 px-5 py-4 rounded-xl border border-slate-700 shrink-0">
                                 <?php
-                                    $num1 = rand(1, 10);
-                                    $num2 = rand(1, 10);
+                                    $num1 = rand(10, 99);
+                                    $num2 = rand(10, 99);
                                     $_SESSION['varner_employment_captcha'] = $num1 + $num2;
                                 ?>
                                 <span class="text-2xl font-black text-white tracking-widest"><?php echo $num1; ?> + <?php echo $num2; ?> = ?</span>

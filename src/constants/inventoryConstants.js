@@ -4,7 +4,7 @@ export const DEFAULT_EMPTY_UNIT = {
   price: '', callForPrice: false, vin: '', stockStatus: 'Draft', 
   category: 'Tractors', subcategory: '', sub_subcategory: '',
   color: '', length: '', meter: '', meterType: 'Hours', intakeDate: '', description: '',
-  featured: false, showOnWebsite: true, images: [], image_ids: [], attachments: [],
+  featured: false, showOnWebsite: true, facebookSync: true, images: [], image_ids: [], attachments: [],
   sellerInfo: '<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>',
   hasAttachments: false, attachmentDetails: '', drive: '',
 };

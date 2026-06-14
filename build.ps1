@@ -25,7 +25,7 @@ Remove-Item "$pluginFolder\dist" -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item ".\dist" "$pluginFolder\" -Recurse -Force
 
 # 3. Auto-Increment Plugin Version (Busts CDN/WP Cache & Forces Overwrite Prompt)
-Write-Host "`n[3/4] Auto-incrementing plugin version..." -ForegroundColor Yellow
+Write-Host "`n[3/4] Auto-incrementing plugin and theme versions..." -ForegroundColor Yellow
 $pluginFile = "$pluginFolder\varner-os-plugin-v23.php"
 if (Test-Path $pluginFile) {
     $pluginContent = Get-Content $pluginFile -Raw
@@ -39,6 +39,36 @@ if (Test-Path $pluginFile) {
         $pluginContent = $pluginContent -replace 'Version\s*\d+\.\d+\.\d+\s*-\s*React-powered', "Version $newVer - React-powered"
         Set-Content $pluginFile $pluginContent -NoNewline
         Write-Host "Plugin version bumped to: $newVer" -ForegroundColor Green
+
+        # Also bump theme version in style.css to match
+        $themeStyleFile = "varner-equipment-theme-lite\varner-lite\style.css"
+        if (Test-Path $themeStyleFile) {
+            $styleContent = Get-Content $themeStyleFile -Raw
+            if ($styleContent -match 'Version:\s*\d+\.\d+\.\d+') {
+                $styleContent = $styleContent -replace 'Version:\s*\d+\.\d+\.\d+', "Version: $newVer"
+                Set-Content $themeStyleFile $styleContent -NoNewline
+                Write-Host "Theme version bumped to: $newVer" -ForegroundColor Green
+            } else {
+                Write-Host "Warning: Could not match version regex in theme style.css!" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "Warning: Theme style.css not found at $themeStyleFile" -ForegroundColor Red
+        }
+
+        # Sync version to plugin's readme.txt
+        $pluginReadmeFile = "$pluginFolder\readme.txt"
+        if (Test-Path $pluginReadmeFile) {
+            $readmeContent = Get-Content $pluginReadmeFile -Raw
+            if ($readmeContent -match 'Version:\s*\d+\.\d+\.\d+') {
+                $readmeContent = $readmeContent -replace 'Version:\s*\d+\.\d+\.\d+', "Version: $newVer"
+                Set-Content $pluginReadmeFile $readmeContent -NoNewline
+                Write-Host "Plugin readme version bumped to: $newVer" -ForegroundColor Green
+            } else {
+                Write-Host "Warning: Could not match version regex in plugin readme.txt!" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "Warning: Plugin readme.txt not found at $pluginReadmeFile" -ForegroundColor Red
+        }
     } else {
         Write-Host "Warning: Could not match version regex in plugin header!" -ForegroundColor Red
     }
@@ -62,7 +92,7 @@ $pluginZipName = "varner-os-plugin-v23.zip"
 $pluginZip = Join-Path $root $pluginZipName
 if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
 Push-Location "varner-os-plugin-v23-unpacked"
-tar -a -c -f "../$pluginZipName" varner-os-plugin-v23
+python "..\tools\zip_helper.py" "../$pluginZipName" "varner-os-plugin-v23"
 Pop-Location
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
@@ -71,7 +101,7 @@ $themeZipName = "varner-equipment-theme-v23-lite.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
 Push-Location "varner-equipment-theme-lite"
-tar -a -c -f "../$themeZipName" varner-lite
+python "..\tools\zip_helper.py" "../$themeZipName" "varner-lite"
 Pop-Location
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 

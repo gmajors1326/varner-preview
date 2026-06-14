@@ -283,6 +283,7 @@ export const UnitEditorPanel = ({
               {[
                 { field: 'featured', icon: <Star size={20} fill={unitData.featured ? 'currentColor' : 'none'} />, iconBg: unitData.featured ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300', label: 'Featured Unit', sub: 'Display at the top of the homepage', color: unitData.featured ? 'bg-amber-500' : 'bg-slate-200' },
                 { field: 'showOnWebsite', icon: <Eye size={20} />, iconBg: unitData.showOnWebsite ? 'bg-green-100 text-green-600' : 'bg-white text-slate-300', label: 'Website Visibility', sub: 'Publicly visible on showroom pages', color: unitData.showOnWebsite ? 'bg-green-600' : 'bg-slate-200' },
+                { field: 'facebookSync', icon: <Facebook size={20} fill={unitData.facebookSync ? 'currentColor' : 'none'} />, iconBg: unitData.facebookSync ? 'bg-blue-100 text-blue-600' : 'bg-white text-slate-300', label: 'Sync to Meta/Facebook', sub: 'Include this unit in the Facebook Catalog CSV feed', color: unitData.facebookSync ? 'bg-blue-600' : 'bg-slate-200' },
               ].map(({ field, icon, iconBg, label, sub, color }) => (
                 <div key={field} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                   <div className="flex items-center gap-4">

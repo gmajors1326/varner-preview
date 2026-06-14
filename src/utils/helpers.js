@@ -25,6 +25,7 @@ export function apiToLocal(u) {
     sellerInfo: u.seller_info,
     featured: u.featured ?? false,
     showOnWebsite: u.show_on_website ?? true,
+    facebookSync: u.facebook_sync ?? true,
     hasAttachments: u.has_attachments ?? false,
     attachmentDetails: u.attachment_details ?? '',
     drive: u.drive ?? '',
@@ -86,6 +87,7 @@ export function apiToListItem(u) {
     image: u.images?.[0] ?? '',
     images: u.images ?? [],
     showOnWebsite: u.show_on_website ?? true,
+    facebookSync: u.facebook_sync ?? true,
     featured: u.featured ?? false,
     attachments: (u.implements ?? []).map(imp => ({
       image: imp.image,

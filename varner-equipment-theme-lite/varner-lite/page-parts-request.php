@@ -192,8 +192,8 @@ get_header(); ?>
                             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
                                 <?php 
                                     if ( ! session_id() ) { session_start(); }
-                                    $num1 = rand(1, 10);
-                                    $num2 = rand(1, 10);
+                                    $num1 = rand(10, 99);
+                                    $num2 = rand(10, 99);
                                     $_SESSION['varner_parts_captcha'] = $num1 + $num2;
                                 ?>
                                 <span class="text-2xl font-black text-white tracking-widest"><?php echo $num1; ?> + <?php echo $num2; ?> = ?</span>
