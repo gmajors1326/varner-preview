@@ -192,12 +192,11 @@ get_header(); ?>
                         <div class="flex items-center gap-4">
                             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
                                 <?php 
-                                    if ( ! session_id() ) { session_start(); }
-                                    $num1 = rand(10, 99);
-                                    $num2 = rand(10, 99);
-                                    $_SESSION['varner_captcha'] = $num1 + $num2;
+                                    $captcha = varner_generate_stateless_captcha();
                                 ?>
-                                <span class="text-2xl font-black text-white tracking-widest"><?php echo $num1; ?> + <?php echo $num2; ?> = ?</span>
+                                <span class="text-2xl font-black text-white tracking-widest"><?php echo $captcha['num1']; ?> + <?php echo $captcha['num2']; ?> = ?</span>
+                                <input type="hidden" name="captcha_time" value="<?php echo esc_attr($captcha['time']); ?>">
+                                <input type="hidden" name="captcha_hash" value="<?php echo esc_attr($captcha['hash']); ?>">
                             </div>
                         </div>
                         <div class="flex-1 w-full">

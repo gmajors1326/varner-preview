@@ -132,11 +132,11 @@ get_header();
                         <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                             <div class="bg-slate-800 px-5 py-4 rounded-xl border border-slate-700 shrink-0">
                                 <?php
-                                    $num1 = rand(10, 99);
-                                    $num2 = rand(10, 99);
-                                    $_SESSION['varner_employment_captcha'] = $num1 + $num2;
+                                    $captcha = varner_generate_stateless_captcha();
                                 ?>
-                                <span class="text-2xl font-black text-white tracking-widest"><?php echo $num1; ?> + <?php echo $num2; ?> = ?</span>
+                                <span class="text-2xl font-black text-white tracking-widest"><?php echo $captcha['num1']; ?> + <?php echo $captcha['num2']; ?> = ?</span>
+                                <input type="hidden" name="captcha_time" value="<?php echo esc_attr($captcha['time']); ?>">
+                                <input type="hidden" name="captcha_hash" value="<?php echo esc_attr($captcha['hash']); ?>">
                             </div>
                             <div class="flex-1 w-full">
                                 <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">What is the sum? <span class="text-red-500">*</span></label>

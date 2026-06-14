@@ -537,8 +537,8 @@ function varner_api_permanent_delete(WP_REST_Request $request) {
     $rid = varner_os_request_id($request);
     varner_os_log_ledger($post_id, 'permanent_delete', 'permanent delete', array(), $rid);
 
-    if (function_exists('varner_os_write_facebook_catalog_file')) {
-        varner_os_write_facebook_catalog_file();
+    if (function_exists('varner_os_schedule_catalog_regeneration')) {
+        varner_os_schedule_catalog_regeneration();
     }
 
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
@@ -609,13 +609,14 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
         foreach ($active_sessions as $sess) {
             $is_valid          = true;
             $reason            = 'expired';
-            $is_mobile_token   = strlen($sess->session_token) === 16 && ctype_xdigit($sess->session_token);
+            $is_mobile_token   = strlen($sess->session_token) === 32 && ctype_xdigit($sess->session_token);
 
             if (empty($sess->session_token)) {
                 $is_valid = false;
                 $reason   = 'expired';
             } elseif ($is_mobile_token) {
-                $stored_user_id = get_transient('varner_mobile_token_' . $sess->session_token);
+                $data = get_transient('varner_mobile_token_' . $sess->session_token);
+                $stored_user_id = (is_array($data) && isset($data['user_id'])) ? intval($data['user_id']) : (is_numeric($data) ? intval($data) : null);
                 if (!$stored_user_id) {
                     $is_valid = false;
                     $reason   = 'expired';
@@ -684,8 +685,18 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
     $count_sql = "SELECT COUNT(*) FROM {$safe_sessions_table} {$where_sql}";
     $total     = $wpdb->get_var($params ? $wpdb->prepare($count_sql, $params) : $count_sql);
 
+    // Batch user lookups to avoid N+1 queries in the loop
+    $user_ids = array_unique(array_filter(array_column($items, 'user_id')));
+    $users_by_id = array();
+    if (!empty($user_ids)) {
+        $user_query = get_users(array('include' => $user_ids));
+        foreach ($user_query as $u) {
+            $users_by_id[$u->ID] = $u;
+        }
+    }
+
     foreach ($items as &$row) {
-        $u                  = $row['user_id'] ? get_user_by('id', $row['user_id']) : null;
+        $u = isset($users_by_id[$row['user_id']]) ? $users_by_id[$row['user_id']] : null;
         $row['display_name'] = $u ? $u->display_name : '';
         $row['initials']     = $u ? varner_os_user_initials($u) : '';
     }
@@ -905,9 +916,9 @@ function varner_api_generate_mobile_token() {
     }
 
     // Generate the auth token (30-minute transient) and a one-time handoff nonce (2 minutes).
-    $token  = strtoupper(bin2hex(random_bytes(8)));  // 16-char hex mobile auth token
-    $nonce  = bin2hex(random_bytes(8));              // 16-char hex one-time handoff nonce
-    set_transient('varner_mobile_token_' . $token, $user_id, 1800);
+    $token  = strtoupper(bin2hex(random_bytes(16)));  // 32-char hex mobile auth token
+    $nonce  = bin2hex(random_bytes(16));              // 32-char hex one-time handoff nonce
+    set_transient('varner_mobile_token_' . $token, array('user_id' => $user_id, 'created_at' => time()), 1800);
     set_transient('varner_handoff_' . $nonce, $token, 120); // nonce expires in 2 minutes
 
     // Track active tokens and set cooldown.
@@ -1118,6 +1129,11 @@ function varner_api_get_meta_sync_logs(): WP_REST_Response {
 }
 
 function varner_api_get_meta_sync_health(): WP_REST_Response {
+    $cached = get_transient('varner_meta_sync_health');
+    if ($cached !== false) {
+        return rest_ensure_response($cached);
+    }
+
     $posts = get_posts(array(
         'post_type'      => 'equipment',
         'post_status'    => 'publish',
@@ -1131,12 +1147,14 @@ function varner_api_get_meta_sync_health(): WP_REST_Response {
 
     $total = count($posts);
     if ($total === 0) {
-        return rest_ensure_response(array(
+        $result = array(
             'match_rate'         => 100,
             'image_optimization' => 100,
             'sync_latency'       => '0.1s',
             'total_units'        => 0,
-        ));
+        );
+        set_transient('varner_meta_sync_health', $result, 300);
+        return rest_ensure_response($result);
     }
 
     $valid_match = 0;
@@ -1147,11 +1165,10 @@ function varner_api_get_meta_sync_health(): WP_REST_Response {
 
     foreach ($posts as $post) {
         $post_id = $post->ID;
-        $fields  = function_exists('get_fields') ? get_fields($post_id) : array();
 
-        // Check image
+        // Check image (use get_post_meta directly to bypass get_fields N+1 query)
         $image_ok = false;
-        $gallery = isset($fields['gallery']) ? $fields['gallery'] : get_post_meta($post_id, 'gallery', true);
+        $gallery = get_post_meta($post_id, 'gallery', true);
         if (!empty($gallery)) {
             $image_ok = true;
         } else {
@@ -1166,12 +1183,12 @@ function varner_api_get_meta_sync_health(): WP_REST_Response {
         }
 
         // Check brand/make
-        $make = isset($fields['make']) ? $fields['make'] : get_post_meta($post_id, 'make', true);
+        $make = get_post_meta($post_id, 'make', true);
         $make_ok = !empty($make);
 
         // Check price
-        $price_val = isset($fields['price']) ? $fields['price'] : get_post_meta($post_id, 'price', true);
-        $call_for_price = isset($fields['call_for_price']) ? (bool) $fields['call_for_price'] : (bool) get_post_meta($post_id, 'call_for_price', true);
+        $price_val = get_post_meta($post_id, 'price', true);
+        $call_for_price = (bool) get_post_meta($post_id, 'call_for_price', true);
         $price_ok = $call_for_price || (!empty($price_val) && floatval($price_val) > 0);
 
         // Required Facebook fields: title, description, link, image, make, price
@@ -1189,12 +1206,16 @@ function varner_api_get_meta_sync_health(): WP_REST_Response {
     // Add base serialization/parsing overhead of about 0.15s per feed request
     $latency = round(0.15 + $query_latency + ($total * 0.003), 2);
 
-    return rest_ensure_response(array(
+    $result = array(
         'match_rate'         => $match_rate,
         'image_optimization' => $image_optimization,
         'sync_latency'       => $latency . 's',
         'total_units'        => $total,
-    ));
+    );
+
+    set_transient('varner_meta_sync_health', $result, 300); // cache for 5 minutes
+
+    return rest_ensure_response($result);
 }
 
 function varner_api_get_unit(WP_REST_Request $request): WP_REST_Response|WP_Error {

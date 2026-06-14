@@ -116,12 +116,11 @@ get_header(); ?>
                             <div class="bg-slate-50 rounded-2xl p-6 border-2 border-slate-100 flex flex-col md:flex-row items-center gap-6">
                                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm min-w-[140px] text-center">
                                     <?php 
-                                        if ( ! session_id() ) { session_start(); }
-                                        $num1 = rand(10, 99);
-                                        $num2 = rand(10, 99);
-                                        $_SESSION['varner_contact_captcha'] = $num1 + $num2;
+                                        $captcha = varner_generate_stateless_captcha();
                                     ?>
-                                    <span class="text-xl font-black text-slate-900 tracking-widest"><?php echo $num1; ?> + <?php echo $num2; ?> = ?</span>
+                                    <span class="text-xl font-black text-slate-900 tracking-widest"><?php echo $captcha['num1']; ?> + <?php echo $captcha['num2']; ?> = ?</span>
+                                    <input type="hidden" name="captcha_time" value="<?php echo esc_attr($captcha['time']); ?>">
+                                    <input type="hidden" name="captcha_hash" value="<?php echo esc_attr($captcha['hash']); ?>">
                                 </div>
                                 <div class="flex-1 w-full">
                                     <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Security Sum <span class="text-red-600">(*)</span></label>

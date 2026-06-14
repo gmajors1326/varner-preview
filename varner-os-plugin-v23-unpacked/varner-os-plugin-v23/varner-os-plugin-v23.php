@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.141 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.141
+ * Description: Version 1.23.142 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.142
  * Author: hwy559.com
  */
 
@@ -136,7 +136,7 @@ function varner_os_record_logout(): void {
     // Note: $_GET['mobile_token'] intentionally removed — tokens must arrive via
     // HTTP headers only. GET params appear in server logs and Referer headers.
 
-    if ($token && strlen($token) === 16 && ctype_xdigit($token)) {
+    if ($token && strlen($token) === 32 && ctype_xdigit($token)) {
         delete_transient('varner_mobile_token_' . $token);
     } else {
         $token = wp_get_session_token();
@@ -206,6 +206,9 @@ function varner_os_cleanup_sessions(): void {
 
 add_filter('determine_current_user', 'varner_authenticate_mobile_token', 15);
 function varner_authenticate_mobile_token(int $user_id): int {
+    if (!(defined('REST_REQUEST') && REST_REQUEST)) {
+        return $user_id;
+    }
     if ($user_id) {
         return $user_id;
     }
@@ -222,10 +225,19 @@ function varner_authenticate_mobile_token(int $user_id): int {
         return $user_id;
     }
 
-    $stored_user_id = get_transient('varner_mobile_token_' . $token);
-    if ($stored_user_id) {
-        set_transient('varner_mobile_token_' . $token, $stored_user_id, 1800);
-        return intval($stored_user_id);
+    $data = get_transient('varner_mobile_token_' . $token);
+    if (is_array($data) && isset($data['user_id'])) {
+        $created_at = isset($data['created_at']) ? intval($data['created_at']) : 0;
+        if (time() - $created_at > 86400) { // 24-hour absolute expiration
+            delete_transient('varner_mobile_token_' . $token);
+            return $user_id;
+        }
+        set_transient('varner_mobile_token_' . $token, $data, 1800);
+        return intval($data['user_id']);
+    } elseif ($data && !is_array($data)) {
+        // Fallback for legacy plain user_id transients
+        set_transient('varner_mobile_token_' . $token, $data, 1800);
+        return intval($data);
     }
 
     return $user_id;
@@ -235,6 +247,9 @@ function varner_authenticate_mobile_token(int $user_id): int {
 
 add_action('init', 'varner_update_session_activity');
 function varner_update_session_activity(): void {
+    if (!current_user_can('edit_posts')) {
+        return;
+    }
     $user_id = get_current_user_id();
     if (!$user_id) {
         return;
@@ -307,7 +322,7 @@ function varner_update_session_activity(): void {
             ));
 
             foreach ($active_mobile as $old_sess) {
-                if (strlen($old_sess->session_token) === 16 && ctype_xdigit($old_sess->session_token)) {
+                if (strlen($old_sess->session_token) === 32 && ctype_xdigit($old_sess->session_token)) {
                     $wpdb->update(
                         $table,
                         array('logout_at' => current_time('mysql'), 'ended_reason' => 'superseded'),
@@ -778,14 +793,14 @@ function varner_os_get_facebook_catalog_csv(): string {
 
     foreach ($posts as $post) {
         $post_id = $post->ID;
-        $fields  = function_exists('get_fields') ? get_fields($post_id) : array();
 
-        $stock_status = isset($fields['stock_status']) ? $fields['stock_status'] : get_post_meta($post_id, 'stock_status', true);
+        // Use direct get_post_meta lookups to avoid ACF's heavy get_fields N+1 query pattern.
+        $stock_status = get_post_meta($post_id, 'stock_status', true);
         if ($stock_status === 'Draft') continue;
 
         $title = $post->post_title;
 
-        $desc_raw = isset($fields['description']) ? $fields['description'] : get_post_meta($post_id, 'description', true);
+        $desc_raw = get_post_meta($post_id, 'description', true);
         $desc = wp_strip_all_tags($desc_raw);
         $desc = str_replace(array("\r", "\n", "\t"), ' ', $desc);
         $desc = preg_replace('/\s+/', ' ', $desc);
@@ -797,7 +812,8 @@ function varner_os_get_facebook_catalog_csv(): string {
 
         $image_0_url = '';
         $additional_images = array();
-        $gallery = isset($fields['gallery']) ? $fields['gallery'] : get_post_meta($post_id, 'gallery', true);
+        
+        $gallery = get_post_meta($post_id, 'gallery', true);
         if (!empty($gallery) && is_array($gallery)) {
             $img_count = 0;
             foreach ($gallery as $img) {
@@ -819,32 +835,43 @@ function varner_os_get_facebook_catalog_csv(): string {
             if ($feat_id) $image_0_url = wp_get_attachment_url($feat_id);
         }
 
-        $make = isset($fields['make']) ? $fields['make'] : get_post_meta($post_id, 'make', true);
+        $make = get_post_meta($post_id, 'make', true);
         if (empty($make)) $make = 'Varner Equipment';
 
-        $model = isset($fields['model']) ? $fields['model'] : get_post_meta($post_id, 'model', true);
+        $model = get_post_meta($post_id, 'model', true);
         if (empty($model)) $model = 'Equipment';
 
-        $year = isset($fields['year']) ? $fields['year'] : get_post_meta($post_id, 'year', true);
+        $year = get_post_meta($post_id, 'year', true);
         if (empty($year)) $year = get_the_date('Y', $post_id) ?: '2026';
 
-        $cond_raw  = isset($fields['condition']) ? $fields['condition'] : get_post_meta($post_id, 'condition', true);
+        $cond_raw  = get_post_meta($post_id, 'condition', true);
         $condition = strtolower($cond_raw) === 'used' ? 'used' : 'new';
         $availability = ($stock_status === 'In Stock') ? 'in stock' : 'out of stock';
 
-        $price_val     = isset($fields['price']) ? $fields['price'] : get_post_meta($post_id, 'price', true);
-        $call_for_price = isset($fields['call_for_price']) ? (bool) $fields['call_for_price'] : (bool) get_post_meta($post_id, 'call_for_price', true);
+        $price_val     = get_post_meta($post_id, 'price', true);
+        $call_for_price = (bool) get_post_meta($post_id, 'call_for_price', true);
         $price = ($call_for_price || empty($price_val) || floatval($price_val) <= 0) ? '0 USD' : floatval($price_val) . ' USD';
 
-        $category     = isset($fields['category']) ? $fields['category'] : get_post_meta($post_id, 'category', true);
-        $stock_number = isset($fields['stock_number']) ? $fields['stock_number'] : get_post_meta($post_id, 'stock_number', true);
+        $category     = get_post_meta($post_id, 'category', true);
+        $stock_number = get_post_meta($post_id, 'stock_number', true);
 
-        fputcsv($out, array(
+        $row = array(
             $post_id, $title, $desc, $url, $image_0_url,
             implode(',', $additional_images),
             $availability, $condition, $price, $make,
             $category, $stock_number, $year, $make, $model,
-        ));
+        );
+
+        // Neutralize CSV formula injection (= + - @)
+        $row = array_map(function ($val) {
+            $val = (string) $val;
+            if (strlen($val) > 0 && in_array($val[0], array('=', '+', '-', '@'), true)) {
+                return "'" . $val;
+            }
+            return $val;
+        }, $row);
+
+        fputcsv($out, $row);
     }
 
     rewind($out);
@@ -854,10 +881,21 @@ function varner_os_get_facebook_catalog_csv(): string {
     return $csv_data;
 }
 
+function varner_os_schedule_catalog_regeneration(): void {
+    if (!wp_next_scheduled('varner_cron_regenerate_catalog')) {
+        wp_schedule_single_event(time() + 60, 'varner_cron_regenerate_catalog');
+    }
+}
+add_action('varner_cron_regenerate_catalog', 'varner_os_write_facebook_catalog_file');
+
 function varner_os_write_facebook_catalog_file(): bool {
     $csv_data = varner_os_get_facebook_catalog_csv();
     $file_path = ABSPATH . 'facebook-catalog.csv';
     $written = @file_put_contents($file_path, $csv_data);
+    
+    // Clear the meta sync health cache transient so it recalculates next time
+    delete_transient('varner_meta_sync_health');
+    
     return $written !== false;
 }
 
@@ -1092,8 +1130,11 @@ self.addEventListener('fetch', (event) => {
         fetch(event.request)
             .then((response) => {
                 if (response.ok) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                    const urlObj = new URL(event.request.url);
+                    if (!urlObj.pathname.includes('/mobile-app')) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                    }
                 }
                 return response;
             })
@@ -1113,11 +1154,26 @@ self.addEventListener('fetch', (event) => {
         // If they have a handoff nonce or token, let them access the PWA directly so
         // the client-side React app can verify the token and authenticate silently.
         // Otherwise, if they are not logged into WordPress, redirect to the login screen.
-        $has_auth_param = !empty($_GET['handoff']) || !empty($_GET['token']);
+        $has_auth_param = false;
+        if (!empty($_GET['handoff'])) {
+            $handoff_nonce = sanitize_text_field(wp_unslash($_GET['handoff']));
+            if (strlen($handoff_nonce) === 32 && ctype_xdigit($handoff_nonce)) {
+                $has_auth_param = (bool) get_transient('varner_handoff_' . $handoff_nonce);
+            }
+        } elseif (!empty($_GET['token'])) {
+            $token = sanitize_text_field(wp_unslash($_GET['token']));
+            if (strlen($token) === 32 && ctype_xdigit($token)) {
+                $has_auth_param = (bool) get_transient('varner_mobile_token_' . $token);
+            }
+        }
+
         if (!$has_auth_param && !is_user_logged_in()) {
             wp_redirect(wp_login_url(home_url('/mobile-app/')));
             exit;
         }
+
+        nocache_headers();
+        header('Cache-Control: private, no-store');
         status_header(200);
         ?><!DOCTYPE html>
 <html lang="en">
@@ -1183,7 +1239,7 @@ self.addEventListener('fetch', (event) => {
 $mobile_token_for_page = '';
 if (!empty($_GET['handoff'])) {
     $handoff_nonce = sanitize_text_field(wp_unslash($_GET['handoff']));
-    if (strlen($handoff_nonce) === 16 && ctype_xdigit($handoff_nonce)) {
+    if (strlen($handoff_nonce) === 32 && ctype_xdigit($handoff_nonce)) {
         $resolved = get_transient('varner_handoff_' . $handoff_nonce);
         if ($resolved) {
             $mobile_token_for_page = $resolved;
@@ -1193,12 +1249,41 @@ if (!empty($_GET['handoff'])) {
 }
 
 // Priority 2: User is already logged into WordPress — skip the token gate entirely.
-// Generate and embed a session token automatically so they land straight in the app.
+// Reuse an existing active valid token if possible, otherwise generate and embed one.
 if (!$mobile_token_for_page && is_user_logged_in() && current_user_can('edit_posts')) {
     $wp_user_id = get_current_user_id();
-    $auto_token = strtoupper(bin2hex(random_bytes(8)));
-    set_transient('varner_mobile_token_' . $auto_token, $wp_user_id, 1800);
-    $mobile_token_for_page = $auto_token;
+    $active_key = 'varner_active_tokens_' . $wp_user_id;
+    $active_tokens = get_transient($active_key) ?: array();
+    
+    $valid_token = '';
+    if (is_array($active_tokens)) {
+        // Search newest first for reuse
+        foreach (array_reverse($active_tokens) as $t) {
+            $data = get_transient('varner_mobile_token_' . $t);
+            if ($data) {
+                $valid_token = $t;
+                break;
+            }
+        }
+    }
+
+    if ($valid_token) {
+        $mobile_token_for_page = $valid_token;
+    } else {
+        $auto_token = strtoupper(bin2hex(random_bytes(16)));
+        $token_data = array('user_id' => $wp_user_id, 'created_at' => time());
+        set_transient('varner_mobile_token_' . $auto_token, $token_data, 1800);
+        
+        $active_tokens = is_array($active_tokens) ? $active_tokens : array();
+        $active_tokens[] = $auto_token;
+        if (count($active_tokens) > 3) {
+            $oldest = array_shift($active_tokens);
+            delete_transient('varner_mobile_token_' . $oldest);
+        }
+        set_transient($active_key, $active_tokens, 1800);
+        
+        $mobile_token_for_page = $auto_token;
+    }
 }
 ?>
 window.varnerData = {
@@ -1310,7 +1395,7 @@ function varner_os_acf_save_meta_sync_log($post_id): void {
     }
 
     // Refresh the static facebook-catalog.csv file
-    varner_os_write_facebook_catalog_file();
+    varner_os_schedule_catalog_regeneration();
 }
 
 // Hook into trash post to track removals
@@ -1329,7 +1414,7 @@ function varner_os_trash_meta_sync_log($post_id): void {
     varner_os_log_meta_sync("Inventory Removed: {$display_name}", 'warning');
 
     // Refresh the static facebook-catalog.csv file
-    varner_os_write_facebook_catalog_file();
+    varner_os_schedule_catalog_regeneration();
 }
 
 // Hook into untrash post to refresh catalog when restored
@@ -1348,15 +1433,15 @@ function varner_os_untrash_meta_sync_log($post_id): void {
     varner_os_log_meta_sync("Inventory Restored: {$display_name}");
 
     // Refresh the static facebook-catalog.csv file
-    varner_os_write_facebook_catalog_file();
+    varner_os_schedule_catalog_regeneration();
 }
 
 
 // Hook into WP All Import after import completion to refresh catalog
 add_action('pmxi_after_xml_import', 'varner_os_wpaip_import_complete');
 function varner_os_wpaip_import_complete($import_id): void {
-    if (function_exists('varner_os_write_facebook_catalog_file')) {
-        varner_os_write_facebook_catalog_file();
+    if (function_exists('varner_os_schedule_catalog_regeneration')) {
+        varner_os_schedule_catalog_regeneration();
     }
 }
 

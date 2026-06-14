@@ -207,11 +207,26 @@ function varner_ip_in_cidr( $ip, $cidr ) {
 /**
  * Form Submission Helper: Verifies nonce and captcha, and applies IP-based rate limiting
  */
-function varner_verify_form_submission( $nonce_name, $action_name, $captcha_key = null ) {
-    if ( ! session_id() ) {
-        session_start();
-    }
+function varner_generate_stateless_captcha() {
+    $num1 = rand(10, 99);
+    $num2 = rand(10, 99);
+    $ans  = $num1 + $num2;
+    $time = time();
+    $key  = wp_salt('nonce');
+    $hash = hash_hmac('sha256', "$ans|$time", $key);
+    
+    return array(
+        'num1' => $num1,
+        'num2' => $num2,
+        'time' => $time,
+        'hash' => $hash,
+    );
+}
 
+/**
+ * Form Submission Helper: Verifies nonce and captcha, and applies IP-based rate limiting
+ */
+function varner_verify_form_submission( $nonce_name, $action_name, $require_captcha = false ) {
     // Validate nonce FIRST — don't spend rate-limit budget on forged/expired requests.
     if ( ! isset( $_POST[$nonce_name] ) || ! wp_verify_nonce( $_POST[$nonce_name], $action_name ) ) {
         wp_safe_redirect( wp_get_referer() ?: home_url() );
@@ -234,12 +249,12 @@ function varner_verify_form_submission( $nonce_name, $action_name, $captcha_key 
             );
         }
 
-        // 1. Cooldown check (e.g., 5 seconds between submissions)
+        // 1. Cooldown check (5 seconds between submissions)
         if ( $now - $rate_data['last_time'] < 5 ) {
             wp_die( '<h1>Too Many Requests</h1><p>Please wait a few seconds before submitting another form.</p><a href="javascript:history.back()">Go Back</a>', 'Too Many Requests', array( 'response' => 429 ) );
         }
 
-        // 2. Hourly limit check (e.g., max 10 submissions per hour per IP)
+        // 2. Hourly limit check (max 10 submissions per hour per IP)
         if ( $now - $rate_data['first_time'] > 3600 ) {
             $rate_data['first_time'] = $now;
             $rate_data['count']      = 0;
@@ -256,16 +271,20 @@ function varner_verify_form_submission( $nonce_name, $action_name, $captcha_key 
         set_transient( $transient_key, $rate_data, $ttl );
     }
 
-    if ( $captcha_key ) {
+    if ( $require_captcha ) {
         $user_ans = isset( $_POST['captcha_answer'] ) ? intval( $_POST['captcha_answer'] ) : 0;
-        
-        // Retrieve and immediately unset the session key to prevent replay attacks
-        $real_ans = isset( $_SESSION[$captcha_key] ) ? $_SESSION[$captcha_key] : null;
-        if ( isset( $_SESSION[$captcha_key] ) ) {
-            unset( $_SESSION[$captcha_key] );
+        $time     = isset( $_POST['captcha_time'] ) ? intval( $_POST['captcha_time'] ) : 0;
+        $hash     = isset( $_POST['captcha_hash'] ) ? sanitize_text_field( $_POST['captcha_hash'] ) : '';
+
+        // Check expiration: 1 hour (3600 seconds)
+        if ( time() - $time > 3600 || time() - $time < -10 ) {
+            wp_die( '<h1>Security Verification Failed</h1><p>Captcha expired. Please go back, reload the page, and try again.</p><a href="javascript:history.back()">Go Back</a>' );
         }
 
-        if ( $real_ans === null || $user_ans !== intval( $real_ans ) ) {
+        $key = wp_salt('nonce');
+        $expected_hash = hash_hmac('sha256', "$user_ans|$time", $key);
+
+        if ( empty($hash) || ! hash_equals( $expected_hash, $hash ) ) {
             wp_die( '<h1>Security Verification Failed</h1><p>Incorrect sum. Please go back and try again.</p><a href="javascript:history.back()">Go Back</a>' );
         }
     }
@@ -275,7 +294,7 @@ function varner_verify_form_submission( $nonce_name, $action_name, $captcha_key 
  * Chatbox form handler
  */
 function varner_handle_chatbox_submit() {
-    varner_verify_form_submission( 'varner_chatbox_nonce', 'varner_chatbox_submit' );
+    varner_verify_form_submission( 'varner_chatbox_nonce', 'varner_chatbox_submit', false );
 
     $dept    = sanitize_text_field( $_POST['department'] ?? '' );
     $name    = sanitize_text_field( $_POST['name'] ?? '' );
@@ -298,7 +317,7 @@ add_action( 'admin_post_varner_chatbox_submit', 'varner_handle_chatbox_submit' )
  * General Contact Form handler
  */
 function varner_handle_contact_form_submit() {
-    varner_verify_form_submission( 'varner_contact_nonce', 'varner_contact_form_submit', 'varner_contact_captcha' );
+    varner_verify_form_submission( 'varner_contact_nonce', 'varner_contact_form_submit', true );
 
     $name = sanitize_text_field( $_POST['full_name'] );
     $body = "CONTACT FORM SUBMISSION:\n\n"
@@ -320,7 +339,7 @@ add_action( 'admin_post_varner_contact_form_submit', 'varner_handle_contact_form
  * Parts Request form handler
  */
 function varner_handle_parts_request_submit() {
-    varner_verify_form_submission( 'varner_parts_nonce', 'varner_parts_request_submit', 'varner_parts_captcha' );
+    varner_verify_form_submission( 'varner_parts_nonce', 'varner_parts_request_submit', true );
 
     $fname = sanitize_text_field( $_POST['first_name'] ?? '' );
     $lname = sanitize_text_field( $_POST['last_name']  ?? '' );
@@ -352,7 +371,7 @@ add_action( 'admin_post_varner_parts_request_submit', 'varner_handle_parts_reque
  * Service Request form handler
  */
 function varner_handle_service_request_submit() {
-    varner_verify_form_submission( 'varner_service_nonce', 'varner_service_request_submit', 'varner_captcha' );
+    varner_verify_form_submission( 'varner_service_nonce', 'varner_service_request_submit', true );
 
     $fname = sanitize_text_field( $_POST['first_name'] ?? '' );
     $lname = sanitize_text_field( $_POST['last_name']  ?? '' );
@@ -384,7 +403,7 @@ add_action( 'admin_post_varner_service_request_submit', 'varner_handle_service_r
  * Employment Application form handler
  */
 function varner_handle_employment_submit() {
-    varner_verify_form_submission( 'varner_employment_nonce', 'varner_employment_submit', 'varner_employment_captcha' );
+    varner_verify_form_submission( 'varner_employment_nonce', 'varner_employment_submit', true );
 
     $fname = sanitize_text_field( $_POST['first_name'] ?? '' );
     $lname = sanitize_text_field( $_POST['last_name'] ?? '' );

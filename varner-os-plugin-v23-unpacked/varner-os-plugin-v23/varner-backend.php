@@ -383,8 +383,8 @@ function varner_save_unit_fields(int $post_id, array $data): void {
         update_field('implements', $rows, $post_id);
     }
 
-    if (function_exists('varner_os_write_facebook_catalog_file')) {
-        varner_os_write_facebook_catalog_file();
+    if (function_exists('varner_os_schedule_catalog_regeneration')) {
+        varner_os_schedule_catalog_regeneration();
     }
 }
 
