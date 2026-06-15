@@ -14,3 +14,10 @@ Plugins/
 
 # Claude internal session files
 .claude/
+
+# Local testing / helper files
+add_imp.php
+snapshot.php
+modify.cjs
+*.json
+
