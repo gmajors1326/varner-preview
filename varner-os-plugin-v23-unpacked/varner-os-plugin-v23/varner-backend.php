@@ -359,6 +359,20 @@ function varner_format_unit(int $post_id, string $context = 'edit'): ?array {
     return $data;
 }
 
+function varner_os_purge_cache(int $post_id = 0): void {
+    if (class_exists('WpeCommon')) {
+        if ($post_id > 0 && method_exists('WpeCommon', 'purge_varnish_cache')) {
+            WpeCommon::purge_varnish_cache($post_id);
+        }
+        if (method_exists('WpeCommon', 'purge_varnish_cache_all')) {
+            WpeCommon::purge_varnish_cache_all();
+        }
+        if (method_exists('WpeCommon', 'purge_object_cache')) {
+            WpeCommon::purge_object_cache();
+        }
+    }
+}
+
 function varner_save_unit_fields(int $post_id, array $data): void {
     $config = varner_get_equipment_fields_config();
 
@@ -407,6 +421,10 @@ function varner_save_unit_fields(int $post_id, array $data): void {
 
     if (function_exists('varner_os_schedule_catalog_regeneration')) {
         varner_os_schedule_catalog_regeneration();
+    }
+
+    if (function_exists('varner_os_purge_cache')) {
+        varner_os_purge_cache($post_id);
     }
 }
 

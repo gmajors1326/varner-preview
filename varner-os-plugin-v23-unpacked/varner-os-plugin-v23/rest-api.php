@@ -558,6 +558,11 @@ function varner_api_soft_delete(WP_REST_Request $request) {
     wp_trash_post($post_id);
     $rid = varner_os_request_id($request);
     varner_os_log_ledger($post_id, 'delete', 'soft delete', array('deleted_at' => current_time('mysql')), $rid);
+    
+    if (function_exists('varner_os_purge_cache')) {
+        varner_os_purge_cache($post_id);
+    }
+    
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
 }
 
@@ -575,6 +580,11 @@ function varner_api_restore_unit(WP_REST_Request $request) {
     delete_post_meta($post_id, '_varner_deleted_at');
     $rid = varner_os_request_id($request);
     varner_os_log_ledger($post_id, 'restore', 'restore unit', array(), $rid);
+    
+    if (function_exists('varner_os_purge_cache')) {
+        varner_os_purge_cache($post_id);
+    }
+    
     return rest_ensure_response(varner_format_unit($post_id));
 }
 
@@ -593,6 +603,10 @@ function varner_api_permanent_delete(WP_REST_Request $request) {
 
     if (function_exists('varner_os_schedule_catalog_regeneration')) {
         varner_os_schedule_catalog_regeneration();
+    }
+    
+    if (function_exists('varner_os_purge_cache')) {
+        varner_os_purge_cache($post_id);
     }
 
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
