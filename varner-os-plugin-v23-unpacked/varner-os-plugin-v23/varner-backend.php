@@ -239,46 +239,66 @@ function varner_register_blocks(): void {
 
 function varner_get_equipment_fields_config(): array {
     return array(
-        'year'              => array('type' => 'text'),
-        'make'              => array('type' => 'text'),
-        'model'             => array('type' => 'text'),
+        'year'              => array('type' => 'text', 'public' => true),
+        'make'              => array('type' => 'text', 'public' => true),
+        'model'             => array('type' => 'text', 'public' => true),
         'stock_number'      => array('type' => 'text'),
         'vin'               => array('type' => 'text'),
         'vin_image'         => array('type' => 'text'),
-        'price'             => array('type' => 'number'),
-        'call_for_price'    => array('type' => 'bool'),
-        'condition'         => array('type' => 'text', 'default' => 'New'),
-        'stock_status'      => array('type' => 'text', 'default' => 'Draft'),
-        'category'          => array('type' => 'text'),
-        'subcategory'       => array('type' => 'text'),
-        'sub_subcategory'   => array('type' => 'text'),
-        'color'             => array('type' => 'text'),
-        'length'            => array('type' => 'text'),
-        'meter'             => array('type' => 'text'),
-        'meter_type'        => array('type' => 'text', 'default' => 'Hours'),
+        'price'             => array('type' => 'number', 'public' => true),
+        'call_for_price'    => array('type' => 'bool', 'public' => true),
+        'condition'         => array('type' => 'text', 'default' => 'New', 'public' => true),
+        'stock_status'      => array('type' => 'text', 'default' => 'Draft', 'public' => true),
+        'category'          => array('type' => 'text', 'public' => true),
+        'subcategory'       => array('type' => 'text', 'public' => true),
+        'sub_subcategory'   => array('type' => 'text', 'public' => true),
+        'color'             => array('type' => 'text', 'public' => true),
+        'length'            => array('type' => 'text', 'public' => true),
+        'meter'             => array('type' => 'text', 'public' => true),
+        'meter_type'        => array('type' => 'text', 'default' => 'Hours', 'public' => true),
         'intake_date'       => array('type' => 'text'),
-        'description'       => array('type' => 'wysiwyg'),
+        'description'       => array('type' => 'wysiwyg', 'public' => true),
         'seller_info'       => array('type' => 'wysiwyg'),
-        'featured'          => array('type' => 'bool'),
-        'show_on_website'   => array('type' => 'bool', 'default' => true),
-        'facebook_sync'     => array('type' => 'bool', 'default' => true),
+        'featured'          => array('type' => 'bool', 'public' => true),
+        'show_on_website'   => array('type' => 'bool', 'default' => true, 'public' => true),
+        'facebook_sync'     => array('type' => 'bool', 'default' => true, 'public' => true),
+        // Tracking fields explicitly defined so they follow the schema default-deny rule
+        'deleted_at'          => array('type' => 'text', 'virtual' => true),
+        'last_action'         => array('type' => 'text', 'virtual' => true),
+        'last_actor_name'     => array('type' => 'text', 'virtual' => true),
+        'last_actor_initials' => array('type' => 'text', 'virtual' => true),
+        'last_action_at'      => array('type' => 'text', 'virtual' => true),
         // Note: has_attachments, attachment_details, and drive are intentionally
         // omitted — they have no corresponding ACF field in the field group and
         // update_field() for unknown keys is a silent no-op.
     );
 }
 
-function varner_format_unit(int $post_id): ?array {
+function varner_format_unit(int $post_id, string $context = 'edit'): ?array {
     $post = get_post($post_id);
     if (!$post) return null;
 
     $config = varner_get_equipment_fields_config();
-    $fields = function_exists('get_fields') ? get_fields($post_id) : array();
+    $bulk = get_post_meta($post_id);
+    $acf_fields_to_keep = array('intake_date', 'vin_image', 'description', 'seller_info');
 
-    $data = array('id' => $post_id, 'title' => $post->post_title);
+    $data = array('id' => $post_id, 'title' => $post->post_title, 'created_at' => $post->post_date);
 
     foreach ($config as $key => $meta) {
-        $val = isset($fields[$key]) ? $fields[$key] : null;
+        if (empty($meta['public']) && $context === 'public') {
+            continue;
+        }
+
+        if (!empty($meta['virtual'])) {
+            $data[$key] = get_post_meta($post_id, '_varner_' . $key, true);
+            continue;
+        }
+
+        if (in_array($key, $acf_fields_to_keep, true)) {
+            $val = function_exists('get_field') ? get_field($key, $post_id) : null;
+        } else {
+            $val = array_key_exists($key, $bulk) ? $bulk[$key][0] : null;
+        }
 
         if ($meta['type'] === 'bool') {
             $data[$key] = (bool) ($val !== false && $val !== null ? $val : ($meta['default'] ?? false));
@@ -293,7 +313,13 @@ function varner_format_unit(int $post_id): ?array {
         }
     }
 
-    $gallery = isset($fields['gallery']) ? $fields['gallery'] : array();
+    if ($context === 'public' && !empty($data['call_for_price'])) {
+        $data['price'] = '';
+    }
+
+    $gallery = function_exists('get_field') ? get_field('gallery', $post_id) : array();
+    if (!is_array($gallery)) $gallery = array();
+    
     $data['images']    = array();
     $data['image_ids'] = array();
     if (!empty($gallery)) {
@@ -308,7 +334,9 @@ function varner_format_unit(int $post_id): ?array {
         }
     }
 
-    $raw_implements = isset($fields['implements']) ? $fields['implements'] : array();
+    $raw_implements = function_exists('get_field') ? get_field('implements', $post_id) : array();
+    if (!is_array($raw_implements)) $raw_implements = array();
+    
     $data['implements'] = array();
     if (!empty($raw_implements)) {
         foreach ($raw_implements as $imp) {
@@ -328,13 +356,6 @@ function varner_format_unit(int $post_id): ?array {
         }
     }
 
-    $data['created_at']         = $post->post_date;
-    $data['deleted_at']         = get_post_meta($post_id, '_varner_deleted_at', true);
-    $data['last_action']        = get_post_meta($post_id, '_varner_last_action', true);
-    $data['last_actor_name']    = get_post_meta($post_id, '_varner_last_actor_name', true);
-    $data['last_actor_initials'] = get_post_meta($post_id, '_varner_last_actor_initials', true);
-    $data['last_action_at']     = get_post_meta($post_id, '_varner_last_action_at', true);
-
     return $data;
 }
 
@@ -342,6 +363,7 @@ function varner_save_unit_fields(int $post_id, array $data): void {
     $config = varner_get_equipment_fields_config();
 
     foreach ($config as $key => $meta) {
+        if (!empty($meta['virtual'])) continue;
         if (!array_key_exists($key, $data)) continue;
 
         $val = $data[$key];

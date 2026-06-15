@@ -92,7 +92,7 @@ $pluginZipName = "varner-os-plugin-v23.zip"
 $pluginZip = Join-Path $root $pluginZipName
 if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
 Push-Location "varner-os-plugin-v23-unpacked"
-python "..\tools\zip_helper.py" "../$pluginZipName" "varner-os-plugin-v23"
+tar -a -c -f ../$pluginZipName varner-os-plugin-v23
 Pop-Location
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
@@ -101,7 +101,7 @@ $themeZipName = "varner-equipment-theme-v23-lite.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
 Push-Location "varner-equipment-theme-lite"
-python "..\tools\zip_helper.py" "../$themeZipName" "varner-lite"
+tar -a -c -f ../$themeZipName varner-lite
 Pop-Location
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 

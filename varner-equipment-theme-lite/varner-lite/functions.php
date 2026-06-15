@@ -301,7 +301,7 @@ function varner_handle_chatbox_submit() {
     $mobile  = sanitize_text_field( $_POST['mobile'] ?? '' );
     $msg     = sanitize_textarea_field( $_POST['message'] ?? '' );
 
-    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', get_option( 'admin_email' ) );
     $subject   = sanitize_text_field( "Chatbox Inquiry [{$dept}]: {$name}" );
     $body      = "Department: {$dept}\nName: {$name}\nMobile: {$mobile}\n\nMessage:\n{$msg}";
     wp_mail( $recipient, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
@@ -325,7 +325,7 @@ function varner_handle_contact_form_submit() {
           . "Email: " . sanitize_email( $_POST['email'] ) . "\n"
           . "Phone: " . sanitize_text_field( $_POST['phone'] ) . "\n\n"
           . "Message:\n" . sanitize_textarea_field( $_POST['message'] ) . "\n";
-    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', get_option( 'admin_email' ) );
     wp_mail( $recipient, 'General Website Inquiry: ' . $name, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( esc_url_raw( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) ) );
@@ -357,7 +357,7 @@ function varner_handle_parts_request_submit() {
           . "Preferred Date: " . sanitize_text_field( $_POST['appointment_date'] ) . "\nDescription: " . sanitize_textarea_field( $_POST['parts_needed'] ) . "\n\n"
           . "HISTORY:\n"
           . "Prior Customer: " . sanitize_text_field( $_POST['prior_service'] ) . "\nLast Date: " . sanitize_text_field( $_POST['last_service_date'] ) . "\nLast Work: " . sanitize_text_field( $_POST['last_service_work'] ) . "\n";
-    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', get_option( 'admin_email' ) );
     wp_mail( $recipient, "Parts Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( home_url( '/contact?request=sent' ) );
@@ -389,7 +389,7 @@ function varner_handle_service_request_submit() {
           . "Appointment Date: " . sanitize_text_field( $_POST['appointment_date'] ) . "\nDescription: " . sanitize_textarea_field( $_POST['services_needed'] ) . "\n\n"
           . "HISTORY:\n"
           . "Prior Customer: " . sanitize_text_field( $_POST['prior_service'] ) . "\nLast Date: " . sanitize_text_field( $_POST['last_service_date'] ) . "\nLast Work: " . sanitize_text_field( $_POST['last_service_work'] ) . "\n";
-    $recipient = varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
+    $recipient = varner_get_theme_setting( 'contact_email', get_option( 'admin_email' ) );
     wp_mail( $recipient, "Service Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
     wp_safe_redirect( home_url( '/contact?request=sent' ) );
@@ -440,7 +440,7 @@ function varner_handle_employment_submit() {
         }
     }
 
-    $recipient = varner_get_theme_setting( 'employment_email' ) ?: varner_get_theme_setting( 'contact_email', 'gmajors1326@gmail.com' );
+    $recipient = varner_get_theme_setting( 'employment_email' ) ?: varner_get_theme_setting( 'contact_email', get_option( 'admin_email' ) );
     wp_mail( $recipient, "Job Application: $fname $lname — $pos", $body, array( 'Content-Type: text/plain; charset=UTF-8' ), $attachments );
 
     if ( ! empty( $attachments[0] ) && file_exists( $attachments[0] ) ) {

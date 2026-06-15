@@ -398,8 +398,44 @@ function varner_api_get_inventory(WP_REST_Request $request) {
     }
 
     $query = new WP_Query($args);
+
+    $attachment_ids = array();
+    foreach ($query->posts as $p) {
+        $thumb_id = get_post_thumbnail_id($p->ID);
+        if ($thumb_id) {
+            $attachment_ids[] = intval($thumb_id);
+        }
+
+        $bulk = get_post_meta($p->ID);
+        
+        if (!empty($bulk['vin_image'][0])) {
+            $attachment_ids[] = intval($bulk['vin_image'][0]);
+        }
+
+        if (!empty($bulk['gallery'][0])) {
+            $gallery = maybe_unserialize($bulk['gallery'][0]);
+            if (is_array($gallery)) {
+                foreach ($gallery as $g_id) {
+                    if (is_numeric($g_id)) $attachment_ids[] = intval($g_id);
+                }
+            }
+        }
+
+        $impl_count = isset($bulk['implements'][0]) ? intval($bulk['implements'][0]) : 0;
+        for ($i = 0; $i < $impl_count; $i++) {
+            $img_key = "implements_{$i}_implement_image";
+            if (!empty($bulk[$img_key][0]) && is_numeric($bulk[$img_key][0])) {
+                $attachment_ids[] = intval($bulk[$img_key][0]);
+            }
+        }
+    }
+    
+    if (!empty($attachment_ids)) {
+        _prime_post_caches(array_unique(array_filter($attachment_ids)), false, true);
+    }
+
     $items = array_map(function (WP_Post $p): array {
-        return varner_format_unit($p->ID);
+        return varner_format_unit($p->ID, current_user_can('edit_posts') ? 'edit' : 'public');
     }, $query->posts);
 
     if ($paginate) {
@@ -451,6 +487,9 @@ function varner_api_get_deleted(WP_REST_Request $request): WP_REST_Response {
 
 function varner_api_create_unit(WP_REST_Request $request) {
     $data    = $request->get_json_params();
+    if (!is_array($data)) {
+        return new WP_Error('invalid_body', 'Invalid JSON body', array('status' => 400));
+    }
     $status  = (isset($data['stock_status']) && $data['stock_status'] === 'Draft') ? 'draft' : 'publish';
     $post_id = wp_insert_post(array(
         'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Unit'),
@@ -471,7 +510,13 @@ function varner_api_create_unit(WP_REST_Request $request) {
 
 function varner_api_update_unit(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
+    if (!current_user_can('edit_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to edit this unit.', array('status' => 403));
+    }
     $data    = $request->get_json_params();
+    if (!is_array($data)) {
+        return new WP_Error('invalid_body', 'Invalid JSON body', array('status' => 400));
+    }
     $post    = varner_api_validate_equipment($post_id);
     if (is_wp_error($post)) {
         return $post;
@@ -502,6 +547,9 @@ function varner_api_update_unit(WP_REST_Request $request) {
 
 function varner_api_soft_delete(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
+    if (!current_user_can('delete_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to delete this unit.', array('status' => 403));
+    }
     $post    = varner_api_validate_equipment($post_id);
     if (is_wp_error($post)) {
         return $post;
@@ -515,6 +563,9 @@ function varner_api_soft_delete(WP_REST_Request $request) {
 
 function varner_api_restore_unit(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
+    if (!current_user_can('edit_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to restore this unit.', array('status' => 403));
+    }
     $post    = varner_api_validate_equipment($post_id);
     if (is_wp_error($post)) {
         return $post;
@@ -529,6 +580,9 @@ function varner_api_restore_unit(WP_REST_Request $request) {
 
 function varner_api_permanent_delete(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
+    if (!current_user_can('delete_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to delete this unit.', array('status' => 403));
+    }
     $post    = varner_api_validate_equipment($post_id);
     if (is_wp_error($post)) {
         return $post;

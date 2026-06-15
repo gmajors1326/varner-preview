@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.142 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.142
+ * Description: Version 1.23.145 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.145
  * Author: hwy559.com
  */
 
@@ -890,7 +890,8 @@ add_action('varner_cron_regenerate_catalog', 'varner_os_write_facebook_catalog_f
 
 function varner_os_write_facebook_catalog_file(): bool {
     $csv_data = varner_os_get_facebook_catalog_csv();
-    $file_path = ABSPATH . 'facebook-catalog.csv';
+    $upload_dir = wp_upload_dir();
+    $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
     $written = @file_put_contents($file_path, $csv_data);
     
     // Clear the meta sync health cache transient so it recalculates next time
@@ -903,7 +904,9 @@ function varner_os_generate_facebook_catalog(): void {
     $csv_data = varner_os_get_facebook_catalog_csv();
     
     // Attempt to write/refresh the static file for Nginx direct serving
-    @file_put_contents(ABSPATH . 'facebook-catalog.csv', $csv_data);
+    $upload_dir = wp_upload_dir();
+    $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
+    @file_put_contents($file_path, $csv_data);
 
     // Log Meta sync crawl event
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';

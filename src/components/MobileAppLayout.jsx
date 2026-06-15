@@ -387,9 +387,9 @@ export const MobileAppLayout = ({
               <p className="text-slate-400 text-xs mt-2 font-medium">Field Inventory Management Console</p>
             </div>
 
-            <form onSubmit={handleLoginSubmit} className="bg-[#121214] rounded-3xl p-8 border border-[#27272a] shadow-2xl space-y-6">
+            <form onSubmit={handleLoginSubmit} className="bg-[#121214] rounded-3xl p-8 border border-slate-500/60 shadow-2xl space-y-6">
               <div>
-                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Secure Access Token</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Secure Access Token</label>
                 <input
                   type="text"
                   value={tokenInput}
@@ -424,7 +424,7 @@ export const MobileAppLayout = ({
               >
                 Log in with Username & Password
               </a>
-              <div className="bg-[#121214]/40 border border-[#27272a]/30 rounded-2xl p-5 text-center">
+              <div className="bg-[#121214]/40 border border-slate-500/60/30 rounded-2xl p-5 text-center">
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase tracking-wider">
                   Forgot your token? Open Varner OS on your desktop, go to "Mobile Companion" in the sidebar, and scan the QR code.
                 </p>
@@ -470,7 +470,7 @@ export const MobileAppLayout = ({
       {renderInstallBanner()}
 
       {/* HEADER SECTION (Mockup V2.4 Red Accents - Centered Logo, No Version Num) */}
-      <header className={`relative px-4 py-3 flex items-center justify-between border-b shrink-0 safe-top ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#0d0d0f] border-[#18181b]'}`}>
+      <header className={`relative px-4 py-4 flex items-center justify-between border-b shrink-0 safe-top ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#0d0d0f] border-[#18181b]'}`}>
         <button onClick={() => setIsDrawerOpen(true)} className={`p-2 rounded-xl transition-all shrink-0 z-10 ${isSunlightMode ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-300 hover:bg-[#18181b]'}`}>
           <Menu size={22} />
         </button>
@@ -513,7 +513,7 @@ export const MobileAppLayout = ({
         {/* ADD / EDIT UNIT TAB (Lands here by default) */}
         {mobileActiveTab === 'edit' && (
           <div className="p-4 space-y-6 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between border-b pb-3 border-[#27272a]/20">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-500/60/20">
               <h2 className={`text-sm font-black uppercase tracking-wider ${isSunlightMode ? 'text-slate-900' : 'text-white'}`}>
                 {unitData.id ? `Editing Listing [SKU: ${unitData.stockNumber || 'PENDING'}]` : 'Create New Listing'}
               </h2>
@@ -528,27 +528,27 @@ export const MobileAppLayout = ({
               {/* Category Options (Category, then Sub, then Sub Sub) */}
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Category *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Category *</label>
                   <div className="relative">
                     <select
                       value={unitData.category || ''}
                       onChange={e => handleCategorySelectChange(e.target.value)}
-                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       <option value="">Select Category</option>
                       {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                   <button type="button" onClick={() => setShowCategoriesModal(true)}
                     className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
                       isSunlightMode 
                         ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
-                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
+                        : 'bg-[#121214] border-slate-500/60 text-red-500 hover:bg-red-500/5'
                     }`}
                   >
                     <Settings size={14}/> Manage Categories
@@ -556,27 +556,27 @@ export const MobileAppLayout = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Subcategory</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Subcategory</label>
                   <div className="relative">
                     <select
                       value={unitData.subcategory || ''}
                       onChange={e => handleSubcategorySelectChange(e.target.value)}
-                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       <option value="">Select Subcategory</option>
                       {allSubcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
                     </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                   <button type="button" onClick={() => setShowSubcategoriesModal(true)}
                     className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
                       isSunlightMode 
                         ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
-                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
+                        : 'bg-[#121214] border-slate-500/60 text-red-500 hover:bg-red-500/5'
                     }`}
                   >
                     <Settings size={14}/> Manage Subcategories
@@ -584,27 +584,27 @@ export const MobileAppLayout = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Sub-Subcategory</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Sub-Subcategory</label>
                   <div className="relative">
                     <select
                       value={unitData.sub_subcategory || ''}
                       onChange={e => handleSubSubcategorySelectChange(e.target.value)}
-                      className={`w-full border rounded-xl py-3.5 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       <option value="">Select Sub-Subcategory</option>
                       {allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
                     </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                   <button type="button" onClick={() => setShowSubSubcategoriesModal(true)}
                     className={`w-full border-2 border-dashed rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest mt-1.5 min-h-[50px] ${
                       isSunlightMode 
                         ? 'bg-slate-50 border-slate-200 text-red-600 hover:bg-red-50' 
-                        : 'bg-[#121214] border-[#27272a] text-red-500 hover:bg-red-500/5'
+                        : 'bg-[#121214] border-slate-500/60 text-red-500 hover:bg-red-500/5'
                     }`}
                   >
                     <Settings size={14}/> Manage Sub-Subcategories
@@ -614,15 +614,15 @@ export const MobileAppLayout = ({
               </div>
 
               <div>
-                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Public Inventory Title *</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Public Inventory Title *</label>
                 <input
                   type="text"
                   value={unitData.title || ''}
                   onChange={e => handleInputChange('title', e.target.value)}
-                  className={`w-full border rounded-xl py-3 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                  className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                     isSunlightMode 
                       ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                      : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                      : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                   }`}
                   placeholder="e.g. 2026 Mahindra 2638 HST"
                 />
@@ -631,37 +631,37 @@ export const MobileAppLayout = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Year *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Year *</label>
                   <input
                     type="text"
                     value={unitData.year || ''}
                     onChange={e => handleInputChange('year', e.target.value)}
-                    className={`w-full border rounded-xl py-3 px-4 text-base font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                    className={`w-full border rounded-xl py-4 px-5 text-lg font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                       isSunlightMode 
                         ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                        : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                        : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                     }`}
                     placeholder="2026"
                   />
                   {fieldErrors.year && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.year}</p>}
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Make / Brand *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Make / Brand *</label>
                   <div className="relative">
                     <select
                       value={unitData.make || ''}
                       onChange={e => handleInputChange('make', e.target.value)}
-                      className={`w-full border rounded-xl py-3 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       <option value="">Select Brand</option>
                       {brands.map(b => <option key={b} value={b}>{b}</option>)}
                       <option value="Other">Other</option>
                     </select>
-                    <div className="absolute right-3.5 top-4.5 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                   {fieldErrors.make && <p className="text-red-500 text-[9px] font-bold mt-1 uppercase tracking-wider">{fieldErrors.make}</p>}
                 </div>
@@ -669,15 +669,15 @@ export const MobileAppLayout = ({
 
               <div className="grid grid-cols-1 gap-3">
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Model *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Model *</label>
                   <input
                     type="text"
                     value={unitData.model || ''}
                     onChange={e => handleInputChange('model', e.target.value)}
-                    className={`w-full border rounded-xl py-3 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                    className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                       isSunlightMode 
                         ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                        : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                        : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                     }`}
                     placeholder="e.g. 2638 HST"
                   />
@@ -688,29 +688,29 @@ export const MobileAppLayout = ({
               {/* VIN Block with scanner button on its own line below */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Stock Number</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Stock Number</label>
                   <input
                     type="text"
                     value={unitData.stockNumber || ''}
                     onChange={e => handleInputChange('stockNumber', e.target.value)}
-                    className={`w-full border rounded-xl py-3 px-4 text-base font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                    className={`w-full border rounded-xl py-4 px-5 text-lg font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                       isSunlightMode 
                         ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                        : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                        : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                     }`}
                     placeholder="e.g. 1234"
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">VIN / Serial *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">VIN / Serial *</label>
                   <input
                     type="text"
                     value={unitData.vin || ''}
                     onChange={e => handleInputChange('vin', e.target.value)}
-                    className={`w-full border rounded-xl py-3 px-4 text-base font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                    className={`w-full border rounded-xl py-4 px-5 text-lg font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                       isSunlightMode 
                         ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                        : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                        : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                     }`}
                     placeholder="VIN / SERIAL #"
                   />
@@ -739,7 +739,7 @@ export const MobileAppLayout = ({
                   className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs font-black uppercase tracking-wider active:scale-95 shadow-md ${
                     isSunlightMode 
                       ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200' 
-                      : 'bg-[#18181b] hover:bg-[#27272a] text-white border border-[#27272a]'
+                      : 'bg-[#18181b] hover:bg-[#27272a] text-white border border-slate-500/60'
                   }`}
                 >
                   {isScanning ? (
@@ -753,7 +753,7 @@ export const MobileAppLayout = ({
 
               {/* VIN Image preview block */}
               {unitData.vinImage && (
-                <div className={`p-3 rounded-2xl border flex items-center gap-3 ${isSunlightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
+                <div className={`p-3 rounded-2xl border flex items-center gap-3 ${isSunlightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#121214] border-slate-500/60'}`}>
                   <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-700 shrink-0 bg-slate-900">
                     <img src={unitData.vinImage} alt="VIN Plate" className="w-full h-full object-cover" />
                   </div>
@@ -785,40 +785,40 @@ export const MobileAppLayout = ({
               {/* Meter details */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Meter Reading</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Meter Reading</label>
                   <input
                     type="text"
                     value={unitData.meter || ''}
                     onChange={e => handleInputChange('meter', e.target.value)}
-                    className={`w-full border rounded-xl py-3 px-4 text-base font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                    className={`w-full border rounded-xl py-4 px-5 text-lg font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                       isSunlightMode 
                         ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                        : 'bg-[#121214] border-[#27272a] text-white focus:ring-red-600'
+                        : 'bg-[#121214] border-slate-500/60 text-white focus:ring-red-600'
                     }`}
                     placeholder="e.g. 250"
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Meter Type</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Meter Type</label>
                   <div className="relative">
                     <select
                       value={unitData.meterType || 'Hours'}
                       onChange={e => handleInputChange('meterType', e.target.value)}
-                      className={`w-full border rounded-xl py-3 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       {METER_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
-                    <div className="absolute right-3.5 top-4 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                 </div>
               </div>
 
               {/* Price details */}
-              <div className={`p-4 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
+              <div className={`p-4 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-slate-500/60'}`}>
                 <div className="flex justify-between items-center">
                   <span className={`text-[10px] font-black uppercase tracking-widest ${isSunlightMode ? 'text-slate-950' : 'text-white'}`}>Price Details</span>
                   <label className={`flex items-center gap-2 text-xs font-bold cursor-pointer ${isSunlightMode ? 'text-slate-700' : 'text-slate-300'}`}>
@@ -833,15 +833,15 @@ export const MobileAppLayout = ({
                 </div>
                 {!unitData.callForPrice && (
                   <div>
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Retail Price (USD) *</label>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Retail Price (USD) *</label>
                     <input
                       type="number"
                       value={unitData.price || ''}
                       onChange={e => handleInputChange('price', e.target.value)}
-                      className={`w-full border rounded-xl py-3 px-4 text-base font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-mono font-bold focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                       placeholder="e.g. 24900"
                     />
@@ -853,33 +853,33 @@ export const MobileAppLayout = ({
               {/* Condition & Status */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Condition *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Condition *</label>
                   <div className="relative">
                     <select
                       value={unitData.condition || 'New'}
                       onChange={e => handleInputChange('condition', e.target.value)}
-                      className={`w-full border rounded-xl py-3 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       <option value="New">New</option>
                       <option value="Used">Used</option>
                     </select>
-                    <div className="absolute right-3.5 top-4 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Stock Status *</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Stock Status *</label>
                   <div className="relative">
                     <select
                       value={unitData.stockStatus || 'Draft'}
                       onChange={e => handleInputChange('stockStatus', e.target.value)}
-                      className={`w-full border rounded-xl py-3 px-4 text-base font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
+                      className={`w-full border rounded-xl py-4 px-5 text-lg font-bold focus:ring-1 focus:ring-red-600 outline-none appearance-none transition-all ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                          : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                          : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                       }`}
                     >
                       <option value="In Stock">In Stock</option>
@@ -887,13 +887,13 @@ export const MobileAppLayout = ({
                       <option value="Sold">Sold</option>
                       <option value="Draft">Draft</option>
                     </select>
-                    <div className="absolute right-3.5 top-4 pointer-events-none text-slate-400"><ChevronDown size={14}/></div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"><ChevronDown size={22}/></div>
                   </div>
                 </div>
               </div>
 
               {/* Website featured options */}
-              <div className={`p-4 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
+              <div className={`p-4 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-slate-500/60'}`}>
                 <div className="flex justify-between items-center">
                   <div>
                     <h4 className={`text-[10px] font-black uppercase tracking-widest ${isSunlightMode ? 'text-slate-950' : 'text-white'}`}>Show on Website</h4>
@@ -924,14 +924,14 @@ export const MobileAppLayout = ({
 
               {/* Description */}
               <div>
-                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Description (Plain Text / HTML)</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Description (Plain Text / HTML)</label>
                 <textarea
                   value={unitData.description || ''}
                   onChange={e => handleInputChange('description', e.target.value)}
-                  className={`w-full border rounded-xl py-3 px-4 text-base focus:ring-1 focus:ring-red-600 outline-none transition-all ${
+                  className={`w-full border rounded-xl py-4 px-5 text-lg focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                     isSunlightMode 
                       ? 'bg-white border-slate-200 text-slate-900 focus:border-red-500' 
-                      : 'bg-[#121214] border-[#27272a] text-white focus:border-red-600'
+                      : 'bg-[#121214] border-slate-500/60 text-white focus:border-red-600'
                   }`}
                   rows={4}
                   placeholder="Details about the unit..."
@@ -939,7 +939,7 @@ export const MobileAppLayout = ({
               </div>
 
               {/* General image gallery */}
-              <div className={`p-5 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
+              <div className={`p-5 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-slate-500/60'}`}>
                 <div className="flex justify-between items-center">
                   <h3 className={`text-xs font-black uppercase tracking-widest ${isSunlightMode ? 'text-slate-950' : 'text-white'}`}>Image Gallery</h3>
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{unitData.images?.length || 0} Images</span>
@@ -973,7 +973,7 @@ export const MobileAppLayout = ({
                     type="button"
                     disabled={isUploadingImages}
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex-1 bg-[#dc2626] hover:bg-red-700 disabled:opacity-50 text-white py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow"
+                    className="flex-1 bg-[#dc2626] hover:bg-red-700 disabled:opacity-50 text-white py-3.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow"
                   >
                     {isUploadingImages ? <Loader2 className="animate-spin" size={14}/> : <Camera size={14}/>}
                     {isUploadingImages ? 'Uploading...' : 'Take Photo'}
@@ -982,7 +982,7 @@ export const MobileAppLayout = ({
                     type="button"
                     disabled={isUploadingImages}
                     onClick={() => galleryInputRef.current?.click()}
-                    className={`flex-1 disabled:opacity-50 py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                    className={`flex-1 disabled:opacity-50 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all ${
                       isSunlightMode 
                         ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
                         : 'bg-[#18181b] hover:bg-[#27272a] text-white'
@@ -1037,7 +1037,7 @@ export const MobileAppLayout = ({
               </div>
 
               {/* Implements / Attachments */}
-              <div className={`p-5 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
+              <div className={`p-5 rounded-3xl border space-y-4 ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-slate-500/60'}`}>
                 <div className="flex justify-between items-center">
                   <h3 className={`text-xs font-black uppercase tracking-widest ${isSunlightMode ? 'text-slate-950' : 'text-white'}`}>Implements / Attachments</h3>
                   <button
@@ -1051,7 +1051,7 @@ export const MobileAppLayout = ({
 
                 <div className="space-y-4">
                   {(unitData.attachments ?? []).map((imp, idx) => (
-                    <div key={idx} className={`p-4 rounded-2xl border space-y-3 relative animate-in fade-in ${isSunlightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#18181b] border-[#27272a]'}`}>
+                    <div key={idx} className={`p-4 rounded-2xl border space-y-3 relative animate-in fade-in ${isSunlightMode ? 'bg-slate-50 border-slate-200' : 'bg-[#18181b] border-slate-500/60'}`}>
                       <button
                         type="button"
                         onClick={() => handleRemoveImplement(idx)}
@@ -1066,7 +1066,7 @@ export const MobileAppLayout = ({
                           type="text"
                           value={imp.title || ''}
                           onChange={e => handleUpdateImplement(idx, 'title', e.target.value)}
-                          className={`w-full border rounded-lg py-2 px-3 text-sm font-bold ${isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-black border-[#27272a] text-white'}`}
+                          className={`w-full border rounded-lg py-2 px-3 text-sm font-bold ${isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-black border-slate-500/60 text-white'}`}
                           placeholder="e.g. Loader Bucket"
                         />
                       </div>
@@ -1078,7 +1078,7 @@ export const MobileAppLayout = ({
                             type="text"
                             value={imp.price || ''}
                             onChange={e => handleUpdateImplement(idx, 'price', e.target.value)}
-                            className={`w-full border rounded-lg py-2 px-3 text-sm font-bold ${isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-black border-[#27272a] text-white'}`}
+                            className={`w-full border rounded-lg py-2 px-3 text-sm font-bold ${isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-black border-slate-500/60 text-white'}`}
                             placeholder="e.g. 1200"
                           />
                         </div>
@@ -1097,7 +1097,7 @@ export const MobileAppLayout = ({
                             />
                             <label
                               htmlFor={`imp-img-${idx}`}
-                              className={`flex-1 border rounded-lg py-2 px-3 text-center text-[10px] font-black uppercase tracking-widest cursor-pointer truncate ${isSunlightMode ? 'bg-white border-slate-200 text-slate-600 hover:border-red-500' : 'bg-black border-[#27272a] text-slate-400 hover:border-red-600'}`}
+                              className={`flex-1 border rounded-lg py-2 px-3 text-center text-[10px] font-black uppercase tracking-widest cursor-pointer truncate ${isSunlightMode ? 'bg-white border-slate-200 text-slate-600 hover:border-red-500' : 'bg-black border-slate-500/60 text-slate-400 hover:border-red-600'}`}
                             >
                               {imp.image ? 'CHANGE IMAGE' : 'CHOOSE PHOTO'}
                             </label>
@@ -1115,7 +1115,7 @@ export const MobileAppLayout = ({
                         <textarea
                           value={imp.description || ''}
                           onChange={e => handleUpdateImplement(idx, 'description', e.target.value)}
-                          className={`w-full border rounded-lg py-2 px-3 text-xs ${isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-black border-[#27272a] text-white'}`}
+                          className={`w-full border rounded-lg py-2 px-3 text-xs ${isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-black border-slate-500/60 text-white'}`}
                           rows={2}
                           placeholder="Brief description..."
                         />
@@ -1156,7 +1156,7 @@ export const MobileAppLayout = ({
                 className={`w-full rounded-xl py-3.5 pl-11 pr-4 text-xs focus:ring-1 focus:ring-red-600 outline-none transition-all ${
                   isSunlightMode 
                     ? 'bg-white border border-slate-200 text-slate-900 focus:border-red-500 shadow-sm' 
-                    : 'bg-[#121214] border border-[#27272a] text-white focus:border-red-600'
+                    : 'bg-[#121214] border border-slate-500/60 text-white focus:border-red-600'
                 }`}
               />
               {mobileSearch && (
@@ -1175,7 +1175,7 @@ export const MobileAppLayout = ({
                       ? 'bg-[#dc2626] border-[#dc2626] text-white shadow-lg'
                       : (isSunlightMode 
                           ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100' 
-                          : 'bg-[#121214] border-[#27272a] text-slate-400 hover:text-white')
+                          : 'bg-[#121214] border-slate-500/60 text-slate-400 hover:text-white')
                   }`}
                 >
                   {cat}
@@ -1204,7 +1204,7 @@ export const MobileAppLayout = ({
                       className={`p-3.5 rounded-2xl border shadow-md flex flex-col sm:flex-row sm:items-center gap-4 transition-all active:scale-[0.99] ${
                         isSunlightMode 
                           ? 'bg-white border-slate-200/80 hover:bg-slate-50 text-slate-900' 
-                          : 'bg-[#121214] border-[#27272a] hover:bg-[#18181b] text-white'
+                          : 'bg-[#121214] border-slate-500/60 hover:bg-[#18181b] text-white'
                       }`}
                     >
                       <div className="flex items-center gap-4">
@@ -1238,7 +1238,7 @@ export const MobileAppLayout = ({
 
                           {/* Dynamic Specification Badges */}
                           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                            <span className={`text-[8px] font-black px-2 py-0.5 rounded ${isSunlightMode ? 'bg-slate-100 text-slate-700' : 'bg-[#18181b] text-white border border-[#27272a]'}`}>
+                            <span className={`text-[8px] font-black px-2 py-0.5 rounded ${isSunlightMode ? 'bg-slate-100 text-slate-700' : 'bg-[#18181b] text-white border border-slate-500/60'}`}>
                               {item.callForPrice ? 'Call' : item.price ? `$${parseFloat(item.price).toLocaleString()}` : '$0'}
                             </span>
                             {hp && <span className="bg-blue-600/10 text-blue-400 text-[8px] font-black px-2 py-0.5 rounded border border-blue-500/15">{hp}</span>}
@@ -1297,7 +1297,7 @@ export const MobileAppLayout = ({
         {mobileActiveTab === 'marketplace' && (
           <div className="p-4 space-y-4 animate-in fade-in duration-300">
             <h1 className={`text-2xl font-black uppercase tracking-tight ${isSunlightMode ? 'text-slate-950' : 'text-white'}`}>Meta Sync</h1>
-            <div className={`p-4 rounded-3xl border ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-[#27272a]'}`}>
+            <div className={`p-4 rounded-3xl border ${isSunlightMode ? 'bg-white border-slate-200' : 'bg-[#121214] border-slate-500/60'}`}>
               <MarketplaceTab />
             </div>
             <div className="h-20" />
@@ -1320,7 +1320,7 @@ export const MobileAppLayout = ({
                   <div 
                     key={item.id} 
                     className={`p-4 rounded-2xl border shadow-md flex flex-col gap-3.5 transition-all ${
-                      isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#121214] border-[#27272a] text-white'
+                      isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#121214] border-slate-500/60 text-white'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
@@ -1401,7 +1401,7 @@ export const MobileAppLayout = ({
           <aside className={`relative w-[280px] max-w-[85vw] h-full flex flex-col pt-0 px-6 pb-6 shadow-2xl border-r transition-transform animate-in slide-in-from-left duration-300 ${
             isSunlightMode ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0d0d0f] border-[#18181b] text-white'
           }`}>
-            <div className="flex items-center justify-between mb-8 border-b border-[#27272a]/20 pb-4 safe-top">
+            <div className="flex items-center justify-between mb-8 border-b border-slate-500/60/20 pb-4 safe-top">
               <div className="flex items-center gap-2">
                 {logoUrl ? (
                   <img src={logoUrl} className="h-8 max-w-[120px] object-contain" alt="Varner OS" />
@@ -1483,7 +1483,7 @@ export const MobileAppLayout = ({
               </button>
             </nav>
 
-            <div className="pt-4 border-t border-[#27272a]/20">
+            <div className="pt-4 border-t border-slate-500/60/20">
               <button 
                 onClick={handleLogout} 
                 className={`w-full text-left py-3 px-4 rounded-xl flex items-center gap-3 font-black text-xs uppercase tracking-wider transition-all text-slate-400 hover:text-red-500`}
