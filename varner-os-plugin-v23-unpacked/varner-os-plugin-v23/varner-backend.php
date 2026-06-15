@@ -367,9 +367,9 @@ function varner_os_purge_cache(int $post_id = 0): void {
         if (method_exists('WpeCommon', 'purge_varnish_cache_all')) {
             WpeCommon::purge_varnish_cache_all();
         }
-        if (method_exists('WpeCommon', 'purge_object_cache')) {
-            WpeCommon::purge_object_cache();
-        }
+    }
+    if (function_exists('wp_cache_flush')) {
+        wp_cache_flush();
     }
 }
 
