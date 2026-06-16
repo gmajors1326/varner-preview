@@ -551,8 +551,19 @@ const App = () => {
     return null;
   };
 
-  const handleClone = (unitToClone = null) => {
-    const base = unitToClone ? (unitToClone.id ? apiToLocal(unitToClone) : unitToClone) : unitData;
+  const handleClone = (source = null) => {
+    // Tolerate any caller shape: React events (onClick) and null → clone the open unit;
+    // an object → clone it (normalizing API shape); a bare id should never reach here now,
+    // but if it does, fall back to the open unit rather than spreading a primitive.
+    const isEvent  = source && typeof source === 'object' && (source.nativeEvent || source._reactName);
+    const isObject = source && typeof source === 'object' && !isEvent;
+    const base = isObject ? (source.id ? apiToLocal(source) : source) : unitData;
+
+    if (!base || (!base.title && !base.stockNumber && !base.make)) {
+      showToast?.('Open a unit before cloning', 'error');
+      return;
+    }
+
     setUnitData({
       ...base,
       id: null,
@@ -735,7 +746,7 @@ const App = () => {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             {activeTab === 'inventory' && unitData.title && (
-              <button onClick={handleClone} className="bg-slate-100 text-slate-600 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
+              <button onClick={() => handleClone()} className="bg-slate-100 text-slate-600 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
                 <Copy size={16} /> <span className="hidden sm:inline">Clone Unit</span>
               </button>
             )}

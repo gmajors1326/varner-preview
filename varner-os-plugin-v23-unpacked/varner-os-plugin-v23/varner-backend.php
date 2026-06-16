@@ -597,6 +597,36 @@ function varner_backend_get_settings_defaults(): array {
                 'job_badge_text'  => '',
             ),
         ),
+        'finance_cards'              => array(
+            array(
+                'name'            => 'Wells Fargo',
+                'logo'            => 'WellsFargo_red.png',
+                'application_pdf' => 'Wells-Fargo-Application.pdf',
+                'description'     => '',
+                'alt'             => 'Wells Fargo logo',
+            ),
+            array(
+                'name'            => 'Sheffield Finance',
+                'logo'            => 'SheffieldFinance_Green.png',
+                'application_pdf' => 'sheffield-application-rev.pdf',
+                'description'     => '',
+                'alt'             => 'Sheffield Finance logo',
+            ),
+            array(
+                'name'            => 'DLL Finance',
+                'logo'            => 'DLLFinance_blue.png',
+                'application_pdf' => 'dll-application-rev.pdf',
+                'description'     => '',
+                'alt'             => 'DLL Finance logo',
+            ),
+            array(
+                'name'            => 'AGDirect',
+                'logo'            => 'AGDirect_Gray.png',
+                'application_pdf' => 'AgDirect-Application.pdf',
+                'description'     => '',
+                'alt'             => 'AGDirect logo',
+            ),
+        ),
     );
 }
 

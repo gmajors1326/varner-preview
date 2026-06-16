@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Sparkles, Image as ImageIcon, Loader2, Upload, Trash2, Mail, Clock, Plus,
-  Briefcase, ChevronUp, ChevronDown, Save
+  Briefcase, ChevronUp, ChevronDown, Save, DollarSign
 } from 'lucide-react';
 import { apiFetch, uploadFile } from '../../utils/api';
 import { InputField, TextAreaField } from '../Common/FormFields';
@@ -54,12 +54,15 @@ export const SettingsTab = ({ showToast }) => {
     employment_headline: '',
     employment_intro: '',
     employment_jobs: [],
+    finance_cards: [],
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
   const thumbnailInputRef = useRef(null);
+  const pdfInputRefs = useRef({});
+  const logoInputRefs = useRef({});
 
   const iframeRef = useRef(null);
   const iframeReady = useRef(false);
@@ -73,6 +76,7 @@ export const SettingsTab = ({ showToast }) => {
     hours: false,
     about: false,
     careers: false,
+    finance: false,
   });
 
   // Section key → anchor ID on the live site (must match id= in index.php)
@@ -84,6 +88,7 @@ export const SettingsTab = ({ showToast }) => {
     hours:   'varner-map',       // same section — hours live near the map
     about:   'section-cta',
     careers: 'section-cta',     // careers page is separate; scroll to CTA as closest
+    finance: 'applications',    // section id in page-finance.php
   };
 
   const scrollIframeTo = (anchor) => {
@@ -879,6 +884,279 @@ export const SettingsTab = ({ showToast }) => {
                   <Plus size={16} /> Add Job Opening
                 </button>
               </div>
+            </div>
+          </CollapsiblePanel>
+        </div>
+
+        {/* 8. FINANCE CARDS */}
+        <div id="editor-section-finance">
+          <CollapsiblePanel
+            title="Finance Partners"
+            icon={<DollarSign size={20} />}
+            isOpen={openSections.finance}
+            onToggle={() => toggleSection('finance')}
+          >
+            <div className="space-y-6">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide pl-1">
+                Finance partner cards displayed on the /finance page. Each card shows a logo, name, description, and an Apply link.
+              </p>
+
+              <div className="space-y-4">
+                {settings.finance_cards && settings.finance_cards.map((card, idx) => (
+                  <div key={idx} className="bg-slate-50 rounded-[1.5rem] p-6 border-2 border-slate-100 space-y-4 relative group">
+                    <div className="absolute top-4 right-4 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (idx === 0) return;
+                          const updated = [...settings.finance_cards];
+                          const temp = updated[idx];
+                          updated[idx] = updated[idx - 1];
+                          updated[idx - 1] = temp;
+                          handleFieldChange('finance_cards', updated);
+                        }}
+                        disabled={idx === 0}
+                        className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
+                        title="Move Up"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (idx === settings.finance_cards.length - 1) return;
+                          const updated = [...settings.finance_cards];
+                          const temp = updated[idx];
+                          updated[idx] = updated[idx + 1];
+                          updated[idx + 1] = temp;
+                          handleFieldChange('finance_cards', updated);
+                        }}
+                        disabled={idx === settings.finance_cards.length - 1}
+                        className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
+                        title="Move Down"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = settings.finance_cards.filter((_, i) => i !== idx);
+                          handleFieldChange('finance_cards', updated);
+                        }}
+                        className="bg-white border border-slate-200 text-red-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-100"
+                        title="Delete Card"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Partner Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Wells Fargo"
+                          value={card.name || ''}
+                          onChange={e => {
+                            const updated = [...settings.finance_cards];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            handleFieldChange('finance_cards', updated);
+                          }}
+                          className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Logo Image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={el => { logoInputRefs.current[idx] = el; }}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            e.target.value = '';
+                            const updated = [...settings.finance_cards];
+                            updated[idx] = { ...updated[idx], _uploading_logo: true };
+                            handleFieldChange('finance_cards', updated);
+                            try {
+                              const result = await uploadFile(file);
+                              const updated2 = [...settings.finance_cards];
+                              updated2[idx] = { ...updated2[idx], logo: result.url, _uploading_logo: false };
+                              handleFieldChange('finance_cards', updated2);
+                              showToast('Logo uploaded successfully!');
+                            } catch (err) {
+                              const updated3 = [...settings.finance_cards];
+                              updated3[idx] = { ...updated3[idx], _uploading_logo: false };
+                              handleFieldChange('finance_cards', updated3);
+                              showToast('Logo upload failed: ' + err.message, 'error');
+                            }
+                          }}
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => logoInputRefs.current[idx]?.click()}
+                            disabled={card._uploading_logo}
+                            className="bg-slate-950 text-white px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {card._uploading_logo ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            {card._uploading_logo ? 'Uploading…' : card.logo ? 'Replace Logo' : 'Upload Logo'}
+                          </button>
+                          {card.logo && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...settings.finance_cards];
+                                updated[idx] = { ...updated[idx], logo: '' };
+                                handleFieldChange('finance_cards', updated);
+                              }}
+                              className="bg-red-50 text-red-600 border border-red-100 px-4 py-4 rounded-xl hover:bg-red-100 transition-all flex items-center gap-2"
+                              title="Remove Logo"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                        <div className="mt-3 bg-white rounded-xl border border-slate-100 p-4 flex items-center justify-center min-h-[6rem]">
+                          {card.logo ? (
+                            <img
+                              src={card.logo}
+                              alt={card.alt || card.name || 'Finance partner logo'}
+                              className="h-24 w-24 object-contain"
+                              onError={e => { e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest">No logo uploaded</span>
+                          )}
+                        </div>
+                        <div className="mt-3">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Alt Text (for accessibility)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Wells Fargo logo"
+                            value={card.alt || ''}
+                            onChange={e => {
+                              const updated = [...settings.finance_cards];
+                              updated[idx] = { ...updated[idx], alt: e.target.value };
+                              handleFieldChange('finance_cards', updated);
+                            }}
+                            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="sm:col-span-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Application PDF</label>
+                        <input
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          className="hidden"
+                          ref={el => { pdfInputRefs.current[idx] = el; }}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            e.target.value = '';
+                            const updated = [...settings.finance_cards];
+                            updated[idx] = { ...updated[idx], _uploading: true };
+                            handleFieldChange('finance_cards', updated);
+                            try {
+                              const result = await uploadFile(file);
+                              const updated2 = [...settings.finance_cards];
+                              updated2[idx] = { ...updated2[idx], application_pdf: result.url, _uploading: false };
+                              handleFieldChange('finance_cards', updated2);
+                              showToast('PDF uploaded successfully!');
+                            } catch (err) {
+                              const updated3 = [...settings.finance_cards];
+                              updated3[idx] = { ...updated3[idx], _uploading: false };
+                              handleFieldChange('finance_cards', updated3);
+                              showToast('PDF upload failed: ' + err.message, 'error');
+                            }
+                          }}
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => pdfInputRefs.current[idx]?.click()}
+                            disabled={card._uploading}
+                            className="bg-slate-950 text-white px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {card._uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            {card._uploading ? 'Uploading…' : card.application_pdf ? 'Replace PDF' : 'Upload PDF'}
+                          </button>
+                          {card.application_pdf && (
+                            <>
+                              <a
+                                href={card.application_pdf}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-slate-100 text-slate-600 px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
+                              >
+                                View PDF
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...settings.finance_cards];
+                                  updated[idx] = { ...updated[idx], application_pdf: '' };
+                                  handleFieldChange('finance_cards', updated);
+                                }}
+                                className="bg-red-50 text-red-600 border border-red-100 px-4 py-4 rounded-xl hover:bg-red-100 transition-all flex items-center gap-2"
+                                title="Remove PDF"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Short Description (optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Flexible financing for agricultural equipment"
+                          value={card.description || ''}
+                          onChange={e => {
+                            const updated = [...settings.finance_cards];
+                            updated[idx] = { ...updated[idx], description: e.target.value };
+                            handleFieldChange('finance_cards', updated);
+                          }}
+                          className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+                ))}
+
+                {(!settings.finance_cards || settings.finance_cards.length === 0) && (
+                  <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                    No finance partners configured.
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const cards = settings.finance_cards || [];
+                  handleFieldChange('finance_cards', [
+                    ...cards,
+                    {
+                      name: '',
+                      logo: '',
+                      application_pdf: '',
+                      description: '',
+                      alt: '',
+                    }
+                  ]);
+                }}
+                className="mt-4 w-full py-4 border-2 border-dashed border-slate-200 rounded-[1.5rem] text-slate-400 font-black uppercase tracking-widest text-[10px] hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus size={16} /> Add Finance Partner
+              </button>
             </div>
           </CollapsiblePanel>
         </div>

@@ -926,6 +926,21 @@ function _varner_sanitize_settings_data(array $params, array $defaults): array {
                 }
             }
             $sanitized[$key] = $links;
+        } elseif ($key === 'finance_cards') {
+            $cards = array();
+            if (is_array($params[$key])) {
+                foreach ($params[$key] as $card) {
+                    if (!is_array($card)) continue;
+                    $cards[] = array(
+                        'name'            => sanitize_text_field($card['name'] ?? ''),
+                        'logo'            => esc_url_raw($card['logo'] ?? ''),
+                        'application_pdf' => esc_url_raw($card['application_pdf'] ?? ''),
+                        'description'     => sanitize_text_field($card['description'] ?? ''),
+                        'alt'             => sanitize_text_field($card['alt'] ?? ''),
+                    );
+                }
+            }
+            $sanitized[$key] = $cards;
         } elseif (is_array($default_val)) {
             $sanitized[$key] = array_map('sanitize_text_field', (array) $params[$key]);
         } elseif (is_bool($default_val)) {

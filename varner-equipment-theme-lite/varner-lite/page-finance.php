@@ -11,28 +11,9 @@ $prefill_apr   = isset( $_GET['apr'] )   ? floatval( wp_unslash( $_GET['apr'] ) 
 $prefill_term  = isset( $_GET['term'] )  ? intval( wp_unslash( $_GET['term'] ) )    : 60;
 $prefill_down  = isset( $_GET['down'] )  ? floatval( wp_unslash( $_GET['down'] ) )  : 10; // percent
 
-$finance_partners = [
-    [
-        'name' => 'Wells Fargo',
-        'file' => 'WellsFargo_red.png',
-        'pdf'  => 'Wells-Fargo-Application.pdf',
-    ],
-    [
-        'name' => 'Sheffield Finance',
-        'file' => 'SheffieldFinance_Green.png',
-        'pdf'  => 'sheffield-application-rev.pdf',
-    ],
-    [
-        'name' => 'DLL Finance',
-        'file' => 'DLLFinance_blue.png',
-        'pdf'  => 'dll-application-rev.pdf',
-    ],
-    [
-        'name' => 'AGDirect',
-        'file' => 'AGDirect_Gray.png',
-        'pdf'  => 'AgDirect-Application.pdf',
-    ],
-];
+$theme_settings = get_option( 'varner_theme_settings', array() );
+$defaults       = function_exists( 'varner_get_theme_settings_defaults' ) ? varner_get_theme_settings_defaults() : array();
+$finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['finance_cards'] : ( $defaults['finance_cards'] ?? array() );
 
 ?>
 
@@ -55,13 +36,36 @@ $finance_partners = [
     <div class="bg-slate-100 text-slate-900 py-12">
         <div class="max-w-6xl mx-auto px-4">
             <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <?php foreach ( $finance_partners as $partner ) : ?>
-                    <div class="p-5 rounded-2xl bg-white shadow-lg border border-slate-200 flex flex-col gap-4 items-center text-center">
-                        <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $partner['file'] ); ?>" alt="<?php echo esc_attr( $partner['name'] ); ?>" class="h-48 w-48 object-contain">
-                        <div class="text-base font-black text-slate-900"><?php echo esc_html( $partner['name'] ); ?></div>
-                        <a href="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $partner['pdf'] ); ?>" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-[11px] font-black uppercase tracking-[0.25em] hover:bg-red-700 transition-all" target="_blank" rel="noopener noreferrer">Apply Now</a>
-                    </div>
-                <?php endforeach; ?>
+                <?php if ( ! empty( $finance_cards ) ) : ?>
+                    <?php foreach ( $finance_cards as $card ) : ?>
+                        <?php
+                            $logo = $card['logo'] ?? '';
+                            $pdf  = $card['application_pdf'] ?? '';
+                            $logo_url = $logo && ! preg_match('/^https?:\/\//', $logo )
+                                ? get_template_directory_uri() . '/assets/' . $logo
+                                : $logo;
+                            $pdf_url  = $pdf && ! preg_match('/^https?:\/\//', $pdf )
+                                ? get_template_directory_uri() . '/assets/' . $pdf
+                                : $pdf;
+                        ?>
+                        <div class="p-5 rounded-2xl bg-white shadow-lg border border-slate-200 flex flex-col gap-4 items-center text-center">
+                            <?php if ( $logo_url ) : ?>
+                                <img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $card['alt'] ?? $card['name'] ?? '' ); ?>" class="h-48 w-48 object-contain">
+                            <?php else : ?>
+                                <div class="h-48 w-48 flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-[10px] font-black uppercase tracking-widest">No Logo</div>
+                            <?php endif; ?>
+                            <div class="text-base font-black text-slate-900"><?php echo esc_html( $card['name'] ?? '' ); ?></div>
+                            <?php if ( $card['description'] ?? '' ) : ?>
+                                <p class="text-xs text-slate-500 font-bold"><?php echo esc_html( $card['description'] ); ?></p>
+                            <?php endif; ?>
+                            <?php if ( $pdf_url ) : ?>
+                                <a href="<?php echo esc_url( $pdf_url ); ?>" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-[11px] font-black uppercase tracking-[0.25em] hover:bg-red-700 transition-all" target="_blank" rel="noopener noreferrer">Apply Now</a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else : ?>
+                    <div class="col-span-full text-center py-16 text-slate-400 text-[11px] font-black uppercase tracking-widest">No finance partners configured yet.</div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

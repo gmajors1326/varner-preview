@@ -308,7 +308,10 @@ export const MobileAppLayout = ({
     if (window.confirm('Clone this listing?')) {
       showToast('Cloning listing...', 'info');
       try {
-        await handleClone(wpId);
+        const unit = await handleFullEdit(wpId);   // fetch full unit + load into editor
+        if (!unit) { showToast('Could not load unit to clone', 'error'); return; }
+        handleClone();                              // clone the now-loaded unit (no arg)
+        setMobileActiveTab('edit');                 // show the pre-filled clone form
         showToast('Listing cloned successfully!');
         loadInventory();
       } catch (err) {

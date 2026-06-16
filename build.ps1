@@ -91,18 +91,31 @@ Pop-Location
 $pluginZipName = "varner-os-plugin-v23.zip"
 $pluginZip = Join-Path $root $pluginZipName
 if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
-Push-Location "varner-os-plugin-v23-unpacked"
-tar -a -c -f ../$pluginZipName varner-os-plugin-v23
-Pop-Location
+python tools/zip_helper.py $pluginZip "varner-os-plugin-v23-unpacked/varner-os-plugin-v23"
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
-# Package Theme ZIP
+# Package Theme ZIP (varner-lite/ folder — must match active theme slug)
 $themeZipName = "varner-equipment-theme-v23-lite.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
-Push-Location "varner-equipment-theme-lite"
-tar -a -c -f ../$themeZipName varner-lite
-Pop-Location
+python -c "
+import zipfile, os
+src = os.path.abspath('varner-equipment-theme-lite/varner-lite')
+with zipfile.ZipFile(r'$themeZip', 'w', zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk(src):
+        dirs[:] = [d for d in dirs if d not in ('src', '.git')]
+        dirs.sort(); files.sort()
+        for d in dirs:
+            p = os.path.join(root, d)
+            a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/') + '/'
+            z.write(p, a)
+        for f in files:
+            if f.startswith('.git') or f in ('.DS_Store', 'tailwind.config.js') or f.endswith('.md'): continue
+            p = os.path.join(root, f)
+            a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/')
+            z.write(p, a)
+print('Theme ZIP: varner-lite/ folder structure')
+"
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 
 Write-Host "`n=============================================" -ForegroundColor Green
