@@ -34,16 +34,28 @@ function varner_register_rest_routes(): void {
     register_rest_route($ns, '/inventory/deleted', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_deleted',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('edit_others_posts'); },
         'args'                => array(
             'page'     => array('type' => 'integer', 'minimum' => 1, 'default' => 1,  'sanitize_callback' => 'absint'),
             'per_page' => array('type' => 'integer', 'minimum' => 1, 'maximum' => 200, 'default' => 50, 'sanitize_callback' => 'absint'),
         ),
     ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)', array(
-        array('methods' => 'GET',    'callback' => 'varner_api_get_unit',      'permission_callback' => $auth),
-        array('methods' => 'PATCH',  'callback' => 'varner_api_update_unit',   'permission_callback' => $auth),
-        array('methods' => 'DELETE', 'callback' => 'varner_api_soft_delete',   'permission_callback' => $auth),
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'varner_api_get_unit',
+            'permission_callback' => function (): bool { return current_user_can('edit_others_posts'); },
+        ),
+        array(
+            'methods'             => 'PATCH',
+            'callback'            => 'varner_api_update_unit',
+            'permission_callback' => $auth,
+        ),
+        array(
+            'methods'             => 'DELETE',
+            'callback'            => 'varner_api_soft_delete',
+            'permission_callback' => $auth,
+        ),
     ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)/restore', array(
         'methods'             => 'POST',
@@ -58,7 +70,7 @@ function varner_register_rest_routes(): void {
     register_rest_route($ns, '/inventory/(?P<id>\d+)/ledger', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_ledger',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('edit_others_posts'); },
     ));
 
     register_rest_route($ns, '/media', array(
@@ -140,25 +152,33 @@ function varner_register_rest_routes(): void {
     ));
 
     register_rest_route($ns, '/settings', array(
-        array('methods' => 'GET',  'callback' => 'varner_api_get_settings',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_settings', 'permission_callback' => $auth),
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'varner_api_get_settings',
+            'permission_callback' => function (): bool { return current_user_can('manage_options'); },
+        ),
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'varner_api_save_settings',
+            'permission_callback' => function (): bool { return current_user_can('manage_options'); },
+        ),
     ));
     register_rest_route($ns, '/settings/preview', array(
         'methods'             => 'POST',
         'callback'            => 'varner_api_save_preview_settings',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('manage_options'); },
     ));
 
     register_rest_route($ns, '/meta-sync/logs', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_meta_sync_logs',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('manage_options'); },
     ));
 
     register_rest_route($ns, '/meta-sync/health', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_meta_sync_health',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('manage_options'); },
     ));
 
     // ── Staff User Management ─────────────────────────────────────────────────
@@ -377,12 +397,12 @@ function varner_api_get_inventory(WP_REST_Request $request) {
 
     $args = array(
         'post_type'      => 'equipment',
-        'post_status'    => current_user_can('edit_posts') ? array('publish', 'draft') : 'publish',
+        'post_status'    => current_user_can('edit_others_posts') ? array('publish', 'draft') : 'publish',
         'orderby'        => 'date',
         'order'          => 'DESC',
     );
 
-    if (!current_user_can('edit_posts')) {
+    if (!current_user_can('edit_others_posts')) {
         $args['meta_query'] = array(
             'relation' => 'OR',
             array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
@@ -435,7 +455,7 @@ function varner_api_get_inventory(WP_REST_Request $request) {
     }
 
     $items = array_map(function (WP_Post $p): array {
-        return varner_format_unit($p->ID, current_user_can('edit_posts') ? 'edit' : 'public');
+        return varner_format_unit($p->ID, current_user_can('edit_others_posts') ? 'edit' : 'public');
     }, $query->posts);
 
     if ($paginate) {

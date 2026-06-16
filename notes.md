@@ -71,6 +71,7 @@ Varner Equipment/
 - It handles: Equipment CPT registration, REST API (`/varner/v1`), ACF field sync, asset loading, session tracking, and mobile PWA routing.
 - **Every `build.ps1` run auto-increments the patch version** (e.g. `1.23.4 → 1.23.5`). This forces WP to prompt for an overwrite on install and busts CDN cache.
 - The plugin must be uploaded as a ZIP and installed via `wp plugin install --force`. Do not use the WP admin uploader — it has size limits.
+- **REST-loop/CLI migrations tail**: Since locks debounce rapid writes, always trigger `varner_os_schedule_catalog_regeneration(true);` (or WP-CLI: `wp eval "varner_os_schedule_catalog_regeneration(true);"`) as the last step of any non-WP-All-Import bulk import.
 
 ### React App (Varner OS)
 - Built with **Vite + React + Tailwind**. Entry: `src/main.jsx`, root component: `src/App.jsx`.

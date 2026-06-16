@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.147 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.147
+ * Description: Version 1.23.154 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.154
  * Author: hwy559.com
  */
 
@@ -881,12 +881,77 @@ function varner_os_get_facebook_catalog_csv(): string {
     return $csv_data;
 }
 
-function varner_os_schedule_catalog_regeneration(): void {
+function varner_os_schedule_catalog_regeneration(bool $force = false): void {
+    if ($force) {
+        delete_option('varner_catalog_regen_lock_expiry');
+        delete_option('varner_catalog_dirty');
+    }
+
+    $lock_expiry = (int)get_option('varner_catalog_regen_lock_expiry', 0);
+    $is_locked   = (time() < $lock_expiry);
+
+    // Regenerate immediately synchronously to ensure live sync updates instantly (unless importing in bulk and not forced)
+    if ($force || !defined('WP_IMPORTING') || !WP_IMPORTING) {
+        if (!$force && $is_locked) {
+            // Set dirty flag so we sweep updates at the end of the burst (non-autoloaded)
+            update_option('varner_catalog_dirty', 1, false);
+
+            // Rate-limited synchronously; schedule a background job as a fallback
+            if (!wp_next_scheduled('varner_cron_regenerate_catalog')) {
+                wp_schedule_single_event(time() + 60, 'varner_cron_regenerate_catalog');
+            }
+            return;
+        }
+
+        // Set a 10-second cooldown lock to debounce rapid subsequent edits (bulk loops) (non-autoloaded)
+        if (!$force) {
+            update_option('varner_catalog_regen_lock_expiry', time() + 10, false);
+        }
+        delete_option('varner_catalog_dirty');
+        varner_os_write_facebook_catalog_file();
+    } else {
+        // We are importing in bulk and not forced; flag catalog as dirty for sweeping (non-autoloaded)
+        update_option('varner_catalog_dirty', 1, false);
+    }
+
+    // Schedule single event in the background as a fallback/cooldown mechanism
     if (!wp_next_scheduled('varner_cron_regenerate_catalog')) {
         wp_schedule_single_event(time() + 60, 'varner_cron_regenerate_catalog');
     }
 }
-add_action('varner_cron_regenerate_catalog', 'varner_os_write_facebook_catalog_file');
+
+// Sweep dirty catalog on next request once lock expires
+add_action('init', 'varner_os_maybe_cleanup_dirty_catalog');
+function varner_os_maybe_cleanup_dirty_catalog(): void {
+    $is_dirty    = (int)get_option('varner_catalog_dirty', 0) === 1;
+    $lock_expiry = (int)get_option('varner_catalog_regen_lock_expiry', 0);
+    $is_locked   = (time() < $lock_expiry);
+
+    // Gate 1: Check dirty flag and lock state
+    if (!$is_dirty || $is_locked) {
+        return;
+    }
+
+    // Gate 2: Skip if requesting the catalog file directly to avoid serving/rebuild race
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (strpos($uri, 'facebook-catalog.csv') !== false) {
+        return;
+    }
+
+    // Thundering Herd Guard: Set lock immediately before we start compiling (non-autoloaded)
+    update_option('varner_catalog_regen_lock_expiry', time() + 10, false);
+
+    // Ordering Caution: Clear dirty flag BEFORE write to capture any writes happening mid-execution
+    delete_option('varner_catalog_dirty');
+
+    varner_os_write_facebook_catalog_file();
+}
+
+add_action('varner_cron_regenerate_catalog', 'varner_os_cron_regenerate_catalog');
+function varner_os_cron_regenerate_catalog(): void {
+    delete_option('varner_catalog_dirty');
+    varner_os_write_facebook_catalog_file();
+}
 
 function varner_os_write_facebook_catalog_file(): bool {
     $csv_data = varner_os_get_facebook_catalog_csv();
@@ -901,6 +966,10 @@ function varner_os_write_facebook_catalog_file(): bool {
 }
 
 function varner_os_generate_facebook_catalog(): void {
+    status_header(200);
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
     $csv_data = varner_os_get_facebook_catalog_csv();
     
     // Attempt to write/refresh the static file for Nginx direct serving
@@ -1439,12 +1508,31 @@ function varner_os_untrash_meta_sync_log($post_id): void {
     varner_os_schedule_catalog_regeneration();
 }
 
+// Hook into before_delete_post to track permanent removals
+add_action('before_delete_post', 'varner_os_delete_meta_sync_log');
+function varner_os_delete_meta_sync_log($post_id): void {
+    if (get_post_type($post_id) !== 'equipment') {
+        return;
+    }
+    $title = get_the_title($post_id);
+    $make = get_field('make', $post_id) ?: '';
+    $model = get_field('model', $post_id) ?: '';
+    $display_name = trim("$make $model");
+    if (empty($display_name)) {
+        $display_name = $title;
+    }
+    varner_os_log_meta_sync("Inventory Removed (Permanent): {$display_name}", 'warning');
+
+    // Refresh the static facebook-catalog.csv file
+    varner_os_schedule_catalog_regeneration();
+}
+
 
 // Hook into WP All Import after import completion to refresh catalog
 add_action('pmxi_after_xml_import', 'varner_os_wpaip_import_complete');
 function varner_os_wpaip_import_complete($import_id): void {
     if (function_exists('varner_os_schedule_catalog_regeneration')) {
-        varner_os_schedule_catalog_regeneration();
+        varner_os_schedule_catalog_regeneration(true);
     }
 }
 
