@@ -124,7 +124,7 @@ acf_add_local_field_group(array(
                 'Legend'=>'Legend','Macdon'=>'Macdon','Mahindra'=>'Mahindra','Maschio'=>'Maschio',
                 'Massey Ferguson'=>'Massey Ferguson','Maxon'=>'Maxon','McHale'=>'McHale','MK Martin'=>'MK Martin',
                 'RC Trailers'=>'RC Trailers','Speeco'=>'Speeco','Tar River'=>'Tar River','Tidenberg'=>'Tidenberg',
-                'Titan MFG'=>'Titan MFG','Triton'=>'Triton','TYM'=>'TYM','Worksaver'=>'Worksaver',
+                'Titan Trailers'=>'Titan Trailers','Triton'=>'Triton','TYM'=>'TYM','Worksaver'=>'Worksaver','Zetor'=>'Zetor',
                 'Other'=>'Other',
             ),
         ),

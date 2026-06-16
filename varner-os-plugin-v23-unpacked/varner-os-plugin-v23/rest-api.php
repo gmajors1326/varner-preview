@@ -296,12 +296,11 @@ function varner_api_delete_staff(WP_REST_Request $req): WP_REST_Response|WP_Erro
 
 function varner_api_get_brands(): WP_REST_Response {
     $default = array(
-        'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson',
-        'Brush Chief', 'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman',
-        'Deutz Fahr', 'Donahue', 'Enorossi', 'Hackett', 'Interstate', 'Krone',
-        'Legend', 'Macdon', 'Mahindra', 'Maschio', 'Massey Ferguson', 'Maxon',
-        'McHale', 'MK Martin', 'RC Trailers', 'Speeco', 'Tar River', 'Tidenberg',
-        'Titan MFG', 'Triton', 'TYM', 'Worksaver',
+        'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief',
+        'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
+        'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra',
+        'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers',
+        'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor',
     );
     return rest_ensure_response(get_option('varner_brands', $default));
 }
