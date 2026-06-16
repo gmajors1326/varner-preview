@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: Finance Calculator
+ * Template Name: FINANCE CALCULATOR
  * Description: In-site finance calculator for equipment payments.
  */
 
@@ -23,7 +23,7 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
                 <div class="space-y-3">
             <div class="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">Apply</div>
-                    <h2 class="text-4xl md:text-6xl font-black tracking-tight">Financial Applications</h2>
+                    <h2 class="text-4xl md:text-6xl font-black tracking-tight">FINANCIAL APPLICATIONS</h2>
                     <p class="text-slate-200 font-bold max-w-3xl">Start your application online or let our team guide you. We tailor terms to the machine, usage, and your preferred structure.</p>
                 </div>
                 <div class="flex-shrink-0">
@@ -41,12 +41,22 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
                         <?php
                             $logo = $card['logo'] ?? '';
                             $pdf  = $card['application_pdf'] ?? '';
-                            $logo_url = $logo && ! preg_match('/^https?:\/\//', $logo )
-                                ? get_template_directory_uri() . '/assets/' . $logo
-                                : $logo;
-                            $pdf_url  = $pdf && ! preg_match('/^https?:\/\//', $pdf )
-                                ? get_template_directory_uri() . '/assets/' . $pdf
-                                : $pdf;
+                            if ( $logo && ! preg_match( '/^https?:\/\//', $logo ) ) {
+                                $logo_file = get_template_directory() . '/assets/' . $logo;
+                                $logo_url  = file_exists( $logo_file )
+                                    ? get_template_directory_uri() . '/assets/' . $logo
+                                    : '';
+                            } else {
+                                $logo_url = $logo;
+                            }
+                            if ( $pdf && ! preg_match( '/^https?:\/\//', $pdf ) ) {
+                                $pdf_file = get_template_directory() . '/assets/' . $pdf;
+                                $pdf_url  = file_exists( $pdf_file )
+                                    ? get_template_directory_uri() . '/assets/' . $pdf
+                                    : '';
+                            } else {
+                                $pdf_url = $pdf;
+                            }
                         ?>
                         <div class="p-5 rounded-2xl bg-white shadow-lg border border-slate-200 flex flex-col gap-4 items-center text-center">
                             <?php if ( $logo_url ) : ?>
@@ -77,7 +87,7 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
             <div class="space-y-3">
                 <div class="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">Financing</div>
-                <h1 class="text-4xl md:text-6xl font-black tracking-tighter">Finance Calculator</h1>
+                <h1 class="text-4xl md:text-6xl font-black tracking-tighter">FINANCE CALCULATOR</h1>
                 <p class="text-slate-300 max-w-3xl font-bold">Estimate payments with flexible terms, down payment, taxes, fees, and trade-in adjustments—all on one page.</p>
             </div>
             <div class="flex-shrink-0">

@@ -244,8 +244,8 @@
                         <div class="group relative">
                             <span class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Financing</span>
                             <div class="absolute left-0 top-full mt-2 w-64 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-2">
-                                <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Financial Applications</a>
-                                <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Financial Calculator</a>
+                                <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">FINANCIAL APPLICATIONS</a>
+                                <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">FINANCIAL CALCULATOR</a>
                             </div>
                         </div>
 
@@ -324,8 +324,8 @@
                             <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div class="hidden bg-white/5 py-2">
-                            <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Financial Applications</a>
-                            <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Financial Calculator</a>
+                            <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">FINANCIAL APPLICATIONS</a>
+                            <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">FINANCIAL CALCULATOR</a>
                         </div>
                     </div>
                     
