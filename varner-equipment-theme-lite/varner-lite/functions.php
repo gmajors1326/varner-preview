@@ -41,11 +41,11 @@ if( function_exists('acf_add_options_page') ) {
  * Enqueue scripts and styles.
  */
 function varner_theme_scripts() {
-	// Tailwind CSS via CDN (For Phase 1 rapid prototyping. Will compile locally in Phase 3)
-	wp_enqueue_script( 'tailwindcss', 'https://cdn.tailwindcss.com', array(), null, false );
-	
 	// Google Fonts - Inter
 	wp_enqueue_style( 'varner-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap', array(), null );
+
+	// Compiled Tailwind CSS (replaces CDN)
+	wp_enqueue_style( 'varner-tailwind', get_template_directory_uri() . '/assets/css/tailwind.css', array(), filemtime( get_template_directory() . '/assets/css/tailwind.css' ) );
 
 	// Main stylesheet
 	wp_enqueue_style( 'varner-style', get_stylesheet_uri(), array(), wp_get_theme()->get('Version') );
