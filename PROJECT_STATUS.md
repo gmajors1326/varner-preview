@@ -2,7 +2,7 @@
 
 **Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
-**Last updated:** June 15, 2026
+**Last updated:** June 16, 2026
 **Maintainer:** Greg
 
 ---
@@ -43,6 +43,9 @@ Deployment to dev is performed with WP-CLI over SSH (stream ZIP → `wp plugin/t
 | `main` | `1.23.150` | `1.23.149` + Meta Live Sync fixes (200 OK headers, synchronous writes, delete hook, stale root file cleanup). Deployed and verified. |
 | `main` | `1.23.151` | `1.23.150` + Meta Live Sync bulk debouncing (O(1) loop writes) and Varnish cache bypass (`DONOTCACHEPAGE`). Deployed and verified. |
 | `main` | `1.23.154` | `1.23.151` + options-based lock and dirty flags (non-autoloaded) + init sweep thundering herd guard + WP All Import complete hook. Deployed and E2E verified. |
+| `main` | `1.23.160` | Finance cards editor in Settings tab, `file_exists()` asset resolution, ZIP packaging fix (`zip_helper.py` replaces `tar`), sidebar nav restructuring, handleClone bug fix. Deployed. |
+| `main` | `1.23.163` | Tailwind CDN removed → locally compiled `tailwind.css` with `filemtime()` versioning. Tesseract SRI integrity + crossorigin added. |
+| `main` | `1.23.164` | Build bump after SRI + Tailwind swap. ZIPs rebuilt. |
 | `feature/magic-link` | `1.23.151` | Passwordless email magic-link authentication. Fully built, reviewed, and parked on `feature/magic-link` branch. **Not live.** |
 
 **Magic-link work is parked, not deleted.** The `feature/magic-link` branch holds the fully assembled source files **and** the built `1.23.151` ZIP. Before relying on it as a restore point, confirm it rebuilds cleanly to a working `1.23.151` (see §7).

@@ -56,41 +56,9 @@ To rebuild the theme and plugin in one step:
 > [!TIP]
 > Each run of `.\build.ps1` auto-increments the plugin patch version (e.g. `1.23.1` → `1.23.2`), forces WordPress to prompt for an overwrite, and busts CDN/browser cache for all enqueued scripts on WP Engine.
 
-### Manual Sync & Rebuild (For Debugging)
-If you prefer to run commands manually:
+### Theme ZIP packaging note
 
-#### Theme Manual Rebuild:
-```powershell
-# Sync changed files from full → lite
-Copy-Item '.\varner-equipment-theme-v23\varner-v23\functions.php'  '.\varner-equipment-theme-lite\varner-lite\functions.php'  -Force
-Copy-Item '.\varner-equipment-theme-v23\varner-v23\header.php'     '.\varner-equipment-theme-lite\varner-lite\header.php'     -Force
-Copy-Item '.\varner-equipment-theme-v23\varner-v23\index.php'      '.\varner-equipment-theme-lite\varner-lite\index.php'      -Force
-
-# Full ZIP
-if (Test-Path '.\varner-equipment-theme-v23.zip') { Remove-Item '.\varner-equipment-theme-v23.zip' -Force }
-# Using tar ensures forward slashes for Linux compatibility
-cmd /c "cd varner-equipment-theme-v23 && tar -a -c -f ../varner-equipment-theme-v23.zip varner-v23"
-
-# Lite ZIP
-if (Test-Path '.\varner-equipment-theme-v23-lite.zip') { Remove-Item '.\varner-equipment-theme-v23-lite.zip' -Force }
-cmd /c "cd varner-equipment-theme-lite && tar -a -c -f ../varner-equipment-theme-v23-lite.zip varner-lite"
-```
-
-#### Plugin Manual Rebuild:
-```powershell
-# 1. Build React
-npm run build
-
-# 2. Copy built files into plugin
-Remove-Item '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\dist' -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item '.\dist' '.\varner-os-plugin-v23-unpacked\varner-os-plugin-v23\' -Recurse -Force
-
-# 3. Zip plugin
-Remove-Item '.\varner-os-plugin-v23.zip' -Force -ErrorAction SilentlyContinue
-Push-Location 'varner-os-plugin-v23-unpacked'
-tar -a -c -f ../varner-os-plugin-v23.zip varner-os-plugin-v23
-Pop-Location
-```
+Do NOT use `tar -a -c -f` for ZIP creation — PowerShell's `tar` creates POSIX TAR archives, not valid ZIPs. WordPress rejects them with "Incompatible Archive." Always use `build.ps1` which uses Python's `zipfile` module for proper ZIP creation.
 
 ## Plugin Install or Update
 
