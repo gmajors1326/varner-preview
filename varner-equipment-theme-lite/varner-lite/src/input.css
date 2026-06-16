@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Match html background to announcement bar to prevent white gap above sticky top bar */
+html { background-color: #020617; }
+
 /* Modern Pagination Styling */
 .varner-pagination ul.page-numbers {
     display: flex !important;

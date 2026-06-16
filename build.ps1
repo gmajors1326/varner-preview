@@ -94,7 +94,7 @@ if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
 python tools/zip_helper.py $pluginZip "varner-os-plugin-v23-unpacked/varner-os-plugin-v23"
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
-# Package Theme ZIP (varner-lite/ folder — must match active theme slug)
+# Package Theme ZIP (varner-lite/ prefix — matches active theme slug for wp theme install --force)
 $themeZipName = "varner-equipment-theme-v23-lite.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
@@ -110,11 +110,11 @@ with zipfile.ZipFile(r'$themeZip', 'w', zipfile.ZIP_DEFLATED) as z:
             a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/') + '/'
             z.write(p, a)
         for f in files:
-            if f.startswith('.git') or f in ('.DS_Store', 'tailwind.config.js') or f.endswith('.md'): continue
+            if f.startswith('.git') or f in ('.DS_Store', 'tailwind.config.js', 'nul') or f.endswith('.md'): continue
             p = os.path.join(root, f)
             a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/')
             z.write(p, a)
-print('Theme ZIP: varner-lite/ folder structure')
+print('Theme ZIP: varner-lite/ prefix')
 "
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 
