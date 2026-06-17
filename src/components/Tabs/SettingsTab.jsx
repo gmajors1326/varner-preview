@@ -265,6 +265,38 @@ export const SettingsTab = ({ showToast }) => {
         className="w-full lg:w-[420px] xl:w-[480px] shrink-0 space-y-6 sm:space-y-8 lg:max-h-[calc(100vh-12rem)] lg:overflow-y-auto pr-2 no-scrollbar pb-24"
       >
         
+        {/* SECTION QUICK-JUMP NAV */}
+        <div className="sticky top-0 z-50 bg-white -mx-2 px-2 pt-0 pb-3 mb-2 border-b border-slate-100 flex flex-wrap gap-1.5">
+          {[
+            { key: 'hero',    label: 'Hero' },
+            { key: 'support', label: 'Support' },
+            { key: 'youtube', label: 'YouTube' },
+            { key: 'contact', label: 'Contact' },
+            { key: 'hours',   label: 'Hours' },
+            { key: 'about',   label: 'About' },
+            { key: 'careers', label: 'Careers' },
+            { key: 'finance', label: 'Finance' },
+            { key: 'pages',   label: 'Pages' },
+          ].map(s => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => {
+                const el = document.getElementById(`editor-section-${s.key}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (!openSections[s.key]) toggleSection(s.key);
+              }}
+              className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg transition-all ${
+                openSections[s.key]
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        
         {/* 1. HERO SECTION */}
         <div id="editor-section-hero">
           <CollapsiblePanel
