@@ -194,9 +194,9 @@ These are **not** code-review items; they gate production go-live.
 | Author read-scope hardening | ✅ Resolved (`1.23.149`) |
 | Meta Live Sync | ✅ Resolved (Commerce Manager verification pending live URL setup) |
 | Magic-link feature | ⏸ Parked (`feature/magic-link`, `1.23.151`); superseded by Magic Login Pro plan |
-| Pages Management REST API & panel | ✅ Resolved (`1.23.177`) |
-| Destructive Action confirmation dialogs | ✅ Resolved (`1.23.177`) |
-| Mobile token input & neutral prompt | ✅ Resolved (`1.23.177`) |
+| Pages Management REST API & panel | ✅ Resolved (`1.23.178`) |
+| Destructive Action confirmation dialogs | ✅ Resolved (`1.23.178`) |
+| Mobile token input & neutral prompt | ✅ Resolved (`1.23.178`) |
 | SMTP / email deliverability | ⛔ Not set up — blocks go-live |
 | Sandhills migration | ⏳ Pending (dealer-led; do not cancel until data pulled) |
 | Form email routing | ⏳ Pending owner decision |

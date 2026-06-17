@@ -137,11 +137,11 @@ If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path
 | `GET` | `/varner/v1/me` | logged-in | Current user info |
 | `POST` | `/varner/v1/logout` | logged-in | Destroy session |
 | `POST` | `/varner/v1/mobile/token` | editor | Generate secure alphanumeric mobile token |
-| `GET` | `/varner/v1/pages` | editor | List all WordPress pages |
-| `POST` | `/varner/v1/pages` | editor | Create new WordPress page |
-| `PATCH` | `/varner/v1/pages/{id}` | editor | Update page attributes |
-| `DELETE` | `/varner/v1/pages/{id}` | editor | Trash a WordPress page |
-| `GET` | `/varner/v1/page-templates` | editor | List available active theme templates |
+| `GET` | `/varner/v1/pages` | edit_pages | List all WordPress pages |
+| `POST` | `/varner/v1/pages` | publish_pages | Create new WordPress page |
+| `PATCH` | `/varner/v1/pages/{id}` | edit_page | Update page attributes (per-object check) |
+| `DELETE` | `/varner/v1/pages/{id}` | delete_page | Trash a WordPress page (per-object check) |
+| `GET` | `/varner/v1/page-templates` | edit_pages | List available active theme templates |
 
 ## Quick Verification in wp-admin
 
