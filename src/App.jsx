@@ -220,6 +220,7 @@ const App = () => {
   };
 
   const handleListDelete = async (endpoint, current, name, setter, clearField = null) => {
+    if (!window.confirm(`Delete "${name}" from ${endpoint}?`)) return;
     const updated = current.filter(v => v !== name);
     await apiFetch(`/${endpoint}`, { method: 'POST', body: JSON.stringify({ [endpoint]: updated }) });
     setter(updated);

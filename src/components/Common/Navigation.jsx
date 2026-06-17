@@ -48,19 +48,31 @@ export const NavItem = ({ icon, label, active = false, badge = null, onClick }) 
 
 export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav }) => (
   <>
-    <nav className="space-y-2 flex-1">
-      <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard"      active={activeTab==='dashboard'}     onClick={() => onNav('dashboard')} />
-      <NavItem icon={<List size={20}/>}            label="Inventory List" active={activeTab==='all-inventory'} onClick={() => onNav('all-inventory')} badge={inventoryList.length} />
-      <NavItem icon={<Box size={20}/>}             label="Add / Edit"     active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
-      <NavItem icon={<Facebook size={20}/>}        label="Meta Sync"      active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
-      <NavItem icon={<History size={20}/>}         label="History"        active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
-      <NavItem icon={<Sliders size={20}/>}         label="Page Editor"    active={activeTab==='settings'}      onClick={() => onNav('settings')} />
-      <NavItem icon={<Camera size={20}/>}          label="Videos Manager" active={activeTab==='videos'}        onClick={() => onNav('videos')} />
-      <NavItem icon={<Smartphone size={20}/>}      label="Mobile Companion" active={activeTab==='mobile'}        onClick={() => onNav('mobile')} />
+    <nav className="space-y-2">
+      <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard"        active={activeTab==='dashboard'}     onClick={() => onNav('dashboard')} />
+      <NavItem icon={<List size={20}/>}            label="Inventory List"   active={activeTab==='all-inventory'} onClick={() => onNav('all-inventory')} badge={inventoryList.length} />
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<Box size={20}/>}             label="Add / Edit"       active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
+      </div>
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<Facebook size={20}/>}        label="Meta Sync"        active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
+      </div>
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<History size={20}/>}         label="History"          active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
+      </div>
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<Camera size={20}/>}          label="Videos Manager"   active={activeTab==='videos'}        onClick={() => onNav('videos')} />
+      </div>
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<Smartphone size={20}/>}      label="Mobile Companion" active={activeTab==='mobile'}        onClick={() => onNav('mobile')} />
+      </div>
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<Sliders size={20}/>} label="Page Editor" active={activeTab==='settings'} onClick={() => onNav('settings')} />
+      </div>
+      <div className="pt-4 border-t border-slate-800">
+        <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='config'} onClick={() => onNav('config')} />
+      </div>
     </nav>
-    <div className="mt-auto pt-4 border-t border-slate-800">
-      <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='config'} onClick={() => onNav('config')} />
-    </div>
   </>
 );
 

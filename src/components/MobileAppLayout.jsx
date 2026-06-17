@@ -106,6 +106,7 @@ export const MobileAppLayout = ({
   };
 
   const handleListDelete = async (endpoint, current, name, setter, clearField = null) => {
+    if (!window.confirm(`Delete "${name}" from ${endpoint}?`)) return;
     const updated = current.filter(v => v !== name);
     await apiFetch(`/${endpoint}`, { method: 'POST', body: JSON.stringify({ [endpoint]: updated }) });
     setter(updated);
@@ -143,7 +144,7 @@ export const MobileAppLayout = ({
     }));
   };
 
-  const verifyAndSaveToken = async (tokenToVerify) => {
+  const verifyAndSaveToken = async (tokenToVerify, isManualSubmit = false) => {
     setIsVerifying(true);
     setAuthError('');
     try {
@@ -163,7 +164,11 @@ export const MobileAppLayout = ({
       }
     } catch (err) {
       localStorage.removeItem('varner_mobile_token');
-      setAuthError('Authentication failed: Invalid or expired token.');
+      if (isManualSubmit) {
+        setAuthError('Authentication failed: Invalid or expired token.');
+      } else {
+        setAuthError('');
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -179,7 +184,7 @@ export const MobileAppLayout = ({
     e.preventDefault();
     const cleaned = tokenInput.trim().toUpperCase();
     if (!cleaned) return;
-    verifyAndSaveToken(cleaned);
+    verifyAndSaveToken(cleaned, true);
   };
 
   const handleLogout = async () => {
@@ -399,16 +404,21 @@ export const MobileAppLayout = ({
                   type="text"
                   value={tokenInput}
                   onChange={e => setTokenInput(e.target.value)}
-                  placeholder="E.G. A1B2C3D4E5F6"
-                  maxLength={16}
+                  placeholder="32-CHARACTER ACCESS TOKEN"
+                  maxLength={32}
                   className="w-full bg-black border border-slate-700 rounded-2xl py-4 px-4 text-center font-mono font-black text-lg tracking-widest uppercase focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all text-white"
                 />
               </div>
 
-              {authError && (
+              {authError ? (
                 <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 p-4 rounded-2xl text-red-400 text-xs">
                   <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <span className="font-bold">{authError}</span>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl text-slate-400 text-xs">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-slate-500" />
+                  <span className="font-bold">Scan the QR code from your desktop to log in</span>
                 </div>
               )}
 

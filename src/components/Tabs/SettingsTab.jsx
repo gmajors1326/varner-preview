@@ -208,6 +208,7 @@ export const SettingsTab = ({ showToast }) => {
   };
 
   const handleRemoveThumbnail = () => {
+    if (!window.confirm('Remove the YouTube custom thumbnail?')) return;
     handleFieldChange('youtube_custom_thumbnail', '');
     showToast('Custom thumbnail removed.');
   };
@@ -226,6 +227,7 @@ export const SettingsTab = ({ showToast }) => {
   };
 
   const handleRemoveSocialLink = (index) => {
+    if (!window.confirm('Remove this social media link?')) return;
     const updated = (settings.social_custom_links || []).filter((_, i) => i !== index);
     handleFieldChange('social_custom_links', updated);
   };
@@ -714,11 +716,12 @@ export const SettingsTab = ({ showToast }) => {
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        const updated = (settings.about_why_choose_us_bullets || []).filter((_, i) => i !== idx);
-                        handleFieldChange('about_why_choose_us_bullets', updated);
-                      }}
-                      className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
+                        onClick={() => {
+                          if (!window.confirm('Remove this bullet point?')) return;
+                          const updated = (settings.about_why_choose_us_bullets || []).filter((_, i) => i !== idx);
+                          handleFieldChange('about_why_choose_us_bullets', updated);
+                        }}
+                        className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -810,6 +813,7 @@ export const SettingsTab = ({ showToast }) => {
                         <button
                           type="button"
                           onClick={() => {
+                            if (!window.confirm('Delete this job opening?')) return;
                             const updated = settings.employment_jobs.filter((_, i) => i !== idx);
                             handleFieldChange('employment_jobs', updated);
                           }}
@@ -1000,6 +1004,7 @@ export const SettingsTab = ({ showToast }) => {
                       <button
                         type="button"
                         onClick={() => {
+                          if (!window.confirm('Delete this finance partner card?')) return;
                           const updated = settings.finance_cards.filter((_, i) => i !== idx);
                           handleFieldChange('finance_cards', updated);
                         }}

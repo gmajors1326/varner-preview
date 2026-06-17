@@ -22,6 +22,7 @@ export const HistoryTab = ({ deletedItems, onRestore, onPermanentDelete, onBulkR
 
   const handleBulkRestoreClick = () => {
     if (onBulkRestore && selectedIds.length > 0) {
+      if (!window.confirm(`Restore ${selectedIds.length} selected unit(s)?`)) return;
       const selectedWpIds = deletedItems
         .filter(item => selectedIds.includes(item.id))
         .map(item => item.wpId);
