@@ -4,6 +4,9 @@
 
 ## Changelog
 
+### 2026-06-17 (v1.23.181)
+- **iPad Landscape Responsiveness Fixes**: Resolved the overlap between the hero buttons and the quick search bar by adjusting the hero section height (from `h-[85vh]` to `min-h-[750px]`), increasing container padding-bottom (to `lg:pb-48`), and introducing a smooth responsive scale for the hero H1 title (`text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl`) to prevent excessive wrapping on tablet viewports.
+
 ### 2026-06-17 (v1.23.177)
 - **Pages Management API Hardening & UI**: Added secure REST endpoints (`/pages`, `/page-templates`) and a management sub-panel in Settings. Consolidated duplicate route registrations. Gated endpoints on granular meta capabilities (`edit_page`, `delete_page`, and `publish_pages`). Added server-side validation whitelists for theme templates, and blocked trashing or draft-status toggling of critical system pages (home page, blog page, privacy page, or showroom).
 - **UX & Safety Enhancements**: Built sticky quick-jump section navigation at the top of the Settings Page Editor. Integrated client-side confirmation prompts to safeguard destructive actions.

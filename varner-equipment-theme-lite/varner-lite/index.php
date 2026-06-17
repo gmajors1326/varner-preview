@@ -3,7 +3,7 @@
 ?>
 
     <!-- HERO SECTION -->
-    <section id="hero-parallax" class="relative min-h-[85vh] lg:h-[85vh] bg-slate-950 flex flex-col justify-center overflow-hidden pb-32 lg:pb-0">
+    <section id="hero-parallax" class="relative min-h-[85vh] lg:min-h-[750px] xl:min-h-[80vh] bg-slate-950 flex flex-col justify-center overflow-hidden pb-32 lg:pb-0">
         <div id="hero-parallax-media" class="absolute inset-0 z-0">
             <div class="absolute inset-0 w-full h-full scale-105">
                 <!-- CINEMATIC VIDEO BACKGROUND -->
@@ -65,22 +65,22 @@
             </div>
         </div>
 
-        <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 pb-12">
+        <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 lg:pb-48 pb-12">
             <div class="max-w-3xl space-y-8">
-                <h1 class="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_title' ) ); ?>
                 </h1>
                 <div class="text-xl text-white font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300 hero-subtitle-container">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
                 </div>
-                <div class="grid grid-cols-2 sm:flex sm:flex-row flex-wrap gap-3 sm:gap-4 pt-6 items-start">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-6 items-start">
                     <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>
                     </a>
                     <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-500">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-12 py-6 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
                         Online Parts
                     </a>
                 </div>
@@ -92,10 +92,10 @@
             <div class="max-w-7xl mx-auto px-4 py-6 lg:py-0">
                 <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/30 flex flex-col lg:flex-row gap-3 items-center">
                     <div class="flex-1 w-full">
-                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-[30px] px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
+                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-12 px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
                     </div>
-                    <div class="w-full lg:w-40">
-                        <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-[30px] px-3 bg-slate-50 rounded-lg font-black uppercase text-[10px] tracking-widest border border-transparent outline-none cursor-pointer">
+                    <div class="w-full lg:w-48">
+                        <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-12 px-3 bg-slate-50 rounded-lg font-black uppercase text-xs tracking-widest border border-transparent outline-none cursor-pointer">
                             <option value="" disabled selected hidden>Select Type</option>
                             <option value="all">All Types</option>
                             <option value="__new__">New</option>
@@ -106,7 +106,7 @@
                             <option value="Hay Equipment">Hay Equipment</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-full lg:w-auto h-12 lg:h-[30px] bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">
+                    <button type="submit" class="w-full lg:w-auto h-12 lg:h-12 bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">
                         Find Machines
                     </button>
                 </form>
@@ -240,7 +240,7 @@
     <!-- SUPPORT HUB BAR (Under Hero) -->
     <section id="section-support" class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 lg:grid-cols-3 gap-2">
                 <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_service_link', '/services/service-request' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
                     <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 group-hover:text-red-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.15.14a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.82 0l.14.15a2 2 0 0 1 0 2.82l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0"/></svg>

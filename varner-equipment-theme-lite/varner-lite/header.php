@@ -135,12 +135,12 @@
             <!-- NAVIGATION ROW (Desktop) -->
             <div class="hidden lg:block bg-slate-50 border-t border-slate-200 border-b-4 border-red-600 w-full">
                 <div class="max-w-7xl mx-auto px-4">
-                    <nav class="flex items-center justify-center gap-6 lg:gap-8 py-4 flex-wrap relative">
-                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Home</a>
+                    <nav class="flex items-center justify-center gap-3 xl:gap-8 py-4 flex-wrap relative">
+                        <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Home</a>
                         
                         <!-- INVENTORY DROPDOWN -->
                         <div class="group relative">
-                            <span class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">
+                            <span class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">
                                 Inventory
                                 <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                             </span>
@@ -209,7 +209,7 @@
 
                         <!-- BRANDS DROPDOWN (MEGA MENU) -->
                         <div class="group relative">
-                            <span class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">
+                            <span class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">
                                 Brands
                                 <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                             </span>
@@ -242,7 +242,7 @@
                         </div>
                         
                         <div class="group relative">
-                            <span class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Financing</span>
+                            <span class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Financing</span>
                             <div class="absolute left-0 top-full mt-2 w-64 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-2">
                                 <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">FINANCIAL APPLICATIONS</a>
                                 <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">FINANCIAL CALCULATOR</a>
@@ -250,18 +250,18 @@
                         </div>
 
                         <div class="group relative">
-                            <span class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Services</span>
+                            <span class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Services</span>
                             <div class="absolute left-0 top-full mt-2 w-56 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-2">
                                 <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Service Request</a>
                                 <a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Parts Request</a>
                             </div>
                         </div>
 
-                        <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
-                        <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
+                        <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
+                        <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
                         
                         <div class="group relative">
-                            <span class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Dealer Info</span>
+                            <span class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default">Dealer Info</span>
                             <div class="absolute left-0 top-full mt-2 w-48 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 translate-y-2">
                                 <a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">About Us</a>
                                 <a href="<?php echo esc_url( home_url( '/dealer-info/our-team' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Our Team</a>
@@ -269,7 +269,7 @@
                             </div>
                         </div>
 
-                        <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="font-black uppercase text-xs tracking-widest text-slate-700 hover:text-red-600 transition-colors">Contact</a>
+                        <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="font-black uppercase text-[10px] xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Contact</a>
                     </nav>
                 </div>
             </div>
