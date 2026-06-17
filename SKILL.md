@@ -44,10 +44,10 @@ The project utilizes a custom **native PHP/SQL filtering system** for high-perfo
 ---
 
 ## 4. Branding & Mega Menu
-Authorized brands are managed in three locations to ensure full integration:
+Authorized brands are managed in three locations to ensure full integration (synced to include Zetor and Titan Trailers):
 
 1.  **Public UI**: `header.php` (Mega Menu grid).
-2.  **REST API**: `varner-backend.php` (`varner_api_get_brands` default array).
+2.  **REST API**: `rest-api.php` (`varner_api_get_brands` default array).
 3.  **ACF Backend**: `varner-backend.php` (Choices array in the equipment field group).
 
 ---
@@ -115,3 +115,31 @@ The Mobile Companion is a fully responsive Progressive Web App that runs on any 
 * Dynamically registers routes for `/mobile-app/` (HTML app shell), `/manifest.json` (configuration), and `/sw.js` (service worker caching) directly in the plugin main file.
 * Integrates directly with native mobile cameras using `<input type="file" accept="image/*" capture="environment">` inside `src/App.jsx`.
 * Session updates, device parameters (user agent details), and client IP addresses are automatically registered in the `wp_varner_user_sessions` auditing table.
+* Handles initial neutral state ("Scan the QR code from your desktop to log in") gracefully without leading with red session-expiration warnings unless an actual error or expiration occurs. Alphanumeric token input supports a 32-character `maxLength`.
+
+---
+
+## 9. Page Management & REST Endpoints
+Added in v1.23.177, Varner OS features native WordPress page management built into the administrative dashboard:
+
+*   **REST Endpoint Security**: Consolidated duplicate route definitions. Bounded by granular WP capability requirements:
+    *   `GET /varner/v1/pages`: Gated on `edit_pages`. Returns all pages (ID, title, slug, template, status).
+    *   `POST /varner/v1/pages`: Gated on `publish_pages` (to publish pages). Sanitizes and creates a new page.
+    *   `PATCH /varner/v1/pages/{id}`: Gated on per-object meta-capability `edit_page` checking `current_user_can('edit_page', $id)`.
+    *   `DELETE /varner/v1/pages/{id}`: Gated on per-object meta-capability `delete_page` checking `current_user_can('delete_page', $id)`.
+    *   `GET /varner/v1/page-templates`: Gated on `edit_pages`.
+*   **Server-Side Security Guards**:
+    *   **System Page Protection**: Reject trashing, changing status to draft, or changing slugs on crucial system pages (front page, posts page, privacy policy page, or any page containing the `[varner_showroom]` showroom shortcode) with a `403 Forbidden` error.
+    *   **Template Validation Whitelist**: Creates and updates validate the requested template against theme-registered templates (`wp_get_theme()->get_page_templates()`), returning a `400 Bad Request` if invalid.
+*   **Editor Integration**: The Page Editor settings panel features a collapsible "Pages" subsection showing active pages, their slugs/templates, a quick link to view them, and options to delete or add new pages inline.
+
+---
+
+## 10. UX Safety & Input Constraints
+Additional controls improve the administrative experience and reduce user entry errors:
+
+*   **Destructive Actions Safeguards**: Administrative confirmations protect critical deletion routes. Confirms are triggered on list additions/removes (brands/categories), deleting settings attachments (thumbnails/bullets), deleting job listings, deleting finance cards, and performing bulk restorations/deletions.
+*   **Sticky Quick-Jump Navigation**: Settings sub-sections (Hero, Support, Careers, YouTube, etc.) feature a sticky top quick-jump panel in the Page Editor to facilitate rapid navigation between settings fields.
+*   **Conditional Trailer Length**: In the equipment details form, the "Length" input conditionally renders only when the selected category includes "trailer". The field has been migrated from a free-text input to a dropdown select ranging from 8 ft to 53 ft to ensure standardized length specifications.
+*   **Service & Parts Responsive Form Grid**: The equipment references grids inside the public service and parts request forms have been updated from rigid layouts to responsive `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5` structures, preventing squished inputs on medium (tablet/laptop) resolutions.
+

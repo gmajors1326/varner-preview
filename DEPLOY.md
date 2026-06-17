@@ -4,6 +4,13 @@
 
 ## Changelog
 
+### 2026-06-17 (v1.23.177)
+- **Pages Management API Hardening & UI**: Added secure REST endpoints (`/pages`, `/page-templates`) and a management sub-panel in Settings. Consolidated duplicate route registrations. Gated endpoints on granular meta capabilities (`edit_page`, `delete_page`, and `publish_pages`). Added server-side validation whitelists for theme templates, and blocked trashing or draft-status toggling of critical system pages (home page, blog page, privacy page, or showroom).
+- **UX & Safety Enhancements**: Built sticky quick-jump section navigation at the top of the Settings Page Editor. Integrated client-side confirmation prompts to safeguard destructive actions.
+- **Form Responsive Grid Optimizations**: Redesigned the equipment references grid on both [page-service-request.php](file:///c:/Users/Greg/Desktop/Varner%20Equipent/varner-equipment-theme-lite/varner-lite/page-service-request.php) and [page-parts-request.php](file:///c:/Users/Greg/Desktop/Varner%20Equipent/varner-equipment-theme-lite/varner-lite/page-parts-request.php) to use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`. This prevents input squishing on tablet/laptop viewports by folding cleanly into a balanced grid, with the "Hours/Meter" field spanning full-width on medium sizes and resolving to a single row on desktop/large laptop screens.
+- **Trailer Length Selection Options**: Conditionally displays trailer length selection only when category includes "trailer", and transitioned length input from a free-text string to a dropdown select covering 8–53 ft.
+- **Brand Sync & Tailwind/Build Fixes**: Synced brand options (added Zetor, renamed Titan MFG to Titan Trailers) across theme menus, REST configurations, and ACF structures. Added safelist configuration for arbitrary utility classes in `tailwind.config.js` and hardened `build.ps1` and `zip_helper.py` against Windows reserved `nul` files.
+
 ### 2026-06-09
 - **varner-lite promoted to sole master theme**: `varner-equipment-theme-v23/` archived to `_archive/`. Tailwind build source (`src/input.css`, `tailwind.config.js`) migrated into `varner-lite/`. `build.ps1` updated — now produces one theme ZIP (`varner-equipment-theme-v23-lite.zip`) instead of two. No changes to deployed site (varner-lite was already the active theme).
 
@@ -40,7 +47,7 @@
 ## Workspace Rule
 
 - Do not create or use temporary theme/plugin folders (for example: `temp-theme` or `temp-plugin`).
-- Make all edits directly in the versioned source/artifact folders (for example: `varner-equipment-theme-v23/`) and then rebuild the deployment ZIP.
+- Make all edits directly in the versioned source/artifact folders (for example: `varner-equipment-theme-lite/varner-lite/`) and then rebuild the deployment ZIP.
 
 ## Theme & Plugin ZIP Packaging (Unified Script)
 
@@ -90,10 +97,17 @@ If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path
 
 ## Theme Install or Update
 
-1. Stream the theme ZIP in the same manner as the plugin ZIP (using `/sites/varnerequipdev/varner-equipment-theme-v23.zip`).
-2. Run `wp theme install /sites/varnerequipdev/varner-equipment-theme-v23.zip --force --path=/sites/varnerequipdev`.
+1. Stream the theme ZIP in the same manner as the plugin ZIP (using `/sites/varnerequipdev/varner-equipment-theme-v23-lite.zip`).
+   * **Note**: WordPress CLI expects the ZIP filename to match the theme slug folder name inside it (`varner-lite/`). Therefore, you must rename the uploaded zip to `varner-lite.zip` before running the install command.
+2. Rename and run:
+   ```powershell
+   ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "mv /sites/varnerequipdev/varner-equipment-theme-v23-lite.zip /sites/varnerequipdev/varner-lite.zip && wp theme install /sites/varnerequipdev/varner-lite.zip --force --path=/sites/varnerequipdev"
+   ```
 3. Confirm `style.css` is at the theme root.
-4. Clean up the theme ZIP on the remote server.
+4. Clean up the theme ZIP on the remote server:
+   ```powershell
+   ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "rm -f /sites/varnerequipdev/varner-lite.zip"
+   ```
 
 ## Post-Install Checks
 
@@ -123,6 +137,11 @@ If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path
 | `GET` | `/varner/v1/me` | logged-in | Current user info |
 | `POST` | `/varner/v1/logout` | logged-in | Destroy session |
 | `POST` | `/varner/v1/mobile/token` | editor | Generate secure alphanumeric mobile token |
+| `GET` | `/varner/v1/pages` | editor | List all WordPress pages |
+| `POST` | `/varner/v1/pages` | editor | Create new WordPress page |
+| `PATCH` | `/varner/v1/pages/{id}` | editor | Update page attributes |
+| `DELETE` | `/varner/v1/pages/{id}` | editor | Trash a WordPress page |
+| `GET` | `/varner/v1/page-templates` | editor | List available active theme templates |
 
 ## Quick Verification in wp-admin
 

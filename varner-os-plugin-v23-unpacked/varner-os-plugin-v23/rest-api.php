@@ -211,39 +211,47 @@ function varner_register_rest_routes(): void {
     ));
 
     // ── Page Management ────────────────────────────────────────────────────────
-    $page_auth = function (): bool { return current_user_can('edit_pages'); };
+    $page_read_auth   = function (): bool { return current_user_can('edit_pages'); };
+    $page_create_auth = function (): bool { return current_user_can('publish_pages'); };
+
     register_rest_route($ns, '/pages', array(
         array(
             'methods'             => 'GET',
             'callback'            => 'varner_api_list_pages',
-            'permission_callback' => $page_auth,
+            'permission_callback' => $page_read_auth,
         ),
         array(
             'methods'             => 'POST',
             'callback'            => 'varner_api_create_page',
-            'permission_callback' => $page_auth,
+            'permission_callback' => $page_create_auth,
         ),
     ));
     register_rest_route($ns, '/pages/(?P<id>\d+)', array(
-        'methods'             => 'PATCH',
-        'callback'            => 'varner_api_update_page',
-        'permission_callback' => $page_auth,
-        'args'                => array(
-            'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+        array(
+            'methods'             => 'PATCH',
+            'callback'            => 'varner_api_update_page',
+            'permission_callback' => function (WP_REST_Request $request): bool {
+                return current_user_can('edit_page', intval($request->get_param('id')));
+            },
+            'args'                => array(
+                'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+            ),
         ),
-    ));
-    register_rest_route($ns, '/pages/(?P<id>\d+)', array(
-        'methods'             => 'DELETE',
-        'callback'            => 'varner_api_delete_page',
-        'permission_callback' => $page_auth,
-        'args'                => array(
-            'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+        array(
+            'methods'             => 'DELETE',
+            'callback'            => 'varner_api_delete_page',
+            'permission_callback' => function (WP_REST_Request $request): bool {
+                return current_user_can('delete_page', intval($request->get_param('id')));
+            },
+            'args'                => array(
+                'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+            ),
         ),
     ));
     register_rest_route($ns, '/page-templates', array(
         'methods'             => 'GET',
         'callback'            => 'varner_api_get_page_templates',
-        'permission_callback' => $page_auth,
+        'permission_callback' => $page_read_auth,
     ));
 }
 
@@ -1390,6 +1398,42 @@ function varner_api_list_pages(): WP_REST_Response {
     return rest_ensure_response($out);
 }
 
+/**
+ * Check if a page is protected (e.g. front page, blog page, privacy policy, or showroom).
+ */
+function varner_is_protected_page(int $id): bool {
+    if ($id <= 0) {
+        return false;
+    }
+
+    $front_page_id   = (int) get_option('page_on_front');
+    $posts_page_id   = (int) get_option('page_for_posts');
+    $privacy_page_id = (int) get_option('wp_page_for_privacy_policy');
+
+    if ($id === $front_page_id || $id === $posts_page_id || $id === $privacy_page_id) {
+        return true;
+    }
+
+    $post = get_post($id);
+    if ($post && (has_shortcode($post->post_content, 'varner_showroom') || strpos($post->post_content, '[varner_showroom]') !== false)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Validate if a page template file exists and is registered in the active theme.
+ */
+function varner_is_valid_page_template(string $template): bool {
+    if ($template === '' || $template === 'default') {
+        return true;
+    }
+    $theme = wp_get_theme();
+    $templates = $theme->get_page_templates();
+    return is_array($templates) && array_key_exists($template, $templates);
+}
+
 function varner_api_create_page(WP_REST_Request $request): WP_REST_Response|WP_Error {
     $title    = sanitize_text_field($request->get_param('title'));
     $slug     = sanitize_title($request->get_param('slug') ?: $title);
@@ -1397,6 +1441,10 @@ function varner_api_create_page(WP_REST_Request $request): WP_REST_Response|WP_E
 
     if (empty($title)) {
         return new WP_Error('missing_title', 'Page title is required.', array('status' => 400));
+    }
+
+    if (!varner_is_valid_page_template($template)) {
+        return new WP_Error('invalid_template', 'The selected page template is invalid.', array('status' => 400));
     }
 
     $id = wp_insert_post(array(
@@ -1410,7 +1458,7 @@ function varner_api_create_page(WP_REST_Request $request): WP_REST_Response|WP_E
         return $id;
     }
 
-    if ($template) {
+    if ($template && $template !== 'default') {
         update_post_meta($id, '_wp_page_template', $template);
     }
 
@@ -1429,16 +1477,27 @@ function varner_api_update_page(WP_REST_Request $request): WP_REST_Response|WP_E
         return new WP_Error('not_found', 'Page not found.', array('status' => 404));
     }
 
+    $slug   = $request->get_param('slug');
+    $status = $request->get_param('status');
+
+    // Hardened server-side guard for protected pages
+    if (varner_is_protected_page($id)) {
+        if ($status === 'draft') {
+            return new WP_Error('protected_page', 'Protected system pages (e.g. front page or showroom) cannot be changed to draft status.', array('status' => 403));
+        }
+        if ($slug !== null && sanitize_title($slug) !== $post->post_name) {
+            return new WP_Error('protected_page', 'Slugs of protected system pages cannot be modified as it will break site routing.', array('status' => 403));
+        }
+    }
+
     $update = array('ID' => $id);
     $title = $request->get_param('title');
     if ($title !== null) {
         $update['post_title'] = sanitize_text_field($title);
     }
-    $slug = $request->get_param('slug');
     if ($slug !== null) {
         $update['post_name'] = sanitize_title($slug);
     }
-    $status = $request->get_param('status');
     if ($status !== null && in_array($status, array('publish', 'draft'), true)) {
         $update['post_status'] = $status;
     }
@@ -1452,6 +1511,10 @@ function varner_api_update_page(WP_REST_Request $request): WP_REST_Response|WP_E
 
     $template = $request->get_param('template');
     if ($template !== null) {
+        $template = sanitize_text_field($template);
+        if (!varner_is_valid_page_template($template)) {
+            return new WP_Error('invalid_template', 'The selected page template is invalid.', array('status' => 400));
+        }
         update_post_meta($id, '_wp_page_template', $template);
     }
 
@@ -1464,6 +1527,12 @@ function varner_api_delete_page(WP_REST_Request $request): WP_REST_Response|WP_E
     if (!$post || $post->post_type !== 'page') {
         return new WP_Error('not_found', 'Page not found.', array('status' => 404));
     }
+
+    // Hardened server-side guard: do not allow trashing critical pages
+    if (varner_is_protected_page($id)) {
+        return new WP_Error('protected_page', 'This page is a protected system page (e.g. front page or showroom) and cannot be deleted.', array('status' => 403));
+    }
+
     $result = wp_trash_post($id);
     if (!$result) {
         return new WP_Error('delete_failed', 'Could not trash page.', array('status' => 500));

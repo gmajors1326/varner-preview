@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, Facebook, Settings, ChevronRight, Star, Eye, Save, Copy,
+  Box, Facebook, Settings, ChevronRight, ChevronDown, Star, Eye, Save, Copy,
   Loader2, CheckCircle2, ArrowUpRight
 } from 'lucide-react';
 import {
@@ -154,7 +154,7 @@ export const UnitEditorPanel = ({
                                             <option value="">-- Select Brand --</option>
                       {brands.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90" /></div>
+                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
                   </div>
                   <button type="button" onClick={() => setShowBrandsModal(true)}
                     className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
@@ -217,10 +217,29 @@ export const UnitEditorPanel = ({
               <div className="flex-1"><SelectField label="Condition" options={CONDITION_OPTIONS} value={unitData.condition} onChange={v => handleInputChange('condition', v)} error={fieldErrors.condition} /></div>
             </div>
 
-            {/* Color + Length */}
+            {/* Color + Trailer Length (shown only for trailer categories) */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1"><SelectField label="Color" placeholder="Choose Color" options={COLOR_OPTIONS} value={unitData.color} onChange={v => handleInputChange('color', v)} error={fieldErrors.color} /></div>
-              <div className="flex-1"><InputField label="Length (e.g. 20 ft)" value={unitData.length} onChange={v => handleInputChange('length', v)} error={fieldErrors.length} /></div>
+              {unitData.category && unitData.category.toLowerCase().includes('trailer') && (
+                <div className="flex-1 space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Trailer Length</label>
+                  <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+                    <select
+                      value={unitData.length}
+                      onChange={e => handleInputChange('length', e.target.value)}
+                      className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
+                      style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}
+                    >
+                      <option value="">-- Select Length --</option>
+                      {Array.from({ length: 46 }, (_, i) => i + 8).map(ft => (
+                        <option key={ft} value={`${ft} ft`}>{ft} ft</option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
+                  </div>
+                  {fieldErrors.length && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.length}</p>}
+                </div>
+              )}
             </div>
 
             {/* Meter + Drive */}

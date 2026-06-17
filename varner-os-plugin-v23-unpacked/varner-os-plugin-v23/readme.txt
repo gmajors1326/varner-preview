@@ -3,7 +3,7 @@ Contributors: Varner Team
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Version: 1.23.159
+Version: 1.23.178
 License: Proprietary
 
 == Description ==
@@ -38,6 +38,11 @@ React-powered inventory management for Varner Equipment. Provides custom Equipme
 - `GET /me` — current user profile + initials (auth).
 - `POST /logout` — logout and record session end (auth).
 - `GET /inventory/{id}/ledger` — paginated ledger entries for a unit (auth).
+- GET /pages — list pages (auth: edit_pages).
+- POST /pages — create page (auth: publish_pages).
+- PATCH /pages/{id} — update page (auth: per-object edit_page).
+- DELETE /pages/{id} — trash page (auth: per-object delete_page).
+- GET /page-templates — list page templates (auth: edit_pages).
 
 == Admin Mounts ==
 - Varner OS dashboard under wp-admin menu.
@@ -48,7 +53,7 @@ React-powered inventory management for Varner Equipment. Provides custom Equipme
 - Picks latest `dist/assets/*.js|*.css`, preferring `main.*`, versioned by `filemtime`.
 
 == Audit Foundations ==
-- Activation creates tables for sessions and inventory ledger (append-only). Ledger writing hooks are planned but not yet wired for field diffs in this build.
+- Activation creates tables for sessions and inventory ledger (append-only), with detailed REST-based CRUD and field-diff logging fully wired.
 
 == Notes ==
 - Storefront theme pages remain separate; this plugin focuses on inventory admin and REST.

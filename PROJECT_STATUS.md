@@ -2,7 +2,7 @@
 
 **Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
-**Last updated:** June 16, 2026
+**Last updated:** June 17, 2026
 **Maintainer:** Greg
 
 ---
@@ -46,6 +46,7 @@ Deployment to dev is performed with WP-CLI over SSH (stream ZIP → `wp plugin/t
 | `main` | `1.23.160` | Finance cards editor in Settings tab, `file_exists()` asset resolution, ZIP packaging fix (`zip_helper.py` replaces `tar`), sidebar nav restructuring, handleClone bug fix. Deployed. |
 | `main` | `1.23.163` | Tailwind CDN removed → locally compiled `tailwind.css` with `filemtime()` versioning. Tesseract SRI integrity + crossorigin added. |
 | `main` | `1.23.164` | Build bump after SRI + Tailwind swap. ZIPs rebuilt. |
+| `main` | `1.23.178` | Cumulative updates, Pages API hardening, responsive grid improvements, and documentation audit sweep: Pages REST API (with server-side protected page guards, meta-caps, and validation), safety confirm dialogs, trailer length dropdown, Zetor/Titan brand sync, Tailwind config safelists, ZIP packaging script robustness, responsive grid layout optimization for service/parts requests on tablet/laptop viewports, and swept documentation files for legacy paths, REST capabilities, and audit ledger log contradictions. |
 | `feature/magic-link` | `1.23.151` | Passwordless email magic-link authentication. Fully built, reviewed, and parked on `feature/magic-link` branch. **Not live.** |
 
 **Magic-link work is parked, not deleted.** The `feature/magic-link` branch holds the fully assembled source files **and** the built `1.23.151` ZIP. Before relying on it as a restore point, confirm it rebuilds cleanly to a working `1.23.151` (see §7).
@@ -102,7 +103,8 @@ A senior-level security review was run across the theme and plugin. Findings and
 
 **Phase 1 — Build & version gate (local)**
 1. Run `.\build.ps1`.
-2. **Gate (must pass):** version bumped in **both** the plugin header and theme `style.css`; `dist/assets/` contains new content-hashed filenames (so the PWA service worker busts cache). If not, **STOP**.
+2. **Gate (must pass):** version bumped in **both** the plugin header and theme `style.css`.
+   * **React Assets Note**: `dist/assets/` contains new content-hashed filenames only if React files were modified. For PHP-only changes, the hashes remain unchanged; do not stop the deployment in this case, as the plugin version bump handles the necessary cache-busting. Otherwise, if React changed and hashes did not, **STOP**.
 
 **Phase 2 — Sequential deploy & cache flush (remote)**
 1. Stream ZIP to server.
@@ -122,7 +124,7 @@ A senior-level security review was run across the theme and plugin. Findings and
 - **Rollback-grade:** security leak, admin won't mount, front-end white-screen, performance regression.
 - **Fix-forward:** cosmetic UI, stale icon.
 
-**Packaging note:** `build.ps1` uses `tar.exe --format=zip` to force forward-slash Unix paths — Windows-packed ZIPs otherwise extract as literal `dir\file` names on Linux. Confirm extracted trees have real nested directories for **both** plugin and theme.
+**Packaging note:** `build.ps1` uses Python's `zipfile` module (and `tools/zip_helper.py` for the plugin) to create archives with proper forward-slash Unix paths. Do NOT use PowerShell's `tar -a -c -f` (which makes POSIX TAR archives) or `Compress-Archive` because WordPress rejects them. Confirm extracted trees have real nested directories.
 
 ---
 
@@ -192,6 +194,9 @@ These are **not** code-review items; they gate production go-live.
 | Author read-scope hardening | ✅ Resolved (`1.23.149`) |
 | Meta Live Sync | ✅ Resolved (Commerce Manager verification pending live URL setup) |
 | Magic-link feature | ⏸ Parked (`feature/magic-link`, `1.23.151`); superseded by Magic Login Pro plan |
+| Pages Management REST API & panel | ✅ Resolved (`1.23.177`) |
+| Destructive Action confirmation dialogs | ✅ Resolved (`1.23.177`) |
+| Mobile token input & neutral prompt | ✅ Resolved (`1.23.177`) |
 | SMTP / email deliverability | ⛔ Not set up — blocks go-live |
 | Sandhills migration | ⏳ Pending (dealer-led; do not cancel until data pulled) |
 | Form email routing | ⏳ Pending owner decision |

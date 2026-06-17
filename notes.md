@@ -1,5 +1,5 @@
 # Varner Equipment — Workspace Notes & Intelligence
-*Last updated: June 12, 2026*
+*Last updated: June 17, 2026*
 
 ---
 
@@ -9,8 +9,7 @@
 > - **Do not add** code, functions, text, or images without approval.
 > - **Do not delete** anything without approval.
 > - **Make suggestions** for improvements — don't act on them unilaterally.
-> - **Use `tar`** to zip files every time. Never use Compress-Archive or zip.
-> - **Use `tar`** even for single files — consistency matters for WP Engine compatibility.
+> - **Use `build.ps1` or Python's `zipfile` module (via `tools/zip_helper.py`)** to zip files. Never use PowerShell's `tar -a -c -f` (which creates POSIX TAR archives) or `Compress-Archive` because WordPress rejects them.
 
 ### SSH / Deployment Rules
 
@@ -81,7 +80,7 @@ Varner Equipment/
 
 ### REST API Authentication
 - **Admin sessions**: Standard WP nonce (`X-WP-Nonce` header). Nonces expire after 12–24 hours — a stale nonce is the most common cause of `Failed to load inventory` errors.
-- **Mobile sessions**: 16-char hex token passed as `X-Varner-Mobile-Token` header. Tokens expire after 30 minutes of inactivity. Max 3 active tokens per user.
+- **Mobile sessions**: 32-char hex token passed as `X-Varner-Mobile-Token` header. Tokens expire after 30 minutes of inactivity. Max 3 active tokens per user.
 - **Public**: `GET /inventory` is public (filtered by `show_on_website` for non-editors). All write operations require `edit_posts` capability.
 
 ---
@@ -90,6 +89,10 @@ Varner Equipment/
 
 | Date | Issue | Fix |
 |---|---|---|
+| Jun 17, 2026 | Form grid responsiveness | Redesigned the equipment details grid on service and parts request pages to use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5` to prevent squished inputs on tablet/laptop viewports. Files: `page-service-request.php`, `page-parts-request.php`. |
+| Jun 17, 2026 | PWA login length & cold launch | Set secure access token `maxLength` to 32 characters in mobile login form. Replaced prominent red session expired error on initial cold launch with a neutral slate instruction banner. File: `MobileAppLayout.jsx`. |
+| Jun 17, 2026 | Trailer Length conditional select | Added conditional rendering so trailer length only displays for trailer categories, replacing raw text input with standardized 8–53 ft dropdown select. File: `UnitEditorPanel.jsx`. |
+| Jun 17, 2026 | Page Editor settings panel upgrades | Added Page Editor quick-jump sticky sub-navigation, page deletion safety confirmation dialogs, and a WordPress Pages management REST API and UI list. Files: `SettingsTab.jsx`, `rest-api.php`, `App.jsx`, `MobileAppLayout.jsx`. |
 | Jun 12, 2026 | PWA Redesign (Midnight V2.4) | Visual skinning for Midnight/Sunlight togglable theme, centered Varner logo PNG, 2-tab bottom nav, slide-out hamburger drawer, 100% database-backed VIN plate scanner camera, browser-based Tesseract.js OCR text pre-fill, and outline clone cards. Files: `MobileAppLayout.jsx`, `App.jsx`, `helpers.js`, `varner-backend.php`. |
 | Jun 9, 2026 | `f.map is not a function` — inventory failed to load | `apiFetch('/inventory/deleted')` failure inside `Promise.all` killed the entire load. Fixed by splitting the calls and adding defensive `Array.isArray()` checks. |
 | — | Stale nonce after long WP session | `apiFetch` throws `Request failed: 401`. User must refresh the page to get a new nonce. No code fix — WP behavior. |

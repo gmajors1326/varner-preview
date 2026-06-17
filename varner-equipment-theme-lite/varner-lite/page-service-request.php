@@ -106,12 +106,12 @@ get_header(); ?>
                         <span class="text-red-600 font-black text-xl">02</span>
                         <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Equipment Being Serviced</h3>
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-                        <div class="space-y-2 col-span-2 md:col-span-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <div class="space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Make <span class="text-red-600">(*)</span></label>
                             <input type="text" name="make" required placeholder="e.g. Mahindra" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
-                        <div class="space-y-2 col-span-2 md:col-span-1">
+                        <div class="space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Model <span class="text-red-600">(*)</span></label>
                             <input type="text" name="model" required placeholder="e.g. 2638 HST" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
@@ -119,11 +119,11 @@ get_header(); ?>
                             <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Year <span class="text-red-600">(*)</span></label>
                             <input type="text" name="year" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
-                        <div class="space-y-2 col-span-2 md:col-span-1">
+                        <div class="space-y-2">
                             <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Serial Number #</label>
                             <input type="text" name="serial" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm uppercase">
                         </div>
-                        <div class="space-y-2">
+                        <div class="space-y-2 sm:col-span-2 lg:col-span-1">
                             <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Hours / Meter</label>
                             <input type="text" name="hours" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
