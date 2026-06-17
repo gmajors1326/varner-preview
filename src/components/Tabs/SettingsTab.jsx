@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Sparkles, Image as ImageIcon, Loader2, Upload, Trash2, Mail, Clock, Plus,
-  Briefcase, ChevronUp, ChevronDown, Save, DollarSign
+  Briefcase, ChevronUp, ChevronDown, Save, DollarSign, FileText
 } from 'lucide-react';
 import { apiFetch, uploadFile } from '../../utils/api';
 import { InputField, TextAreaField } from '../Common/FormFields';
@@ -68,6 +68,10 @@ export const SettingsTab = ({ showToast }) => {
   const iframeReady = useRef(false);
   const pendingScroll = useRef(null);
 
+  const [pages, setPages] = useState([]);
+  const [pageTemplates, setPageTemplates] = useState([]);
+  const [isLoadingPages, setIsLoadingPages] = useState(false);
+
   const [openSections, setOpenSections] = useState({
     hero: false,
     support: false,
@@ -77,6 +81,7 @@ export const SettingsTab = ({ showToast }) => {
     about: false,
     careers: false,
     finance: false,
+    pages: false,
   });
 
   // Section key → anchor ID on the live site (must match id= in index.php)
@@ -89,6 +94,7 @@ export const SettingsTab = ({ showToast }) => {
     about:   'section-cta',
     careers: 'section-cta',     // careers page is separate; scroll to CTA as closest
     finance: 'applications',    // section id in page-finance.php
+    pages:   '',
   };
 
   const scrollIframeTo = (anchor) => {
@@ -137,6 +143,28 @@ export const SettingsTab = ({ showToast }) => {
       setPreviewUrl(`${baseUrl}?varner_preview=1`);
     }
   }, [isLoading]);
+
+  const fetchPages = useCallback(async () => {
+    setIsLoadingPages(true);
+    try {
+      const [pagesData, templatesData] = await Promise.all([
+        apiFetch('/pages'),
+        apiFetch('/page-templates'),
+      ]);
+      setPages(pagesData);
+      setPageTemplates(templatesData);
+    } catch (err) {
+      showToast('Failed to load pages: ' + err.message, 'error');
+    } finally {
+      setIsLoadingPages(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (openSections.pages) {
+      fetchPages();
+    }
+  }, [openSections.pages, fetchPages]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -1019,18 +1047,16 @@ export const SettingsTab = ({ showToast }) => {
                             </button>
                           )}
                         </div>
-                        <div className="mt-3 bg-white rounded-xl border border-slate-100 p-4 flex items-center justify-center min-h-[6rem]">
-                          {card.logo ? (
+                        {card.logo && card.logo.match(/^https?:\/\//) && (
+                          <div className="mt-3 bg-white rounded-xl border border-slate-100 p-4 flex items-center justify-center">
                             <img
                               src={card.logo}
                               alt={card.alt || card.name || 'Finance partner logo'}
                               className="h-24 w-24 object-contain"
                               onError={e => { e.target.style.display = 'none'; }}
                             />
-                          ) : (
-                            <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest">No logo uploaded</span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         <div className="mt-3">
                           <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Alt Text (for accessibility)</label>
                           <input
@@ -1161,6 +1187,88 @@ export const SettingsTab = ({ showToast }) => {
           </CollapsiblePanel>
         </div>
 
+        {/* 9. PAGES */}
+        <div id="editor-section-pages">
+          <CollapsiblePanel
+            title="Pages"
+            icon={<FileText size={20} />}
+            isOpen={openSections.pages}
+            onToggle={() => toggleSection('pages')}
+          >
+            <div className="space-y-6">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide pl-1">
+                Manage WordPress pages. Create new pages with a template, or edit/delete existing ones.
+              </p>
+
+              {isLoadingPages ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 size={20} className="animate-spin text-slate-400" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pages.length === 0 ? (
+                    <p className="text-[10px] font-bold text-slate-400 text-center py-4">No pages found.</p>
+                  ) : (
+                    pages.map((page) => (
+                      <div key={page.id} className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-black text-slate-900 truncate">{page.title}</div>
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                            /{page.slug}
+                            <span className="mx-1.5">·</span>
+                            {page.template === 'default' ? 'Default Template' : page.template.replace(/^page-|\.php$/g, '')}
+                            <span className="mx-1.5">·</span>
+                            <span className={page.status === 'publish' ? 'text-green-600' : 'text-amber-500'}>{page.status}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <a
+                            href={page.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white border border-slate-200 text-slate-400 p-2 rounded-lg hover:text-slate-900 transition-colors"
+                            title="View Page"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!window.confirm(`Delete "${page.title}"? It will be moved to trash.`)) return;
+                              try {
+                                await apiFetch(`/pages/${page.id}`, { method: 'DELETE' });
+                                setPages(prev => prev.filter(p => p.id !== page.id));
+                                showToast(`"${page.title}" moved to trash.`, 'success');
+                              } catch (err) {
+                                showToast('Delete failed: ' + err.message, 'error');
+                              }
+                            }}
+                            className="bg-white border border-slate-200 text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Trash Page"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <hr className="border-slate-200" />
+
+              <NewPageForm
+                pageTemplates={pageTemplates}
+                onCreated={(newPage) => {
+                  setPages(prev => [...prev, newPage]);
+                  fetchPages();
+                }}
+                showToast={showToast}
+              />
+            </div>
+          </CollapsiblePanel>
+        </div>
+
         {/* STATIONARY SAVE CONFIGURATION BAR */}
         <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 flex items-center justify-center mt-8 shadow-xl">
           <button
@@ -1219,6 +1327,104 @@ export const SettingsTab = ({ showToast }) => {
         </div>
       </div>
 
+    </div>
+  );
+};
+
+const NewPageForm = ({ pageTemplates, onCreated, showToast }) => {
+  const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [template, setTemplate] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [autoSlug, setAutoSlug] = useState(true);
+
+  const handleTitleChange = (val) => {
+    setTitle(val);
+    if (autoSlug) {
+      setSlug(val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!title.trim()) {
+      showToast('Page title is required.', 'error');
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const result = await apiFetch('/pages', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: title.trim(),
+          slug: slug.trim() || undefined,
+          template: template || undefined,
+        }),
+      });
+      showToast(`"${title.trim()}" page created!`, 'success');
+      setTitle('');
+      setSlug('');
+      setTemplate('');
+      setAutoSlug(true);
+      onCreated(result);
+    } catch (err) {
+      showToast('Failed to create page: ' + err.message, 'error');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  return (
+    <div className="bg-slate-50 rounded-[1.5rem] p-6 border-2 border-dashed border-slate-200 space-y-4">
+      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Add New Page</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="sm:col-span-2">
+          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Page Title</label>
+          <input
+            type="text"
+            placeholder="e.g. Our Services"
+            value={title}
+            onChange={e => handleTitleChange(e.target.value)}
+            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Slug</label>
+          <div className="flex gap-2 items-center">
+            <span className="text-[10px] font-bold text-slate-400">/</span>
+            <input
+              type="text"
+              placeholder="our-services"
+              value={slug}
+              onChange={e => { setSlug(e.target.value); setAutoSlug(false); }}
+              className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Template</label>
+          <select
+            value={template}
+            onChange={e => setTemplate(e.target.value)}
+            className="w-full bg-white border-2 border-slate-100 rounded-xl p-3 font-black text-slate-900 outline-none focus:border-red-500 transition-all text-sm"
+          >
+            <option value="">Default Template</option>
+            {pageTemplates.filter(t => t.file).map(t => (
+              <option key={t.file} value={t.file}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={isCreating}
+          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all disabled:opacity-50"
+        >
+          {isCreating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          {isCreating ? 'Creating...' : 'Create Page'}
+        </button>
+      </div>
     </div>
   );
 };

@@ -209,6 +209,42 @@ function varner_register_rest_routes(): void {
             'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
         ),
     ));
+
+    // ── Page Management ────────────────────────────────────────────────────────
+    $page_auth = function (): bool { return current_user_can('edit_pages'); };
+    register_rest_route($ns, '/pages', array(
+        array(
+            'methods'             => 'GET',
+            'callback'            => 'varner_api_list_pages',
+            'permission_callback' => $page_auth,
+        ),
+        array(
+            'methods'             => 'POST',
+            'callback'            => 'varner_api_create_page',
+            'permission_callback' => $page_auth,
+        ),
+    ));
+    register_rest_route($ns, '/pages/(?P<id>\d+)', array(
+        'methods'             => 'PATCH',
+        'callback'            => 'varner_api_update_page',
+        'permission_callback' => $page_auth,
+        'args'                => array(
+            'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+        ),
+    ));
+    register_rest_route($ns, '/pages/(?P<id>\d+)', array(
+        'methods'             => 'DELETE',
+        'callback'            => 'varner_api_delete_page',
+        'permission_callback' => $page_auth,
+        'args'                => array(
+            'id' => array('validate_callback' => function ($p): bool { return is_numeric($p); }),
+        ),
+    ));
+    register_rest_route($ns, '/page-templates', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_get_page_templates',
+        'permission_callback' => $page_auth,
+    ));
 }
 
 // ─── 1B. STAFF USER MANAGEMENT HANDLERS ─────────────────────────────────────
@@ -1328,4 +1364,121 @@ function varner_api_get_unit(WP_REST_Request $request): WP_REST_Response|WP_Erro
     }
     $unit = varner_format_unit($id);
     return rest_ensure_response($unit);
+}
+
+// ─── PAGE MANAGEMENT HANDLERS ─────────────────────────────────────────────────
+
+function varner_api_list_pages(): WP_REST_Response {
+    $pages = get_pages(array(
+        'post_status' => array('publish', 'draft'),
+        'sort_column' => 'post_title',
+        'sort_order'  => 'ASC',
+    ));
+    $out = array();
+    foreach ($pages as $p) {
+        $template = get_page_template_slug($p->ID);
+        $out[] = array(
+            'id'          => $p->ID,
+            'title'       => $p->post_title,
+            'slug'        => $p->post_name,
+            'template'    => $template ?: 'default',
+            'status'      => $p->post_status,
+            'modified'    => $p->post_modified,
+            'link'        => get_permalink($p->ID),
+        );
+    }
+    return rest_ensure_response($out);
+}
+
+function varner_api_create_page(WP_REST_Request $request): WP_REST_Response|WP_Error {
+    $title    = sanitize_text_field($request->get_param('title'));
+    $slug     = sanitize_title($request->get_param('slug') ?: $title);
+    $template = sanitize_text_field($request->get_param('template') ?: '');
+
+    if (empty($title)) {
+        return new WP_Error('missing_title', 'Page title is required.', array('status' => 400));
+    }
+
+    $id = wp_insert_post(array(
+        'post_type'   => 'page',
+        'post_title'  => $title,
+        'post_name'   => $slug,
+        'post_status' => 'publish',
+    ), true);
+
+    if (is_wp_error($id)) {
+        return $id;
+    }
+
+    if ($template) {
+        update_post_meta($id, '_wp_page_template', $template);
+    }
+
+    return rest_ensure_response(array(
+        'success'  => true,
+        'page_id'  => $id,
+        'link'     => get_permalink($id),
+        'edit_link'=> get_edit_post_link($id, ''),
+    ));
+}
+
+function varner_api_update_page(WP_REST_Request $request): WP_REST_Response|WP_Error {
+    $id = intval($request->get_param('id'));
+    $post = get_post($id);
+    if (!$post || $post->post_type !== 'page') {
+        return new WP_Error('not_found', 'Page not found.', array('status' => 404));
+    }
+
+    $update = array('ID' => $id);
+    $title = $request->get_param('title');
+    if ($title !== null) {
+        $update['post_title'] = sanitize_text_field($title);
+    }
+    $slug = $request->get_param('slug');
+    if ($slug !== null) {
+        $update['post_name'] = sanitize_title($slug);
+    }
+    $status = $request->get_param('status');
+    if ($status !== null && in_array($status, array('publish', 'draft'), true)) {
+        $update['post_status'] = $status;
+    }
+
+    if (!empty($update)) {
+        $result = wp_update_post($update, true);
+        if (is_wp_error($result)) {
+            return $result;
+        }
+    }
+
+    $template = $request->get_param('template');
+    if ($template !== null) {
+        update_post_meta($id, '_wp_page_template', $template);
+    }
+
+    return rest_ensure_response(array('success' => true, 'page_id' => $id));
+}
+
+function varner_api_delete_page(WP_REST_Request $request): WP_REST_Response|WP_Error {
+    $id = intval($request->get_param('id'));
+    $post = get_post($id);
+    if (!$post || $post->post_type !== 'page') {
+        return new WP_Error('not_found', 'Page not found.', array('status' => 404));
+    }
+    $result = wp_trash_post($id);
+    if (!$result) {
+        return new WP_Error('delete_failed', 'Could not trash page.', array('status' => 500));
+    }
+    return rest_ensure_response(array('success' => true));
+}
+
+function varner_api_get_page_templates(): WP_REST_Response {
+    $theme = wp_get_theme();
+    $templates = $theme->get_page_templates();
+    $out = array();
+    // Add default template
+    $out[] = array('file' => '', 'name' => 'Default Template');
+    foreach ($templates as $file => $name) {
+        $out[] = array('file' => $file, 'name' => $name);
+    }
+    return rest_ensure_response($out);
 }
