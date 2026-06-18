@@ -341,14 +341,7 @@ function varner_api_delete_staff(WP_REST_Request $req): WP_REST_Response|WP_Erro
 // ─── 2. TAXONOMY HANDLERS ────────────────────────────────────────────────────
 
 function varner_api_get_brands(): WP_REST_Response {
-    $default = array(
-        'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief',
-        'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
-        'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra',
-        'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers',
-        'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor',
-    );
-    return rest_ensure_response(get_option('varner_brands', $default));
+    return rest_ensure_response(get_option('varner_brands', varner_default_brands()));
 }
 
 function varner_api_save_list(string $param, string $option, WP_REST_Request $request): WP_REST_Response {
