@@ -104,7 +104,20 @@ add_filter('acf/settings/load_json', function (array $paths): array {
     return $paths;
 });
 
-// ─── 3. ACF FIELD GROUP ──────────────────────────────────────────────────────
+// ─── 3. BRAND HELPERS ────────────────────────────────────────────────────────
+
+function varner_default_brands(): array {
+    return array(
+        'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief',
+        'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
+        'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra',
+        'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers',
+        'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor',
+        'Other',
+    );
+}
+
+// ─── 4. ACF FIELD GROUP ──────────────────────────────────────────────────────
 
 if (function_exists('acf_add_local_field_group')):
 
@@ -115,18 +128,7 @@ acf_add_local_field_group(array(
         array('key' => 'field_varner_year',         'label' => 'Year',                    'name' => 'year',             'type' => 'text'),
         array('key' => 'field_varner_make',          'label' => 'Brand / Manufacturer',    'name' => 'make',             'type' => 'select',
             'ui' => 1, 'allow_null' => 1,
-            'choices' => array(
-                'Bale King'=>'Bale King','Baumalight'=>'Baumalight','Beaver Valley'=>'Beaver Valley',
-                'Big Tex'=>'Big Tex','Bison'=>'Bison','Branson'=>'Branson','Brush Chief'=>'Brush Chief',
-                'CM Truck Beds'=>'CM Truck Beds','Custom Made'=>'Custom Made',
-                'Danuser'=>'Danuser','Degelman'=>'Degelman','Deutz Fahr'=>'Deutz Fahr','Donahue'=>'Donahue',
-                'Enorossi'=>'Enorossi','Hackett'=>'Hackett','Interstate'=>'Interstate','Krone'=>'Krone',
-                'Legend'=>'Legend','Macdon'=>'Macdon','Mahindra'=>'Mahindra','Maschio'=>'Maschio',
-                'Massey Ferguson'=>'Massey Ferguson','Maxon'=>'Maxon','McHale'=>'McHale','MK Martin'=>'MK Martin',
-                'RC Trailers'=>'RC Trailers','Speeco'=>'Speeco','Tar River'=>'Tar River','Tidenberg'=>'Tidenberg',
-                'Titan Trailers'=>'Titan Trailers','Triton'=>'Triton','TYM'=>'TYM','Worksaver'=>'Worksaver','Zetor'=>'Zetor',
-                'Other'=>'Other',
-            ),
+            'choices' => array_combine( varner_default_brands(), varner_default_brands() ),
         ),
         array('key' => 'field_varner_model',         'label' => 'Model',          'name' => 'model',          'type' => 'text'),
         array('key' => 'field_varner_stock',         'label' => 'Stock Number',   'name' => 'stock_number',   'type' => 'text'),

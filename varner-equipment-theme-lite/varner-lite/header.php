@@ -197,13 +197,9 @@
                         }
                         $all_brands = get_option( 'varner_brands' );
                         if ( ! is_array( $all_brands ) || empty( $all_brands ) ) {
-                            $all_brands = array(
-                                'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief', 
-                                'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue', 
-                                'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra', 
-                                'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers', 
-                                'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor'
-                            );
+                            $all_brands = function_exists( 'varner_default_brands' )
+                                ? varner_default_brands()
+                                : array( 'Big Tex', 'Mahindra', 'CM Truck Beds', 'TYM', 'Other' );
                         }
                         ?>
 
