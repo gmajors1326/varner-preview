@@ -495,6 +495,31 @@ const App = () => {
     }
   };
 
+  const handleToggleDraft = async (item) => {
+    const newStatus = item.status === 'Draft' ? 'In Stock' : 'Draft';
+
+    // Optimistic update for list
+    setInventoryList(prev => prev.map(u => u.wpId === item.wpId ? { ...u, status: newStatus } : u));
+
+    // Update unitData if currently editing this unit
+    if (unitData.id === item.wpId) {
+      setUnitData(prev => ({ ...prev, stockStatus: newStatus }));
+    }
+
+    try {
+      await apiFetch(`/inventory/${item.wpId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ stock_status: newStatus })
+      });
+    } catch (e) {
+      showToast(`Failed to update draft status: ${e.message}`, 'error');
+      loadInventory(); // Rollback list
+      if (unitData.id === item.wpId) {
+        setUnitData(prev => ({ ...prev, stockStatus: item.status === 'Draft' ? 'Draft' : 'In Stock' }));
+      }
+    }
+  };
+
   const handlePermanentDelete = async (wpId) => {
     if (!window.confirm('PERMANENT DELETE: This cannot be undone. Proceed?')) return;
     try {
@@ -823,6 +848,7 @@ const App = () => {
                 onDelete={handleDeleteUnit}
                 onClone={(wpId) => handleFullEdit(wpId).then(handleClone)}
                 onToggle={handleToggleBoolean}
+                onToggleDraft={handleToggleDraft}
               />
             )}
 

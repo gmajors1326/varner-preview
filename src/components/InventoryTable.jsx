@@ -17,6 +17,7 @@ export const InventoryTable = ({
   onDelete,
   onClone,
   onToggle,
+  onToggleDraft,
 }) => {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
@@ -128,12 +129,13 @@ export const InventoryTable = ({
                     <th className="px-6 py-5 text-center w-28">WEBSITE</th>
                     <th className="px-6 py-5 text-center w-28">META SYNC</th>
                     <th className="px-6 py-5 text-center w-28">FEATURED</th>
+                    <th className="px-6 py-5 text-center w-28">DRAFT</th>
                     <th className="px-6 py-5 text-right w-32">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {filteredInventory.length === 0 ? (
-                    <tr><td colSpan="11" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
+                    <tr><td colSpan="13" className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</td></tr>
                   ) : filteredInventory.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => onEdit(item.wpId)}>
                       <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
@@ -209,6 +211,14 @@ export const InventoryTable = ({
                           <button onClick={() => onToggle(item, 'featured')}
                             className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-center">
+                          <button onClick={() => onToggleDraft(item)}
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.status === 'Draft' ? 'left-7' : 'left-1'}`} />
                           </button>
                         </div>
                       </td>

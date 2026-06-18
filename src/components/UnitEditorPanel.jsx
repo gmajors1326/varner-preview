@@ -318,6 +318,22 @@ export const UnitEditorPanel = ({
                   </button>
                 </div>
               ))}
+              {/* Draft toggle — separate row since it mirrors the enum, not a boolean */}
+              <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl transition-all ${unitData.stockStatus === 'Draft' ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300'}`}>
+                    <Eye size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Draft (Hidden)</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Unit is a draft — hidden from the public site &amp; Facebook feed</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => handleInputChange('stockStatus', unitData.stockStatus === 'Draft' ? 'In Stock' : 'Draft')}
+                  className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                  <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'left-8' : 'left-1'}`} />
+                </button>
+              </div>
             </div>
 
             {/* Description + Seller Info */}
