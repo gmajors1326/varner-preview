@@ -130,11 +130,13 @@ The following directories contain unreferenced files that are safe to delete onc
 
 ## Quick Reference
 
-### Brands — Three Places to Keep in Sync
-When adding or removing an authorized brand, update **all three**:
-1. `header.php` — Mega Menu brand grid
-2. `rest-api.php` — `varner_api_get_brands()` default array
-3. `varner-backend.php` — ACF field choices array
+### Brands — Single Source of Truth (SSOT)
+Brands are defined in one place: `varner_default_brands()` in `varner-backend.php`.
+- ACF `make` field uses `array_combine( varner_default_brands(), ... )`
+- REST API fallback calls `varner_default_brands()` directly
+- Theme nav fallback calls it via `function_exists` guard
+- Add/remove brands only in `varner_default_brands()` — the rest follows.
+- DB option `varner_brands` overrides the default at runtime.
 
 ### Inventory Taxonomy (3 levels, stored in wp_postmeta)
 ```
