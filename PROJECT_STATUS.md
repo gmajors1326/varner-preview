@@ -91,6 +91,8 @@ A senior-level security review was run across the theme and plugin. Findings and
 | Author read-scope | Split: settings/meta-sync admin-only; ledger/inventory editor-allowed | Configuration writes reserved to owner; read-only unit history kept available to trusted staff. |
 | Passwordless login | Use **Magic Login Pro** plugin; park the custom build | Offloads auth maintenance/patching; the restored `/mobile-app/` WP-login redirect carries a logged-in WP user into the OS, so no custom endpoints needed. Custom branch retained as fallback. |
 | Email "from" identity | Production must send from the dealership domain, not personal Gmail | Personal `@gmail.com` can't be SPF/DKIM-authenticated; mail gets spam-filtered/rejected. |
+| Category taxonomy SSOT (cleanup #13) | Deferred — not a refactor | Categories diverge across React `CATEGORY_TREE` (hierarchical) and the legacy flat ACF `category` field + theme SEO landing-page filters; they share no literal and span JS+PHP. A true single source would rewrite live `category` postmeta and SEO filters — a behavior change + data migration, out of scope for the cleanup phases. Grouped with the parked ACF dynamic-dropdown item. |
+| Brands SSOT (cleanup #12) | ✅ Resolved — `varner_default_brands()` in `varner-backend.php` | ACF `make` field, REST API fallback, and theme nav all call the same function. `header.php` guards with `function_exists` + minimal 5-brand emergency fallback. The one remaining divergence (static ACF dropdown not reading `varner_brands` from DB) is a behavior change, out of scope. |
 
 ---
 
