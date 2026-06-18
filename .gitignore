@@ -19,5 +19,5 @@ Plugins/
 add_imp.php
 snapshot.php
 modify.cjs
-*.json
+snapshot_*.json
 
