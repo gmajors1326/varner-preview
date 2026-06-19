@@ -681,13 +681,25 @@ function varner_api_upload_media(WP_REST_Request $request) {
     if (empty($_FILES['file'])) {
         return new WP_Error('no_file', 'No file uploaded.', array('status' => 400));
     }
+
+    $file = $_FILES['file'];
+    $max_size = wp_max_upload_size();
+    if ($file['size'] > $max_size) {
+        $max_mb = size_format($max_size);
+        return new WP_Error('file_too_large', "File exceeds the maximum upload size of {$max_mb}. Try a smaller file or compress the video.", array('status' => 413));
+    }
+
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/image.php';
     require_once ABSPATH . 'wp-admin/includes/media.php';
 
     $attachment_id = media_handle_upload('file', 0);
     if (is_wp_error($attachment_id)) {
-        return new WP_Error('upload_failed', $attachment_id->get_error_message(), array('status' => 500));
+        $msg = $attachment_id->get_error_message();
+        if (empty($msg)) {
+            $msg = 'The server could not process this file. The file may be too large, an unsupported format, or blocked by server security rules.';
+        }
+        return new WP_Error('upload_failed', $msg, array('status' => 500));
     }
     return rest_ensure_response(array(
         'id'  => $attachment_id,

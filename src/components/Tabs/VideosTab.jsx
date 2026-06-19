@@ -75,6 +75,12 @@ export const VideosTab = ({ showToast }) => {
   const handleUploadVideoFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Warn if file exceeds 50MB — server may reject it
+    if (file.size > 50 * 1024 * 1024) {
+      showToast('File is over 50MB. The server may reject it. Try compressing the video first.', 'error');
+    }
+
     setIsUploading(true);
     try {
       const result = await uploadFile(file);
