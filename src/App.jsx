@@ -501,10 +501,13 @@ const App = () => {
     // Optimistic update for list
     setInventoryList(prev => prev.map(u => u.wpId === item.wpId ? { ...u, status: newStatus } : u));
 
-    // Update unitData if currently editing this unit
+    // Update unitData if currently editing this unit (keeps editor toggle + dropdown in sync)
     if (unitData.id === item.wpId) {
       setUnitData(prev => ({ ...prev, stockStatus: newStatus }));
     }
+
+    // New unit not yet created — nothing to persist; the create Save carries stock_status.
+    if (!item.wpId) return;
 
     try {
       await apiFetch(`/inventory/${item.wpId}`, {
@@ -515,7 +518,7 @@ const App = () => {
       showToast(`Failed to update draft status: ${e.message}`, 'error');
       loadInventory(); // Rollback list
       if (unitData.id === item.wpId) {
-        setUnitData(prev => ({ ...prev, stockStatus: item.status === 'Draft' ? 'Draft' : 'In Stock' }));
+        setUnitData(prev => ({ ...prev, stockStatus: item.status }));
       }
     }
   };
@@ -857,6 +860,7 @@ const App = () => {
               <UnitEditorPanel
                 unitData={unitData}
                 handleInputChange={handleInputChange}
+                onToggleDraft={handleToggleDraft}
                 handleSave={handleSave}
                 handleClone={handleClone}
                 isSaving={isSaving}

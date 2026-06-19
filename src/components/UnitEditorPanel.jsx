@@ -14,6 +14,7 @@ import { AttachmentsSection } from './AttachmentsSection';
 export const UnitEditorPanel = ({
   unitData,
   handleInputChange,
+  onToggleDraft,
   handleSave,
   handleClone,
   isSaving,
@@ -329,7 +330,7 @@ export const UnitEditorPanel = ({
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Unit is a draft — hidden from the public site &amp; Facebook feed</p>
                   </div>
                 </div>
-                <button type="button" onClick={() => handleInputChange('stockStatus', unitData.stockStatus === 'Draft' ? 'In Stock' : 'Draft')}
+                <button type="button" onClick={() => onToggleDraft({ wpId: unitData.id, status: unitData.stockStatus })}
                   className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}>
                   <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'left-8' : 'left-1'}`} />
                 </button>
