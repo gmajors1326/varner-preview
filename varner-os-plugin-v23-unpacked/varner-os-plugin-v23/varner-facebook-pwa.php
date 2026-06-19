@@ -318,21 +318,23 @@ function varner_os_mobile_pwa_router(): void {
             'theme_color'      => '#0f172a',
             'categories'       => array('business', 'productivity'),
             'icons'            => array(
-                array('src' => $icon_url, 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'),
-                array('src' => $icon_url, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'),
+                array('src' => plugin_dir_url(__FILE__) . 'assets/icons/icon-192.png',         'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'),
+                array('src' => plugin_dir_url(__FILE__) . 'assets/icons/icon-512.png',         'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'),
+                array('src' => plugin_dir_url(__FILE__) . 'assets/icons/icon-192-maskable.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'),
+                array('src' => plugin_dir_url(__FILE__) . 'assets/icons/icon-512-maskable.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'),
             ),
             'shortcuts' => array(
                 array(
                     'name'       => 'New Listing',
                     'short_name' => 'Add Unit',
                     'url'        => home_url('/mobile-app/?action=new'),
-                    'icons'      => array(array('src' => $icon_url, 'sizes' => '96x96', 'type' => 'image/png')),
+                    'icons'      => array(array('src' => plugin_dir_url(__FILE__) . 'assets/icons/icon-96.png', 'sizes' => '96x96', 'type' => 'image/png')),
                 ),
                 array(
                     'name'       => 'View Stock',
                     'short_name' => 'Stock',
                     'url'        => home_url('/mobile-app/?action=list'),
-                    'icons'      => array(array('src' => $icon_url, 'sizes' => '96x96', 'type' => 'image/png')),
+                    'icons'      => array(array('src' => plugin_dir_url(__FILE__) . 'assets/icons/icon-96.png', 'sizes' => '96x96', 'type' => 'image/png')),
                 ),
             ),
         ), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -510,9 +512,12 @@ self.addEventListener('fetch', (event) => {
     <meta name="theme-color" content="#0f172a">
     <meta name="msapplication-TileColor" content="#0f172a">
     <link rel="manifest" href="<?php echo esc_url(home_url('/mobile-app/manifest.json')); ?>">
-    <?php $pwa_icon = esc_url(get_transient('varner_pwa_icon_url') ?: plugin_dir_url(__FILE__) . 'dist/assets/logo.png'); ?>
-    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $pwa_icon; ?>">
-    <link rel="apple-touch-startup-image" href="<?php echo $pwa_icon; ?>">
+    <?php
+    $pwa_icons_base = plugin_dir_url(__FILE__) . 'assets/icons/';
+    $apple_icon     = esc_url($pwa_icons_base . 'apple-touch-icon-180.png');
+    ?>
+    <link rel="apple-touch-icon" sizes="180x180" href="<?php echo $apple_icon; ?>">
+    <link rel="apple-touch-startup-image" href="<?php echo $apple_icon; ?>">
 
     <style>
         html, body { margin:0; padding:0; width:100%; height:100%; background-color:#0a0a0b; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
