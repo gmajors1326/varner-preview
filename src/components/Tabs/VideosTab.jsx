@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Loader2, Camera, Plus, List, Edit2, Trash2, X
+  Loader2, Camera, Plus, List, Edit2, Trash2, X, Upload, Video, Youtube
 } from 'lucide-react';
-import { apiFetch } from '../../utils/api';
+import { apiFetch, uploadFile } from '../../utils/api';
 import { InputField } from '../Common/FormFields';
 
 export const PlayIcon = ({ className }) => (
@@ -21,7 +21,9 @@ export const VideosTab = ({ showToast }) => {
   // Video Modal State
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
-  const [videoForm, setVideoForm] = useState({ title: '', youtube_link: '', category_id: '' });
+  const [videoForm, setVideoForm] = useState({ title: '', youtube_link: '', video_file_url: '', video_file_id: 0, category_id: '' });
+  const [uploadMode, setUploadMode] = useState('youtube'); // 'youtube' | 'upload'
+  const [isUploading, setIsUploading] = useState(false);
   
   // Category Modal State
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -51,23 +53,53 @@ export const VideosTab = ({ showToast }) => {
       setVideoForm({
         title: video.title,
         youtube_link: video.youtube_link,
+        video_file_url: video.video_file_url || '',
+        video_file_id: video.video_file_id || 0,
         category_id: String(video.category_id || '')
       });
+      setUploadMode(video.video_file_url ? 'upload' : 'youtube');
     } else {
       setEditingVideo(null);
       setVideoForm({
         title: '',
         youtube_link: '',
+        video_file_url: '',
+        video_file_id: 0,
         category_id: categories[0] ? String(categories[0].id) : ''
       });
+      setUploadMode('youtube');
     }
     setIsVideoModalOpen(true);
   };
 
+  const handleUploadVideoFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const result = await uploadFile(file);
+      setVideoForm(f => ({ ...f, video_file_url: result.url, video_file_id: result.id }));
+      showToast('Video uploaded successfully!');
+    } catch (err) {
+      showToast('Video upload failed: ' + err.message, 'error');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
   const handleSaveVideo = async (e) => {
     e.preventDefault();
-    if (!videoForm.title || !videoForm.youtube_link || !videoForm.category_id) {
-      showToast('Please fill out all fields.', 'error');
+    if (!videoForm.title || !videoForm.category_id) {
+      showToast('Please fill out all required fields.', 'error');
+      return;
+    }
+    if (uploadMode === 'youtube' && !videoForm.youtube_link) {
+      showToast('Please enter a YouTube link.', 'error');
+      return;
+    }
+    if (uploadMode === 'upload' && !videoForm.video_file_url) {
+      showToast('Please upload a video file.', 'error');
       return;
     }
 
@@ -213,19 +245,26 @@ export const VideosTab = ({ showToast }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVideos.map(vid => {
             const ytId = getYouTubeId(vid.youtube_link);
-            const thumbUrl = ytId 
-              ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`
-              : 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400';
+            const isUploaded = !!vid.video_file_url;
             
             return (
               <div key={vid.id} className="bg-white rounded-[2rem] overflow-hidden shadow-xl border border-slate-100 hover:shadow-2xl hover:-translate-y-0.5 transition-all group flex flex-col">
                 <div className="aspect-video w-full bg-slate-900 relative overflow-hidden shrink-0">
-                  <img src={thumbUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={vid.title}/>
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 bg-red-600/90 text-white rounded-full flex items-center justify-center shadow-lg group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
-                      <PlayIcon className="ml-1 w-5 h-5 fill-current text-white" />
-                    </div>
-                  </div>
+                  {isUploaded ? (
+                    <video src={vid.video_file_url} controls className="w-full h-full object-cover" preload="metadata">
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <>
+                      <img src={ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={vid.title}/>
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                        <div className="w-12 h-12 bg-red-600/90 text-white rounded-full flex items-center justify-center shadow-lg group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
+                          <PlayIcon className="ml-1 w-5 h-5 fill-current text-white" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   <span className="absolute bottom-3 left-3 bg-slate-900/95 text-white text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest border border-slate-800">
                     {vid.category_name}
                   </span>
@@ -272,12 +311,49 @@ export const VideosTab = ({ showToast }) => {
                 onChange={v => setVideoForm(f => ({ ...f, title: v }))}
                 placeholder="e.g. Mahindra 2638 Loader Work"
               />
-              <InputField
-                label="YouTube Video Link"
-                value={videoForm.youtube_link}
-                onChange={v => setVideoForm(f => ({ ...f, youtube_link: v }))}
-                placeholder="e.g. https://www.youtube.com/watch?v=goF_3TspZ6k"
-              />
+
+              {/* Upload mode toggle */}
+              <div className="flex bg-slate-100 rounded-xl p-1">
+                <button type="button" onClick={() => setUploadMode('youtube')}
+                  className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${uploadMode === 'youtube' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <Youtube size={14}/> YouTube Link
+                </button>
+                <button type="button" onClick={() => setUploadMode('upload')}
+                  className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${uploadMode === 'upload' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <Upload size={14}/> Upload Video
+                </button>
+              </div>
+
+              {uploadMode === 'youtube' ? (
+                <InputField
+                  label="YouTube Video Link"
+                  value={videoForm.youtube_link}
+                  onChange={v => setVideoForm(f => ({ ...f, youtube_link: v }))}
+                  placeholder="e.g. https://www.youtube.com/watch?v=goF_3TspZ6k"
+                />
+              ) : (
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Upload Video File</label>
+                  <div className="flex items-center gap-3">
+                    <label className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest cursor-pointer transition-all active:scale-95 ${isUploading ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 border-2 border-dashed border-slate-300 hover:border-red-500 hover:bg-red-50 text-slate-600 hover:text-red-600'}`}>
+                      <Upload size={16}/>
+                      {isUploading ? 'Uploading...' : (videoForm.video_file_url ? 'Replace Video' : 'Choose Video File')}
+                      <input type="file" accept="video/*" className="hidden" onChange={handleUploadVideoFile} disabled={isUploading} />
+                    </label>
+                  </div>
+                  {videoForm.video_file_url && (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
+                      <Video size={16} className="text-green-600 shrink-0"/>
+                      <span className="text-[10px] font-bold text-green-700 truncate flex-1">{videoForm.video_file_url.split('/').pop()}</span>
+                      <button type="button" onClick={() => setVideoForm(f => ({ ...f, video_file_url: '', video_file_id: 0 }))}
+                        className="text-green-600 hover:text-green-800 p-1">
+                        <X size={14}/>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Video Category</label>
                 <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl transition-all shadow-sm min-h-[60px] focus-within:border-red-500 focus-within:bg-white">

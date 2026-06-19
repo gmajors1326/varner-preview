@@ -39,13 +39,16 @@ function varner_get_youtube_embed_html(string $url): string {
     return $url;
 }
 
-function varner_save_video_fields(int $post_id, string $youtube_url, int $category_id): void {
+function varner_save_video_fields(int $post_id, string $youtube_url, int $category_id, string $video_file_url = '', int $video_file_id = 0): void {
     $embed_html = varner_get_youtube_embed_html($youtube_url);
     if (function_exists('update_field')) {
         update_field('youtube_link', $embed_html, $post_id);
     } else {
         update_post_meta($post_id, 'youtube_link', $embed_html);
     }
+
+    update_post_meta($post_id, 'video_file_url', $video_file_url);
+    update_post_meta($post_id, 'video_file_id', $video_file_id);
 
     if ($category_id) {
         wp_set_post_terms($post_id, array($category_id), 'video_category');
@@ -74,6 +77,8 @@ function varner_api_get_videos(): WP_REST_Response {
                 get_post_meta($p->ID, 'youtube_link', true)
                 ?: (function_exists('get_field') ? get_field('youtube_link', $p->ID) : '')
             ),
+            'video_file_url' => get_post_meta($p->ID, 'video_file_url', true) ?: '',
+            'video_file_id'  => intval(get_post_meta($p->ID, 'video_file_id', true)),
             'category_id'   => $cat_id,
             'category_name' => $cat_name,
         );
@@ -92,9 +97,11 @@ function varner_api_create_video(WP_REST_Request $request) {
         return new WP_Error('create_failed', $post_id->get_error_message(), array('status' => 500));
     }
 
-    $youtube_link = sanitize_text_field($data['youtube_link'] ?? '');
-    $category_id  = intval($data['category_id'] ?? 0);
-    varner_save_video_fields($post_id, $youtube_link, $category_id);
+    $youtube_link  = sanitize_text_field($data['youtube_link'] ?? '');
+    $category_id   = intval($data['category_id'] ?? 0);
+    $video_file_url = esc_url_raw($data['video_file_url'] ?? '');
+    $video_file_id  = intval($data['video_file_id'] ?? 0);
+    varner_save_video_fields($post_id, $youtube_link, $category_id, $video_file_url, $video_file_id);
 
     return rest_ensure_response(array('success' => true, 'id' => $post_id));
 }
@@ -112,9 +119,11 @@ function varner_api_update_video(WP_REST_Request $request) {
     }
     wp_update_post($update_args);
 
-    $youtube_link = sanitize_text_field($data['youtube_link'] ?? '');
-    $category_id  = intval($data['category_id'] ?? 0);
-    varner_save_video_fields($post_id, $youtube_link, $category_id);
+    $youtube_link  = sanitize_text_field($data['youtube_link'] ?? '');
+    $category_id   = intval($data['category_id'] ?? 0);
+    $video_file_url = esc_url_raw($data['video_file_url'] ?? '');
+    $video_file_id  = intval($data['video_file_id'] ?? 0);
+    varner_save_video_fields($post_id, $youtube_link, $category_id, $video_file_url, $video_file_id);
 
     return rest_ensure_response(array('success' => true));
 }
