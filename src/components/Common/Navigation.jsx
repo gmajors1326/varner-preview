@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, List, Facebook, History, Sliders, Camera, Smartphone, Settings
+  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings
 } from 'lucide-react';
 
 export const SidebarLogo = () => {
@@ -49,6 +49,7 @@ export const NavItem = ({ icon, label, active = false, badge = null, onClick }) 
 export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav }) => (
   <>
     <nav className="space-y-2">
+      <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard"   active={activeTab==='dashboard'}     onClick={() => onNav('dashboard')} />
       <NavItem icon={<Box size={20}/>}        label="Add / Edit"       active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
       <NavItem icon={<List size={20}/>}       label="Inventory List"   active={activeTab==='all-inventory'} onClick={() => onNav('all-inventory')} badge={inventoryList.length} />
       <NavItem icon={<History size={20}/>}    label="History"          active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
