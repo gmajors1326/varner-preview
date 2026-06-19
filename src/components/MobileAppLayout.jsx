@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Smartphone, Zap, Loader2, AlertCircle, LogOut, Box, Clock, CheckCircle2,
   TrendingUp, Plus, List, Sparkles, Search, X, Image as ImageIcon, ChevronLeft,
-  Trash2, ChevronDown, Save, Camera, Menu, Copy, RotateCcw, ShieldCheck, Sun, Moon, Settings
+  Trash2, ChevronDown, Save, Camera, Menu, Copy, RotateCcw, ShieldCheck, Sun, Moon, Settings,
+  User, Lock
 } from 'lucide-react';
 import { apiFetch, uploadFile } from '../utils/api';
 import { METER_TYPE_OPTIONS, CATEGORY_TREE } from '../constants/inventoryConstants';
@@ -78,11 +79,14 @@ export const MobileAppLayout = ({
   const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [loginMode, setLoginMode] = useState('credentials'); // 'credentials' | 'token'
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     const onTokenExpired = () => {
       setMobileToken('');
-      setAuthError('Your session expired. Please scan a new QR code to continue.');
+      setAuthError('Your session expired. Please log in again.');
     };
     window.addEventListener('varner:token-expired', onTokenExpired);
     return () => window.removeEventListener('varner:token-expired', onTokenExpired);
@@ -185,6 +189,37 @@ export const MobileAppLayout = ({
     const cleaned = tokenInput.trim().toUpperCase();
     if (!cleaned) return;
     verifyAndSaveToken(cleaned, true);
+  };
+
+  // In-PWA username/password login. POSTs to the public /login endpoint (no auth
+  // header needed). The server sets a persistent remember-me cookie in this PWA's
+  // storage context and returns a mobile token, which we hand to the existing
+  // verify+enter flow. Staying inside /mobile-app/ is what makes this work on iOS.
+  const handleCredentialLogin = async (e) => {
+    e.preventDefault();
+    if (!username.trim() || !password) return;
+    setIsVerifying(true);
+    setAuthError('');
+    try {
+      const restUrl = window.varnerData?.rest_url || '/wp-json/';
+      const res = await fetch(`${restUrl}varner/v1/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAuthError(data?.message || 'Login failed. Please try again.');
+        return;
+      }
+      setPassword('');
+      await verifyAndSaveToken(data.token, true); // hands off to the existing enter-app flow
+    } catch (err) {
+      setAuthError('Network error. Check your connection and try again.');
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -397,54 +432,101 @@ export const MobileAppLayout = ({
               <p className="text-slate-400 text-xs mt-2 font-medium">Field Inventory Management Console</p>
             </div>
 
-            <form onSubmit={handleLoginSubmit} className="bg-[#121214] rounded-3xl p-8 border border-slate-500/60 shadow-2xl space-y-6">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Secure Access Token</label>
-                <input
-                  type="text"
-                  value={tokenInput}
-                  onChange={e => setTokenInput(e.target.value)}
-                  placeholder="32-CHARACTER ACCESS TOKEN"
-                  maxLength={32}
-                  className="w-full bg-black border border-slate-700 rounded-2xl py-4 px-4 text-center font-mono font-black text-lg tracking-widest uppercase focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all text-white"
-                />
-              </div>
-
-              {authError ? (
-                <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 p-4 rounded-2xl text-red-400 text-xs">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                  <span className="font-bold">{authError}</span>
+            {loginMode === 'credentials' ? (
+              <form onSubmit={handleCredentialLogin} className="bg-[#121214] rounded-3xl p-8 border border-slate-500/60 shadow-2xl space-y-5">
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2"><User size={12}/> Username or Email</label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="you@varnerequipment.com"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    autoComplete="username"
+                    className="w-full bg-black border border-slate-700 rounded-2xl py-4 px-4 font-bold text-base focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all text-white"
+                  />
                 </div>
-              ) : (
-                <div className="flex items-start gap-2 bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl text-slate-400 text-xs">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-slate-500" />
-                  <span className="font-bold">Scan the QR code from your desktop to log in</span>
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 mb-2"><Lock size={12}/> Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full bg-black border border-slate-700 rounded-2xl py-4 px-4 font-bold text-base focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all text-white"
+                  />
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isVerifying || !tokenInput.trim()}
-                className="w-full bg-[#dc2626] hover:bg-red-700 disabled:opacity-50 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                {isVerifying ? <Loader2 className="animate-spin" size={16}/> : <Zap size={16}/>}
-                Authenticate Mobile
-              </button>
-            </form>
+                {authError && (
+                  <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 p-4 rounded-2xl text-red-400 text-xs">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="font-bold">{authError}</span>
+                  </div>
+                )}
 
-            <div className="text-center space-y-4 pt-2">
-              <a
-                href="/wp-login.php?redirect_to=/mobile-app/"
-                className="block text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider"
-              >
-                Log in with Username & Password
-              </a>
-              <div className="bg-[#121214]/40 border border-slate-500/60/30 rounded-2xl p-5 text-center">
-                <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase tracking-wider">
-                  Forgot your token? Open Varner OS on your desktop, go to "Mobile Companion" in the sidebar, and scan the QR code.
-                </p>
-              </div>
-            </div>
+                <button
+                  type="submit"
+                  disabled={isVerifying || !username.trim() || !password}
+                  className="w-full bg-[#dc2626] hover:bg-red-700 disabled:opacity-50 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {isVerifying ? <Loader2 className="animate-spin" size={16}/> : <ShieldCheck size={16}/>}
+                  Log In
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('token'); setAuthError(''); }}
+                  className="block w-full text-center text-[11px] font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-wider pt-1"
+                >
+                  Use an access token instead
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleLoginSubmit} className="bg-[#121214] rounded-3xl p-8 border border-slate-500/60 shadow-2xl space-y-6">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Secure Access Token</label>
+                  <input
+                    type="text"
+                    value={tokenInput}
+                    onChange={e => setTokenInput(e.target.value)}
+                    placeholder="32-CHARACTER ACCESS TOKEN"
+                    maxLength={32}
+                    className="w-full bg-black border border-slate-700 rounded-2xl py-4 px-4 text-center font-mono font-black text-lg tracking-widest uppercase focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all text-white"
+                  />
+                </div>
+
+                {authError ? (
+                  <div className="flex items-start gap-2 bg-red-950/40 border border-red-800/40 p-4 rounded-2xl text-red-400 text-xs">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="font-bold">{authError}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl text-slate-400 text-xs">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5 text-slate-500" />
+                    <span className="font-bold">On a shared device? Scan the QR code from your desktop, or paste a token here.</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isVerifying || !tokenInput.trim()}
+                  className="w-full bg-[#dc2626] hover:bg-red-700 disabled:opacity-50 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {isVerifying ? <Loader2 className="animate-spin" size={16}/> : <Zap size={16}/>}
+                  Authenticate Mobile
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('credentials'); setAuthError(''); }}
+                  className="block w-full text-center text-[11px] font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-wider pt-1"
+                >
+                  Log in with username &amp; password
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

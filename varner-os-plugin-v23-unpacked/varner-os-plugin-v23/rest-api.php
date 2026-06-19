@@ -152,6 +152,11 @@ function varner_register_rest_routes(): void {
         'callback'            => 'varner_api_generate_mobile_token',
         'permission_callback' => $auth,
     ));
+    register_rest_route($ns, '/login', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_mobile_login',
+        'permission_callback' => '__return_true', // Public: caller is unauthenticated by definition.
+    ));
 
     register_rest_route($ns, '/settings', array(
         array(
@@ -1076,6 +1081,87 @@ function varner_api_generate_mobile_token() {
         'expires_in' => 1800,
         'url'        => $url,
     ));
+}
+
+// ─── 9b. MOBILE PASSWORD LOGIN (in-PWA, iOS-safe) ────────────────────────────
+//
+// Lets the PWA authenticate with username/password WITHOUT leaving the
+// /mobile-app/ manifest scope, so on iOS the auth cookie lands in the standalone
+// app's own storage sandbox (Safari and the home-screen PWA have separate jars).
+// Sets a persistent "remember me" cookie (~14 days) so future opens silently
+// re-mint a token via the cookie->auto-token path in varner-facebook-pwa.php,
+// and returns a short-lived mobile token for the React app's REST calls now.
+function varner_api_mobile_login(WP_REST_Request $request) {
+    // Rate limit: 5 attempts / 15 min per client IP (brute-force guard). [tunable]
+    $ip       = varner_login_client_ip();
+    $rl_key   = 'varner_login_rl_' . substr(md5($ip), 0, 20);
+    $attempts = (int) get_transient($rl_key);
+    if ($attempts >= 5) {
+        return new WP_Error('rate_limited', 'Too many login attempts. Please wait 15 minutes and try again.', array('status' => 429));
+    }
+
+    $username = sanitize_text_field((string) $request->get_param('username'));
+    $password = (string) $request->get_param('password'); // Never sanitize or log a password.
+    if ($username === '' || $password === '') {
+        return new WP_Error('missing_credentials', 'Enter your username and password.', array('status' => 400));
+    }
+
+    // remember=true => persistent ~14-day auth cookie, set in the PWA's context.
+    // wp_signon accepts a username OR an email address as user_login.
+    $user = wp_signon(array(
+        'user_login'    => $username,
+        'user_password' => $password,
+        'remember'      => true,
+    ), is_ssl());
+
+    if (is_wp_error($user)) {
+        // Count the failure; return a generic message (no user/field enumeration).
+        set_transient($rl_key, $attempts + 1, 15 * MINUTE_IN_SECONDS);
+        return new WP_Error('invalid_login', 'Invalid username or password.', array('status' => 401));
+    }
+
+    // Capability gate: only inventory-managing staff may use the mobile app. [tunable]
+    if (!user_can($user, 'edit_posts')) {
+        wp_logout(); // Drop the cookie we just set.
+        return new WP_Error('forbidden', 'This account is not authorized for the mobile app.', array('status' => 403));
+    }
+
+    delete_transient($rl_key); // Clear the rate counter on success.
+    wp_set_current_user($user->ID);
+
+    return rest_ensure_response(array(
+        'token' => varner_mint_mobile_token($user->ID),
+        'user'  => array('display_name' => $user->display_name),
+    ));
+}
+
+// Mint a 32-char mobile auth token (30-min sliding transient) for $user_id,
+// enforcing the max-3-active-tokens-per-user cap. Mirrors the minting block in
+// varner_api_generate_mobile_token (which also issues a handoff nonce/URL).
+function varner_mint_mobile_token(int $user_id): string {
+    $active_key    = 'varner_active_tokens_' . $user_id;
+    $active_tokens = get_transient($active_key) ?: array();
+    $active_tokens = is_array($active_tokens) ? array_values(array_filter($active_tokens, function ($t) {
+        return (bool) get_transient('varner_mobile_token_' . $t);
+    })) : array();
+    if (count($active_tokens) >= 3) {
+        $oldest = array_shift($active_tokens);
+        delete_transient('varner_mobile_token_' . $oldest);
+    }
+
+    $token = strtoupper(bin2hex(random_bytes(16)));
+    set_transient('varner_mobile_token_' . $token, array('user_id' => $user_id, 'created_at' => time()), 1800);
+    $active_tokens[] = $token;
+    set_transient($active_key, $active_tokens, 1800);
+
+    return $token;
+}
+
+// Client IP for login rate limiting. REMOTE_ADDR only — the one value a client
+// cannot forge. Kept local to the plugin to avoid coupling to the theme resolver.
+function varner_login_client_ip(): string {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
 }
 
 // NOTE: Mobile auth filters (determine_current_user, rest_authentication_errors)
