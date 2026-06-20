@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.191 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.191
+ * Description: Version 1.23.192 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.192
  * Author: hwy559.com
  */
 
@@ -591,7 +591,11 @@ add_action('admin_init', function (): void {
 // ─── Admin Page Renderers ────────────────────────────────────────────────────
 
 function varner_render_dashboard_page(): void {
-    echo '<div class="wrap" style="margin:0;padding:0;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
+    $logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '';
+    if ($logo_url) {
+        echo '<div class="wrap" style="margin:0;padding:24px 0 0;text-align:center;background:#0a0a0b;"><img src="' . esc_url($logo_url) . '" alt="Varner Equipment" style="height:40px;width:auto;opacity:0.9;"></div>';
+    }
+    echo '<div class="wrap" style="margin:0;padding:0;background:#0a0a0b;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
 }
 
 function varner_render_configuration_page(): void {
