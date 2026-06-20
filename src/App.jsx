@@ -756,9 +756,6 @@ const App = () => {
 
       {/* SIDEBAR */}
       <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
-        <div className="flex items-center gap-3 mb-8 border-b border-slate-800 pb-6">
-          <SidebarLogo />
-        </div>
         <SidebarContent activeTab={activeTab} inventoryList={inventoryList} deletedHistory={deletedHistory}
           onNav={handleNav} />
       </aside>
