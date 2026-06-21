@@ -181,7 +181,7 @@ export const UnitEditorPanel = ({
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
                                             <option value="">-- Select Year --</option>
-                      {Array.from({ length: 2027 - 1950 + 1 }, (_, i) => 2027 - i).map(year => (
+                      {Array.from({ length: new Date().getFullYear() + 1 - 1950 }, (_, i) => new Date().getFullYear() - i).map(year => (
                         <option key={year} value={year}>{year}</option>
                       ))}
                     </select>

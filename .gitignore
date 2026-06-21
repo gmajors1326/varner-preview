@@ -11,6 +11,7 @@ Raw HTML/
 
 # Plugin zips and extracted (source lives in -unpacked folders)
 Plugins/
+Plugins/*.txt
 
 # Claude internal session files
 .claude/
