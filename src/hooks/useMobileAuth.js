@@ -11,7 +11,6 @@ export function useMobileAuth() {
     new URLSearchParams(window.location.search).get('token') ||
     localStorage.getItem('varner_mobile_token') || ''
   );
-  const [mobileActiveTab, setMobileActiveTab] = useState('edit');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -27,7 +26,5 @@ export function useMobileAuth() {
     isMobileApp,
     mobileToken,
     setMobileToken,
-    mobileActiveTab,
-    setMobileActiveTab,
   };
 }

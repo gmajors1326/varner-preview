@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 import { DEFAULT_EMPTY_UNIT } from './constants/inventoryConstants';
+import { apiFetch } from './utils/api';
 
 import { useInventory } from './hooks/useInventory';
 import { useFilters } from './hooks/useFilters';
@@ -24,13 +25,13 @@ import { VideosTab } from './components/Tabs/VideosTab';
 import { MobileAccessTab } from './components/Tabs/MobileAccessTab';
 import { ConfigurationTab } from './components/Tabs/ConfigurationTab';
 import { HistoryTab } from './components/Tabs/HistoryTab';
-import { MobileAppLayout } from './components/MobileAppLayout';
+import { PwaLoginGate } from './components/PwaLoginGate';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const defaultEmptyUnit = DEFAULT_EMPTY_UNIT;
 
 const App = () => {
-  const { isMobileApp, mobileToken, setMobileToken, mobileActiveTab, setMobileActiveTab } = useMobileAuth();
+  const { isMobileApp, mobileToken, setMobileToken } = useMobileAuth();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,6 +52,32 @@ const App = () => {
       inv.loadActivity();
     }
   }, [activeTab, inv.loadSessions, inv.loadActivity]);
+
+  useEffect(() => {
+    if (isMobileApp) {
+      setActiveTab('all-inventory');
+    }
+  }, []);
+
+  const handlePwaAuthenticated = () => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    if (action === 'new') {
+      inv.setUnitData(defaultEmptyUnit);
+      setActiveTab('inventory');
+    } else {
+      setActiveTab('all-inventory');
+    }
+  };
+
+  const handlePwaSignOut = async () => {
+    try {
+      await apiFetch('/logout', { method: 'POST' });
+    } catch (_) {}
+    localStorage.removeItem('varner_mobile_token');
+    setMobileToken('');
+    window.location.href = '/mobile-app/';
+  };
 
   const handleNav = (tab) => {
     if (tab === 'inventory' && activeTab !== 'inventory') inv.setUnitData(defaultEmptyUnit);
@@ -80,50 +107,13 @@ const App = () => {
     }
   };
 
-  if (isMobileApp) {
+  if (isMobileApp && !mobileToken) {
     return (
-      <MobileAppLayout
-        toast={toast}
+      <PwaLoginGate
         mobileToken={mobileToken}
         setMobileToken={setMobileToken}
-        mobileActiveTab={mobileActiveTab}
-        setMobileActiveTab={setMobileActiveTab}
-        inventoryList={inv.inventoryList}
-        loadInventory={inv.loadInventory}
-        isLoading={inv.isLoading}
-        unitData={inv.unitData}
-        setUnitData={inv.setUnitData}
-        defaultEmptyUnit={defaultEmptyUnit}
-        brands={inv.brands}
-        categories={inv.categories}
-        subcategories={inv.subcategories}
-        subSubcategories={inv.subSubcategories}
-        setCategories={inv.setCategories}
-        setSubcategories={inv.setSubcategories}
-        setSubSubcategories={inv.setSubSubcategories}
-        handleSave={inv.handleSave}
-        isSaving={inv.isSaving}
-        isUploadingImages={inv.isUploadingImages}
-        fieldErrors={inv.fieldErrors}
-        setFieldErrors={inv.setFieldErrors}
-        handleInputChange={inv.handleInputChange}
-        handleAddImages={inv.handleAddImages}
-        handleRemoveImage={inv.handleRemoveImage}
-        handleReorderImages={inv.handleReorderImages}
-        handleAddImplement={inv.handleAddImplement}
-        handleUpdateImplement={inv.handleUpdateImplement}
-        handleRemoveImplement={inv.handleRemoveImplement}
-        handleImplementImageUpload={inv.handleImplementImageUpload}
-        handleToggleBoolean={inv.handleToggleBoolean}
-        handleFullEdit={inv.handleFullEdit}
-        handleDeleteUnit={inv.handleDeleteUnit}
-        showToast={showToast}
-        deletedHistory={inv.deletedHistory}
-        handleRestoreUnit={inv.handleRestoreUnit}
-        handlePermanentDelete={inv.handlePermanentDelete}
-        handleBulkRestore={inv.handleBulkRestore}
-        handleBulkPermanentDelete={inv.handleBulkPermanentDelete}
-        handleClone={inv.handleClone}
+        toast={toast}
+        onAuthenticated={handlePwaAuthenticated}
       />
     );
   }
@@ -131,6 +121,7 @@ const App = () => {
   return (
     <div className="flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 min-h-screen">
       <style dangerouslySetInnerHTML={{ __html: QUILL_STYLES }} />
+      <style>{`body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}`}</style>
 
       {toast && (
         <div className={`fixed top-6 right-6 z-[9999] px-6 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all animate-in slide-in-from-top-4 ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
@@ -168,14 +159,14 @@ const App = () => {
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2"><X size={24} /></button>
             </div>
             <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
-              onNav={handleNav} />
+              onNav={handleNav} isMobileApp={isMobileApp} onSignOut={handlePwaSignOut} />
           </aside>
         </div>
       )}
 
       <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
         <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
-          onNav={handleNav} />
+          onNav={handleNav} isMobileApp={isMobileApp} onSignOut={handlePwaSignOut} />
       </aside>
 
       <main className="flex-1 flex flex-col text-slate-900 min-h-screen">

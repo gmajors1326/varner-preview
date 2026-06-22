@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings
+  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings, LogOut
 } from 'lucide-react';
 
 export const SidebarLogo = () => {
@@ -46,28 +46,44 @@ export const NavItem = ({ icon, label, active = false, badge = null, onClick }) 
   </div>
 );
 
-export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav }) => (
+export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav, isMobileApp, onSignOut }) => (
   <>
     <nav className="space-y-2">
-      <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard"   active={activeTab==='dashboard'}     onClick={() => onNav('dashboard')} />
+      {!isMobileApp && (
+        <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab==='dashboard'} onClick={() => onNav('dashboard')} />
+      )}
       <NavItem icon={<Box size={20}/>}        label="Add / Edit"       active={activeTab==='inventory'}     onClick={() => onNav('inventory')} />
       <NavItem icon={<List size={20}/>}       label="Inventory List"   active={activeTab==='all-inventory'} onClick={() => onNav('all-inventory')} badge={inventoryList.length} />
       <NavItem icon={<History size={20}/>}    label="History"          active={activeTab==='history'}       onClick={() => onNav('history')} badge={deletedHistory.length > 0 ? deletedHistory.length : null} />
       <div className="pt-4 border-t border-slate-800">
         <NavItem icon={<Facebook size={20}/>} label="Meta Sync"        active={activeTab==='marketplace'}   onClick={() => onNav('marketplace')} badge="Live" />
       </div>
-      <div className="pt-4 border-t border-slate-800">
-        <NavItem icon={<Smartphone size={20}/>} label="Mobile Companion" active={activeTab==='mobile'}     onClick={() => onNav('mobile')} />
-      </div>
-      <div className="pt-4 border-t border-slate-800">
-        <NavItem icon={<Camera size={20}/>}   label="Video Manager"    active={activeTab==='videos'}        onClick={() => onNav('videos')} />
-      </div>
-      <div className="pt-4 border-t border-slate-800">
-        <NavItem icon={<Sliders size={20}/>}  label="Page Editor"      active={activeTab==='settings'}     onClick={() => onNav('settings')} />
-      </div>
-      <div className="pt-4 border-t border-slate-800">
-        <NavItem icon={<Settings size={18}/>} label="Configuration"    active={activeTab==='config'}       onClick={() => onNav('config')} />
-      </div>
+      {!isMobileApp && (
+        <>
+          <div className="pt-4 border-t border-slate-800">
+            <NavItem icon={<Smartphone size={20}/>} label="Mobile Companion" active={activeTab==='mobile'} onClick={() => onNav('mobile')} />
+          </div>
+          <div className="pt-4 border-t border-slate-800">
+            <NavItem icon={<Camera size={20}/>} label="Video Manager" active={activeTab==='videos'} onClick={() => onNav('videos')} />
+          </div>
+          <div className="pt-4 border-t border-slate-800">
+            <NavItem icon={<Sliders size={20}/>} label="Page Editor" active={activeTab==='settings'} onClick={() => onNav('settings')} />
+          </div>
+          <div className="pt-4 border-t border-slate-800">
+            <NavItem icon={<Settings size={18}/>} label="Configuration" active={activeTab==='config'} onClick={() => onNav('config')} />
+          </div>
+        </>
+      )}
+      {isMobileApp && (
+        <div className="pt-4 border-t border-slate-800">
+          <div onClick={onSignOut} className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-300 text-slate-500 hover:bg-slate-900 hover:text-slate-100">
+            <div className="flex items-center gap-4">
+              <LogOut size={20} />
+              <span className="font-black text-[13px] uppercase tracking-wider">Sign Out</span>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   </>
 );

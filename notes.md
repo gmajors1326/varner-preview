@@ -26,62 +26,15 @@
 
 ---
 
-## Project Structure (Current — June 2026)
+## Architecture
 
-```
-Varner Equipment/
-├── src/                          ← React app source (Varner OS)
-├── dist/                         ← Compiled React build output
-├── varner-os-plugin-v23-unpacked/ ← Plugin source (PHP + dist goes here)
-├── varner-equipment-theme-lite/  ← ✅ ACTIVE MASTER THEME
-│   └── varner-lite/
-│       ├── src/input.css         ← Tailwind CSS source
-│       ├── tailwind.config.js    ← Tailwind config
-│       ├── assets/css/tailwind.css ← Compiled Tailwind output
-│       ├── partials/             ← breadcrumb.php, equipment-card.php, inventory-sidebar.php
-│       └── *.php                 ← All theme templates
-├── _archive/                     ← Archived (not active)
-│   ├── varner-equipment-theme-v23/  ← Retired June 2026
-│   └── varner-equipment-theme-v23.zip
-├── build.ps1                     ← Unified build script (React + Tailwind + ZIPs)
-├── DEPLOY.md                     ← Deployment runbook (canonical)
-├── SKILL.md                      ← Technical architecture reference
-├── └── notes.md                      ← This file
-```
+See [`SKILL.md`](./SKILL.md) for the complete architecture reference (component roles, data model, API auth, SQL cheat sheet). See [`DEPLOY.md`](./DEPLOY.md) for the canonical build & deploy runbook.
 
-### Deployment Artifacts (produced by build.ps1)
-| Artifact | Purpose |
-|---|---|
-| `varner-os-plugin-v23.zip` | Plugin — upload to WP Engine |
-| `varner-equipment-theme-v23-lite.zip` | Theme — upload to WP Engine |
-
----
-
-## Architecture Intelligence
-
-### Theme: varner-lite is the sole master
-- `varner-equipment-theme-v23` was **retired June 9, 2026** and moved to `_archive/`.
-- **All future theme edits go into `varner-equipment-theme-lite/varner-lite/` only.**
-- `build.ps1` compiles Tailwind directly inside varner-lite and produces one theme ZIP.
-- The `varner-lite` slug is the active WordPress theme on WP Engine.
-- 
-### Plugin: varner-os-plugin-v23
-- The plugin is the **bridge** between the React app and WordPress.
-- It handles: Equipment CPT registration, REST API (`/varner/v1`), ACF field sync, asset loading, session tracking, and mobile PWA routing.
-- **Every `build.ps1` run auto-increments the patch version** (e.g. `1.23.4 → 1.23.5`). This forces WP to prompt for an overwrite on install and busts CDN cache.
-- The plugin must be uploaded as a ZIP and installed via `wp plugin install --force`. Do not use the WP admin uploader — it has size limits.
-- **REST-loop/CLI migrations tail**: Since locks debounce rapid writes, always trigger `varner_os_schedule_catalog_regeneration(true);` (or WP-CLI: `wp eval "varner_os_schedule_catalog_regeneration(true);"`) as the last step of any non-WP-All-Import bulk import.
-
-### React App (Varner OS)
-- Built with **Vite + React + Tailwind**. Entry: `src/main.jsx`, root component: `src/App.jsx`.
-- Mounts on `#varner-inventory-app` / `.varner-inventory-app-mount` — present in WP admin pages and the `[varner_showroom]` shortcode.
-- API calls go through `src/utils/api.js` → `apiFetch()`. The base URL is `window.varnerData.rest_url + '/varner/v1'`. The nonce is injected via `wp_localize_script`.
-- `src/App.jsx` is large (1,302 lines). It's functional but could be split into smaller component files over time.
-
-### REST API Authentication
-- **Admin sessions**: Standard WP nonce (`X-WP-Nonce` header). Nonces expire after 12–24 hours — a stale nonce is the most common cause of `Failed to load inventory` errors.
-- **Mobile sessions**: 32-char hex token passed as `X-Varner-Mobile-Token` header. Tokens expire after 30 minutes of inactivity. Max 3 active tokens per user.
-- **Public**: `GET /inventory` is public (filtered by `show_on_website` for non-editors). All write operations require `edit_posts` capability.
+Notable:
+- `varner-lite` is the sole master theme; `varner-v23` is archived in `_archive/`.
+- `build.ps1` auto-increments the plugin patch version (e.g. `1.23.4 → 1.23.5`).
+- After any bulk import, run: `varner_os_schedule_catalog_regeneration(true);`
+- `src/App.jsx` (1,302 lines) is functional but could be split into smaller components.
 
 ---
 

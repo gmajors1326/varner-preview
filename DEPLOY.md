@@ -119,32 +119,9 @@ If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path
    - Preferred source: media attachment titled `VarnerEquipment_red`.
    - Fallback source: bundled theme logo assets.
 
-## Plugin REST Endpoints (v23)
+## REST Endpoints
 
-| Method | Endpoint | Auth | Notes |
-|--------|----------|------|-------|
-| `GET` | `/varner/v1/inventory` | public | All active listings |
-| `POST` | `/varner/v1/inventory` | editor | Create new unit |
-| `GET` | `/varner/v1/inventory/deleted` | editor | Soft-deleted units |
-| `PATCH` | `/varner/v1/inventory/{id}` | editor | Update unit fields |
-| `DELETE` | `/varner/v1/inventory/{id}` | editor | Soft delete |
-| `POST` | `/varner/v1/inventory/{id}/restore` | editor | Restore soft-deleted unit |
-| `DELETE` | `/varner/v1/inventory/{id}/permanent` | editor | Permanent delete |
-| `GET` | `/varner/v1/inventory/{id}/ledger` | editor | Paginated ledger entries |
-| `POST` | `/varner/v1/media` | editor | Upload media attachment |
-| `GET` | `/varner/v1/brands` | editor | Get brand list |
-| `POST` | `/varner/v1/brands` | editor | Save brand list |
-| `GET` | `/varner/v1/categories` | editor | Get category list |
-| `POST` | `/varner/v1/categories` | editor | Save category list |
-| `GET` | `/varner/v1/sessions` | admin | Supports `active` and `user` filters; paginated |
-| `GET` | `/varner/v1/me` | logged-in | Current user info |
-| `POST` | `/varner/v1/logout` | logged-in | Destroy session |
-| `POST` | `/varner/v1/mobile/token` | editor | Generate secure alphanumeric mobile token |
-| `GET` | `/varner/v1/pages` | edit_pages | List all WordPress pages |
-| `POST` | `/varner/v1/pages` | publish_pages | Create new WordPress page |
-| `PATCH` | `/varner/v1/pages/{id}` | edit_page | Update page attributes (per-object check) |
-| `DELETE` | `/varner/v1/pages/{id}` | delete_page | Trash a WordPress page (per-object check) |
-| `GET` | `/varner/v1/page-templates` | edit_pages | List available active theme templates |
+See the plugin `readme.txt` or [`SKILL.md`](./SKILL.md) §9 for the complete REST API reference.
 
 ## Quick Verification in wp-admin
 

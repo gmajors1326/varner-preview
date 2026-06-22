@@ -96,38 +96,14 @@ A senior-level security review was run across the theme and plugin. Findings and
 
 ---
 
-## 6. Deployment Runbook (Dev)
+## 6. Deployment
 
-> Sequence-strict. Each phase gates the next. All commands run from the local machine against WP Engine dev.
+See [`DEPLOY.md`](./DEPLOY.md) for the canonical deployment runbook (build, stream, install, cache flush, failure tiers).
 
-**Phase 0 — Pre-flight & commit (local)**
-1. Confirm rollback backups exist on the server and are **test-restorable** (not just present).
-2. Commit the working tree locally (do not push yet) so the deployed artifact maps to a real commit.
-
-**Phase 1 — Build & version gate (local)**
-1. Run `.\build.ps1`.
-2. **Gate (must pass):** version bumped in **both** the plugin header and theme `style.css`.
-   * **React Assets Note**: `dist/assets/` contains new content-hashed filenames only if React files were modified. For PHP-only changes, the hashes remain unchanged; do not stop the deployment in this case, as the plugin version bump handles the necessary cache-busting. Otherwise, if React changed and hashes did not, **STOP**.
-
-**Phase 2 — Sequential deploy & cache flush (remote)**
-1. Stream ZIP to server.
-2. Integrity check: `ls -l <zip> && unzip -t <zip> >/dev/null && echo OK`.
-3. Install with `--force`.
-4. Confirm exact slug + version via `wp plugin list --name=... --fields=name,version`.
-5. Repeat for theme (only after plugin succeeds; theme overwrite is active-theme, so backups must be confirmed first).
-6. Flush **all three layers**: object cache (`wp cache flush`), page/CDN cache (`wp page-cache flush` or WP Engine portal "Clear all caches").
-
-**Phase 3 — Validation** (see §8 for the matrix). Run security/scope checks against **origin** (post-flush), confirm performance, admin UI, and PWA.
-
-**Phase 4 — Resolution**
-- Pass → `git push`.
-- Fail → restore from backup ZIPs, **re-flush all caches** (so you debug origin code, not cached new-code responses), `git reset --soft HEAD~1` to keep changes for debugging.
-
-**Failure tiers (what triggers a rollback):**
-- **Rollback-grade:** security leak, admin won't mount, front-end white-screen, performance regression.
-- **Fix-forward:** cosmetic UI, stale icon.
-
-**Packaging note:** `build.ps1` uses Python's `zipfile` module (and `tools/zip_helper.py` for the plugin) to create archives with proper forward-slash Unix paths. Do NOT use PowerShell's `tar -a -c -f` (which makes POSIX TAR archives) or `Compress-Archive` because WordPress rejects them. Confirm extracted trees have real nested directories.
+Key references:
+- Build: `.\build.ps1` (produces `varner-os-plugin-v23.zip` + `varner-equipment-theme-v23-lite.zip`)
+- Version gate: confirm bump in both plugin header and theme `style.css`
+- The verification matrix in §8 below applies post-deploy
 
 ---
 
