@@ -174,6 +174,12 @@ function varner_os_schedule_catalog_regeneration(bool $force = false): void {
 // Sweep dirty catalog on next request once lock expires
 add_action('init', 'varner_os_maybe_cleanup_dirty_catalog');
 function varner_os_maybe_cleanup_dirty_catalog(): void {
+    // Skip catalog sweep on REST requests — it adds 2 DB reads per call and
+    // the catalog only needs to be fresh for Meta crawlers (handled via template_redirect).
+    if (defined('REST_REQUEST') && REST_REQUEST) {
+        return;
+    }
+
     $is_dirty    = (int)get_option('varner_catalog_dirty', 0) === 1;
     $lock_expiry = (int)get_option('varner_catalog_regen_lock_expiry', 0);
     $is_locked   = (time() < $lock_expiry);
@@ -403,7 +409,7 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('[Varner SW] Pre-caching ' + PRE_CACHE.length + ' assets (v' + CACHE_VERSION + ')');
-                return cache.addAll(PRE_CACHE);
+                return Promise.allSettled(PRE_CACHE.map(u => cache.add(u)));
             })
             .then(() => self.skipWaiting())
     );
@@ -485,16 +491,23 @@ self.addEventListener('fetch', (event) => {
             if (strlen($handoff_nonce) === 32 && ctype_xdigit($handoff_nonce)) {
                 $has_auth_param = (bool) get_transient('varner_handoff_' . $handoff_nonce);
             }
-        } elseif (!empty($_GET['token'])) {
-            $token = sanitize_text_field(wp_unslash($_GET['token']));
-            if (strlen($token) === 32 && ctype_xdigit($token)) {
-                $has_auth_param = (bool) get_transient('varner_mobile_token_' . $token);
-            }
         }
 
-        if (!$has_auth_param && !is_user_logged_in()) {
-            wp_redirect(wp_login_url(home_url('/mobile-app/')));
-            exit;
+        if (!$has_auth_param) {
+            if (!is_user_logged_in()) {
+                wp_redirect(wp_login_url(home_url('/mobile-app/')));
+                exit;
+            }
+            if (!current_user_can('edit_posts')) {
+                status_header(403);
+                nocache_headers();
+                echo '<!DOCTYPE html><meta charset="utf-8"><title>Not authorized</title>'
+                   . '<div style="font-family:-apple-system,sans-serif;max-width:30rem;margin:20vh auto;padding:0 1.5rem;text-align:center;color:#0f172a">'
+                   . '<h1 style="font-size:1.25rem">Not authorized</h1>'
+                   . '<p>This account can\'t use the Varner OS app. Ask an admin to set your role to <strong>Editor</strong>.</p>'
+                   . '<p><a href="' . esc_url(wp_logout_url(home_url('/mobile-app/'))) . '">Sign out</a></p></div>';
+                exit;
+            }
         }
 
         nocache_headers();
@@ -527,9 +540,13 @@ self.addEventListener('fetch', (event) => {
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('<?php echo esc_url_raw(home_url('/sw.js')); ?>')
-                .then(reg => console.log('Service Worker registered!', reg.scope))
-                .catch(err => console.log('Service Worker failed:', err));
+            navigator.serviceWorker.register('<?php echo esc_url_raw(home_url('/sw.js')); ?>', { scope: '/mobile-app/' })
+                .then(reg => {
+                    console.log('SW registered', reg.scope);
+                    return navigator.serviceWorker.getRegistrations();
+                })
+                .then(regs => regs && regs.forEach(r => { if (!r.scope.endsWith('/mobile-app/')) r.unregister(); }))
+                .catch(err => console.log('SW failed', err));
         });
     }
     </script>

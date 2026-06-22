@@ -61,7 +61,10 @@ export const PwaLoginGate = ({ mobileToken, setMobileToken, toast, onAuthenticat
     setAuthError('');
     try {
       localStorage.setItem('varner_mobile_token', tokenToVerify);
-      await apiFetch('/inventory');
+      localStorage.setItem('varner_mobile_token_created_at', String(Date.now()));
+      // Use /me (lightweight) instead of /inventory (heavy — loads ALL equipment)
+      // to verify the token. The full inventory loads after auth via useInventory.
+      await apiFetch('/me');
       setMobileToken(tokenToVerify);
       onAuthenticated();
     } catch (err) {

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.195 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.195
+ * Description: Version 1.23.198 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.198
  * Author: hwy559.com
  */
 
@@ -249,6 +249,16 @@ function varner_authenticate_mobile_token(int $user_id): int {
 
 add_action('init', 'varner_update_session_activity');
 function varner_update_session_activity(): void {
+    // Skip session tracking on read-only REST requests — they fire in bursts
+    // (7+ calls on app load) and don't represent meaningful user actions.
+    // Only track activity on mutations (POST/PATCH/DELETE) and page views.
+    if (defined('REST_REQUEST') && REST_REQUEST) {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method === 'GET') {
+            return;
+        }
+    }
+
     if (!current_user_can('edit_posts')) {
         return;
     }
@@ -267,15 +277,12 @@ function varner_update_session_activity(): void {
     global $wpdb;
     $table = $wpdb->prefix . 'varner_user_sessions';
 
-    $token     = '';
-    $is_mobile = false;
+    $token = '';
 
     if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token     = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-        $is_mobile = true;
+        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
     } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token     = sanitize_text_field($matches[1]);
-        $is_mobile = true;
+        $token = sanitize_text_field($matches[1]);
     }
     // Note: $_GET['mobile_token'] intentionally removed — GET params leak into logs.
 
@@ -316,27 +323,6 @@ function varner_update_session_activity(): void {
             );
         }
     } else {
-        if ($is_mobile) {
-            $active_mobile = $wpdb->get_results($wpdb->prepare(
-                "SELECT id, session_token FROM {$table} WHERE user_id = %d AND logout_at IS NULL AND session_token != %s",
-                $user_id,
-                $token
-            ));
-
-            foreach ($active_mobile as $old_sess) {
-                if (strlen($old_sess->session_token) === 32 && ctype_xdigit($old_sess->session_token)) {
-                    $wpdb->update(
-                        $table,
-                        array('logout_at' => current_time('mysql'), 'ended_reason' => 'superseded'),
-                        array('id' => $old_sess->id),
-                        array('%s', '%s'),
-                        array('%d')
-                    );
-                    delete_transient('varner_mobile_token_' . $old_sess->session_token);
-                }
-            }
-        }
-
         $wpdb->insert(
             $table,
             array(

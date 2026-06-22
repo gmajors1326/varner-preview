@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, X, Edit2, Copy, Image as ImageIcon, Eye, Star, Box, TrendingUp } from 'lucide-react';
 import { FilterSidebar } from './FilterSidebar';
 import { FilterTag } from './Common/Navigation';
+import { getDaysInStock } from '../utils/helpers';
 
 export const InventoryTable = ({
   filteredInventory,

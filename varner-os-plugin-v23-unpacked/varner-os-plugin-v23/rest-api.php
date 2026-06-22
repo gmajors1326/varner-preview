@@ -142,6 +142,13 @@ function varner_register_rest_routes(): void {
         'callback'            => 'varner_api_me',
         'permission_callback' => 'is_user_logged_in',
     ));
+    // Single-request bootstrap — returns all data the app needs on initial load.
+    // Eliminates 7 parallel REST calls that trigger Cloudflare 429 rate limits.
+    register_rest_route($ns, '/bootstrap', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_bootstrap',
+        'permission_callback' => $auth,
+    ));
     register_rest_route($ns, '/logout', array(
         'methods'             => 'POST',
         'callback'            => 'varner_api_logout',
@@ -926,6 +933,97 @@ function varner_api_me() {
         'last_name'    => $user->last_name,
         'initials'     => varner_os_user_initials($user),
         'roles'        => array_values($user->roles),
+    ));
+}
+
+/**
+ * GET /varner/v1/bootstrap
+ *
+ * Returns everything the app needs in a single request to avoid
+ * Cloudflare 429 rate limiting from parallel API calls on load.
+ * Replaces: /inventory + /inventory/deleted + /me + /brands +
+ *           /categories + /subcategories + /sub-subcategories
+ */
+function varner_api_bootstrap(): WP_REST_Response {
+    $user = wp_get_current_user();
+
+    // ── Inventory (same logic as varner_api_get_inventory, unpaginated) ──
+    $args = array(
+        'post_type'      => 'equipment',
+        'post_status'    => current_user_can('edit_others_posts') ? array('publish', 'draft') : 'publish',
+        'posts_per_page' => -1,
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+    );
+    if (!current_user_can('edit_others_posts')) {
+        $args['meta_query'] = array(
+            'relation' => 'OR',
+            array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
+            array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
+        );
+    }
+    $query = new WP_Query($args);
+
+    // Prime attachment caches in bulk (same optimization as the inventory endpoint)
+    $attachment_ids = array();
+    foreach ($query->posts as $p) {
+        $thumb_id = get_post_thumbnail_id($p->ID);
+        if ($thumb_id) $attachment_ids[] = intval($thumb_id);
+        $bulk = get_post_meta($p->ID);
+        if (!empty($bulk['gallery'][0])) {
+            $gallery = maybe_unserialize($bulk['gallery'][0]);
+            if (is_array($gallery)) {
+                foreach ($gallery as $g_id) {
+                    if (is_numeric($g_id)) $attachment_ids[] = intval($g_id);
+                }
+            }
+        }
+    }
+    if (!empty($attachment_ids)) {
+        _prime_post_caches(array_unique(array_filter($attachment_ids)), false, true);
+    }
+
+    $context = current_user_can('edit_others_posts') ? 'edit' : 'public';
+    $inventory = array_map(function (WP_Post $p) use ($context): array {
+        return varner_format_unit($p->ID, $context);
+    }, $query->posts);
+
+    // ── Deleted inventory ──
+    $deleted = array();
+    if (current_user_can('edit_others_posts')) {
+        $del_query = new WP_Query(array(
+            'post_type'      => 'equipment',
+            'post_status'    => 'trash',
+            'posts_per_page' => 200,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ));
+        $deleted = array_map(function (WP_Post $p): array {
+            return varner_format_unit($p->ID);
+        }, $del_query->posts);
+    }
+
+    // ── Taxonomy lists ──
+    $brands           = get_option('varner_brands', function_exists('varner_default_brands') ? varner_default_brands() : array());
+    $categories       = get_option('varner_categories', array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements'));
+    $subcategories    = get_option('varner_subcategories', array());
+    $sub_subcategories = get_option('varner_sub_subcategories', array());
+
+    return rest_ensure_response(array(
+        'inventory'         => $inventory,
+        'deleted'           => $deleted,
+        'me'                => array(
+            'id'           => $user->ID,
+            'display_name' => $user->display_name,
+            'first_name'   => $user->first_name,
+            'last_name'    => $user->last_name,
+            'initials'     => varner_os_user_initials($user),
+            'roles'        => array_values($user->roles),
+        ),
+        'brands'            => $brands,
+        'categories'        => $categories,
+        'subcategories'     => $subcategories,
+        'sub_subcategories' => $sub_subcategories,
     ));
 }
 

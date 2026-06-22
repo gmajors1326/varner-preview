@@ -49,6 +49,9 @@ function sanitizePayload(obj) {
   return obj;
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAYS = [1500, 3000]; // ms — escalating backoff
+
 export async function apiFetch(path, options = {}) {
   const token = getMobileToken();
   const headers = {
@@ -68,22 +71,31 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
-  const res = await fetch(`${API}${path}`, {
-    ...options,
-    headers,
-    ...(body ? { body } : {}),
-  });
-  if (!res.ok) {
-    // Mobile context: 401 means the token expired server-side.
-    // Clear it and signal the auth gate to reset — no hard page reload needed.
-    if (res.status === 401 && getMobileToken()) {
-      localStorage.removeItem('varner_mobile_token');
-      window.dispatchEvent(new CustomEvent('varner:token-expired'));
+  const fetchOpts = { credentials: token ? 'omit' : 'same-origin', ...options, headers, ...(body ? { body } : {}) };
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetch(`${API}${path}`, fetchOpts);
+
+    // Retry on rate-limit (429) or server overload (503) with backoff
+    if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRIES) {
+      const delay = RETRY_DELAYS[attempt] ?? 3000;
+      console.warn(`[Varner] ${res.status} on ${path} — retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+      await new Promise(r => setTimeout(r, delay));
+      continue;
     }
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message ?? `Request failed: ${res.status}`);
+
+    if (!res.ok) {
+      // Mobile context: 401 means the token expired server-side.
+      // Clear it and signal the auth gate to reset — no hard page reload needed.
+      if (res.status === 401 && getMobileToken()) {
+        localStorage.removeItem('varner_mobile_token');
+        window.dispatchEvent(new CustomEvent('varner:token-expired'));
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message ?? `Request failed: ${res.status}`);
+    }
+    return res.json();
   }
-  return res.json();
 }
 
 export async function uploadFile(file) {

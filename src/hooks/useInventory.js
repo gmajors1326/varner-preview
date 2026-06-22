@@ -120,12 +120,24 @@ export function useInventory(showToast, setActiveTab) {
       handleFullEdit(postId);
     }
 
+    // ── Staggered loading to avoid Cloudflare 429 rate limits ──
+    // Phase 1: Load inventory immediately (critical path — user sees the list)
     loadInventory();
-    apiFetch('/me').then(setCurrentUser).catch(() => { });
-    apiFetch('/brands').then(setBrands).catch(() => { });
-    apiFetch('/categories').then(setCategories).catch(() => { });
-    apiFetch('/subcategories').then(setSubcategories).catch(() => { });
-    apiFetch('/sub-subcategories').then(setSubSubcategories).catch(() => { });
+
+    // Phase 2: Load auxiliary data after a delay (brands, categories, user profile)
+    // These are only needed when the user opens the editor, so a brief delay is invisible
+    const auxTimer = setTimeout(() => {
+      apiFetch('/me').then(setCurrentUser).catch(() => { });
+      apiFetch('/brands').then(setBrands).catch(() => { });
+      // Small stagger between category calls
+      setTimeout(() => {
+        apiFetch('/categories').then(setCategories).catch(() => { });
+        apiFetch('/subcategories').then(setSubcategories).catch(() => { });
+        apiFetch('/sub-subcategories').then(setSubSubcategories).catch(() => { });
+      }, 400);
+    }, 600);
+
+    return () => clearTimeout(auxTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadInventory]);
 
