@@ -5,7 +5,7 @@ get_header();
 
     <section class="pt-32 pb-16 bg-slate-950 text-white">
         <div class="max-w-7xl mx-auto px-4 space-y-6">
-            <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em]">Varner Equipment</div>
+            <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em]">Varner Equipment</div>
             <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase"><?php echo esc_html( get_the_title() ?: 'Product Videos' ); ?></h1>
             <?php if (get_the_content()): ?>
                 <div class="text-slate-300 max-w-2xl font-bold">
@@ -13,7 +13,7 @@ get_header();
                 </div>
             <?php endif; ?>
             <div class="pt-4">
-                <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" class="inline-block bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-red-700 transition-all">View Our YouTube Channel</a>
+                <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" class="inline-block bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-700 transition-all">View Our YouTube Channel</a>
             </div>
         </div>
     </section>
@@ -61,7 +61,19 @@ get_header();
                                         <div class="aspect-video w-full bg-slate-100 relative">
                                             <?php 
                                             if ($youtube_link) {
-                                                echo $youtube_link;
+                                                echo wp_kses($youtube_link, array(
+                                                    'iframe' => array(
+                                                        'src'             => array(),
+                                                        'width'           => array(),
+                                                        'height'          => array(),
+                                                        'frameborder'     => array(),
+                                                        'allowfullscreen' => array(),
+                                                        'allow'           => array(),
+                                                        'title'           => array(),
+                                                        'loading'         => array(),
+                                                        'referrerpolicy'  => array(),
+                                                    ),
+                                                ));
                                             } else {
                                                 echo '<div class="absolute inset-0 flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Video Unavailable</div>';
                                             }

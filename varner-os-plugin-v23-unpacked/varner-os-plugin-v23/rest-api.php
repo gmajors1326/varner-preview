@@ -67,7 +67,7 @@ function varner_register_rest_routes(): void {
     register_rest_route($ns, '/inventory/(?P<id>\d+)/permanent', array(
         'methods'             => 'DELETE',
         'callback'            => 'varner_api_permanent_delete',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('edit_others_posts'); },
     ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)/ledger', array(
         'methods'             => 'GET',
@@ -353,7 +353,11 @@ function varner_api_delete_staff(WP_REST_Request $req): WP_REST_Response|WP_Erro
 // ─── 2. TAXONOMY HANDLERS ────────────────────────────────────────────────────
 
 function varner_api_get_brands(): WP_REST_Response {
-    return rest_ensure_response(get_option('varner_brands', varner_default_brands()));
+    $brands = get_option('varner_brands');
+    if (!is_array($brands) || empty($brands)) {
+        $brands = varner_default_brands();
+    }
+    return rest_ensure_response($brands);
 }
 
 function varner_api_save_list(string $param, string $option, WP_REST_Request $request): WP_REST_Response {
@@ -397,9 +401,22 @@ function varner_api_save_brands(WP_REST_Request $r): WP_REST_Response {
     return varner_api_save_list('brands', 'varner_brands', $r);
 }
 
+function varner_default_categories(): array {
+    return array(
+        'Utility Vehicles', 'Tractors', 'Planting Equipment', 'Tillage Equipment',
+        'Hay and Forage Equipment', 'Chemical Applicators', 'Manure Handling',
+        'Manure Spreaders', 'Grain Handling / Storage Equipment', 'Ag Trailers',
+        'Outdoor Power', 'Other Equipment', 'Turf Equipment', 'Trucks',
+        'Semi-Trailers', 'Trailers',
+    );
+}
+
 function varner_api_get_categories(): WP_REST_Response {
-    $default = array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements');
-    return rest_ensure_response(get_option('varner_categories', $default));
+    $categories = get_option('varner_categories');
+    if (!is_array($categories) || empty($categories)) {
+        $categories = varner_default_categories();
+    }
+    return rest_ensure_response($categories);
 }
 
 function varner_api_save_categories(WP_REST_Request $r): WP_REST_Response {
@@ -407,7 +424,8 @@ function varner_api_save_categories(WP_REST_Request $r): WP_REST_Response {
 }
 
 function varner_api_get_subcategories(): WP_REST_Response {
-    return rest_ensure_response(get_option('varner_subcategories', array()));
+    $items = get_option('varner_subcategories');
+    return rest_ensure_response(is_array($items) ? $items : array());
 }
 
 function varner_api_save_subcategories(WP_REST_Request $r): WP_REST_Response {
@@ -415,7 +433,8 @@ function varner_api_save_subcategories(WP_REST_Request $r): WP_REST_Response {
 }
 
 function varner_api_get_sub_subcategories(): WP_REST_Response {
-    return rest_ensure_response(get_option('varner_sub_subcategories', array()));
+    $items = get_option('varner_sub_subcategories');
+    return rest_ensure_response(is_array($items) ? $items : array());
 }
 
 function varner_api_save_sub_subcategories(WP_REST_Request $r): WP_REST_Response {
@@ -1004,8 +1023,10 @@ function varner_api_bootstrap(): WP_REST_Response {
     }
 
     // ── Taxonomy lists ──
-    $brands           = get_option('varner_brands', function_exists('varner_default_brands') ? varner_default_brands() : array());
-    $categories       = get_option('varner_categories', array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements'));
+    $raw_brands       = get_option('varner_brands');
+    $brands           = (is_array($raw_brands) && !empty($raw_brands)) ? $raw_brands : (function_exists('varner_default_brands') ? varner_default_brands() : array());
+    $raw_categories   = get_option('varner_categories');
+    $categories       = (is_array($raw_categories) && !empty($raw_categories)) ? $raw_categories : varner_default_categories();
     $subcategories    = get_option('varner_subcategories', array());
     $sub_subcategories = get_option('varner_sub_subcategories', array());
 

@@ -63,11 +63,11 @@ $finance_url    = add_query_arg( array(
             <?php endif; ?>
 
             <?php if ( $is_sold ) : ?>
-            <span class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full z-10 shadow-lg">
+            <span class="absolute top-3 right-3 bg-red-600 text-white text-xs font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full z-10 shadow-lg">
                 Sold
             </span>
             <?php elseif ( $is_pending ) : ?>
-            <span class="absolute top-3 right-3 bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full z-10 shadow-lg">
+            <span class="absolute top-3 right-3 bg-amber-500 text-white text-xs font-black uppercase tracking-[0.25em] px-3 py-1.5 rounded-full z-10 shadow-lg">
                 Sale Pending
             </span>
             <?php endif; ?>
@@ -116,7 +116,7 @@ $finance_url    = add_query_arg( array(
             <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5"><?php echo esc_html( strtoupper( $make ) ); ?></div>
             <?php endif; ?>
             <h3 class="font-black text-slate-900 text-[15px] leading-snug line-clamp-2"><?php echo esc_html( $title_text ); ?></h3>
-            <div class="text-red-600 text-[10px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></div>
+            <div class="text-red-600 text-xs font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></div>
         </div>
 
         <!-- Price -->
@@ -148,7 +148,7 @@ $finance_url    = add_query_arg( array(
 
         <!-- View Details -->
         <a href="<?php echo esc_url( $permalink ); ?>"
-           class="flex items-center justify-center gap-2 bg-red-600 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-all shadow-sm">
+           class="flex items-center justify-center gap-2 bg-red-600 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-all shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             View Details
         </a>
@@ -181,7 +181,7 @@ $finance_url    = add_query_arg( array(
 
         <!-- Contact buttons -->
         <div class="border-t border-slate-100 pt-4 flex gap-2">
-            <a href="mailto:contact@varnerequipment.com"
+            <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>"
                class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 E-mail Us

@@ -80,8 +80,8 @@ export const HistoryTab = ({ deletedItems, onRestore, onPermanentDelete, onBulkR
         </div>
       </div>
       
-      <div className="overflow-x-auto p-2 no-scrollbar">
-        <table className="w-full text-left border-collapse min-w-[800px]">
+      <div className="hidden md:block overflow-x-auto p-2 no-scrollbar">
+        <table className="w-full text-left border-collapse min-w-[640px]">
           <thead>
             <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
               {deletedItems.length > 0 && (
@@ -144,6 +144,7 @@ export const HistoryTab = ({ deletedItems, onRestore, onPermanentDelete, onBulkR
                           onClick={() => onPermanentDelete(item)} 
                           className="bg-slate-100 text-slate-400 p-2.5 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-slate-200 cursor-pointer" 
                           title="Permanently Delete"
+                          aria-label="Permanently delete"
                         >
                           <Trash2 size={16}/>
                         </button>
@@ -155,6 +156,51 @@ export const HistoryTab = ({ deletedItems, onRestore, onPermanentDelete, onBulkR
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Mobile: stacked cards ── */}
+      <div className="md:hidden divide-y divide-slate-100">
+        {deletedItems.length === 0 ? (
+          <div className="p-12 text-center text-slate-300 font-black uppercase text-xs tracking-widest">
+            Recycle bin is empty
+          </div>
+        ) : (
+          deletedItems.map(item => {
+            const isSelected = selectedIds.includes(item.id);
+            return (
+              <div 
+                key={item.id} 
+                className={`p-4 space-y-3 transition-all cursor-pointer ${isSelected ? 'bg-red-50/20' : 'hover:bg-slate-50'}`}
+                onClick={() => handleSelectItem(item.id)}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0" onClick={e => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={isSelected}
+                      onChange={() => handleSelectItem(item.id)}
+                      className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer accent-red-600 shrink-0"
+                    />
+                    <span className="font-mono font-bold text-sm text-slate-500 shrink-0">{item.stock}</span>
+                  </div>
+                  <div className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${isSelected ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500'}`}>{item.deletedAt ? new Date(item.deletedAt).toLocaleDateString() : '—'}</div>
+                </div>
+                <div className="pl-7">
+                  <p className="font-black text-base uppercase leading-tight text-slate-800">{item.year} {item.make} {item.model}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest mt-0.5 text-slate-400">{item.category}</p>
+                </div>
+                <div className="pl-7 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => onRestore(item)} className="bg-green-50 text-green-600 px-3.5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 hover:bg-green-100 transition-all border border-green-100 active:scale-95 cursor-pointer">
+                    <RotateCcw size={12}/> Restore
+                  </button>
+                  <button onClick={() => onPermanentDelete(item)} className="bg-slate-100 text-slate-400 p-2 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all border border-slate-200 active:scale-95 cursor-pointer" title="Permanently Delete" aria-label="Permanently delete">
+                    <Trash2 size={14}/>
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

@@ -41,7 +41,7 @@ export const InventoryTable = ({
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0 mr-1">Active Filters:</span>
           {searchQuery && (
             <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-              <button onClick={() => onSearch('')} className="font-black leading-none hover:text-red-200">×</button>
+              <button onClick={() => onSearch('')} className="font-black leading-none hover:text-red-200" aria-label="Clear search">×</button>
               {searchQuery.toUpperCase()}
             </span>
           )}
@@ -53,25 +53,25 @@ export const InventoryTable = ({
           )}
           {(activeFilters.yearMin || activeFilters.yearMax) && (
             <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-              <button onClick={() => { onFilterChange('yearMin', ''); onFilterChange('yearMax', ''); }} className="font-black leading-none hover:text-red-200">×</button>
+              <button onClick={() => { onFilterChange('yearMin', ''); onFilterChange('yearMax', ''); }} className="font-black leading-none hover:text-red-200" aria-label="Clear year filter">×</button>
               YEAR: {activeFilters.yearMin || '?'}–{activeFilters.yearMax || '?'}
             </span>
           )}
           {(activeFilters.priceMin || activeFilters.priceMax) && (
             <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-              <button onClick={() => { onFilterChange('priceMin', ''); onFilterChange('priceMax', ''); }} className="font-black leading-none hover:text-red-200">×</button>
+              <button onClick={() => { onFilterChange('priceMin', ''); onFilterChange('priceMax', ''); }} className="font-black leading-none hover:text-red-200" aria-label="Clear price filter">×</button>
               PRICE: ${activeFilters.priceMin || '0'}–${activeFilters.priceMax || '∞'}
             </span>
           )}
           {activeFilters.stockSearch && (
             <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-              <button onClick={() => onFilterChange('stockSearch', '')} className="font-black leading-none hover:text-red-200">×</button>
+              <button onClick={() => onFilterChange('stockSearch', '')} className="font-black leading-none hover:text-red-200" aria-label="Clear stock filter">×</button>
               STOCK #: {activeFilters.stockSearch}
             </span>
           )}
           {activeFilters.vinSearch && (
             <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-              <button onClick={() => onFilterChange('vinSearch', '')} className="font-black leading-none hover:text-red-200">×</button>
+              <button onClick={() => onFilterChange('vinSearch', '')} className="font-black leading-none hover:text-red-200" aria-label="Clear VIN filter">×</button>
               VIN: {activeFilters.vinSearch}
             </span>
           )}
@@ -87,7 +87,7 @@ export const InventoryTable = ({
             <div className="absolute inset-y-0 left-0 w-80 bg-white overflow-y-auto shadow-2xl">
               <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                 <h3 className="font-black text-sm uppercase tracking-widest">Filters</h3>
-                <button onClick={() => setShowFilterPanel(false)} className="p-1 text-gray-400 hover:text-gray-700"><X size={20} /></button>
+                <button onClick={() => setShowFilterPanel(false)} className="p-1 text-gray-400 hover:text-gray-700" aria-label="Close filters"><X size={20} /></button>
               </div>
               <FilterSidebar inventoryList={inventoryList} filters={activeFilters}
                 searchQuery={searchQuery} onFilterChange={onFilterChange}
@@ -98,13 +98,15 @@ export const InventoryTable = ({
 
         {/* Table card */}
         <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-xl overflow-hidden" style={{ minWidth: 0 }}>
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
+          <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 w-full">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Inventory Ledger</span>
+          </div>
+          <div className="px-6 py-3 border-b border-slate-100 bg-white flex items-center justify-between w-full gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <button onClick={() => setShowFilterPanel(true)}
-                className="xl:hidden flex items-center gap-2 bg-white border-2 border-slate-200 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:border-red-500 transition-colors">
+                className="xl:hidden flex items-center gap-2 bg-white border-2 border-slate-200 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:border-red-500 transition-colors shrink-0">
                 <Search size={14} /> Filters
               </button>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Inventory Ledger</span>
             </div>
             <span className="bg-slate-900 text-white text-[11px] font-black px-4 py-2 rounded-full uppercase tracking-widest shrink-0">
               {filteredInventory.length} Unit{filteredInventory.length !== 1 ? 's' : ''} Found
@@ -196,7 +198,8 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'show_on_website')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}
+                                aria-label={`${item.showOnWebsite ? 'Disable' : 'Enable'} website visibility`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
@@ -204,7 +207,8 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'facebook_sync')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}
+                                aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.facebookSync ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
@@ -212,7 +216,8 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'featured')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
+                                aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
@@ -220,16 +225,17 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggleDraft(item)}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}
+                                aria-label={`${item.status === 'Draft' ? 'Publish' : 'Set as draft'}`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.status === 'Draft' ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
                           </td>
                           <td className="px-6 py-5 text-right">
                             <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                              <button onClick={() => onEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit"><Edit2 size={16} /></button>
-                              <button onClick={() => onClone(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone"><Copy size={16} /></button>
-                              <button onClick={() => onDelete(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete"><X size={16} /></button>
+                              <button onClick={() => onEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit" aria-label={`Edit ${item.year} ${item.make} ${item.model}`}><Edit2 size={16} /></button>
+                              <button onClick={() => onClone(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone" aria-label={`Clone ${item.year} ${item.make} ${item.model}`}><Copy size={16} /></button>
+                              <button onClick={() => onDelete(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete" aria-label={`Delete ${item.year} ${item.make} ${item.model}`}><X size={16} /></button>
                             </div>
                           </td>
                         </tr>
@@ -273,37 +279,43 @@ export const InventoryTable = ({
                         </div>
                       </div>
 
-                      {/* Toggles row */}
-                      <div className="px-4 pb-2 flex items-center gap-4 flex-wrap border-t border-slate-100 pt-3" onClick={e => e.stopPropagation()}>
-                        <label className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-slate-400 cursor-pointer">
+                      {/* Toggles — full-width rows, label left / toggle right */}
+                      <div className="px-4 py-2 border-t border-slate-100 space-y-2" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Website Visibility</span>
                           <button onClick={() => onToggle(item, 'show_on_website')}
-                            className={`w-9 h-5 rounded-full relative transition-all ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}>
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${item.showOnWebsite ? 'left-4' : 'left-0.5'}`} />
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}
+                            aria-label={`${item.showOnWebsite ? 'Disable' : 'Enable'} website visibility`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`} />
                           </button>
-                          Website
-                        </label>
-                        <label className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-slate-400 cursor-pointer">
+                        </div>
+                        <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Meta Sync</span>
                           <button onClick={() => onToggle(item, 'facebook_sync')}
-                            className={`w-9 h-5 rounded-full relative transition-all ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${item.facebookSync ? 'left-4' : 'left-0.5'}`} />
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}
+                            aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.facebookSync ? 'left-7' : 'left-1'}`} />
                           </button>
-                          Meta
-                        </label>
-                        <label className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-slate-400 cursor-pointer">
+                        </div>
+                        <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Featured</span>
                           <button onClick={() => onToggle(item, 'featured')}
-                            className={`w-9 h-5 rounded-full relative transition-all ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}>
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${item.featured ? 'left-4' : 'left-0.5'}`} />
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
+                            aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
                           </button>
-                          Featured
-                        </label>
-                        <label className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-slate-400 cursor-pointer">
+                        </div>
+                        <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Draft</span>
                           <button onClick={() => onToggleDraft(item)}
-                            className={`w-9 h-5 rounded-full relative transition-all ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}>
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${item.status === 'Draft' ? 'left-4' : 'left-0.5'}`} />
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}
+                            aria-label={`${item.status === 'Draft' ? 'Publish' : 'Set as draft'}`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.status === 'Draft' ? 'left-7' : 'left-1'}`} />
                           </button>
-                          Draft
-                        </label>
-                        <span className="ml-auto text-[8px] font-black text-slate-300 uppercase tracking-wider">{getDaysInStock(item)}</span>
+                        </div>
+                        <div className="flex justify-end pt-1">
+                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-wider">{getDaysInStock(item)}</span>
+                        </div>
                       </div>
 
                       {/* Action buttons row */}

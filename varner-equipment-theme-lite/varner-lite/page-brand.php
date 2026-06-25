@@ -219,9 +219,9 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4">
                     <div class="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
                         <span class="text-3xl font-black text-white"><?php echo number_format_i18n( $total_units ); ?></span>
-                        <span class="text-slate-400 font-black uppercase tracking-widest text-[10px] leading-tight">Units<br/>Available</span>
+                        <span class="text-slate-400 font-black uppercase tracking-widest text-xs leading-tight">Units<br/>Available</span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">
+                    <div class="flex items-center gap-2 text-slate-400 font-black uppercase tracking-[0.2em] text-xs">
                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         Live Inventory Tracking
                     </div>
@@ -253,7 +253,7 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
 
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
                         Showing <?php echo number_format_i18n( $brand_query->post_count ); ?> of <?php echo number_format_i18n( $total_units ); ?> units
                     </p>
                 </div>

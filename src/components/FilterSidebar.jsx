@@ -45,12 +45,14 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
 
   const SectionHeader = ({ label, sKey, applied }) => (
     <button onClick={() => toggleSection(sKey)}
+      aria-expanded={sections[sKey]}
+      aria-controls={`section-${sKey}`}
       className="w-full flex items-center justify-between py-3.5 border-b border-gray-200 text-left hover:bg-gray-50 transition-colors px-2">
       <div className="flex items-center gap-2">
         <span className="font-bold text-sm text-gray-900 leading-none">{label}</span>
         {applied && <span className="text-[10px] font-bold text-red-600 leading-none">- Applied</span>}
       </div>
-      <span className="text-gray-500 font-bold text-sm select-none w-4 text-center">{sections[sKey] ? '−' : '>'}</span>
+      <span className="text-gray-500 font-bold text-sm select-none w-4 text-center" aria-hidden="true">{sections[sKey] ? '−' : '>'}</span>
     </button>
   );
 
@@ -65,7 +67,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
   );
 
   const ShowAllBtn = ({ show, onToggle }) => (
-    <button onClick={onToggle} className="mt-3 w-full bg-slate-800 text-white text-[11px] font-bold py-2.5 rounded-lg hover:bg-slate-700 transition-colors">
+    <button onClick={onToggle} aria-expanded={show} className="mt-3 w-full bg-slate-800 text-white text-[11px] font-bold py-2.5 rounded-lg hover:bg-slate-700 transition-colors">
       {show ? '− Show Less' : '+ Show All'}
     </button>
   );
@@ -150,7 +152,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
               <input type="number" placeholder="Min" value={yearInput.min} onChange={e => setYearInput(p => ({ ...p, min: e.target.value }))} className="w-20 bg-slate-50 border-2 border-slate-100 rounded-lg p-2 text-xs font-bold text-center focus:border-red-500 outline-none [appearance:textfield]"/>
               <span className="text-slate-300">-</span>
               <input type="number" placeholder="Max" value={yearInput.max} onChange={e => setYearInput(p => ({ ...p, max: e.target.value }))} className="w-20 bg-slate-50 border-2 border-slate-100 rounded-lg p-2 text-xs font-bold text-center focus:border-red-500 outline-none [appearance:textfield]"/>
-              <button onClick={() => { onFilterChange('yearMin', yearInput.min); onFilterChange('yearMax', yearInput.max); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all">
+              <button onClick={() => { onFilterChange('yearMin', yearInput.min); onFilterChange('yearMax', yearInput.max); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all" aria-label="Apply year filter">
                 <Search size={14}/>
               </button>
             </div>
@@ -163,7 +165,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
               <input type="number" placeholder="$Min" value={priceInput.min} onChange={e => setPriceInput(p => ({ ...p, min: e.target.value }))} className="w-24 bg-slate-50 border-2 border-slate-100 rounded-lg p-2 text-xs font-bold text-center focus:border-red-500 outline-none [appearance:textfield]"/>
               <span className="text-slate-300">-</span>
               <input type="number" placeholder="$Max" value={priceInput.max} onChange={e => setPriceInput(p => ({ ...p, max: e.target.value }))} className="w-24 bg-slate-50 border-2 border-slate-100 rounded-lg p-2 text-xs font-bold text-center focus:border-red-500 outline-none [appearance:textfield]"/>
-              <button onClick={() => { onFilterChange('priceMin', priceInput.min); onFilterChange('priceMax', priceInput.max); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all">
+              <button onClick={() => { onFilterChange('priceMin', priceInput.min); onFilterChange('priceMax', priceInput.max); }} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all" aria-label="Apply price filter">
                 <Search size={14}/>
               </button>
             </div>
@@ -236,42 +238,46 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
         {/* Stock Status */}
         <SectionHeader label="Stock Status" sKey="listingType" applied={filters.status.length > 0} />
         {sections.listingType && (
-          <div className="py-2">
+          <fieldset id="section-listingType" className="py-2">
+            <legend className="sr-only">Stock Status</legend>
             {allStatuses.map(s => (
               <CheckRow key={s} label={s} count={countOf('status', s)}
                 checked={filters.status.includes(s)} onChange={() => toggleArr('status', s)} />
             ))}
-          </div>
+          </fieldset>
         )}
 
         {/* Category */}
         <SectionHeader label="Category" sKey="category" applied={filters.categories.length > 0} />
         {sections.category && (
-          <div className="py-2">
+          <fieldset id="section-category" className="py-2">
+            <legend className="sr-only">Category</legend>
             {allCategories.map(cat => (
               <CheckRow key={cat} label={cat} count={countOf('category', cat)}
                 checked={filters.categories.includes(cat)} onChange={() => toggleArr('categories', cat)} />
             ))}
-          </div>
+          </fieldset>
         )}
 
         {/* Manufacturer */}
         <SectionHeader label="Manufacturer" sKey="manufacturer" applied={filters.makes.length > 0} />
         {sections.manufacturer && (
-          <div className="py-2">
+          <fieldset id="section-manufacturer" className="py-2">
+            <legend className="sr-only">Manufacturer</legend>
             {sortedMakes.length > 5 && <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Popular</p>}
             {displayMakes.map(make => (
               <CheckRow key={make} label={make} count={makeCounts[make]}
                 checked={filters.makes.includes(make)} onChange={() => toggleArr('makes', make)} />
             ))}
             {sortedMakes.length > 5 && <ShowAllBtn show={showAllMakes} onToggle={() => setShowAllMakes(!showAllMakes)} />}
-          </div>
+          </fieldset>
         )}
 
         {/* Model */}
         <SectionHeader label="Model" sKey="model" applied={filters.models.length > 0} />
         {sections.model && (
-          <div className="py-2">
+          <fieldset id="section-model" className="py-2">
+            <legend className="sr-only">Model</legend>
             {displayMakeGroups.map(make => {
               const models = Object.entries(modelsByMake[make] || {}).sort(([a], [b]) => a.localeCompare(b));
               if (!models.length) return null;
@@ -292,13 +298,13 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
               );
             })}
             {makesForModels.length > 3 && <ShowAllBtn show={showAllModels} onToggle={() => setShowAllModels(!showAllModels)} />}
-          </div>
+          </fieldset>
         )}
 
         {/* Year */}
         <SectionHeader label="Year" sKey="year" applied={!!(filters.yearMin || filters.yearMax)} />
         {sections.year && (
-          <div className="py-2">
+          <div id="section-year" className="py-2">
             <div className="flex items-center gap-1.5">
               <input type="number" placeholder="Min" value={yearInput.min}
                 onChange={e => setYearInput(p => ({ ...p, min: e.target.value }))}
@@ -318,7 +324,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
         {/* Price */}
         <SectionHeader label="Price" sKey="price" applied={!!(filters.priceMin || filters.priceMax)} />
         {sections.price && (
-          <div className="py-2">
+          <div id="section-price" className="py-2">
             <div className="flex items-center gap-1.5">
               <input type="number" placeholder="$Min" value={priceInput.min}
                 onChange={e => setPriceInput(p => ({ ...p, min: e.target.value }))}
@@ -338,12 +344,13 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
         {/* Condition */}
         <SectionHeader label="Condition" sKey="condition" applied={filters.conditions.length > 0} />
         {sections.condition && (
-          <div className="py-2">
+          <fieldset id="section-condition" className="py-2">
+            <legend className="sr-only">Condition</legend>
             {allConditions.map(c => (
               <CheckRow key={c} label={c} count={countOf('condition', c)}
                 checked={filters.conditions.includes(c)} onChange={() => toggleArr('conditions', c)} />
             ))}
-          </div>
+          </fieldset>
         )}
 
 

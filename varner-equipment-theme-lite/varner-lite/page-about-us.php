@@ -6,7 +6,7 @@ get_header();
     <section class="pt-32 pb-24 bg-slate-50 min-h-[60vh]">
         <div class="max-w-7xl mx-auto px-4">
             <div class="mb-12">
-                <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Varner Equipment</div>
+                <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment</div>
                 <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php echo esc_html( get_the_title() ?: 'About Us' ); ?></h1>
                 <div class="w-24 h-2 bg-red-600 mb-10"></div>
             </div>

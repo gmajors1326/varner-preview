@@ -64,16 +64,16 @@ $active_filter_count =
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div class="max-w-3xl">
-                <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Varner Equipment Segment</div>
+                <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment Segment</div>
                 <h1 class="text-5xl md:text-7xl font-black tracking-tight uppercase mb-4 leading-[1.1]"><?php echo esc_html($seo['h1']); ?></h1>
                 <p class="text-lg text-slate-400 font-bold leading-relaxed"><?php echo esc_html($seo['sub']); ?></p>
             </div>
             <div class="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl shrink-0 min-w-[200px]">
-                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Available Units</div>
+                <div class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Available Units</div>
                 <div class="text-4xl font-black text-white"><?php echo $total; ?></div>
                 <div class="mt-4 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-300">Live Inventory</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-300">Live Inventory</span>
                 </div>
             </div>
         </div>
@@ -118,7 +118,7 @@ $active_filter_count =
 
                 <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                         Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
                     </p>
                 </div>
@@ -138,7 +138,7 @@ $active_filter_count =
                             </div>
                             <p class="text-slate-900 font-black uppercase tracking-widest text-sm mb-2">No Match Found</p>
                             <p class="text-slate-400 font-bold text-xs mb-8">We couldn't find any units matching your specific filters.</p>
-                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">
+                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg active:scale-95">
                                 Reset All Filters
                             </a>
                         </div>

@@ -44,11 +44,13 @@ export const MiniCarousel = ({ images = [], alt = '' }) => {
       ))}
       {count > 1 && <>
         <button onClick={e => go(e, -1)}
-                className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/mc:opacity-100 transition-opacity z-10">
+                className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/mc:opacity-100 transition-opacity z-10"
+                aria-label="Previous image">
           <ChevronLeft size={11}/>
         </button>
         <button onClick={e => go(e, 1)}
-                className="absolute right-0.5 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/mc:opacity-100 transition-opacity z-10">
+                className="absolute right-0.5 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover/mc:opacity-100 transition-opacity z-10"
+                aria-label="Next image">
           <ChevronRight size={11}/>
         </button>
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
@@ -88,6 +90,7 @@ export const SortableImage = ({ img, i, onRemove }) => {
       <button 
         onClick={e => { e.stopPropagation(); onRemove(i); }} 
         className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 hover:bg-red-700"
+        aria-label={`Remove image ${i + 1}`}
       >
         <X size={14}/>
       </button>

@@ -111,6 +111,16 @@ export function useInventory(showToast, setActiveTab) {
     }
   }, [showToast]);
 
+  const loadBrands = useCallback(() => {
+    apiFetch('/brands').then(setBrands).catch(e => console.error('Varner OS: Failed to load brands:', e));
+  }, []);
+
+  const loadCategories = useCallback(() => {
+    apiFetch('/categories').then(setCategories).catch(e => console.error('Varner OS: Failed to load categories:', e));
+    apiFetch('/subcategories').then(setSubcategories).catch(e => console.error('Varner OS: Failed to load subcategories:', e));
+    apiFetch('/sub-subcategories').then(setSubSubcategories).catch(e => console.error('Varner OS: Failed to load sub-subcategories:', e));
+  }, []);
+
   useEffect(() => {
     const isVarnerOSPage = window.location.search.includes('page=varner-os');
     const isEquipmentEdit = window.location.pathname.includes('post.php') || window.location.pathname.includes('post-new.php');
@@ -125,21 +135,24 @@ export function useInventory(showToast, setActiveTab) {
     loadInventory();
 
     // Phase 2: Load auxiliary data after a delay (brands, categories, user profile)
-    // These are only needed when the user opens the editor, so a brief delay is invisible
     const auxTimer = setTimeout(() => {
-      apiFetch('/me').then(setCurrentUser).catch(() => { });
-      apiFetch('/brands').then(setBrands).catch(() => { });
-      // Small stagger between category calls
-      setTimeout(() => {
-        apiFetch('/categories').then(setCategories).catch(() => { });
-        apiFetch('/subcategories').then(setSubcategories).catch(() => { });
-        apiFetch('/sub-subcategories').then(setSubSubcategories).catch(() => { });
-      }, 400);
+      apiFetch('/me').then(setCurrentUser).catch(e => console.error('Varner OS: Failed to load user:', e));
+      loadBrands();
+      setTimeout(() => loadCategories(), 400);
     }, 600);
 
     return () => clearTimeout(auxTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadInventory]);
+
+  // Re-fetch taxonomy lists whenever a Manage modal opens
+  useEffect(() => {
+    if (showBrandsModal) loadBrands();
+  }, [showBrandsModal, loadBrands]);
+
+  useEffect(() => {
+    if (showCategoriesModal || showSubcategoriesModal || showSubSubcategoriesModal) loadCategories();
+  }, [showCategoriesModal, showSubcategoriesModal, showSubSubcategoriesModal, loadCategories]);
 
   const handleListAdd = async (endpoint, current, newVal, setter, inputSetter) => {
     const name = newVal.trim();
@@ -252,8 +265,8 @@ export function useInventory(showToast, setActiveTab) {
       const result = await uploadFile(file);
       handleUpdateImplement(index, 'image', result.url);
       handleUpdateImplement(index, 'image_id', result.id);
-    } catch {
-      showToast('Image upload failed', 'error');
+    } catch (err) {
+      showToast('Image upload failed: ' + (err.message || 'unknown error'), 'error');
     }
   };
 
@@ -380,7 +393,7 @@ export function useInventory(showToast, setActiveTab) {
     try {
       await Promise.all(wpIds.map(wpId => apiFetch(`/inventory/${wpId}/restore`, { method: 'POST' })));
       await loadInventory();
-      showToast(`${wpIds.length} units restored`);
+      showToast(`${wpIds.length} unit${wpIds.length !== 1 ? 's' : ''} restored`);
     } catch (e) {
       showToast('Bulk restore failed: ' + e.message, 'error');
     }
@@ -458,7 +471,7 @@ export function useInventory(showToast, setActiveTab) {
     try {
       await Promise.all(wpIds.map(wpId => apiFetch(`/inventory/${wpId}/permanent`, { method: 'DELETE' })));
       await loadInventory();
-      showToast(`${wpIds.length} units permanently deleted`);
+      showToast(`${wpIds.length} unit${wpIds.length !== 1 ? 's' : ''} permanently deleted`);
     } catch (e) {
       showToast('Bulk delete failed: ' + e.message, 'error');
     }

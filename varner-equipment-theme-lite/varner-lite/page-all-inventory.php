@@ -23,7 +23,7 @@ $total = count(get_posts($count_args));
 
         <!-- Page header -->
         <div class="mb-10">
-            <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Varner Equipment Collection</div>
+            <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment Collection</div>
             <h1 class="text-5xl md:text-7xl font-black text-slate-900 tracking-tight uppercase mb-4 leading-[1.1]">All Inventory</h1>
             <p class="text-lg text-slate-500 font-bold max-w-2xl leading-relaxed italic border-l-4 border-red-600 pl-6">"The most complete selection of heavy-duty equipment in Western Colorado."</p>
         </div>
@@ -51,7 +51,7 @@ $total = count(get_posts($count_args));
 
                 <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                         Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
                     </p>
                 </div>
@@ -71,7 +71,7 @@ $total = count(get_posts($count_args));
                             </div>
                             <p class="text-slate-900 font-black uppercase tracking-widest text-sm mb-2">No Units Found</p>
                             <p class="text-slate-400 font-bold text-xs mb-8">Try adjusting your filters to find what you're looking for.</p>
-                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">
+                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg active:scale-95">
                                 Reset All Filters
                             </a>
                         </div>

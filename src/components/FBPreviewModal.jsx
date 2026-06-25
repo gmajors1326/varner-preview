@@ -6,7 +6,7 @@ export const FBPreviewModal = ({ unitData, onClose }) => (
     <div className="bg-white w-full max-w-[420px] rounded-[3.5rem] overflow-hidden shadow-2xl border-[12px] border-slate-950 relative h-[85vh] flex flex-col animate-in zoom-in duration-300">
       <div className="p-8 bg-white flex justify-between border-b items-center pt-10">
         <span className="font-black text-[11px] uppercase text-blue-600 flex items-center gap-3 tracking-[0.2em]"><Facebook size={20} fill="currentColor"/> Meta Marketplace Preview</span>
-        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full"><X size={24} className="text-slate-400"/></button>
+        <button onClick={onClose} aria-label="Close preview modal" className="p-2 hover:bg-slate-100 rounded-full"><X size={24} className="text-slate-400"/></button>
       </div>
       <div className="flex-1 overflow-y-auto no-scrollbar pb-12">
         <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">

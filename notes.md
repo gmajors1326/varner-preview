@@ -31,7 +31,7 @@
 See [`SKILL.md`](./SKILL.md) for the complete architecture reference (component roles, data model, API auth, SQL cheat sheet). See [`DEPLOY.md`](./DEPLOY.md) for the canonical build & deploy runbook.
 
 Notable:
-- `varner-lite` is the sole master theme; `varner-v23` is archived in `_archive/`.
+- `varner-lite` is the sole master theme; `varner-equipment-theme-v23` is archived in `_archive/`.
 - `build.ps1` auto-increments the plugin patch version (e.g. `1.23.4 → 1.23.5`).
 - After any bulk import, run: `varner_os_schedule_catalog_regeneration(true);`
 - `src/App.jsx` (1,302 lines) is functional but could be split into smaller components.

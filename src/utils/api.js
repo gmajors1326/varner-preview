@@ -85,10 +85,13 @@ export async function apiFetch(path, options = {}) {
     }
 
     if (!res.ok) {
-      // Mobile context: 401 means the token expired server-side.
-      // Clear it and signal the auth gate to reset — no hard page reload needed.
       if (res.status === 401 && getMobileToken()) {
         localStorage.removeItem('varner_mobile_token');
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isStandalone) {
+          window.location.href = '/mobile-app/?_=' + Date.now();
+          return;
+        }
         window.dispatchEvent(new CustomEvent('varner:token-expired'));
       }
       const err = await res.json().catch(() => ({}));
@@ -109,11 +112,12 @@ export async function uploadFile(file) {
   const res = await fetch(`${API}/media`, {
     method: 'POST',
     headers,
+    credentials: token ? 'omit' : 'same-origin',
     body: form,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message ?? `Upload failed: ${res.status}`);
+    const text = await res.text().catch(() => '');
+    throw new Error(`Upload failed (${res.status}): ${text.slice(0, 200)}`);
   }
   return res.json(); // { id, url }
 }

@@ -112,6 +112,9 @@ function varner_api_update_video(WP_REST_Request $request) {
     if (!get_post($post_id)) {
         return new WP_Error('not_found', 'Video not found.', array('status' => 404));
     }
+    if (!current_user_can('edit_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to edit this video.', array('status' => 403));
+    }
 
     $update_args = array('ID' => $post_id);
     if (isset($data['title'])) {
@@ -132,6 +135,9 @@ function varner_api_delete_video(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
     if (!get_post($post_id)) {
         return new WP_Error('not_found', 'Video not found.', array('status' => 404));
+    }
+    if (!current_user_can('delete_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to delete this video.', array('status' => 403));
     }
     wp_delete_post($post_id, true);
     return rest_ensure_response(array('success' => true));

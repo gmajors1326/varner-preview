@@ -33,7 +33,7 @@ $total           = $inventory_query->found_posts;
                 <!-- ── FILTER SIDEBAR ─────────────────────────── -->
                 <aside class="w-full lg:w-72 xl:w-80 shrink-0">
                     <button type="button" id="vf-mobile-toggle"
-                            class="lg:hidden w-full flex items-center justify-between bg-slate-900 text-white px-5 py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] mb-4">
+                            class="lg:hidden w-full flex items-center justify-between bg-slate-900 text-white px-5 py-3.5 rounded-xl font-black uppercase tracking-widest text-xs mb-4">
                         <span class="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
                             Filter &amp; Search
@@ -76,7 +76,7 @@ $total           = $inventory_query->found_posts;
                     <div class="bg-white rounded-2xl border border-slate-200 p-16 text-center">
                         <div class="text-slate-300 text-6xl mb-4">⊘</div>
                         <p class="text-slate-500 font-black uppercase tracking-widest text-sm">No units match your current filters.</p>
-                        <a href="<?php echo esc_url( get_permalink() ); ?>" class="inline-block mt-6 bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-colors">
+                        <a href="<?php echo esc_url( get_permalink() ); ?>" class="inline-block mt-6 bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-colors">
                             Clear All Filters
                         </a>
                     </div>

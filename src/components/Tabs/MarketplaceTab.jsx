@@ -132,6 +132,7 @@ export const MarketplaceTab = () => {
               disabled={loading}
               className="p-2 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-colors cursor-pointer rounded-lg hover:bg-slate-50"
               title="Refresh Logs"
+              aria-label="Refresh logs"
             >
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
             </button>

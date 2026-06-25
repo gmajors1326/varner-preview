@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings,
   X, Menu, Copy, Plus, Upload, Download, Save, Zap, TrendingUp, CheckCircle2, Clock,
@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 
 import { DEFAULT_EMPTY_UNIT } from './constants/inventoryConstants';
-import { apiFetch } from './utils/api';
 
 import { useInventory } from './hooks/useInventory';
 import { useFilters } from './hooks/useFilters';
@@ -37,10 +36,10 @@ const App = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const showToast = (msg, type = 'success') => {
+  const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
-  };
+  }, []);
 
   const inv = useInventory(showToast, setActiveTab);
   const { searchQuery, setSearchQuery, activeFilters, showFilterPanel, setShowFilterPanel,
@@ -59,6 +58,16 @@ const App = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handler = () => { if (!document.hidden) inv.loadInventory(); };
+    document.addEventListener('visibilitychange', handler);
+    const pollId = setInterval(() => inv.loadInventory(), 30000);
+    return () => {
+      document.removeEventListener('visibilitychange', handler);
+      clearInterval(pollId);
+    };
+  }, [inv.loadInventory]);
+
   const handlePwaAuthenticated = () => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
@@ -68,15 +77,6 @@ const App = () => {
     } else {
       setActiveTab('all-inventory');
     }
-  };
-
-  const handlePwaSignOut = async () => {
-    try {
-      await apiFetch('/logout', { method: 'POST' });
-    } catch (_) {}
-    localStorage.removeItem('varner_mobile_token');
-    setMobileToken('');
-    window.location.href = '/mobile-app/';
   };
 
   const handleNav = (tab) => {
@@ -92,10 +92,10 @@ const App = () => {
       case 'dashboard': return 'Operations Overview';
       case 'all-inventory': return 'Master Inventory Ledger';
       case 'inventory': return (
-        <span className="flex items-center gap-2">
-          {inv.unitData.title || 'Inventory Editor'}
-          <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded uppercase tracking-tighter font-black">SKU: {inv.unitData.stockNumber || 'PENDING'}</span>
-        </span>
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="truncate">{inv.unitData.title || 'Inventory Editor'}</span>
+            <span className="hidden sm:inline bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded uppercase tracking-tighter font-black shrink-0">SKU: {inv.unitData.stockNumber || 'PENDING'}</span>
+          </span>
       );
       case 'marketplace': return 'Meta Commerce Sync';
       case 'history': return 'Deletion History / Recycle Bin';
@@ -119,12 +119,12 @@ const App = () => {
   }
 
   return (
-    <div className="flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 min-h-screen">
+    <div className={`flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 ${isMobileApp ? 'h-dvh' : 'min-h-screen'}`}>
       <style dangerouslySetInnerHTML={{ __html: QUILL_STYLES }} />
       <style>{`body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}`}</style>
 
       {toast && (
-        <div className={`fixed top-6 right-6 z-[9999] px-6 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all animate-in slide-in-from-top-4 ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+        <div role="alert" aria-live="assertive" className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] px-6 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all animate-in fade-in whitespace-nowrap max-w-[90vw] text-center ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
           {toast.msg}
         </div>
       )}
@@ -135,19 +135,34 @@ const App = () => {
           onClose={() => inv.setShowBrandsModal(false)} placeholder="New brand name..." />
       )}
       {inv.showCategoriesModal && (
-        <ManageListModal title="Manage Categories" items={inv.categories} inputValue={inv.newCategoryInput}
-          onInputChange={inv.setNewCategoryInput} onAdd={inv.handleAddCategory} onDelete={inv.handleDeleteCategory}
-          onClose={() => inv.setShowCategoriesModal(false)} placeholder="New category name..." />
+        <ManageListModal title="Manage Categories"
+          items={inv.categories}
+          inputValue={inv.newCategoryInput}
+          onInputChange={inv.setNewCategoryInput}
+          onAdd={inv.handleAddCategory}
+          onDelete={inv.handleDeleteCategory}
+          onClose={() => inv.setShowCategoriesModal(false)}
+          placeholder="New category name..." />
       )}
       {inv.showSubcategoriesModal && (
-        <ManageListModal title="Manage Custom Subcategories" items={inv.subcategories} inputValue={inv.newSubcategoryInput}
-          onInputChange={inv.setNewSubcategoryInput} onAdd={inv.handleAddSubcategory} onDelete={inv.handleDeleteSubcategory}
-          onClose={() => inv.setShowSubcategoriesModal(false)} placeholder="New subcategory name..." />
+        <ManageListModal title="Manage Subcategories"
+          items={inv.subcategories}
+          inputValue={inv.newSubcategoryInput}
+          onInputChange={inv.setNewSubcategoryInput}
+          onAdd={inv.handleAddSubcategory}
+          onDelete={inv.handleDeleteSubcategory}
+          onClose={() => inv.setShowSubcategoriesModal(false)}
+          placeholder="New subcategory name..." />
       )}
       {inv.showSubSubcategoriesModal && (
-        <ManageListModal title="Manage Custom Sub-Subcategories" items={inv.subSubcategories} inputValue={inv.newSubSubcategoryInput}
-          onInputChange={inv.setNewSubSubcategoryInput} onAdd={inv.handleAddSubSubcategory} onDelete={inv.handleDeleteSubSubcategory}
-          onClose={() => inv.setShowSubSubcategoriesModal(false)} placeholder="New sub-subcategory name..." />
+        <ManageListModal title="Manage Sub-Subcategories"
+          items={inv.subSubcategories}
+          inputValue={inv.newSubSubcategoryInput}
+          onInputChange={inv.setNewSubSubcategoryInput}
+          onAdd={inv.handleAddSubSubcategory}
+          onDelete={inv.handleDeleteSubSubcategory}
+          onClose={() => inv.setShowSubSubcategoriesModal(false)}
+          placeholder="New sub-subcategory name..." />
       )}
 
       {isMobileMenuOpen && (
@@ -159,26 +174,26 @@ const App = () => {
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2"><X size={24} /></button>
             </div>
             <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
-              onNav={handleNav} isMobileApp={isMobileApp} onSignOut={handlePwaSignOut} />
+              onNav={handleNav} isMobileApp={isMobileApp} />
           </aside>
         </div>
       )}
 
       <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
         <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
-          onNav={handleNav} isMobileApp={isMobileApp} onSignOut={handlePwaSignOut} />
+          onNav={handleNav} isMobileApp={isMobileApp} />
       </aside>
 
-      <main className="flex-1 flex flex-col text-slate-900 min-h-screen">
+      <main className="flex-1 min-w-0 flex flex-col text-slate-900 min-h-0">
         <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 sm:py-5 flex items-center justify-between shadow-sm z-10">
           <div className="flex items-center gap-3 min-w-0">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl shrink-0"><Menu size={24} /></button>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 text-white bg-red-600 hover:bg-red-700 rounded-xl shrink-0"><Menu size={24} /></button>
             <div className="flex flex-col min-w-0">
               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 hidden sm:block">System Modules</h2>
               <h3 className="text-base sm:text-xl font-black text-slate-950 tracking-tight leading-none uppercase truncate">{getHeaderTitle()}</h3>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {activeTab === 'inventory' && inv.unitData.title && (
               <button onClick={() => inv.handleClone()} className="bg-slate-100 text-slate-600 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
                 <Copy size={16} /> <span className="hidden sm:inline">Clone Unit</span>
@@ -189,12 +204,12 @@ const App = () => {
                 <Plus size={16} /> <span className="hidden sm:inline">New Unit</span>
               </button>
             )}
-            {activeTab === 'all-inventory' && (
+            {!isMobileApp && activeTab === 'all-inventory' && (
               <a href="/wp-admin/admin.php?page=pmxi-admin-import" className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
                 <Upload size={16} /> <span className="hidden sm:inline">Import Inventory</span><span className="sm:hidden">Import</span>
               </a>
             )}
-            {activeTab === 'all-inventory' && (
+            {!isMobileApp && activeTab === 'all-inventory' && (
               <a href="/wp-admin/admin.php?page=pmxe-admin-manage" className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
                 <Download size={16} /> <span className="hidden sm:inline">Export Inventory</span><span className="sm:hidden">Export</span>
               </a>
@@ -210,7 +225,7 @@ const App = () => {
           </div>
         </header>
 
-        <div className={`flex-1 overflow-y-auto bg-slate-50/50 no-scrollbar ${activeTab === 'all-inventory' || activeTab === 'history' ? 'px-2 py-4 sm:px-3 sm:py-6' : 'p-4 sm:p-6 lg:p-8'}`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto bg-slate-50/50 no-scrollbar pb-[max(2rem,env(safe-area-inset-bottom))] ${activeTab === 'all-inventory' || activeTab === 'history' ? 'px-2 py-4 sm:px-3 sm:py-6' : 'p-4 sm:p-6 lg:p-8'}`} style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className={`${activeTab === 'all-inventory' || activeTab === 'history' ? 'max-w-none px-4 sm:px-6 lg:px-8' : 'max-w-7xl'} mx-auto pb-10`}>
 
             {activeTab === 'dashboard' && (

@@ -15,7 +15,7 @@ export const AttachmentsSection = ({ attachments = [], onAdd, onChange, onRemove
       <div className="space-y-6">
         {attachments.map((imp, i) => (
           <div key={i} className="bg-slate-50 rounded-[1.5rem] p-6 border-2 border-slate-100 flex flex-col md:flex-row gap-6 relative group">
-            <button onClick={() => onRemove(i)} className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"><X size={16}/></button>
+            <button onClick={() => onRemove(i)} aria-label="Remove attachment" className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"><X size={16}/></button>
             <div className="w-full md:w-40 aspect-square bg-white rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 relative">
               <img src={imp.image} className="w-full h-full object-cover" onError={e => { e.target.src='https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }} alt={imp.title} />
               <div onClick={() => { setEditingIndex(i); ref.current?.click(); }} className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"><Camera size={20} className="text-white"/></div>

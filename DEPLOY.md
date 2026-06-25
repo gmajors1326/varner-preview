@@ -78,39 +78,28 @@ Do NOT use `tar -a -c -f` for ZIP creation — PowerShell's `tar` creates POSIX 
 > Only the shared WordPress site folder `/sites/varnerequipdev` (and its subdirectories) is persistent.
 > Because SCP/SFTP subsystems are disabled on the gateway, files must be streamed in binary mode over SSH to the persistent volume.
 
-### 1. Stream the Plugin ZIP to Remote Persistent Storage
-Run this Python command from the local workspace root:
+### 1. Stream & Install the Plugin ZIP
 ```powershell
-python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/varner-os-plugin-v23.zip'], stdin=open('varner-os-plugin-v23.zip', 'rb'))"
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/varner-os-plugin-v23.zip" < varner-os-plugin-v23.zip
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp plugin install /sites/varnerequipdev/varner-os-plugin-v23.zip --force --path=/sites/varnerequipdev && rm /sites/varnerequipdev/varner-os-plugin-v23.zip"
 ```
 
-### 2. Install/Update via Remote WP-CLI
-Connect to the server and trigger the installation pointing to the persistent ZIP path:
-```powershell
-ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp plugin install /sites/varnerequipdev/varner-os-plugin-v23.zip --force --path=/sites/varnerequipdev"
-```
-
-### 3. Clean up the Remote ZIP
-```powershell
-ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "rm /sites/varnerequipdev/varner-os-plugin-v23.zip"
-```
-
-### 4. Activate & Run dbDelta
+### 2. Activate & Run dbDelta
 If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path=/sites/varnerequipdev`. Deactivate and reactivate once to run `dbDelta` and schedule the daily session cleanup cron.
 
 ## Theme Install or Update
 
-1. Stream the theme ZIP in the same manner as the plugin ZIP (using `/sites/varnerequipdev/varner-equipment-theme-v23-lite.zip`).
-   * **Note**: WordPress CLI expects the ZIP filename to match the theme slug folder name inside it (`varner-lite/`). Therefore, you must rename the uploaded zip to `varner-lite.zip` before running the install command.
-2. Rename and run:
-   ```powershell
-   ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "mv /sites/varnerequipdev/varner-equipment-theme-v23-lite.zip /sites/varnerequipdev/varner-lite.zip && wp theme install /sites/varnerequipdev/varner-lite.zip --force --path=/sites/varnerequipdev"
-   ```
-3. Confirm `style.css` is at the theme root.
-4. Clean up the theme ZIP on the remote server:
-   ```powershell
-   ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "rm -f /sites/varnerequipdev/varner-lite.zip"
-   ```
+The active theme slug is `varner-equipment-theme-v23-lite-4` (verify with `wp theme list`). Stream the ZIP using the active slug as the remote filename — `wp theme install` resolves it automatically.
+
+### 1. Stream the Theme ZIP
+```powershell
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip" < varner-equipment-theme-v23-lite.zip
+```
+
+### 2. Install/Update
+```powershell
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp theme install /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip --force --path=/sites/varnerequipdev && rm /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip"
+```
 
 ## Post-Install Checks
 

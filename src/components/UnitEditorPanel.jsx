@@ -307,14 +307,15 @@ export const UnitEditorPanel = ({
               ].map(({ field, icon, iconBg, label, sub, color }) => (
                 <div key={field} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl transition-all ${iconBg}`}>{icon}</div>
-                    <div>
+                    <div className={`p-3 rounded-xl shrink-0 transition-all ${iconBg}`}>{icon}</div>
+                    <div className="min-w-0">
                       <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">{label}</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">{sub}</p>
                     </div>
                   </div>
                   <button type="button" onClick={() => handleInputChange(field, !unitData[field])}
-                    className={`w-14 h-7 rounded-full relative transition-all duration-300 ${color}`}>
+                    className={`w-14 h-7 shrink-0 rounded-full relative transition-all duration-300 ${color}`}
+                    aria-label={`Toggle ${label}`}>
                     <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData[field] ? 'left-8' : 'left-1'}`} />
                   </button>
                 </div>
@@ -322,16 +323,17 @@ export const UnitEditorPanel = ({
               {/* Draft toggle — separate row since it mirrors the enum, not a boolean */}
               <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl transition-all ${unitData.stockStatus === 'Draft' ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300'}`}>
+                  <div className={`p-3 rounded-xl shrink-0 transition-all ${unitData.stockStatus === 'Draft' ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300'}`}>
                     <Eye size={20} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Draft (Hidden)</p>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Unit is a draft — hidden from the public site &amp; Facebook feed</p>
                   </div>
                 </div>
                 <button type="button" onClick={() => onToggleDraft({ wpId: unitData.id, status: unitData.stockStatus })}
-                  className={`w-14 h-7 rounded-full relative transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}>
+                  className={`w-14 h-7 shrink-0 rounded-full relative transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}
+                  aria-label={`${unitData.stockStatus === 'Draft' ? 'Publish' : 'Set as draft'} unit`}>
                   <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'left-8' : 'left-1'}`} />
                 </button>
               </div>
@@ -373,7 +375,8 @@ export const UnitEditorPanel = ({
                 <p className="text-[8px] text-slate-500 uppercase font-black tracking-widest">Auto-Sync Active</p>
               </div>
             </div>
-            <button onClick={() => setSyncEnabled(!syncEnabled)} className={`w-14 h-7 rounded-full relative transition-all duration-300 ${syncEnabled ? 'bg-blue-600' : 'bg-slate-800'}`}>
+            <button onClick={() => setSyncEnabled(!syncEnabled)} className={`w-14 h-7 shrink-0 rounded-full relative transition-all duration-300 ${syncEnabled ? 'bg-blue-600' : 'bg-slate-800'}`}
+              aria-label={`${syncEnabled ? 'Disable' : 'Enable'} Meta marketplace sync`}>
               <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 ${syncEnabled ? 'left-8' : 'left-1'}`} />
             </button>
           </div>

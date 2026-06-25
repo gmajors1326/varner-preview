@@ -288,6 +288,7 @@ export const VideosTab = ({ showToast }) => {
                       onClick={() => handleDeleteVideo(vid.id)}
                       className="bg-red-50 border border-red-100 text-red-600 p-3 rounded-xl hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center"
                       title="Delete Video"
+                      aria-label="Delete video"
                     >
                       <Trash2 size={12}/>
                     </button>
@@ -308,7 +309,7 @@ export const VideosTab = ({ showToast }) => {
                 <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">{editingVideo ? 'Edit Video' : 'Add New Video'}</h3>
                 <p className="text-[9px] text-slate-400 font-bold uppercase mt-1.5">Showcase a new walkthrough or product highlight</p>
               </div>
-              <button onClick={() => setIsVideoModalOpen(false)} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
+              <button onClick={() => setIsVideoModalOpen(false)} aria-label="Close video modal" className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
             </div>
             <form onSubmit={handleSaveVideo} className="p-6 sm:p-8 space-y-5">
               <InputField
@@ -352,6 +353,7 @@ export const VideosTab = ({ showToast }) => {
                       <Video size={16} className="text-green-600 shrink-0"/>
                       <span className="text-[10px] font-bold text-green-700 truncate flex-1">{videoForm.video_file_url.split('/').pop()}</span>
                       <button type="button" onClick={() => setVideoForm(f => ({ ...f, video_file_url: '', video_file_id: 0 }))}
+                        aria-label="Remove uploaded file"
                         className="text-green-600 hover:text-green-800 p-1">
                         <X size={14}/>
                       </button>
@@ -390,7 +392,7 @@ export const VideosTab = ({ showToast }) => {
                 <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm leading-none">Manage Categories</h3>
                 <p className="text-[9px] text-slate-400 font-bold uppercase mt-1.5">{categories.length} Categories configured</p>
               </div>
-              <button onClick={() => setIsCatModalOpen(false)} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
+              <button onClick={() => setIsCatModalOpen(false)} aria-label="Close category modal" className="text-slate-400 hover:text-slate-700 transition-colors"><X size={20}/></button>
             </div>
             
             {/* Create Category form */}
@@ -421,6 +423,7 @@ export const VideosTab = ({ showToast }) => {
                     onClick={() => handleDeleteCategory(cat.id)} 
                     className="text-slate-300 hover:text-red-600 transition-colors p-1"
                     title="Delete Category"
+                    aria-label="Delete category"
                   >
                     <X size={16}/>
                   </button>

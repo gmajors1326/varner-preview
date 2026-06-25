@@ -12,10 +12,11 @@ $submitted = isset( $_GET['application'] ) && $_GET['application'] === 'sent';
 get_header();
 ?>
 
+    <main id="main-content">
     <section class="pt-32 pb-24 bg-slate-50 min-h-[60vh]">
         <div class="max-w-7xl mx-auto px-4">
             <div class="mb-16 text-center max-w-3xl mx-auto">
-                <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4"><?php echo esc_html( $tagline ); ?></div>
+                <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em] mb-4"><?php echo esc_html( $tagline ); ?></div>
                 <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php echo esc_html( $headline ); ?></h1>
                 <div class="w-24 h-2 bg-red-600 mx-auto mb-8"></div>
                 <div class="text-lg font-bold text-slate-600 leading-relaxed"><?php echo wp_kses_post( $intro ); ?></div>
@@ -37,7 +38,7 @@ get_header();
                         <p class="text-sm font-bold text-slate-500 leading-relaxed max-w-md mx-auto mb-6">
                             We are not currently hiring, but we are always looking for hardworking, reliable individuals to join our crew. Please feel free to submit a general application below or check back later!
                         </p>
-                        <a href="#apply" class="inline-block bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 transition-colors shadow-md">Submit General Application</a>
+                        <a href="#apply" class="inline-block bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-slate-900 transition-colors shadow-md">Submit General Application</a>
                     </div>
                     <?php else : ?>
                         <?php foreach ( $jobs as $job ) :
@@ -59,7 +60,7 @@ get_header();
                                 <?php endif; ?>
                             </div>
                             <p class="text-sm font-bold text-slate-600 mb-6 leading-relaxed"><?php echo nl2br( esc_html( $description ) ); ?></p>
-                            <a href="#apply" class="inline-block bg-slate-900 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-colors">Apply Now</a>
+                            <a href="#apply" class="inline-block bg-slate-900 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-colors">Apply Now</a>
                         </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -68,7 +69,7 @@ get_header();
                 <!-- Application Form -->
                 <div id="apply" class="bg-slate-950 p-8 md:p-10 rounded-[3rem] text-white">
                     <h3 class="text-3xl font-black tracking-tighter uppercase mb-2">Submit Application</h3>
-                    <p class="text-sm text-slate-400 font-bold mb-8">Fill out the form below or email your resume to contact@varnerequipment.com</p>
+                    <p class="text-sm text-slate-400 font-bold mb-8">Fill out the form below or email your resume to <?php echo esc_html( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?></p>
 
                     <?php if ( $submitted ) : ?>
                     <div class="bg-green-600 text-white rounded-2xl px-6 py-4 mb-6 font-bold text-sm">
@@ -82,29 +83,29 @@ get_header();
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">First Name</label>
-                                <input type="text" name="first_name" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white" required>
+                                <label for="emp-first-name" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">First Name</label>
+                                <input type="text" name="first_name" id="emp-first-name" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Last Name</label>
-                                <input type="text" name="last_name" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white" required>
+                                <label for="emp-last-name" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Last Name</label>
+                                <input type="text" name="last_name" id="emp-last-name" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Email Address</label>
-                                <input type="email" name="email" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white" required>
+                                <label for="emp-email" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Email Address</label>
+                                <input type="email" name="email" id="emp-email" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Phone Number</label>
-                                <input type="tel" name="phone" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white" required>
+                                <label for="emp-phone" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Phone Number</label>
+                                <input type="tel" name="phone" id="emp-phone" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Position Applied For</label>
-                            <select name="position" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white">
+                            <label for="emp-position" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Position Applied For</label>
+                            <select name="position" id="emp-position" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white">
                                 <?php foreach ( $jobs as $job ) : ?>
                                 <option value="<?php echo esc_attr( $job['job_title'] ); ?>"><?php echo esc_html( $job['job_title'] ); ?></option>
                                 <?php endforeach; ?>
@@ -113,20 +114,20 @@ get_header();
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Brief Cover Letter / Experience</label>
-                            <textarea name="cover_letter" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white resize-none" required></textarea>
+                            <label for="emp-cover-letter" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Brief Cover Letter / Experience</label>
+                            <textarea name="cover_letter" id="emp-cover-letter" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white resize-none" required></textarea>
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Upload Resume</label>
+                            <label for="emp-resume" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Upload Resume</label>
                             <input type="file" name="resume" accept=".pdf,.doc,.docx"
                                 class="w-full text-sm text-slate-400
                                     file:mr-4 file:py-2 file:px-5
                                     file:rounded-lg file:border-0
-                                    file:text-[10px] file:font-black file:uppercase file:tracking-widest
+                                    file:text-xs file:font-black file:uppercase file:tracking-widest
                                     file:bg-red-600 file:text-white
                                     hover:file:bg-red-700 file:cursor-pointer cursor-pointer">
-                            <p class="text-[10px] text-slate-500 mt-1.5">PDF, DOC, or DOCX &mdash; Max 5 MB</p>
+                            <p class="text-xs text-slate-500 mt-1.5">PDF, DOC, or DOCX &mdash; Max 5 MB</p>
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-start sm:items-end gap-4">
@@ -139,12 +140,12 @@ get_header();
                                 <input type="hidden" name="captcha_hash" value="<?php echo esc_attr($captcha['hash']); ?>">
                             </div>
                             <div class="flex-1 w-full">
-                                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">What is the sum? <span class="text-red-500">*</span></label>
-                                <input type="number" name="captcha_answer" required placeholder="Type answer here..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-red-600 text-white">
+                                <label for="emp-captcha" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">What is the sum? <span class="text-red-500">*</span></label>
+                                <input type="number" name="captcha_answer" id="emp-captcha" required placeholder="Type answer here..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white">
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-white hover:text-red-600 transition-all mt-4 border border-transparent hover:border-red-600">
+                        <button type="submit" class="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-white hover:text-red-600 transition-all mt-4 border border-transparent hover:border-red-600">
                             Submit Application
                         </button>
                     </form>
@@ -152,5 +153,6 @@ get_header();
             </div>
         </div>
     </section>
+    </main>
 
 <?php get_footer(); ?>

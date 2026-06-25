@@ -107,30 +107,31 @@ Key references:
 
 ---
 
-## 7. Open Operational Items
+## 7. Open Items
 
-These are **not** code-review items; they gate production go-live.
+### 7.1 Production Environment
+The production environment is not yet provisioned or cut over. Once ready, the deploy commands in `DEPLOY.md` and `AGENTS.md` will target the production host instead of `varnerequipdev`.
 
-1. **SMTP / email deliverability — BLOCKING.**
-   `wp_mail` has no working delivery path by default on WP Engine. Customer **forms** (contact/service/parts/employment) and any **email login** depend on it. Without it, customer leads silently vanish.
-   - **Dev/testing:** FluentSMTP → a real service (Gmail app-password, or a transactional free tier such as Brevo/Mailgun) so `wp_mail` delivers and flows can be tested.
-   - **Production:** send from the dealership domain (`@varnerequipment.com`) with **SPF + DKIM** configured. Confirm whether that domain is on Google Workspace or another provider — it determines the setup.
-   - **Test before relying on it:** send a test email and verify arrival; don't assume "gmail-to-gmail worked in dev" proves production deliverability.
+### 7.2 Magic-Link ZIP Verification
+Before relying on the `feature/magic-link` branch as a restore point, confirm it rebuilds cleanly to a working `1.23.151` ZIP. The branch holds the assembled source and a previously built ZIP, but a clean rebuild has not been verified since the Tailwind/SRI build pipeline changes.
 
-2. **Magic-link / Magic Login Pro.**
-   Decision is to use the Magic Login Pro plugin rather than the custom build. Before it's usable: SMTP must be live; configure post-login redirect to `/mobile-app/`; restrict to staff roles; verify mobile behavior and email-scanner pre-fetch handling. Keep a non-email break-glass login path so a mail outage is never a total lockout.
+### 7.3 Meta Live Sync — Final Verification
+Meta Live Sync fixes are deployed and verified on the dev environment, but Commerce Manager verification requires a live production URL.
 
-3. **Sandhills / TractorHouse migration.**
-   The dealer is handling the export. **Do not cancel Sandhills until data is pulled.** Critical: export the actual **photo files**, not links — equipment photos often live on Sandhills' servers and go dark on cancellation. Confirm export format (spreadsheet vs. login-only) and whether photos download as files. Re-host all images in the WordPress media library.
+### 7.4 SMTP / Email Setup
+WordPress email sending (SMTP) is not yet configured. New user password-setup emails and form notifications cannot be sent until this is in place (see `MOBILE-APP-GUIDE.md` § "About emailing passwords").
 
-4. **Form email routing.**
-   Decide recipient(s) for each form type (contact / service / parts / employment) — single inbox or split by department. Currently routes to one address; confirm with the owner.
+### 7.5 Cleanup — Unreferenced Assets
+- Root `Images/` folder contains ~40 unused inventory mockup photos (keep the 12 brand logo PNGs).
+- Root `public/` folder contains 6 unreferenced files: `imp1.jpg`, `imp2.jpg`, `imp3.jpg`, `left.jpg`, `mahindra.jpg`, `rear.jpg`.
+- `varner_register_video_cpt()` in `varner-lite/functions.php` may duplicate Video CPT registration managed by the plugin.
+- `varner_render_breadcrumbs()` may be duplicated between `functions.php` and `partials/breadcrumb.php`.
 
-5. **Team page content.**
-   Awaiting staff headshots and short bios (Ashley, Devin, and team) for the "Our Team" page.
-
-6. **Production deployment.**
-   All work to date is on dev. Go-live is its own checklist: provisioning, real staff accounts, domain email, SPF/DKIM, migrated inventory, and DNS cutover.
+### 7.6 Future Improvements
+- Split `src/App.jsx` (~1,300 lines) into smaller components.
+- Implement frontend pagination in the React app for catalogs of 200+ units.
+- Wire Facebook Marketplace live sync API integration (UI tab is complete; Meta API not yet connected).
+- Build a polished public-facing filter UI for the `[varner_showroom]` shortcode.
 
 ---
 
@@ -176,11 +177,6 @@ These are **not** code-review items; they gate production go-live.
 | Pages Management REST API & panel | ✅ Resolved (`1.23.178`) |
 | Destructive Action confirmation dialogs | ✅ Resolved (`1.23.178`) |
 | Mobile token input & neutral prompt | ✅ Resolved (`1.23.178`) |
-| SMTP / email deliverability | ⛔ Not set up — blocks go-live |
-| Sandhills migration | ⏳ Pending (dealer-led; do not cancel until data pulled) |
-| Form email routing | ⏳ Pending owner decision |
-| Team page content | ⏳ Awaiting photos + bios |
-| Production cutover | ⏳ Not started |
 
 ---
 

@@ -172,7 +172,8 @@ export const ConfigurationTab = ({
             {activeSubTab === 'staff-users' ? (
               <div className="flex gap-2 shrink-0">
                 <button onClick={loadStaff} disabled={isStaffLoading}
-                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-indigo-100">
+                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-indigo-100"
+                  aria-label="Refresh staff list">
                   {isStaffLoading ? <Loader2 size={12} className="animate-spin"/> : <RotateCcw size={12}/>}
                 </button>
                 <button onClick={() => { setShowInviteForm(v => !v); setInviteResult(null); }}
@@ -229,7 +230,7 @@ export const ConfigurationTab = ({
                     ? <CheckCircle size={16} className="shrink-0 mt-0.5 text-green-600"/>
                     : <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500"/>}
                   <span>{inviteResult.msg}</span>
-                  <button onClick={() => setInviteResult(null)} className="ml-auto text-current opacity-50 hover:opacity-100"><X size={14}/></button>
+                  <button onClick={() => setInviteResult(null)} aria-label="Dismiss invite result" className="ml-auto text-current opacity-50 hover:opacity-100"><X size={14}/></button>
                 </div>
               )}
 
@@ -334,7 +335,8 @@ export const ConfigurationTab = ({
                           </div>
                         ) : (
                           <button onClick={() => setConfirmDeleteId(u.id)}
-                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shrink-0">
+                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shrink-0"
+                            aria-label="Delete staff member">
                             <Trash2 size={14}/>
                           </button>
                         )

@@ -94,27 +94,26 @@ if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
 python tools/zip_helper.py $pluginZip "varner-os-plugin-v23-unpacked/varner-os-plugin-v23"
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
-# Package Theme ZIP (varner-lite/ prefix — matches active theme slug for wp theme install --force)
+# Package Theme ZIP (files at root — required for WP admin upload compatibility)
 $themeZipName = "varner-equipment-theme-v23-lite.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
 python -c "
 import zipfile, os
 src = os.path.abspath('varner-equipment-theme-lite/varner-lite')
+exclude_dirs = {'src', '.git', '__pycache__'}
+exclude_files = {'.DS_Store', 'tailwind.config.js', 'nul', 'package.json'}
 with zipfile.ZipFile(r'$themeZip', 'w', zipfile.ZIP_DEFLATED) as z:
     for root, dirs, files in os.walk(src):
-        dirs[:] = [d for d in dirs if d not in ('src', '.git')]
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
         dirs.sort(); files.sort()
-        for d in dirs:
-            p = os.path.join(root, d)
-            a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/') + '/'
-            z.write(p, a)
         for f in files:
-            if f.startswith('.git') or f in ('.DS_Store', 'tailwind.config.js', 'nul') or f.endswith('.md'): continue
-            p = os.path.join(root, f)
-            a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/')
-            z.write(p, a)
-print('Theme ZIP: varner-lite/ prefix')
+            if f.startswith('.git') or f in exclude_files or f.endswith('.md'): continue
+            if f.endswith('.md'): continue
+            fp = os.path.join(root, f)
+            arcname = os.path.relpath(fp, src).replace(os.sep, '/')
+            z.write(fp, arcname)
+print('Theme ZIP: files at root level (no prefix)')
 "
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 

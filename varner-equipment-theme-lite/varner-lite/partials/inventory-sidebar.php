@@ -42,7 +42,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
         <?php if ( $has_filters ) : ?>
         <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
             <div class="flex justify-between items-center mb-4">
-                <span class="font-black text-[10px] uppercase tracking-widest text-slate-900">Applied Filters</span>
+                <span class="font-black text-xs uppercase tracking-widest text-slate-900">Applied Filters</span>
                 <a href="<?php echo esc_url( $reset_url ); ?>" class="text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700">Clear All</a>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
         <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <!-- Mobile Toggle -->
-            <button type="button" id="vne-mobile-filter-toggle" class="w-full lg:hidden flex justify-between items-center p-5 bg-slate-50 border-b border-slate-200 text-slate-900 font-black uppercase tracking-widest text-[10px]">
+            <button type="button" id="vne-mobile-filter-toggle" class="w-full lg:hidden flex justify-between items-center p-5 bg-slate-50 border-b border-slate-200 text-slate-900 font-black uppercase tracking-widest text-xs" aria-expanded="false" aria-controls="vne-mobile-filter-content">
                 <span class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                     Search & Filter Inventory
@@ -83,7 +83,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                 <form method="get" action="" id="varner-inventory-filter-form" class="space-y-8">
                     
                     <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
                         <div class="space-y-2">
                             <input type="text" name="s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
                             <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
@@ -92,17 +92,17 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Stock #</h3>
-                            <input type="text" name="stock_number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                            <label for="filter-stock-number" class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Stock #</label>
+                            <input type="text" name="stock_number" id="filter-stock-number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
                         </div>
                         <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">VIN / Serial</h3>
-                            <input type="text" name="vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                            <label for="filter-vin" class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">VIN / Serial</label>
+                            <input type="text" name="vin" id="filter-vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
                         </div>
                     </div>
 
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_categories as $cat_key => $cat_obj ) : ?>
                                 <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
@@ -114,14 +114,14 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                    </fieldset>
 
                     <?php 
                     $fallback_subcategories = isset( $filter_data['subcategories'] ) ? $filter_data['subcategories'] : array();
                     if ( ! empty( $fallback_subcategories ) ) : 
                     ?>
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Subcategory</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Subcategory</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_subcategories as $subcat_key => $subcat_obj ) : ?>
                                 <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
@@ -133,11 +133,11 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                    </fieldset>
                     <?php endif; ?>
 
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_makes as $make_key => $make_obj ) : ?>
                                 <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
@@ -149,11 +149,11 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                    </fieldset>
 
                     <?php if ( $facet_show_condition ) : ?>
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</legend>
                         <div class="flex gap-2">
                             <?php 
                             $conditions_to_show = array('New', 'Used');
@@ -172,12 +172,12 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <?php if ( empty($fallback_conditions) ) : ?>
                             <p class="mt-2 text-[9px] font-bold text-red-600">No condition data found in inventory.</p>
                         <?php endif; ?>
-                    </div>
+                    </fieldset>
                     <?php endif; ?>
 
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
                             <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_price_display"></span>
                         </div>
                         <div class="space-y-4">
@@ -195,7 +195,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Year</h3>
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Year</h3>
                             <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_year_display"></span>
                         </div>
                         <div class="space-y-4">
@@ -212,7 +212,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                     </div>
 
                     <div class="pt-4 border-t border-slate-100">
-                        <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">Apply Filters</button>
+                        <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg active:scale-95">Apply Filters</button>
                     </div>
 
                 </form>
@@ -278,12 +278,10 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
     var filterIcon = document.getElementById('vne-mobile-filter-icon');
     if (filterToggle && filterContent && filterIcon) {
       filterToggle.addEventListener('click', function() {
+        var isHidden = filterContent.classList.contains('hidden');
         filterContent.classList.toggle('hidden');
-        if (filterContent.classList.contains('hidden')) {
-          filterIcon.style.transform = 'rotate(0deg)';
-        } else {
-          filterIcon.style.transform = 'rotate(180deg)';
-        }
+        filterIcon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        filterToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
       });
     }
   });

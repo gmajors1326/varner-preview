@@ -68,8 +68,9 @@ $finance_url    = add_query_arg( array(
 
 
         <!-- Back link -->
-        <a href="javascript:history.back()"
-           class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-red-600 transition-colors mb-10">
+        <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>"
+           onclick="if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) { event.preventDefault(); window.history.back(); }"
+           class="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-red-600 transition-colors mb-10">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Search Results
         </a>
@@ -119,7 +120,7 @@ $finance_url    = add_query_arg( array(
                             style="border-color:<?php echo $i === 0 ? 'rgb(220,38,38)' : 'rgb(226,232,240)'; ?>"
                             data-index="<?php echo $i; ?>"
                             aria-label="Photo <?php echo $i + 1; ?>">
-                        <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy"
+                        <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $title_text ); ?> - Photo <?php echo $i + 1; ?>" loading="lazy"
                              class="w-full h-full object-cover">
                     </button>
                     <?php endforeach; ?>
@@ -147,7 +148,7 @@ $finance_url    = add_query_arg( array(
                 <div class="border-t border-slate-200 pt-5">
                     <div class="flex items-baseline gap-2">
                         <?php if ( strpos($formatted_price, 'Call') === false ) : ?>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">USD</span>
+                        <span class="text-xs font-black uppercase tracking-widest text-slate-400">USD</span>
                         <span class="text-4xl font-black text-red-600 tracking-tight">$<?php echo esc_html( $formatted_price ); ?></span>
                         <?php else : ?>
                         <span class="text-4xl font-black text-red-600 tracking-tight"><?php echo esc_html( $formatted_price ); ?></span>
@@ -164,7 +165,7 @@ $finance_url    = add_query_arg( array(
                 </div>
 
                 <!-- E-mail Us -->
-                <a href="mailto:jacob@varnerequipment.com?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
+                <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
                    class="flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[11px] hover:bg-red-600 transition-all shadow-md w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     E-mail Us
@@ -185,7 +186,7 @@ $finance_url    = add_query_arg( array(
 
                 <!-- Seller Information -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Seller Information</h3>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Seller Information</h3>
                     <div class="flex flex-col sm:flex-row gap-4 justify-between">
                         <div>
                             <p class="font-black text-slate-900 text-sm">Varner Equipment</p>
@@ -197,10 +198,10 @@ $finance_url    = add_query_arg( array(
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.72a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                 (970) 874-0612
                             </a>
-                            <a href="mailto:jacob@varnerequipment.com"
+                            <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>"
                                class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                jacob@varnerequipment.com
+                                <?php $__se2 = varner_get_theme_setting('sales_email'); echo esc_html( !empty($__se2) ? $__se2 : 'jacob@varnerequipment.com' ); ?>
                             </a>
                         </div>
                     </div>
@@ -209,7 +210,7 @@ $finance_url    = add_query_arg( array(
                 <!-- Financing CTA -->
                 <div class="flex flex-col gap-3">
                     <a href="<?php echo esc_url( $finance_url ); ?>"
-                       class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-md">
+                       class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         *Apply for Financing
                     </a>
@@ -307,7 +308,7 @@ $finance_url    = add_query_arg( array(
                     style="border-color: transparent;"
                     data-index="<?php echo $idx; ?>"
                     aria-label="Lightbox Photo <?php echo $idx + 1; ?>">
-                <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy" class="w-full h-full object-cover">
+                <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $title_text ); ?> - Photo <?php echo $idx + 1; ?>" loading="lazy" class="w-full h-full object-cover">
             </button>
             <?php endforeach; ?>
         </div>

@@ -14,7 +14,7 @@ export const MetricCard = ({ icon, label, value, subtext, color }) => {
     <div className="rounded-[2rem] p-5 sm:p-8 border bg-white border-slate-200/60 shadow-xl relative overflow-hidden group transition-all">
       <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8 relative z-10">
         <div className={`p-3 sm:p-4 rounded-xl ${c.text} shadow-md group-hover:scale-110 transition-transform`}>{icon}</div>
-        <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 leading-none">{label}</h4>
+        <h4 className="font-black text-[10px] uppercase tracking-widest text-slate-400 leading-none min-w-0 break-words">{label}</h4>
       </div>
       <p className="text-4xl sm:text-5xl font-black text-slate-950 mb-3 tracking-tighter relative z-10 leading-none">{value}</p>
       <p className={`text-[10px] font-black uppercase tracking-[0.1em] relative z-10 ${c.text}`}>{subtext}</p>

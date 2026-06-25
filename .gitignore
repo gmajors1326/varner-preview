@@ -16,9 +16,17 @@ Plugins/*.txt
 # Claude internal session files
 .claude/
 
+# Build artifacts
+*tailwind.unminified.css
+
 # Local testing / helper files
 add_imp.php
 snapshot.php
 modify.cjs
 snapshot_*.json
+diag.php
+diag.b64
+
+# Archived old theme
+_archive/
 

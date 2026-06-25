@@ -152,12 +152,12 @@ $schema = array(
             <?php endif; ?>
 
             <?php if ( $is_last || empty( $crumb['url'] ) ) : ?>
-                <span class="text-[10px] font-black uppercase tracking-widest text-slate-900 truncate max-w-[200px]">
+                <span class="text-xs font-black uppercase tracking-widest text-slate-900 truncate max-w-[200px]">
                     <?php echo esc_html( $crumb['label'] ); ?>
                 </span>
             <?php else : ?>
                 <a href="<?php echo esc_url( $crumb['url'] ); ?>"
-                   class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors">
+                   class="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors">
                     <?php echo esc_html( $crumb['label'] ); ?>
                 </a>
             <?php endif; ?>

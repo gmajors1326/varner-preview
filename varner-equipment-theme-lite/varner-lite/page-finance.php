@@ -22,7 +22,7 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
         <div class="max-w-6xl mx-auto px-4 flex flex-col gap-6">
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
                 <div class="space-y-3">
-            <div class="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">Apply</div>
+            <div class="text-xs font-black uppercase tracking-[0.3em] text-red-500">Apply</div>
                     <h2 class="text-4xl md:text-6xl font-black tracking-tight">FINANCIAL APPLICATIONS</h2>
                     <p class="text-slate-200 font-bold max-w-3xl">Start your application online or let our team guide you. We tailor terms to the machine, usage, and your preferred structure.</p>
                 </div>
@@ -62,7 +62,7 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
                             <?php if ( $logo_url ) : ?>
                                 <img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $card['alt'] ?? $card['name'] ?? '' ); ?>" class="h-48 w-48 object-contain">
                             <?php else : ?>
-                                <div class="h-48 w-48 flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-[10px] font-black uppercase tracking-widest">No Logo</div>
+                                <div class="h-48 w-48 flex items-center justify-center bg-slate-100 rounded-xl text-slate-400 text-xs font-black uppercase tracking-widest">No Logo</div>
                             <?php endif; ?>
                             <div class="text-base font-black text-slate-900"><?php echo esc_html( $card['name'] ?? '' ); ?></div>
                             <?php if ( $card['description'] ?? '' ) : ?>
@@ -86,7 +86,7 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
     <div class="max-w-6xl mx-auto px-4 flex flex-col gap-6">
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
             <div class="space-y-3">
-                <div class="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">Financing</div>
+                <div class="text-xs font-black uppercase tracking-[0.3em] text-red-500">Financing</div>
                 <h1 class="text-4xl md:text-6xl font-black tracking-tighter">FINANCE CALCULATOR</h1>
                 <p class="text-slate-300 max-w-3xl font-bold">Estimate payments with flexible terms, down payment, taxes, fees, and trade-in adjustments—all on one page.</p>
             </div>
@@ -102,10 +102,10 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
         <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-5">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Inputs</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Inputs</div>
                     <h2 class="text-2xl font-black text-slate-900">Deal Structure</h2>
                 </div>
-                <button id="ve-finance-reset" class="text-[10px] font-black uppercase tracking-[0.2em] text-red-600 hover:text-red-700">Reset</button>
+                <button id="ve-finance-reset" class="text-xs font-black uppercase tracking-[0.2em] text-red-600 hover:text-red-700">Reset</button>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -149,27 +149,27 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
         <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-5">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Results</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Results</div>
                     <h2 class="text-2xl font-black text-slate-900">Payment Estimate</h2>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Estimates only</span>
+                <span class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Estimates only</span>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Monthly Payment</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Monthly Payment</div>
                     <div id="ve-fin-payment" class="text-3xl font-black text-red-600">$0</div>
                 </div>
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Amount Financed</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Amount Financed</div>
                     <div id="ve-fin-financed" class="text-2xl font-black text-slate-900">$0</div>
                 </div>
                 <div class="p-4 rounded-xl border border-slate-100">
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Total Interest</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Total Interest</div>
                     <div id="ve-fin-interest" class="text-xl font-black text-slate-800">$0</div>
                 </div>
                 <div class="p-4 rounded-xl border border-slate-100">
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Taxes & Fees</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-1">Taxes & Fees</div>
                     <div id="ve-fin-taxes" class="text-xl font-black text-slate-800">$0</div>
                 </div>
             </div>

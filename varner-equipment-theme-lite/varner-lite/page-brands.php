@@ -125,7 +125,7 @@ function varner_brand_featured_unit( $brand_slug ) {
 
 <section class="py-16 bg-slate-950 text-white">
     <div class="max-w-7xl mx-auto px-4 space-y-6">
-        <div class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em]">Brands</div>
+        <div class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.3em]">Brands</div>
         <h1 class="text-4xl md:text-6xl font-black tracking-tighter">Brands We Carry</h1>
         <p class="text-slate-300 max-w-2xl font-bold">Explore inventory by manufacturer. Each card links to live units for that brand.</p>
     </div>
@@ -142,9 +142,9 @@ function varner_brand_featured_unit( $brand_slug ) {
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all p-5 flex flex-col gap-4">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Brand</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Brand</div>
                     <div class="text-2xl font-black text-slate-900 tracking-tight leading-tight"><?php echo esc_html( $brand_name ); ?></div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 mt-1"><?php echo intval( $brand->qty ); ?> Units</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-red-600 mt-1"><?php echo intval( $brand->qty ); ?> Units</div>
                 </div>
                 <?php if ( $brand_logo ) : ?>
                     <img src="<?php echo esc_url( $brand_logo ); ?>" alt="<?php echo esc_attr( $brand_name ); ?>" class="h-12 md:h-14 max-w-[200px] w-auto object-contain drop-shadow" />
@@ -164,7 +164,7 @@ function varner_brand_featured_unit( $brand_slug ) {
                 </div>
                 <div class="p-3 space-y-1">
                     <div class="text-sm font-black text-slate-900 leading-tight line-clamp-2"><?php echo esc_html( $featured['title'] ); ?></div>
-                    <div class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500"><?php echo esc_html( $featured['category'] ?: 'Inventory' ); ?></div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500"><?php echo esc_html( $featured['category'] ?: 'Inventory' ); ?></div>
                     <div class="text-base font-black text-slate-800"><?php echo esc_html( $featured['price'] ); ?></div>
                 </div>
             </a>
@@ -173,7 +173,7 @@ function varner_brand_featured_unit( $brand_slug ) {
             <?php endif; ?>
 
             <div class="flex gap-2">
-                <a href="<?php echo esc_url( $filter_url ); ?>" class="flex-1 text-center bg-red-600 text-white py-2.5 rounded-lg font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-all">View Brand Inventory</a>
+                <a href="<?php echo esc_url( $filter_url ); ?>" class="flex-1 text-center bg-red-600 text-white py-2.5 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-all">View Brand Inventory</a>
             </div>
         </div>
         <?php endforeach; else : ?>

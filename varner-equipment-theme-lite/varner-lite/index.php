@@ -2,12 +2,16 @@
     get_header();
 ?>
 
+    <!-- ADA: Main content anchor for skip navigation -->
+    <main id="main-content">
+
     <!-- HERO SECTION -->
     <section id="hero-parallax" class="relative min-h-[85vh] lg:min-h-[750px] xl:min-h-[80vh] bg-slate-950 flex flex-col justify-center overflow-hidden pb-32 lg:pb-0">
         <div id="hero-parallax-media" class="absolute inset-0 z-0">
             <div class="absolute inset-0 w-full h-full scale-105">
                 <!-- CINEMATIC VIDEO BACKGROUND -->
                 <video id="hero-video" muted loop playsinline webkit-playsinline
+                       aria-hidden="true"
                        class="absolute inset-0 w-full h-full object-cover opacity-70"
                        style="min-width:100%;min-height:100%;">
                 </video>
@@ -110,7 +114,7 @@
                         Find Machines
                     </button>
                 </form>
-                <p id="hero-search-error" class="mt-2 text-xs font-bold uppercase tracking-widest text-red-600 hidden"></p>
+                <p id="hero-search-error" class="mt-2 text-xs font-bold uppercase tracking-widest text-red-600 hidden" role="alert" aria-live="assertive"></p>
             </div>
         </div>
         <script>
@@ -247,7 +251,7 @@
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1">Request Service</div>
-                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Certified Techs</div>
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-400">Certified Techs</div>
                     </div>
                 </a>
 
@@ -257,7 +261,7 @@
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1">Order Parts</div>
-                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">OEM Components</div>
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-400">OEM Components</div>
                     </div>
                 </a>
 
@@ -267,7 +271,7 @@
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1 text-white">Financing</div>
-                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white/80">Get Pre-Approved</div>
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-white/80">Get Pre-Approved</div>
                     </div>
                 </a>
             </div>
@@ -279,10 +283,10 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
-                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Operations Segments</div>
+                    <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Operations Segments</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Browse by Category</h2>
                 </div>
-                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
             </div>
             <?php
             $segment_filters = array(
@@ -339,7 +343,7 @@
                         </div>
                         <div class="text-center flex flex-col items-center">
                             <div class="font-black text-2xl uppercase tracking-tighter leading-tight group-hover:text-red-600 transition-colors"><?php echo esc_html( $card['label'] ); ?></div>
-                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1"><?php echo esc_html( $card['meta'] ); ?></div>
+                            <div class="text-xs font-black uppercase tracking-widest text-slate-500 mt-1"><?php echo esc_html( $card['meta'] ); ?></div>
                         </div>
                     </a>
                 <?php endforeach; ?>
@@ -356,10 +360,10 @@
 
             <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
-                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Hand-Picked Inventory Ledger</div>
+                    <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Hand-Picked Inventory Ledger</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Featured Inventory</h2>
                 </div>
-                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -404,10 +408,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex flex-col md:flex-row gap-10 lg:gap-20 items-center">
                 <div class="w-full md:w-1/2 space-y-6 text-white text-center md:text-left">
-                    <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em]"><?php echo esc_html( varner_get_theme_setting( 'youtube_tagline', 'Varner Equipment Media' ) ); ?></div>
+                    <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em]"><?php echo esc_html( varner_get_theme_setting( 'youtube_tagline', 'Varner Equipment Media' ) ); ?></div>
                     <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1] md:leading-[0.9] tracking-tighter uppercase break-words"><?php echo wp_kses_post( varner_get_theme_setting( 'youtube_title' ) ); ?></h2>
                     <p class="text-base sm:text-lg text-slate-400 font-bold max-w-md mx-auto md:mx-0 leading-relaxed"><?php echo wp_kses_post( varner_get_theme_setting( 'youtube_paragraph' ) ); ?></p>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'youtube_channel_url', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'youtube_channel_url', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
                         Visit Our Channel
                     </a>
                 </div>
@@ -430,7 +434,7 @@
                     <script>
                     document.getElementById('yt-player-container').addEventListener('click', function() {
                         var videoId = this.getAttribute('data-video-id');
-                        this.innerHTML = '<iframe class="w-full h-full" src="https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+                        this.innerHTML = '<iframe class="w-full h-full" src="https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Product Video"></iframe>';
                     });
                     </script>
                 </div>
@@ -451,12 +455,14 @@
                     <p class="text-lg sm:text-xl text-slate-600 font-bold leading-relaxed">
                         <?php echo wp_kses_post( varner_get_theme_setting( 'cta_text' ) ); ?>
                     </p>
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'cta_button_link', '/dealer-info/about-us' ) ) ); ?>" class="inline-block bg-slate-900 text-white px-10 py-5 sm:px-12 sm:py-6 rounded-3xl font-black uppercase tracking-widest text-[10px] sm:text-sm shadow-xl hover:bg-red-600 hover:text-white transition-all w-full sm:w-auto">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'cta_button_link', '/dealer-info/about-us' ) ) ); ?>" class="inline-block bg-slate-900 text-white px-10 py-5 sm:px-12 sm:py-6 rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl hover:bg-red-600 hover:text-white transition-all w-full sm:w-auto">
                         <?php echo esc_html( varner_get_theme_setting( 'cta_button_text', 'Learn more' ) ); ?>
                     </a>
                 </div>
             </div>
         </div>
     </section>
+
+    </main><!-- /#main-content -->
 
 <?php get_footer(); ?>
