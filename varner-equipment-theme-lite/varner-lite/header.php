@@ -25,18 +25,53 @@
         $og_type = 'product';
         $images = varner_get_card_images($post_id);
         if (!empty($images)) $og_image = $images[0];
-    } elseif (is_page_template('page-equipment-listing.php')) {
+    } elseif ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) {
         $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
         $seo = function_exists('varner_get_segment_seo') ? varner_get_segment_seo($slug) : null;
         if ($seo) {
-            $seo_description = $seo['sub'] . " Browse our live inventory at Varner Equipment.";
+            $seo_description = $seo['blurb'] ?: ($seo['sub'] . " Browse our live inventory at Varner Equipment.");
             $og_title = $seo['h1'] . " | Varner Equipment";
         }
     }
+
+    // Win 4: Detect active search/filter parameters to add noindex and override canonical URL
+    $has_active_filters = !empty(array_filter(array(
+        $_GET['category'] ?? null,
+        $_GET['make'] ?? null,
+        $_GET['condition'] ?? null,
+        $_GET['year_min'] ?? null,
+        $_GET['year_max'] ?? null,
+        $_GET['price_min'] ?? null,
+        $_GET['price_max'] ?? null,
+        $_GET['s'] ?? null,
+        $_GET['stock_number'] ?? null,
+        $_GET['vin'] ?? null
+    )));
+
+    $canonical_url = home_url( add_query_arg( null, null ) );
+    if ( is_singular() ) {
+        $canonical_url = get_permalink();
+    } elseif ( is_page_template('page-equipment-listing.php') ) {
+        $slug = get_query_var('inventory_segment');
+        if ( $slug ) {
+            $canonical_url = home_url( '/inventory/' . $slug );
+        } else {
+            $canonical_url = get_permalink();
+        }
+    } elseif ( get_query_var('brand_name') ) {
+        $canonical_url = home_url( '/brands/' . get_query_var('brand_name') );
+    } else {
+        $canonical_url = strtok( home_url( add_query_arg( null, null ) ), '?' );
+    }
+
+    $og_url = $canonical_url;
     ?>
 
     <meta name="description" content="<?php echo esc_attr($seo_description); ?>">
     <meta name="keywords" content="<?php echo esc_attr($seo_keywords); ?>">
+    <?php if ( $has_active_filters ) : ?>
+        <meta name="robots" content="noindex, follow">
+    <?php endif; ?>
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="<?php echo esc_attr($og_type); ?>">
@@ -52,7 +87,7 @@
     <meta property="twitter:description" content="<?php echo esc_attr($seo_description); ?>">
     <meta property="twitter:image" content="<?php echo esc_url($og_image); ?>">
 
-    <link rel="canonical" href="<?php echo esc_url($og_url); ?>">
+    <link rel="canonical" href="<?php echo esc_url($canonical_url); ?>">
 
     <?php wp_head(); ?>
 </head>
@@ -258,6 +293,7 @@
 
                         <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
                         <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
+                        <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Online Auctions</a>
                         
                         <div class="group relative" data-dropdown>
                             <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true">Dealer Info</button>
@@ -340,6 +376,7 @@
 
                     <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
                     <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Product Videos</a>
+                    <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Auctions</a>
                     
                     <div class="border-b border-white/5">
                         <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false">

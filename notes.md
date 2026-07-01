@@ -1,5 +1,5 @@
 # Varner Equipment — Workspace Notes & Intelligence
-*Last updated: June 17, 2026*
+*Last updated: July 1, 2026*
 
 ---
 
@@ -10,14 +10,20 @@
 > - **Do not delete** anything without approval.
 > - **Make suggestions** for improvements — don't act on them unilaterally.
 > - **Use `build.ps1` or Python's `zipfile` module (via `tools/zip_helper.py`)** to zip files. Never use PowerShell's `tar -a -c -f` (which creates POSIX TAR archives) or `Compress-Archive` because WordPress rejects them.
+> - **Keep `readme.txt` version in sync** with the plugin header and `style.css` after every version bump. The root `readme.txt` is a separate file from the one inside the plugin ZIP — both must reflect the current version.
 
 ### SSH / Deployment Rules
 
 > [!IMPORTANT]
-> **For binary files (ZIPs):** Stream via Python subprocess stdin — this is the only reliable method for WP Engine.
-> ```powershell
-> python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/file.zip'], stdin=open('file.zip', 'rb'))"
-> ```
+> **For binary files (ZIPs):** Two reliable methods:
+> 1. Native PowerShell `<` piping (used in `DEPLOY.md`):
+>    ```powershell
+>    ssh -i ~/.ssh/id_ed25519_wpe user@host "cat > /sites/path/file.zip" < file.zip
+>    ```
+> 2. Python subprocess stdin:
+>    ```powershell
+>    python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/file.zip'], stdin=open('file.zip', 'rb'))"
+>    ```
 > **For text files (PHP, etc.):** Use the PowerShell pipeline method:
 > ```powershell
 > Get-Content "local\path\file.php" -Raw -Encoding UTF8 | ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/wp-content/themes/varner-lite/file.php"

@@ -5,24 +5,25 @@ import { apiToLocal, apiToListItem } from '../utils/helpers';
 import { DEFAULT_EMPTY_UNIT, getCategoryLabel } from '../constants/inventoryConstants';
 
 export function useInventory(showToast, setActiveTab) {
-  const [syncEnabled, setSyncEnabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
-  const [showFBPreview, setShowFBPreview] = useState(false);
 
   const [inventoryList, setInventoryList] = useState([]);
   const [deletedHistory, setDeletedHistory] = useState([]);
   const [unitData, setUnitData] = useState(DEFAULT_EMPTY_UNIT);
   const [brands, setBrands] = useState([]);
+  const [years, setYears] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [subSubcategories, setSubSubcategories] = useState([]);
   const [showBrandsModal, setShowBrandsModal] = useState(false);
+  const [showYearsModal, setShowYearsModal] = useState(false);
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [showSubcategoriesModal, setShowSubcategoriesModal] = useState(false);
   const [showSubSubcategoriesModal, setShowSubSubcategoriesModal] = useState(false);
   const [newBrandInput, setNewBrandInput] = useState('');
+  const [newYearInput, setNewYearInput] = useState('');
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [newSubcategoryInput, setNewSubcategoryInput] = useState('');
   const [newSubSubcategoryInput, setNewSubSubcategoryInput] = useState('');
@@ -115,6 +116,10 @@ export function useInventory(showToast, setActiveTab) {
     apiFetch('/brands').then(setBrands).catch(e => console.error('Varner OS: Failed to load brands:', e));
   }, []);
 
+  const loadYears = useCallback(() => {
+    apiFetch('/years').then(setYears).catch(e => console.error('Varner OS: Failed to load years:', e));
+  }, []);
+
   const loadCategories = useCallback(() => {
     apiFetch('/categories').then(setCategories).catch(e => console.error('Varner OS: Failed to load categories:', e));
     apiFetch('/subcategories').then(setSubcategories).catch(e => console.error('Varner OS: Failed to load subcategories:', e));
@@ -138,6 +143,7 @@ export function useInventory(showToast, setActiveTab) {
     const auxTimer = setTimeout(() => {
       apiFetch('/me').then(setCurrentUser).catch(e => console.error('Varner OS: Failed to load user:', e));
       loadBrands();
+      loadYears();
       setTimeout(() => loadCategories(), 400);
     }, 600);
 
@@ -149,6 +155,10 @@ export function useInventory(showToast, setActiveTab) {
   useEffect(() => {
     if (showBrandsModal) loadBrands();
   }, [showBrandsModal, loadBrands]);
+
+  useEffect(() => {
+    if (showYearsModal) loadYears();
+  }, [showYearsModal, loadYears]);
 
   useEffect(() => {
     if (showCategoriesModal || showSubcategoriesModal || showSubSubcategoriesModal) loadCategories();
@@ -173,6 +183,8 @@ export function useInventory(showToast, setActiveTab) {
 
   const handleAddBrand = () => handleListAdd('brands', brands, newBrandInput, setBrands, setNewBrandInput);
   const handleDeleteBrand = (n) => handleListDelete('brands', brands, n, setBrands, 'make');
+  const handleAddYear = () => handleListAdd('years', years, newYearInput, setYears, setNewYearInput);
+  const handleDeleteYear = (n) => handleListDelete('years', years, n, setYears, 'year');
   const handleAddCategory = () => handleListAdd('categories', categories, newCategoryInput, setCategories, setNewCategoryInput);
   const handleDeleteCategory = (n) => handleListDelete('categories', categories, n, setCategories, 'category');
   const handleAddSubcategory = () => handleListAdd('subcategories', subcategories, newSubcategoryInput, setSubcategories, setNewSubcategoryInput);
@@ -329,7 +341,7 @@ export function useInventory(showToast, setActiveTab) {
         seller_info: unitData.sellerInfo,
         featured: unitData.featured ?? false,
         show_on_website: unitData.showOnWebsite ?? true,
-        facebook_sync: unitData.facebookSync ?? true,
+        facebook_sync: unitData.facebookSync ?? false,
         has_attachments: unitData.hasAttachments ?? false,
         attachment_details: unitData.attachmentDetails || '',
         drive: unitData.drive || '',
@@ -520,18 +532,25 @@ export function useInventory(showToast, setActiveTab) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const applyUnitUpdate = (updated) => {
+    if (!updated?.id) return;
+    setInventoryList(prev => prev.map(u => u.wpId === updated.id ? { ...u, ...updated } : u));
+    setUnitData(prev => prev?.id === updated.id ? { ...prev, ...updated } : prev);
+  };
+
   return {
-    syncEnabled, setSyncEnabled,
     isSaving, isLoading, isUploadingImages,
-    showFBPreview, setShowFBPreview,
     inventoryList, deletedHistory, unitData, setUnitData,
-    brands, categories, subcategories, subSubcategories,
+    brands, years, categories, subcategories, subSubcategories,
+    applyUnitUpdate,
     setCategories, setSubcategories, setSubSubcategories,
     showBrandsModal, setShowBrandsModal,
+    showYearsModal, setShowYearsModal,
     showCategoriesModal, setShowCategoriesModal,
     showSubcategoriesModal, setShowSubcategoriesModal,
     showSubSubcategoriesModal, setShowSubSubcategoriesModal,
     newBrandInput, setNewBrandInput,
+    newYearInput, setNewYearInput,
     newCategoryInput, setNewCategoryInput,
     newSubcategoryInput, setNewSubcategoryInput,
     newSubSubcategoryInput, setNewSubSubcategoryInput,
@@ -542,6 +561,7 @@ export function useInventory(showToast, setActiveTab) {
     loadInventory, loadSessions, loadActivity,
     handleCategorySelectChange, handleSubcategorySelectChange, handleSubSubcategorySelectChange,
     handleAddBrand, handleDeleteBrand,
+    handleAddYear, handleDeleteYear,
     handleAddCategory, handleDeleteCategory,
     handleAddSubcategory, handleDeleteSubcategory,
     handleAddSubSubcategory, handleDeleteSubSubcategory,

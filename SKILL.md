@@ -44,11 +44,13 @@ The project utilizes a custom **native PHP/SQL filtering system** for high-perfo
 ---
 
 ## 4. Branding & Mega Menu
-Authorized brands are managed in three locations to ensure full integration (synced to include Zetor and Titan Trailers):
+Authorized brands are managed with a single-source-of-truth pattern (synced to include Zetor and Titan Trailers):
 
-1.  **Public UI**: `header.php` (Mega Menu grid).
-2.  **REST API**: `rest-api.php` (`varner_api_get_brands` default array).
-3.  **ACF Backend**: `varner-backend.php` (Choices array in the equipment field group).
+1.  **Definition**: `varner_default_brands()` in `varner-backend.php` — canonical brand list.
+2.  **Override**: DB option `varner_brands` supersedes the default at runtime.
+3.  **Public UI**: `header.php` (Mega Menu grid) calls `varner_default_brands()` via `function_exists` guard.
+4.  **REST API**: `rest-api.php` (`varner_api_get_brands` default array).
+5.  **ACF Backend**: `varner-backend.php` (Choices array in the equipment field group).
 
 ---
 

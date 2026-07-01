@@ -15,7 +15,6 @@ import { SidebarLogo, SidebarContent, FilterTag, MappingRow } from './components
 import { ManageListModal } from './components/Common/Modals';
 import { InputField, TextAreaField, SelectField, QUILL_STYLES } from './components/Common/FormFields';
 import { MetricCard, QuickActions, RecentActivity } from './components/Common/DashboardCards';
-import { FBPreviewModal } from './components/FBPreviewModal';
 import { InventoryTable } from './components/InventoryTable';
 import { UnitEditorPanel } from './components/UnitEditorPanel';
 import { MarketplaceTab } from './components/Tabs/MarketplaceTab';
@@ -133,6 +132,11 @@ const App = () => {
         <ManageListModal title="Manage Brands" items={inv.brands} inputValue={inv.newBrandInput}
           onInputChange={inv.setNewBrandInput} onAdd={inv.handleAddBrand} onDelete={inv.handleDeleteBrand}
           onClose={() => inv.setShowBrandsModal(false)} placeholder="New brand name..." />
+      )}
+      {inv.showYearsModal && (
+        <ManageListModal title="Manage Years" items={inv.years} inputValue={inv.newYearInput}
+          onInputChange={inv.setNewYearInput} onAdd={inv.handleAddYear} onDelete={inv.handleDeleteYear}
+          onClose={() => inv.setShowYearsModal(false)} placeholder="New year (e.g. 2028)..." />
       )}
       {inv.showCategoriesModal && (
         <ManageListModal title="Manage Categories"
@@ -275,6 +279,7 @@ const App = () => {
                   isUploadingImages={inv.isUploadingImages}
                   fieldErrors={inv.fieldErrors}
                   brands={inv.brands}
+                  years={inv.years}
                   categories={inv.categories}
                   subcategories={inv.subcategories}
                   subSubcategories={inv.subSubcategories}
@@ -289,12 +294,11 @@ const App = () => {
                   handleRemoveImplement={inv.handleRemoveImplement}
                   handleImplementImageUpload={inv.handleImplementImageUpload}
                   setShowBrandsModal={inv.setShowBrandsModal}
+                  setShowYearsModal={inv.setShowYearsModal}
                   setShowCategoriesModal={inv.setShowCategoriesModal}
                   setShowSubcategoriesModal={inv.setShowSubcategoriesModal}
                   setShowSubSubcategoriesModal={inv.setShowSubSubcategoriesModal}
-                  syncEnabled={inv.syncEnabled}
-                  setSyncEnabled={inv.setSyncEnabled}
-                  setShowFBPreview={inv.setShowFBPreview}
+                  onUnitUpdated={inv.applyUnitUpdate}
                 />
               </ErrorBoundary>
             )}
@@ -351,7 +355,6 @@ const App = () => {
         </div>
       </main>
 
-      {inv.showFBPreview && <FBPreviewModal unitData={inv.unitData} onClose={() => inv.setShowFBPreview(false)} />}
     </div>
   );
 };

@@ -64,6 +64,11 @@ function varner_register_rest_routes(): void {
         'callback'            => 'varner_api_restore_unit',
         'permission_callback' => $auth,
     ));
+    register_rest_route($ns, '/inventory/(?P<id>\d+)/marketplace-posted', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_set_marketplace_posted',
+        'permission_callback' => $auth,
+    ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)/permanent', array(
         'methods'             => 'DELETE',
         'callback'            => 'varner_api_permanent_delete',
@@ -83,7 +88,11 @@ function varner_register_rest_routes(): void {
 
     register_rest_route($ns, '/brands', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_brands',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_brands', 'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_brands', 'permission_callback' => $editor_auth),
+    ));
+    register_rest_route($ns, '/years', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_years',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_years', 'permission_callback' => $editor_auth),
     ));
     register_rest_route($ns, '/categories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
@@ -401,6 +410,27 @@ function varner_api_save_brands(WP_REST_Request $r): WP_REST_Response {
     return varner_api_save_list('brands', 'varner_brands', $r);
 }
 
+function varner_default_years(): array {
+    $years = array();
+    $current = intval(date('Y')) + 1;
+    for ($i = $current; $i >= 1950; $i--) {
+        $years[] = (string) $i;
+    }
+    return $years;
+}
+
+function varner_api_get_years(): WP_REST_Response {
+    $years = get_option('varner_years');
+    if (!is_array($years) || empty($years)) {
+        $years = varner_default_years();
+    }
+    return rest_ensure_response($years);
+}
+
+function varner_api_save_years(WP_REST_Request $r): WP_REST_Response {
+    return varner_api_save_list('years', 'varner_years', $r);
+}
+
 function varner_default_categories(): array {
     return array(
         'Utility Vehicles', 'Tractors', 'Planting Equipment', 'Tillage Equipment',
@@ -674,6 +704,45 @@ function varner_api_restore_unit(WP_REST_Request $request) {
         varner_os_purge_cache($post_id);
     }
     
+    return rest_ensure_response(varner_format_unit($post_id));
+}
+
+function varner_api_set_marketplace_posted(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    if (!current_user_can('edit_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to edit this unit.', array('status' => 403));
+    }
+    $post = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
+    }
+
+    $data   = $request->get_json_params();
+    $posted = is_array($data) && array_key_exists('posted', $data)
+        ? (bool) $data['posted']
+        : true;
+
+    if ($posted) {
+        update_post_meta($post_id, 'marketplace_posted', '1');
+        update_post_meta($post_id, '_varner_marketplace_posted_date', current_time('c'));
+    } else {
+        update_post_meta($post_id, 'marketplace_posted', '0');
+        delete_post_meta($post_id, '_varner_marketplace_posted_date');
+    }
+
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger(
+        $post_id,
+        'marketplace_posted',
+        $posted ? 'marked as posted to Marketplace' : 'unmarked Marketplace posted',
+        array('posted' => $posted),
+        $rid
+    );
+
+    if (function_exists('varner_os_purge_cache')) {
+        varner_os_purge_cache($post_id);
+    }
+
     return rest_ensure_response(varner_format_unit($post_id));
 }
 

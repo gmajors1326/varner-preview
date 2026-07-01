@@ -2,7 +2,7 @@
 
 **Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
-**Last updated:** June 17, 2026
+**Last updated:** June 29, 2026
 **Maintainer:** Greg
 
 ---
@@ -48,6 +48,7 @@ Deployment to dev is performed with WP-CLI over SSH (stream ZIP → `wp plugin/t
 | `main` | `1.23.164` | Build bump after SRI + Tailwind swap. ZIPs rebuilt. |
 | `main` | `1.23.178` | Cumulative updates, Pages API hardening, responsive grid improvements, and documentation audit sweep: Pages REST API (with server-side protected page guards, meta-caps, and validation), safety confirm dialogs, trailer length dropdown, Zetor/Titan brand sync, Tailwind config safelists, ZIP packaging script robustness, responsive grid layout optimization for service/parts requests on tablet/laptop viewports. |
 | `main` | `1.23.181` | iPad Landscape Responsiveness Fix: resolved overlap between hero buttons and quick search bar by adjusting hero section height, container padding-bottom, and responsive title font sizes. |
+| `main` | `1.23.221` | Current head. PWA redesign (Midnight V2.4 theme, VIN plate scanner, outline clone cards), PWA login flow improvements, trailer length dropdown, page editor upgrades with safety confirm dialogs, responsive form grid fixes. |
 | `feature/magic-link` | `1.23.151` | Passwordless email magic-link authentication. Fully built, reviewed, and parked on `feature/magic-link` branch. **Not live.** |
 
 **Magic-link work is parked, not deleted.** The `feature/magic-link` branch holds the fully assembled source files **and** the built `1.23.151` ZIP. Before relying on it as a restore point, confirm it rebuilds cleanly to a working `1.23.151` (see §7).

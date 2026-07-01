@@ -10,7 +10,7 @@
 ### 2026-06-17 (v1.23.177)
 - **Pages Management API Hardening & UI**: Added secure REST endpoints (`/pages`, `/page-templates`) and a management sub-panel in Settings. Consolidated duplicate route registrations. Gated endpoints on granular meta capabilities (`edit_page`, `delete_page`, and `publish_pages`). Added server-side validation whitelists for theme templates, and blocked trashing or draft-status toggling of critical system pages (home page, blog page, privacy page, or showroom).
 - **UX & Safety Enhancements**: Built sticky quick-jump section navigation at the top of the Settings Page Editor. Integrated client-side confirmation prompts to safeguard destructive actions.
-- **Form Responsive Grid Optimizations**: Redesigned the equipment references grid on both [page-service-request.php](file:///c:/Users/Greg/Desktop/Varner%20Equipent/varner-equipment-theme-lite/varner-lite/page-service-request.php) and [page-parts-request.php](file:///c:/Users/Greg/Desktop/Varner%20Equipent/varner-equipment-theme-lite/varner-lite/page-parts-request.php) to use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`. This prevents input squishing on tablet/laptop viewports by folding cleanly into a balanced grid, with the "Hours/Meter" field spanning full-width on medium sizes and resolving to a single row on desktop/large laptop screens.
+- **Form Responsive Grid Optimizations**: Redesigned the equipment references grid on both `page-service-request.php` and `page-parts-request.php` to use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`. This prevents input squishing on tablet/laptop viewports by folding cleanly into a balanced grid, with the "Hours/Meter" field spanning full-width on medium sizes and resolving to a single row on desktop/large laptop screens.
 - **Trailer Length Selection Options**: Conditionally displays trailer length selection only when category includes "trailer", and transitioned length input from a free-text string to a dropdown select covering 8–53 ft.
 - **Brand Sync & Tailwind/Build Fixes**: Synced brand options (added Zetor, renamed Titan MFG to Titan Trailers) across theme menus, REST configurations, and ACF structures. Added safelist configuration for arbitrary utility classes in `tailwind.config.js` and hardened `build.ps1` and `zip_helper.py` against Windows reserved `nul` files.
 
@@ -91,6 +91,8 @@ If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path
 
 The active theme slug is `varner-equipment-theme-v23-lite-4` (verify with `wp theme list`). Stream the ZIP using the active slug as the remote filename — `wp theme install` resolves it automatically.
 
+> The `-4` suffix is the WP Engine-installed slug, not part of the local ZIP filename (`varner-equipment-theme-v23-lite.zip`). The remote filename must match the slug for `wp theme install --force` to replace the correct theme.
+
 ### 1. Stream the Theme ZIP
 ```powershell
 ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip" < varner-equipment-theme-v23-lite.zip
@@ -103,7 +105,10 @@ ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp 
 
 ## Post-Install Checks
 
-1. Clear app/server/CDN caches.
+1. Flush caches:
+   ```powershell
+   ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp page-cache flush --path=/sites/varnerequipdev"
+   ```
 2. Verify header logo renders.
    - Preferred source: media attachment titled `VarnerEquipment_red`.
    - Fallback source: bundled theme logo assets.

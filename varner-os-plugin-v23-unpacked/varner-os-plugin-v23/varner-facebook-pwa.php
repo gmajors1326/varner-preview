@@ -13,12 +13,16 @@ defined('ABSPATH') || exit;
 
 function varner_os_get_facebook_catalog_csv(): string {
     $posts = get_posts(array(
-        'post_type'      => 'equipment',
-        'post_status'    => 'publish',
-        'posts_per_page' => -1,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
-        'meta_query'     => array(
+        'post_type'              => 'equipment',
+        'post_status'            => 'publish',
+        'posts_per_page'         => -1,
+        'orderby'                => 'date',
+        'order'                  => 'DESC',
+        'cache_results'          => false,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
+        'suppress_filters'       => false,
+        'meta_query'             => array(
             'relation' => 'AND',
             array(
                 'relation' => 'OR',
@@ -26,9 +30,7 @@ function varner_os_get_facebook_catalog_csv(): string {
                 array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
             ),
             array(
-                'relation' => 'OR',
-                array('key' => 'facebook_sync', 'value' => '1', 'compare' => '='),
-                array('key' => 'facebook_sync', 'compare' => 'NOT EXISTS'),
+                'key' => 'facebook_sync', 'value' => '1', 'compare' => '=',
             ),
         ),
     ));
@@ -214,7 +216,10 @@ function varner_os_write_facebook_catalog_file(): bool {
     $csv_data = varner_os_get_facebook_catalog_csv();
     $upload_dir = wp_upload_dir();
     $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
-    $written = @file_put_contents($file_path, $csv_data);
+    $written = file_put_contents($file_path, $csv_data);
+    if ($written === false) {
+        varner_os_log_meta_sync("ERROR: Failed to write catalog CSV to {$file_path}", 'warning');
+    }
     
     // Clear the meta sync health cache transient so it recalculates next time
     delete_transient('varner_meta_sync_health');
@@ -232,7 +237,10 @@ function varner_os_generate_facebook_catalog(): void {
     // Attempt to write/refresh the static file for Nginx direct serving
     $upload_dir = wp_upload_dir();
     $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
-    @file_put_contents($file_path, $csv_data);
+    $written = file_put_contents($file_path, $csv_data);
+    if ($written === false) {
+        varner_os_log_meta_sync("ERROR: Failed to write catalog CSV to {$file_path}", 'warning');
+    }
 
     // Log Meta sync crawl event
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';

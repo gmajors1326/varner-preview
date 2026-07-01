@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Edit2, Copy, Image as ImageIcon, Eye, Star, Box, TrendingUp } from 'lucide-react';
+import { Search, X, Edit2, Copy, Image as ImageIcon, Eye, Star, Box, TrendingUp, Facebook } from 'lucide-react';
 import { FilterSidebar } from './FilterSidebar';
 import { FilterTag } from './Common/Navigation';
 import { getDaysInStock } from '../utils/helpers';
@@ -134,8 +134,9 @@ export const InventoryTable = ({
                         <th className="px-6 py-5 w-40">STATUS</th>
                         <th className="px-6 py-5 text-center w-36">DAYS IN STOCK</th>
                         <th className="px-6 py-5 text-center w-28">WEBSITE</th>
-                        <th className="px-6 py-5 text-center w-28">META SYNC</th>
                         <th className="px-6 py-5 text-center w-28">FEATURED</th>
+                        <th className="px-6 py-5 text-center w-28">META SYNC</th>
+                        <th className="px-6 py-5 text-center w-28">MARKETPLACE</th>
                         <th className="px-6 py-5 text-center w-28">DRAFT</th>
                         <th className="px-6 py-5 text-right w-32">ACTIONS</th>
                       </tr>
@@ -206,6 +207,15 @@ export const InventoryTable = ({
                           </td>
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
+                              <button onClick={() => onToggle(item, 'featured')}
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
+                                aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
+                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'facebook_sync')}
                                 className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}
                                 aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync`}>
@@ -214,13 +224,15 @@ export const InventoryTable = ({
                             </div>
                           </td>
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
-                            <div className="flex justify-center">
-                              <button onClick={() => onToggle(item, 'featured')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
-                                aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
-                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
-                              </button>
-                            </div>
+                            {item.marketplace_posted ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-[9px] font-black uppercase tracking-widest">
+                                <Facebook size={11} fill="currentColor" /> On Marketplace
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                                Not posted
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
@@ -290,6 +302,14 @@ export const InventoryTable = ({
                           </button>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Featured</span>
+                          <button onClick={() => onToggle(item, 'featured')}
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
+                            aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
+                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between py-1.5">
                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Meta Sync</span>
                           <button onClick={() => onToggle(item, 'facebook_sync')}
                             className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}
@@ -298,12 +318,16 @@ export const InventoryTable = ({
                           </button>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Featured</span>
-                          <button onClick={() => onToggle(item, 'featured')}
-                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
-                            aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
-                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
-                          </button>
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Marketplace</span>
+                          {item.marketplace_posted ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-[9px] font-black uppercase tracking-widest">
+                              <Facebook size={11} fill="currentColor" /> Posted
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                              Not posted
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center justify-between py-1.5">
                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Draft</span>

@@ -261,14 +261,62 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
  */
 function varner_get_segment_seo($slug) {
     $segments = array(
-        'all-units' => array('title' => 'All Inventory', 'h1' => 'Complete Collection', 'sub' => 'Western Colorado\'s selection.', 'filter' => array()),
-        'new'       => array('title' => 'New Inventory', 'h1' => 'New Equipment', 'sub' => 'Latest machines.', 'filter' => array('condition' => array('New'))),
-        'used'      => array('title' => 'Used Inventory', 'h1' => 'Proven Performance', 'sub' => 'Certified units.', 'filter' => array('condition' => array('Used'))),
-        'tractors'  => array('title' => 'Tractors', 'h1' => 'Heavy-Duty Tractors', 'sub' => 'Backbone of any operation.', 'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))),
-        'trailers'  => array('title' => 'Trailers', 'h1' => 'Commercial Trailers', 'sub' => 'Haul with confidence.', 'filter' => array('category' => array('Commercial Trailers', 'Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))),
-        'attachments' => array('title' => 'Attachments', 'h1' => 'Attachments & Implements', 'sub' => 'Maximize versatility.', 'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))),
-        'hay-equipment' => array('title' => 'Hay Equipment', 'h1' => 'Hay & Harvest', 'sub' => 'Precision baling.', 'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))),
-        'misc'      => array('title' => 'Miscellaneous', 'h1' => 'Misc. Equipment', 'sub' => 'Tools & accessories.', 'filter' => array('category' => array('Misc', 'Other')))
+        'all-units' => array(
+            'title' => 'All Inventory',
+            'h1'    => 'Complete Collection',
+            'sub'   => 'Browse our full inventory of new and used tractors, trailers, and farm attachments.',
+            'blurb' => 'Varner Equipment is Colorado\'s Western Slope premier agricultural and commercial machinery dealership. Browse our complete live inventory of premium farm tractors, utility trailers, and implements available today in Delta.',
+            'filter' => array()
+        ),
+        'new'       => array(
+            'title' => 'New Inventory',
+            'h1'    => 'New Equipment',
+            'sub'   => 'Explore the latest agricultural machinery and commercial trailers from top brands.',
+            'blurb' => 'We carry brand-new Mahindra tractors, Deutz-Fahr tractors, Big Tex trailers, CM Truck Beds, and more. Find the latest heavy-duty machinery for your commercial or farm operation.',
+            'filter' => array('condition' => array('New'))
+        ),
+        'used'      => array(
+            'title' => 'Used Inventory',
+            'h1'    => 'Proven Performance',
+            'sub'   => 'High-quality, reliable, and pre-owned tractors, trailers, and machinery.',
+            'blurb' => 'Browse our fully inspected, certified pre-owned farm equipment, tractors, and utility trailers. Get proven heavy-duty performance at a great value on the Western Slope.',
+            'filter' => array('condition' => array('Used'))
+        ),
+        'tractors'  => array(
+            'title' => 'Tractors',
+            'h1'    => 'Heavy-Duty Tractors',
+            'sub'   => 'Find the perfect tractor for your acreage, farm, or commercial job site.',
+            'blurb' => 'From Mahindra compact tractors to high-horsepower Deutz-Fahr agricultural workhorses, we supply the backbone of Colorado\'s ranching operations. Explore our live tractor inventory with local parts and service support.',
+            'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))
+        ),
+        'trailers'  => array(
+            'title' => 'Trailers',
+            'h1'    => 'Commercial Trailers',
+            'sub'   => 'Commercial dump trailers, flatbeds, utility trailers, and truck beds.',
+            'blurb' => 'Haul with confidence. We stock premium trailers from Big Tex, Titan, and Triton, including heavy-duty dump trailers, goosenecks, equipment haulers, and utility models in Delta, Colorado.',
+            'filter' => array('category' => array('Commercial Trailers', 'Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))
+        ),
+        'attachments' => array(
+            'title' => 'Attachments',
+            'h1'    => 'Attachments & Implements',
+            'sub'   => 'Loaders, mowers, cutters, and implements to maximize utility.',
+            'blurb' => 'Get more done. Equip your tractor with premium attachments, loaders, backhoes, rotary cutters, and mowers. Maximize the versatility of your equipment for ranching, landscaping, or farming.',
+            'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))
+        ),
+        'hay-equipment' => array(
+            'title' => 'Hay Equipment',
+            'h1'    => 'Hay & Harvest',
+            'sub'   => 'Precision balers, rakes, tedders, and hay tools from Krone and McHale.',
+            'blurb' => 'From precision round balers to heavy-duty disc mowers and rakes, we carry industry-leading Krone and McHale hay tools. Achieve optimal forage quality and harvesting efficiency.',
+            'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))
+        ),
+        'misc'      => array(
+            'title' => 'Miscellaneous',
+            'h1'    => 'Misc. Equipment',
+            'sub'   => 'Explore miscellaneous tools, accessories, and farm equipment.',
+            'blurb' => 'Find unique agricultural tools, commercial power equipment, and utility vehicles. Quality equipment and accessories to support your homestead, ranch, or commercial operation.',
+            'filter' => array('category' => array('Misc', 'Other'))
+        )
     );
     return $segments[$slug] ?? null;
 }
@@ -678,4 +726,117 @@ add_filter( 'xmlrpc_enabled', '__return_false' );
 if ( ! defined( 'DISALLOW_FILE_EDIT' ) ) {
     define( 'DISALLOW_FILE_EDIT', true );
 }
+
+/**
+ * ─── WIN 1 & 5: SEO CUSTOM TITLE TAGS, ROBOTS & SITEMAPS OVERRIDES ───
+ */
+
+/**
+ * Win 1: Custom Title Tags
+ * Hook into document_title_parts to target specific search intent.
+ */
+function varner_seo_title_parts( $title_parts ) {
+    if ( is_singular( 'equipment' ) ) {
+        $post_id  = get_the_ID();
+        $year     = get_field( 'year',     $post_id );
+        $make     = get_field( 'make',     $post_id );
+        $model    = get_field( 'model',    $post_id );
+        $category = get_field( 'category', $post_id );
+        
+        $name = trim( implode( ' ', array_filter( array( $year, $make, $model ) ) ) );
+        if ( empty( $name ) ) {
+            $name = get_the_title( $post_id );
+        }
+        
+        $cat_label = $category ? " " . $category : " Equipment";
+        $title_parts['title']   = $name . $cat_label . " For Sale";
+        $title_parts['site']    = "Delta, CO | Varner Equipment";
+        unset( $title_parts['tagline'] );
+    } elseif ( get_query_var( 'inventory_segment' ) ) {
+        $slug = get_query_var( 'inventory_segment' );
+        $seo  = varner_get_segment_seo( $slug );
+        if ( $seo ) {
+            $title_parts['title']   = $seo['h1'];
+            $title_parts['site']    = "Varner Equipment";
+            unset( $title_parts['tagline'] );
+        }
+    } elseif ( get_query_var( 'brand_name' ) ) {
+        $brand_slug  = get_query_var( 'brand_name' );
+        $brands      = get_option( 'varner_brands', array() );
+        $brand_label = rawurldecode( $brand_slug );
+        foreach ( $brands as $b ) {
+            if ( sanitize_title( $b ) === $brand_slug ) {
+                $brand_label = $b;
+                break;
+            }
+        }
+        $title_parts['title']   = $brand_label . " Equipment For Sale";
+        $title_parts['site']    = "Delta, CO | Varner Equipment";
+        unset( $title_parts['tagline'] );
+    }
+    return $title_parts;
+}
+add_filter( 'document_title_parts', 'varner_seo_title_parts', 100 );
+
+/**
+ * Win 5: Programmatic Robots Meta for Sold / Pending Equipment
+ * Sets to noindex, follow to preserve backlink equity while keeping sold inventory out of search indexes.
+ */
+function varner_seo_robots_visibility( $robots ) {
+    if ( is_singular( 'equipment' ) ) {
+        $post_id      = get_the_ID();
+        $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post_id ) ) );
+        if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
+            return array(
+                'noindex'  => true,
+                'nofollow' => false,
+            );
+        }
+    }
+    return $robots;
+}
+add_filter( 'wp_robots', 'varner_seo_robots_visibility', 100 );
+
+/**
+ * Exclude Sold / Pending / Draft from WordPress native sitemaps
+ */
+function varner_exclude_sold_from_sitemaps( $args, $post_type ) {
+    if ( 'equipment' === $post_type ) {
+        if ( ! isset( $args['meta_query'] ) ) {
+            $args['meta_query'] = array();
+        }
+        $args['meta_query'][] = array(
+            'key'     => 'stock_status',
+            'value'   => array( 'sold', 'pending sale', 'sale pending', 'pending' ),
+            'compare' => 'NOT IN',
+        );
+    }
+    return $args;
+}
+add_filter( 'wp_sitemaps_posts_query_args', 'varner_exclude_sold_from_sitemaps', 100, 2 );
+
+/**
+ * Exclude Sold / Pending / Draft from Yoast SEO XML sitemaps
+ */
+function varner_exclude_sold_from_yoast_sitemap( $url, $type, $post ) {
+    if ( 'post' === $type && isset( $post->post_type ) && 'equipment' === $post->post_type ) {
+        $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post->ID ) ) );
+        if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
+            return false;
+        }
+    }
+    return $url;
+}
+add_filter( 'wpseo_sitemap_entry', 'varner_exclude_sold_from_yoast_sitemap', 10, 3 );
+add_filter( 'wpseo_robots', function( $robots ) {
+    if ( is_singular( 'equipment' ) ) {
+        $post_id      = get_the_ID();
+        $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post_id ) ) );
+        if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
+            return 'noindex,follow';
+        }
+    }
+    return $robots;
+}, 100 );
+
 

@@ -4,7 +4,7 @@ Theme URI: https://varnerequipment.com
 Author: hwy559.com
 Author URI: https://hwy559.com
 Description: High-performance, industrial-calm storefront for Varner Equipment. Optimized for v23 OS.
-Version: 1.23.212
+Version: 1.23.245
 Requires at least: 5.4
 Tested up to: 6.4
 Requires PHP: 7.4
@@ -16,6 +16,29 @@ Text Domain: varner-v23
 body {
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+}
+
+/* Dynamic Accessibility Skip Link */
+.skip-to-content {
+    position: absolute;
+    top: -100px;
+    left: 20px;
+    background: #dc2626;
+    color: white;
+    padding: 10px 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    z-index: 99999;
+    border-radius: 0 0 12px 12px;
+    transition: top 0.2s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-decoration: none;
+}
+.skip-to-content:focus {
+    top: 0;
+    outline: none;
 }
 
 .hero-gradient {

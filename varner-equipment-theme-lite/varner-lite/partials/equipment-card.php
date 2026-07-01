@@ -23,7 +23,9 @@ if ( ! strpos($formatted_price, 'Call') && get_field('call_for_price', $post_id)
 }
 
 $permalink      = get_permalink( $post_id );
-$title_text     = trim( "$year $make $model" ) ?: 'View Unit';
+$card_loc_parts  = explode( ' ', varner_get_theme_setting( 'contact_address_line2', 'Delta, CO' ) );
+$card_location   = isset( $card_loc_parts[0] ) ? rtrim( $card_loc_parts[0], ',' ) . ' ' . ( $card_loc_parts[1] ?? '' ) : 'Delta, CO';
+$title_text      = trim( "$year $make $model" . ( $category ? " — $category" : '' ) . ( $card_location ? " at Varner Equipment, $card_location" : '' ) ) ?: 'View Unit';
 $uid            = 'vne-' . $post_id;
 $card_status    = isset( $stock_status ) ? $stock_status : get_field( 'stock_status', $post_id );
 $card_status_lc = $card_status ? strtolower( trim( $card_status ) ) : '';
@@ -42,14 +44,28 @@ $finance_url    = add_query_arg( array(
     <!-- ── IMAGE CAROUSEL ─────────────────────────────────── -->
     <div class="vne-carousel-wrap relative group/carousel" id="<?php echo esc_attr( $uid ); ?>">
         <div class="aspect-[16/11] relative overflow-hidden bg-slate-100">
-            <?php foreach ( $images as $i => $img_url ) : ?>
+            <?php 
+            $card_cat = isset($category) ? $category : get_field('category', $post_id);
+            $card_cond = isset($condition) ? $condition : get_field('condition', $post_id);
+            $base_alt = trim( implode( ' ', array_filter( array( $card_cond, $year, $make, $model, $card_cat ) ) ) );
+            if ( empty( $base_alt ) ) {
+                $base_alt = $title_text;
+            }
+            $base_alt .= ' for sale at Varner Equipment in Delta, CO';
+            
+            foreach ( $images as $i => $img_url ) : 
+                $alt_desc = $base_alt;
+                if ( count( $images ) > 1 ) {
+                    $alt_desc .= ' - Photo ' . ( $i + 1 );
+                }
+            ?>
             <a href="<?php echo esc_url( $img_url ); ?>" 
                class="vne-slide vne-lightbox-trigger block absolute inset-0 w-full h-full transition-opacity duration-300"
                data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
                data-start="<?php echo esc_url( $img_url ); ?>"
                style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
                 <img src="<?php echo esc_url( $img_url ); ?>"
-                     alt="<?php echo esc_attr( $title_text ); ?>"
+                     alt="<?php echo esc_attr( $alt_desc ); ?>"
                      loading="lazy"
                      class="w-full h-full object-cover">
             </a>

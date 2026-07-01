@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Box, Facebook, Settings, ChevronRight, ChevronDown, Star, Eye, Save, Copy,
-  Loader2, CheckCircle2, ArrowUpRight
+  Loader2
 } from 'lucide-react';
 import {
   COLOR_OPTIONS, STATUS_OPTIONS, CONDITION_OPTIONS,
@@ -9,6 +9,7 @@ import {
 } from '../constants/inventoryConstants';
 import { InputField, TextAreaField, SelectField } from './Common/FormFields';
 import { MediaSection } from './MediaSection';
+import { MarketplaceQuickPost } from './MarketplaceQuickPost';
 import { AttachmentsSection } from './AttachmentsSection';
 
 export const UnitEditorPanel = ({
@@ -21,6 +22,7 @@ export const UnitEditorPanel = ({
   isUploadingImages,
   fieldErrors,
   brands,
+  years,
   categories,
   subcategories,
   subSubcategories,
@@ -35,12 +37,11 @@ export const UnitEditorPanel = ({
   handleRemoveImplement,
   handleImplementImageUpload,
   setShowBrandsModal,
+  setShowYearsModal,
   setShowCategoriesModal,
   setShowSubcategoriesModal,
   setShowSubSubcategoriesModal,
-  syncEnabled,
-  setSyncEnabled,
-  setShowFBPreview,
+  onUnitUpdated,
 }) => {
   // Build category option lists
   const allCategories = Array.from(new Set([
@@ -170,22 +171,30 @@ export const UnitEditorPanel = ({
             <div className="flex flex-col sm:flex-row gap-3 md:col-span-2">
               <div className="flex-1">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Year</label>
-                  <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                    <select value={unitData.year}
-                      onChange={e => {
-                        const v = e.target.value;
-                        handleInputChange('year', v);
-                        handleInputChange('title', `${v} ${unitData.make} ${unitData.model}`.trim());
-                      }}
-                      className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
-                      style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                            <option value="">-- Select Year --</option>
-                      {Array.from({ length: new Date().getFullYear() + 1 - 1950 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                        <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronRight size={24} className="rotate-90" /></div>
+                  <div className="flex justify-between items-end">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Year</label>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
+                      <select value={unitData.year}
+                        onChange={e => {
+                          const v = e.target.value;
+                          handleInputChange('year', v);
+                          handleInputChange('title', `${v} ${unitData.make} ${unitData.model}`.trim());
+                        }}
+                        className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
+                        style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
+                                              <option value="">-- Select Year --</option>
+                        {Array.isArray(years) ? [...years].sort((a, b) => b.localeCompare(a)).map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        )) : null}
+                      </select>
+                      <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
+                    </div>
+                    <button type="button" onClick={() => setShowYearsModal(true)}
+                      className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
+                      <Settings size={14} /> Manage Years
+                    </button>
                   </div>
                   {fieldErrors.year && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.year}</p>}
                 </div>
@@ -303,7 +312,7 @@ export const UnitEditorPanel = ({
               {[
                 { field: 'featured', icon: <Star size={20} fill={unitData.featured ? 'currentColor' : 'none'} />, iconBg: unitData.featured ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300', label: 'Featured Unit', sub: 'Display at the top of the homepage', color: unitData.featured ? 'bg-amber-500' : 'bg-slate-200' },
                 { field: 'showOnWebsite', icon: <Eye size={20} />, iconBg: unitData.showOnWebsite ? 'bg-green-100 text-green-600' : 'bg-white text-slate-300', label: 'Website Visibility', sub: 'Publicly visible on showroom pages', color: unitData.showOnWebsite ? 'bg-green-600' : 'bg-slate-200' },
-                { field: 'facebookSync', icon: <Facebook size={20} fill={unitData.facebookSync ? 'currentColor' : 'none'} />, iconBg: unitData.facebookSync ? 'bg-blue-100 text-blue-600' : 'bg-white text-slate-300', label: 'Sync to Meta/Facebook', sub: 'Include this unit in the Facebook Catalog CSV feed', color: unitData.facebookSync ? 'bg-blue-600' : 'bg-slate-200' },
+                { field: 'facebookSync', icon: <Facebook size={20} fill={unitData.facebookSync ? 'currentColor' : 'none'} />, iconBg: unitData.facebookSync ? 'bg-blue-100 text-blue-600' : 'bg-white text-slate-300', label: 'Sync to Meta/Facebook', sub: 'Enable to include in Facebook/Marketplace feed', color: unitData.facebookSync ? 'bg-blue-600' : 'bg-slate-200' },
               ].map(({ field, icon, iconBg, label, sub, color }) => (
                 <div key={field} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                   <div className="flex items-center gap-4">
@@ -364,35 +373,9 @@ export const UnitEditorPanel = ({
         </div>
       </div>
 
-      {/* Right — Marketplace widget */}
+      {/* Right — Marketplace posting helper */}
       <div className="space-y-8">
-        <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200/60 flex flex-col">
-          <div className="bg-slate-950 p-6 text-white flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-600 p-2.5 rounded-xl"><Facebook size={20} fill="white" /></div>
-              <div>
-                <h4 className="font-black text-sm uppercase tracking-tight leading-none mb-1">Meta Marketplace</h4>
-                <p className="text-[8px] text-slate-500 uppercase font-black tracking-widest">Auto-Sync Active</p>
-              </div>
-            </div>
-            <button onClick={() => setSyncEnabled(!syncEnabled)} className={`w-14 h-7 shrink-0 rounded-full relative transition-all duration-300 ${syncEnabled ? 'bg-blue-600' : 'bg-slate-800'}`}
-              aria-label={`${syncEnabled ? 'Disable' : 'Enable'} Meta marketplace sync`}>
-              <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-300 ${syncEnabled ? 'left-8' : 'left-1'}`} />
-            </button>
-          </div>
-          <div className="p-8 space-y-8 bg-white text-slate-900">
-            <div className="flex items-center gap-4 p-5 bg-blue-50/40 border-2 border-blue-100 rounded-[1.5rem]">
-              <div className="bg-white p-2 rounded-full border border-blue-200 shadow-md text-blue-600"><CheckCircle2 size={20} /></div>
-              <div>
-                <p className="text-[11px] font-black text-blue-950 uppercase leading-none mb-1">Facebook Catalog Synced</p>
-                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest italic">Refreshed 2m ago</p>
-              </div>
-            </div>
-            <button onClick={() => setShowFBPreview(true)} className="w-full bg-slate-950 text-white py-6 rounded-[1.5rem] font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black transition-all active:scale-95 shadow-2xl shadow-slate-300 mt-2 leading-none border-b-4 border-slate-800">
-              View Marketplace Preview <ArrowUpRight size={18} className="text-blue-400" />
-            </button>
-          </div>
-        </div>
+        <MarketplaceQuickPost unitData={unitData} onUnitUpdated={onUnitUpdated} />
       </div>
     </div>
   );

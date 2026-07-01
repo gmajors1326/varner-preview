@@ -55,7 +55,7 @@ function varner_os_acf_save_meta_sync_log($post_id): void {
     $gallery = get_field('gallery', $post_id);
     
     $facebook_sync = get_field('facebook_sync', $post_id);
-    $facebook_sync = ($facebook_sync !== null && $facebook_sync !== '') ? (bool)$facebook_sync : true;
+    $facebook_sync = ($facebook_sync !== null && $facebook_sync !== '') ? (bool)$facebook_sync : false;
 
     $prev_key = 'varner_prev_post_' . $post_id;
     $prev_data = get_transient($prev_key);
@@ -69,7 +69,7 @@ function varner_os_acf_save_meta_sync_log($post_id): void {
     set_transient($prev_key, $current_data, 300);
     
     if ($prev_data) {
-        $prev_sync = isset($prev_data['facebook_sync']) ? (bool)$prev_data['facebook_sync'] : true;
+        $prev_sync = isset($prev_data['facebook_sync']) ? (bool)$prev_data['facebook_sync'] : false;
         if ($prev_sync !== $facebook_sync) {
             if ($facebook_sync) {
                 varner_os_log_meta_sync("Inventory Synced: {$display_name}");

@@ -20,6 +20,7 @@ Plugins/*.txt
 *tailwind.unminified.css
 
 # Local testing / helper files
+nul
 add_imp.php
 snapshot.php
 modify.cjs

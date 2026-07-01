@@ -45,7 +45,15 @@ $drive           = get_field( 'drive', $post_id );
 $images          = varner_get_card_images( $post_id );
 
 $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
-$title_text      = trim( "$year $make $model" ) ?: get_the_title();
+$location_parts  = explode( ' ', varner_get_theme_setting( 'contact_address_line2', 'Delta, CO' ) );
+$location_short  = isset( $location_parts[0] ) ? rtrim( $location_parts[0], ',' ) . ' ' . ( $location_parts[1] ?? '' ) : 'Delta, CO';
+$title_text      = trim( "$year $make $model" . ( $category ? " — $category" : '' ) . ( $location_short ? " at Varner Equipment, $location_short" : '' ) ) ?: get_the_title();
+
+$base_alt = trim( implode( ' ', array_filter( array( $condition, $year, $make, $model, $category ) ) ) );
+if ( empty( $base_alt ) ) {
+    $base_alt = $title_text;
+}
+$base_alt .= ' for sale at Varner Equipment in ' . $location_short;
 
 // Monthly payment — 10% APR, 60 months
 $monthly_payment = '';
@@ -83,9 +91,14 @@ $finance_url    = add_query_arg( array(
 
                 <!-- Main image carousel -->
                 <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3 cursor-zoom-in" id="vne-detail-carousel">
-                    <?php foreach ( $images as $i => $img_url ) : ?>
+                    <?php foreach ( $images as $i => $img_url ) : 
+                        $alt_desc = $base_alt;
+                        if ( count( $images ) > 1 ) {
+                            $alt_desc .= ' - Photo ' . ( $i + 1 );
+                        }
+                    ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
-                         alt="<?php echo esc_attr( $title_text ); ?>"
+                         alt="<?php echo esc_attr( $alt_desc ); ?>"
                          loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
                          class="vne-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                          style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>">
@@ -115,12 +128,14 @@ $finance_url    = add_query_arg( array(
                 <!-- Thumbnail strip -->
                 <?php if ( count( $images ) > 1 ) : ?>
                 <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;">
-                    <?php foreach ( $images as $i => $img_url ) : ?>
+                    <?php foreach ( $images as $i => $img_url ) : 
+                        $alt_desc = $base_alt . ' - Thumbnail Photo ' . ( $i + 1 );
+                    ?>
                     <button class="vne-thumb shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
                             style="border-color:<?php echo $i === 0 ? 'rgb(220,38,38)' : 'rgb(226,232,240)'; ?>"
                             data-index="<?php echo $i; ?>"
                             aria-label="Photo <?php echo $i + 1; ?>">
-                        <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $title_text ); ?> - Photo <?php echo $i + 1; ?>" loading="lazy"
+                        <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $alt_desc ); ?>" loading="lazy"
                              class="w-full h-full object-cover">
                     </button>
                     <?php endforeach; ?>
@@ -303,12 +318,14 @@ $finance_url    = add_query_arg( array(
         
         <?php if ( count( $images ) > 1 ) : ?>
         <div class="flex gap-2.5 overflow-x-auto max-w-full pb-2 px-4 justify-center" style="scrollbar-width: none;">
-            <?php foreach ( $images as $idx => $img_url ) : ?>
+            <?php foreach ( $images as $idx => $img_url ) : 
+                $alt_desc = $base_alt . ' - Lightbox Photo ' . ( $idx + 1 );
+            ?>
             <button class="lightbox-thumb shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 opacity-60 hover:opacity-100"
                     style="border-color: transparent;"
                     data-index="<?php echo $idx; ?>"
                     aria-label="Lightbox Photo <?php echo $idx + 1; ?>">
-                <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $title_text ); ?> - Photo <?php echo $idx + 1; ?>" loading="lazy" class="w-full h-full object-cover">
+                <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $alt_desc ); ?>" loading="lazy" class="w-full h-full object-cover">
             </button>
             <?php endforeach; ?>
         </div>
