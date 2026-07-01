@@ -2,7 +2,7 @@
 
 **Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
-**Last updated:** June 29, 2026
+**Last updated:** July 1, 2026
 **Maintainer:** Greg
 
 ---
@@ -25,8 +25,7 @@ Varner OS is a custom WordPress build that replaces a third-party inventory plat
 
 | Environment | Host | Notes |
 | :--- | :--- | :--- |
-| Development | WP Engine — `varnerequipdev` | All work to date. Accessed via WP-CLI over SSH. |
-| Production | _[TBD]_ | Not yet provisioned / cut over. See §7 Open Items. |
+| Development / Production | WP Engine — `varnerequipdev` | Single WP Engine install serves both roles. Point the real domain (e.g. `varnerequipment.com`) at this install for go-live. |
 
 Deployment to dev is performed with WP-CLI over SSH (stream ZIP → `wp plugin/theme install --force` → verify version → flush caches). See §6.
 
@@ -110,17 +109,17 @@ Key references:
 
 ## 7. Open Items
 
-### 7.1 Production Environment
-The production environment is not yet provisioned or cut over. Once ready, the deploy commands in `DEPLOY.md` and `AGENTS.md` will target the production host instead of `varnerequipdev`.
+### 7.1 Production Go-Live
+Production is the same WP Engine install — no separate provision needed. At go-live, point the real domain at the WP Engine install and update the site URL in WordPress settings.
 
 ### 7.2 Magic-Link ZIP Verification
 Before relying on the `feature/magic-link` branch as a restore point, confirm it rebuilds cleanly to a working `1.23.151` ZIP. The branch holds the assembled source and a previously built ZIP, but a clean rebuild has not been verified since the Tailwind/SRI build pipeline changes.
 
 ### 7.3 Meta Live Sync — Final Verification
-Meta Live Sync fixes are deployed and verified on the dev environment, but Commerce Manager verification requires a live production URL.
+Meta Live Sync fixes are deployed and verified. Commerce Manager verification can proceed once the real domain is pointed at the install.
 
 ### 7.4 SMTP / Email Setup
-WordPress email sending (SMTP) is not yet configured. New user password-setup emails and form notifications cannot be sent until this is in place (see `MOBILE-APP-GUIDE.md` § "About emailing passwords").
+✅ Configured. WP Mail SMTP plugin active with Brevo (Sendinblue) API key, sending from `web@varnerequipment.com`.
 
 ### 7.5 Cleanup — Unreferenced Assets
 - Root `Images/` folder contains ~40 unused inventory mockup photos (keep the 12 brand logo PNGs).
@@ -173,9 +172,9 @@ WordPress email sending (SMTP) is not yet configured. New user password-setup em
 | N+1 / performance | ✅ Resolved |
 | Write-path capability hardening | ✅ Resolved |
 | Author read-scope hardening | ✅ Resolved (`1.23.149`) |
-| Meta Live Sync | ✅ Resolved (Commerce Manager verification pending live URL setup) |
+| Meta Live Sync | ✅ Resolved |
 | Magic-link feature | ⏸ Parked (`feature/magic-link`, `1.23.151`); superseded by Magic Login Pro plan |
-| Pages Management REST API & panel | ✅ Resolved (`1.23.178`) |
+| SMTP / Email sending | ✅ Resolved |
 | Destructive Action confirmation dialogs | ✅ Resolved (`1.23.178`) |
 | Mobile token input & neutral prompt | ✅ Resolved (`1.23.178`) |
 
