@@ -82,7 +82,7 @@ The following directories contain unreferenced files that are safe to delete onc
 ### 🟢 Low Priority — Future Improvements
 - **Split `src/App.jsx`**: At 1,302 lines it handles too much. Extracting the inventory editor, list view, and modal logic into separate components would improve maintainability.
 - **Inventory pagination**: The React app loads all equipment at once. For large catalogs (200+ units) this could get slow. The REST API already supports pagination — the frontend just needs to opt in.
-- **Facebook Marketplace live sync**: The Marketplace tab UI is complete but the actual Meta API integration is not wired. Currently informational only.
+- **Facebook Marketplace live sync**: The Marketplace tab is informational only (feed URL, health metrics, logs). **Catalog** (CSV feed) updates are fully automated. **Marketplace free listings** remain human-in-the-loop via the Quick Post tool — Meta does not allow automated free listings for equipment dealers.
 - **Public showroom filter UX**: The `[varner_showroom]` shortcode renders the React app publicly, but there's no polished public-facing filter UI yet — it shows the full admin inventory list.
 
 ---

@@ -1,6 +1,6 @@
 # Varner OS — Project Notes
 
-**Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
+**Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog feed (automated) / Marketplace listings (manual)
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
 **Last updated:** July 1, 2026
 **Maintainer:** Greg
@@ -130,7 +130,7 @@ Meta Live Sync fixes are deployed and verified. Commerce Manager verification ca
 ### 7.6 Future Improvements
 - Split `src/App.jsx` (~1,300 lines) into smaller components.
 - Implement frontend pagination in the React app for catalogs of 200+ units.
-- Wire Facebook Marketplace live sync API integration (UI tab is complete; Meta API not yet connected).
+- Marketplace tab is informational only (shows feed URL, health metrics, sync logs). Catalog updates are fully automated; Marketplace free listings remain human-in-the-loop via the Quick Post tool and are not automatable through Meta's API for equipment dealers.
 - Build a polished public-facing filter UI for the `[varner_showroom]` shortcode.
 
 ---
