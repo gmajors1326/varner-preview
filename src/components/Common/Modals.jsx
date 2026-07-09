@@ -16,6 +16,15 @@ export const ManageListModal = ({ title, items, inputValue, onInputChange, onAdd
     return () => { clearTimeout(timer); };
   }, []);
 
+  // Restore focus only on actual unmount, not every re-render
+  useEffect(() => {
+    return () => {
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') { onClose(); return; }
@@ -31,12 +40,7 @@ export const ManageListModal = ({ title, items, inputValue, onInputChange, onAdd
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
-        previousFocusRef.current.focus();
-      }
-    };
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
   return (

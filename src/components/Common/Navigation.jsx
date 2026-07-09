@@ -1,14 +1,14 @@
 import React from 'react';
 import {
-  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings
+  Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings, LogOut
 } from 'lucide-react';
 
-export const SidebarLogo = () => {
+export const SidebarLogo = ({ centered = false }) => {
   const logoUrl = window.varnerData?.logo_url;
   
   if (logoUrl) {
     return (
-      <div className="flex items-center justify-start py-1">
+      <div className={`flex items-center ${centered ? 'justify-center w-full' : 'justify-start'} py-1`}>
         <img 
           src={logoUrl} 
           alt="Varner Equipment" 
@@ -19,12 +19,19 @@ export const SidebarLogo = () => {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center ${centered ? 'justify-center text-center' : 'gap-3'}`}>
       <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
-      <div>
-        <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
-        <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
-      </div>
+      {!centered ? (
+        <div>
+          <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
+          <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+        </div>
+      ) : (
+        <div className="ml-3 text-left">
+          <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
+          <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -47,7 +54,7 @@ export const NavItem = ({ icon, label, active = false, badge = null, onClick }) 
   </button>
 );
 
-export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav, isMobileApp }) => (
+export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav, isMobileApp, onLogout }) => (
   <>
     <nav className="space-y-2">
       {!isMobileApp && (
@@ -85,6 +92,13 @@ export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav
         </>
       )}
     </nav>
+    {isMobileApp && onLogout && (
+      <div className="pt-4 border-t border-slate-800 mt-auto">
+        <NavItem icon={<LogOut size={20}/>} label="Log Out" onClick={() => {
+          if (window.confirm('Are you sure you want to log out?')) onLogout();
+        }} />
+      </div>
+    )}
   </>
 );
 

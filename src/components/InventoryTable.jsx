@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Edit2, Copy, Image as ImageIcon, Eye, Star, Box, TrendingUp, Facebook } from 'lucide-react';
+import { Search, X, Edit2, Copy, Image as ImageIcon, Eye, Star, Box, TrendingUp, Facebook, Loader2 } from 'lucide-react';
 import { FilterSidebar } from './FilterSidebar';
 import { FilterTag } from './Common/Navigation';
 import { getDaysInStock } from '../utils/helpers';
@@ -97,7 +97,7 @@ export const InventoryTable = ({
         )}
 
         {/* Table card */}
-        <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-xl overflow-hidden" style={{ minWidth: 0 }}>
+        <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-xl overflow-auto max-h-[80vh]" style={{ minWidth: 0 }}>
           <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 w-full">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Inventory Ledger</span>
           </div>
@@ -115,16 +115,19 @@ export const InventoryTable = ({
 
           <div className="p-2">
             {isLoading ? (
-              <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Loading inventory…</div>
+              <div className="p-20 text-center flex flex-col items-center gap-4">
+                <Loader2 size={24} className="text-slate-300 animate-spin" />
+                <span className="text-slate-300 font-black uppercase text-xs tracking-widest">Loading inventory…</span>
+              </div>
             ) : filteredInventory.length === 0 ? (
               <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</div>
             ) : (
               <>
                 {/* ─── Desktop table (md+) ─── */}
-                <div className="overflow-x-auto hidden md:block">
+                <div className="hidden md:block">
                   <table className="w-full text-left border-collapse min-w-[1400px]">
-                    <thead>
-                      <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50">
+                    <thead className="sticky top-0 z-10">
+                      <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 border-b border-slate-50 bg-white">
                         <th className="px-6 py-5 w-24">STOCK #</th>
                         <th className="px-6 py-5 w-28">PHOTO</th>
                         <th className="px-6 py-5">YEAR / MAKE / MODEL</th>

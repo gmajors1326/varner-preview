@@ -61,8 +61,15 @@ get_header();
                                         <div class="aspect-video w-full bg-slate-100 relative">
                                             <?php 
                                             if ($youtube_link) {
-                                                echo wp_kses($youtube_link, array(
+                                                // Gate YouTube embeds behind marketing consent
+                                                $youtube_gated = str_replace(
+                                                    ' src="',
+                                                    ' data-cookie-src="',
+                                                    $youtube_link
+                                                );
+                                                echo wp_kses($youtube_gated, array(
                                                     'iframe' => array(
+                                                        'data-cookie-src' => array(),
                                                         'src'             => array(),
                                                         'width'           => array(),
                                                         'height'          => array(),

@@ -46,10 +46,6 @@ export const CATEGORY_TREE = {
   "Chemical Applicators": {
     "Sprayers": ["3 pt/Mounted"]
   },
-  "Manure Handling": {},
-  "Manure Spreaders": {
-    "Dry": []
-  },
   "Grain Handling / Storage Equipment": {
     "Grain Augers": []
   },
@@ -60,8 +56,9 @@ export const CATEGORY_TREE = {
     "Lawn Mowers": ["Riding"],
     "Snow Blowers": []
   },
-  "Other Equipment": {
-    "Blades/Box Scrapers": []
+  "Implements": {
+    "Blades/Box Scrapers": [],
+    "Manure Spreaders": ["Dry"]
   },
   "Turf Equipment": {
     "Mowers": ["Fairway"]

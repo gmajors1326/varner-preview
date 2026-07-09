@@ -8,22 +8,33 @@ get_header();
 
 $brand_slug = get_query_var('brand_name');
 if ( $brand_slug ) {
-    $brand_name = str_replace('-', ' ', $brand_slug);
-    $brand_name = ucwords($brand_name);
-    // Special naming overrides
-    $overrides = array(
-        'big tex' => 'Big Tex',
-        'tym'     => 'TYM',
-        'zetor'   => 'Zetor',
-        'krone'   => 'Krone',
-        'macdon'  => 'MacDon',
-        'mchale'  => 'McHale',
-        'roxr'    => 'ROXR',
-        'titan trailers' => 'Titan Trailers',
-        'titan mfg' => 'Titan Trailers'
-    );
-    if ( isset( $overrides[ strtolower($brand_name) ] ) ) {
-        $brand_name = $overrides[ strtolower($brand_name) ];
+    $brand_name = '';
+    $brands     = get_option( 'varner_brands', array() );
+    foreach ( $brands as $b ) {
+        if ( sanitize_title( $b ) === $brand_slug ) {
+            $brand_name = $b;
+            break;
+        }
+    }
+    
+    if ( ! $brand_name ) {
+        $brand_name = str_replace('-', ' ', $brand_slug);
+        $brand_name = ucwords($brand_name);
+        // Special naming overrides
+        $overrides = array(
+            'big tex' => 'Big Tex',
+            'tym'     => 'TYM',
+            'zetor'   => 'Zetor',
+            'krone'   => 'Krone',
+            'macdon'  => 'MacDon',
+            'mchale'  => 'McHale',
+            'roxr'    => 'ROXR',
+            'titan trailers' => 'Titan Trailers',
+            'titan mfg' => 'Titan Trailers'
+        );
+        if ( isset( $overrides[ strtolower($brand_name) ] ) ) {
+            $brand_name = $overrides[ strtolower($brand_name) ];
+        }
     }
 } else {
     $brand_name = get_the_title();
@@ -124,7 +135,7 @@ if ( ! function_exists( 'varner_find_brand_logo_url' ) ) {
             'brush-chief'          => 'BrushChief_white.png',
             'danuser'              => 'Danuser_white.png',
             'degelman'             => 'Degelman_white.png',
-            'enorossi'             => 'Enorossi_white.png',
+            'enorossi'             => 'enorossi_white.png',
             'mk-martin'            => 'MKMartin_white.png',
             'maschio'              => 'Maschio_white.png',
             'maxon'                => 'Maxon_white.png',

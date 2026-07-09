@@ -60,7 +60,7 @@ const App = () => {
   useEffect(() => {
     const handler = () => { if (!document.hidden) inv.loadInventory(); };
     document.addEventListener('visibilitychange', handler);
-    const pollId = setInterval(() => inv.loadInventory(), 30000);
+    const pollId = setInterval(() => inv.loadInventory(), 300000);
     return () => {
       document.removeEventListener('visibilitychange', handler);
       clearInterval(pollId);
@@ -85,6 +85,11 @@ const App = () => {
   };
 
   const handleAddNewUnit = () => { inv.setUnitData(defaultEmptyUnit); setActiveTab('inventory'); };
+
+  const handleLogout = () => {
+    document.cookie = 'varner_mobile_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    window.dispatchEvent(new CustomEvent('varner:token-expired'));
+  };
 
   const getHeaderTitle = () => {
     switch (activeTab) {
@@ -178,14 +183,17 @@ const App = () => {
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2"><X size={24} /></button>
             </div>
             <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
-              onNav={handleNav} isMobileApp={isMobileApp} />
+              onNav={handleNav} isMobileApp={isMobileApp} onLogout={handleLogout} />
           </aside>
         </div>
       )}
 
       <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
+        <div className="mb-8 border-b border-slate-800 pb-6 flex justify-center">
+          <SidebarLogo centered />
+        </div>
         <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
-          onNav={handleNav} isMobileApp={isMobileApp} />
+          onNav={handleNav} isMobileApp={isMobileApp} onLogout={handleLogout} />
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col text-slate-900 min-h-0">

@@ -137,11 +137,7 @@
                 let message = '';
 
                 if (!query && !hasCategory) {
-                    message = 'Please enter a model, brand, VIN, or type and select a type.';
-                } else if (query && !hasCategory) {
-                    message = 'Please select a type.';
-                } else if (!query && hasCategory) {
-                    message = 'Please enter a model, brand, VIN, or type.';
+                    message = 'Please enter a keyword or select a type.';
                 }
 
                 if (message) {
@@ -155,7 +151,7 @@
                     const existingCondition = form.querySelector('input[name="condition[]"]');
                     if (existingCondition) existingCondition.remove();
 
-                    if (categoryIsAll) {
+                    if (!hasCategory || categoryIsAll) {
                         categorySelect.name = '';
                         categorySelect.value = '';
                     } else if (categoryIsNew || categoryIsUsed) {

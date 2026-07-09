@@ -66,12 +66,30 @@ export function useInventory(showToast, setActiveTab) {
   const loadInventory = useCallback(async () => {
     setIsLoading(true);
     try {
-      const activeRaw = await apiFetch('/inventory');
-      const activeItems = Array.isArray(activeRaw) ? activeRaw : (activeRaw?.items ?? []);
-      setInventoryList(activeItems.map(apiToListItem));
+      const perPage = 100;
+      let page = 1;
+      let allItems = [];
+      let total = 0;
+
+      // Fetch page 1 to learn total
+      const first = await apiFetch(`/inventory?per_page=${perPage}&page=${page}`);
+      const firstItems = Array.isArray(first) ? first : (first?.items ?? []);
+      total = Array.isArray(first) ? firstItems.length : (first?.total ?? firstItems.length);
+      allItems = firstItems;
+
+      // Fetch remaining pages sequentially if needed
+      const totalPages = Math.ceil(total / perPage);
+      while (page < totalPages) {
+        page += 1;
+        const next = await apiFetch(`/inventory?per_page=${perPage}&page=${page}`);
+        const nextItems = Array.isArray(next) ? next : (next?.items ?? []);
+        allItems = allItems.concat(nextItems);
+      }
+
+      setInventoryList(allItems.map(apiToListItem));
 
       try {
-        const deletedRaw = await apiFetch('/inventory/deleted');
+        const deletedRaw = await apiFetch('/inventory/deleted?per_page=200');
         const deletedItems = Array.isArray(deletedRaw) ? deletedRaw : (deletedRaw?.items ?? []);
         setDeletedHistory(deletedItems.map(item => ({
           ...apiToListItem(item),
@@ -500,7 +518,7 @@ export function useInventory(showToast, setActiveTab) {
       }
     } catch {
       try {
-        const units = await apiFetch('/inventory');
+        const units = await apiFetch('/inventory?per_page=100');
         const list = Array.isArray(units) ? units : (units?.items ?? []);
         const found = list.find(u => u.id === wpId);
         if (found) {

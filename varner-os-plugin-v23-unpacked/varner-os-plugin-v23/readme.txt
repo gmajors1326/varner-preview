@@ -3,7 +3,7 @@ Contributors: Varner Team
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Version: 1.23.245
+Version: 1.23.271
 License: Proprietary
 
 == Description ==
@@ -57,3 +57,19 @@ React-powered inventory management for Varner Equipment. Provides custom Equipme
 
 == Notes ==
 - Storefront theme pages remain separate; this plugin focuses on inventory admin and REST.
+
+== Changelog ==
+
+= 1.23.261 =
+- Fix: PWA at /mobile-app/ failed to load inventory (and all authenticated data)
+  because the React API client suppressed the `X-WP-Nonce` header whenever
+  `varnerData.is_mobile_app` was true, relying solely on the mobile-token cookie.
+  When that token path did not authenticate the request, WordPress rejected every
+  authenticated endpoint (/me, /inventory, /brands, /categories, ...) with
+  401 rest_forbidden and the app hung on "LOADING INVENTORY…". The client now
+  always sends the WP REST nonce when one is available; cookie+nonce auth carries
+  the browser/same-jar case while the mobile-token cookie remains a fallback.
+- No database or schema changes (DB version unchanged at 1.23.8).
+
+= 1.23.260 =
+- Prior release.

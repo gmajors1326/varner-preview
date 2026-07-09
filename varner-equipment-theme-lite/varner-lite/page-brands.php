@@ -8,6 +8,14 @@ get_header();
 
 global $wpdb;
 
+$hidden_sql = '';
+if ( function_exists( 'varner_get_hidden_post_ids' ) ) {
+    $hidden_ids = varner_get_hidden_post_ids();
+    if ( ! empty( $hidden_ids ) ) {
+        $hidden_sql = 'AND p.ID NOT IN (' . implode( ',', $hidden_ids ) . ')';
+    }
+}
+
 $brands = $wpdb->get_results(
     $wpdb->prepare(
         "SELECT pm.meta_value AS make, COUNT(*) as qty
@@ -15,10 +23,7 @@ $brands = $wpdb->get_results(
          JOIN {$wpdb->posts} p ON p.ID = pm.post_id
          WHERE pm.meta_key = %s AND pm.meta_value != ''
            AND p.post_type = %s AND p.post_status = 'publish'
-           AND p.ID NOT IN (
-               SELECT post_id FROM {$wpdb->postmeta}
-               WHERE meta_key = 'show_on_website' AND meta_value = '0'
-           )
+           $hidden_sql
          GROUP BY pm.meta_value
          ORDER BY pm.meta_value ASC",
         'make',

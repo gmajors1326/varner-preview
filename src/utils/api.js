@@ -2,9 +2,29 @@ const API = window.varnerData?.rest_url
   ? window.varnerData.rest_url.replace(/\/$/, '') + '/varner/v1'
   : '/wp-json/varner/v1';
 
-const NONCE = window.varnerData?.nonce ?? '';
+let _nonce = window.varnerData?.nonce ?? '';
 
-export const getMobileToken = () => localStorage.getItem('varner_mobile_token') || '';
+// Adopted by the login gate after a successful /login (post-auth nonce).
+export function setNonce(n) { if (typeof n === 'string' && n) _nonce = n; }
+
+// Fetch a fresh nonce from our own cookie-validated endpoint.
+// NOT the REST index — /wp-json/ does not expose a nonce (verified).
+let _nonceRefreshPromise = null;
+async function refreshNonce() {
+  if (_nonceRefreshPromise) return _nonceRefreshPromise;
+  _nonceRefreshPromise = (async () => {
+    try {
+      const res = await fetch(API + '/session', { credentials: 'include' });
+      if (!res.ok) return false;            // 401 here = session genuinely gone
+      const data = await res.json();
+      if (data?.nonce && typeof data.nonce === 'string') { _nonce = data.nonce; return true; }
+    } catch {}
+    return false;
+  })();
+  const ok = await _nonceRefreshPromise;
+  _nonceRefreshPromise = null;
+  return ok;
+}
 
 function convertRgbToHexInHtml(html) {
   if (typeof html !== 'string') return html;
@@ -53,10 +73,9 @@ const MAX_RETRIES = 2;
 const RETRY_DELAYS = [1500, 3000]; // ms — escalating backoff
 
 export async function apiFetch(path, options = {}) {
-  const token = getMobileToken();
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'X-Varner-Mobile-Token': token } : { 'X-WP-Nonce': NONCE }),
+    'X-WP-Nonce': _nonce,
     ...(options.headers ?? {}),
   };
 
@@ -71,9 +90,13 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
-  const fetchOpts = { credentials: token ? 'omit' : 'same-origin', ...options, headers, ...(body ? { body } : {}) };
-
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const fetchOpts = {
+      credentials: 'include',
+      ...options,
+      headers: { ...headers, 'X-WP-Nonce': _nonce },
+      ...(body ? { body } : {}),
+    };
     const res = await fetch(`${API}${path}`, fetchOpts);
 
     // Retry on rate-limit (429) or server overload (503) with backoff
@@ -85,15 +108,23 @@ export async function apiFetch(path, options = {}) {
     }
 
     if (!res.ok) {
-      if (res.status === 401 && getMobileToken()) {
-        localStorage.removeItem('varner_mobile_token');
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        if (isStandalone) {
-          window.location.href = '/mobile-app/?_=' + Date.now();
-          return;
+      // ── Stale-nonce auto-recovery: 403 + rest_cookie_invalid_nonce ──
+      if (res.status === 403 && attempt === 0) {
+        const errBody = await res.clone().json().catch(() => ({}));
+        if (errBody.code === 'rest_cookie_invalid_nonce') {
+          if (await refreshNonce()) continue;        // got a fresh nonce → retry once
+          // refresh failed → session is actually gone; fall into the re-auth path below
+          if (window.varnerData?.is_mobile_app) {
+            window.dispatchEvent(new CustomEvent('varner:token-expired'));
+          }
         }
+      }
+
+      // Existing 401 handler — session/token gone, NOT a nonce problem. Unchanged.
+      if (res.status === 401 && window.varnerData?.is_mobile_app) {
         window.dispatchEvent(new CustomEvent('varner:token-expired'));
       }
+
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message ?? `Request failed: ${res.status}`);
     }
@@ -102,9 +133,8 @@ export async function apiFetch(path, options = {}) {
 }
 
 export async function uploadFile(file) {
-  const token = getMobileToken();
   const headers = {
-    ...(token ? { 'X-Varner-Mobile-Token': token } : { 'X-WP-Nonce': NONCE }),
+    'X-WP-Nonce': _nonce,
   };
 
   const form = new FormData();
@@ -112,7 +142,7 @@ export async function uploadFile(file) {
   const res = await fetch(`${API}/media`, {
     method: 'POST',
     headers,
-    credentials: token ? 'omit' : 'same-origin',
+    credentials: 'include',
     body: form,
   });
   if (!res.ok) {

@@ -35,8 +35,8 @@ export const MarketplaceTab = () => {
   useEffect(() => {
     fetchData(true);
     
-    // Poll for changes every 30 seconds
-    const interval = setInterval(() => fetchData(false), 30000);
+    // Poll for changes every 5 minutes
+    const interval = setInterval(() => fetchData(false), 300000);
     
     return () => {
       clearInterval(interval);

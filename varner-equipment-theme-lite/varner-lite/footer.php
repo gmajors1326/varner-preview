@@ -130,7 +130,7 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <button data-department="Trailer Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Trailer Sales</button>
-                            <button data-department="Equipment Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Equipment Sales</button>
+                            <button data-department="Equip Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Equip Sales</button>
                             <button data-department="Service" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Service</button>
                             <button data-department="Parts" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Parts</button>
                             <button data-department="General" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">General</button>
@@ -174,9 +174,9 @@
         <div class="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-white/10 text-center">
             <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-2">&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</p>
             <div class="text-xs text-slate-500 font-bold uppercase tracking-widest flex justify-center gap-2">
-                <a href="#" class="hover:text-red-500 transition-colors">Terms of Service</a>
+                <a href="<?php echo esc_url( home_url( '/legal/terms-of-service' ) ); ?>" class="hover:text-red-500 transition-colors">Terms of Service</a>
                 <span>|</span>
-                <a href="#" class="hover:text-red-500 transition-colors">Privacy Policy</a>
+                <a href="<?php echo esc_url( home_url( '/legal/privacy-policy' ) ); ?>" class="hover:text-red-500 transition-colors">Privacy Policy</a>
             </div>
         </div>
     </footer>
@@ -396,6 +396,34 @@
                 }
             });
         }
+    </script>
+
+    <!-- ANALYTICS BEACON -->
+    <script>
+    (function() {
+        var restUrl = '<?php echo esc_url_raw(rest_url('varner/v1/track/pageview')); ?>';
+        var ref = document.referrer || '';
+        var ua = navigator.userAgent || '';
+
+        function fire() {
+            var payload = JSON.stringify({
+                path: window.location.pathname,
+                referrer: ref,
+                ua: ua
+            });
+            navigator.sendBeacon(restUrl, payload);
+        }
+
+        if (window.VarnerCookies && typeof window.VarnerCookies.waitForConsent === 'function') {
+            window.VarnerCookies.waitForConsent(30000).then(function(consent) {
+                if (consent && consent.analytics) {
+                    fire();
+                }
+            });
+        } else {
+            fire();
+        }
+    })();
     </script>
 
     <?php wp_footer(); ?>

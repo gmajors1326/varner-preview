@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Smartphone, Zap, Loader2, AlertCircle, ShieldCheck, User, Lock
 } from 'lucide-react';
-import { apiFetch } from '../utils/api';
+import { apiFetch, setNonce } from '../utils/api';
 
 const InstallBanner = () => {
   const [isStandalone, setIsStandalone] = useState(true);
@@ -60,15 +60,10 @@ export const PwaLoginGate = ({ mobileToken, setMobileToken, toast, onAuthenticat
     setIsVerifying(true);
     setAuthError('');
     try {
-      localStorage.setItem('varner_mobile_token', tokenToVerify);
-      localStorage.setItem('varner_mobile_token_created_at', String(Date.now()));
-      // Use /me (lightweight) instead of /inventory (heavy — loads ALL equipment)
-      // to verify the token. The full inventory loads after auth via useInventory.
       await apiFetch('/me');
-      setMobileToken(tokenToVerify);
+      setMobileToken('cookie-auth');
       onAuthenticated();
     } catch (err) {
-      localStorage.removeItem('varner_mobile_token');
       if (isManualSubmit) {
         setAuthError('Authentication failed: Invalid or expired token.');
       } else {
@@ -96,7 +91,7 @@ export const PwaLoginGate = ({ mobileToken, setMobileToken, toast, onAuthenticat
       const res = await fetch(`${restUrl}varner/v1/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
+        credentials: 'include',
         body: JSON.stringify({ username: username.trim(), password }),
       });
       const data = await res.json().catch(() => ({}));
@@ -105,6 +100,7 @@ export const PwaLoginGate = ({ mobileToken, setMobileToken, toast, onAuthenticat
         return;
       }
       setPassword('');
+      if (data.nonce) setNonce(data.nonce);
       await verifyAndSaveToken(data.token, true);
     } catch (err) {
       setAuthError('Network error. Check your connection and try again.');

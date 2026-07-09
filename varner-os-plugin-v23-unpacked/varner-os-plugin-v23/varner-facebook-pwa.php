@@ -232,25 +232,31 @@ function varner_os_generate_facebook_catalog(): void {
     if (!defined('DONOTCACHEPAGE')) {
         define('DONOTCACHEPAGE', true);
     }
-    $csv_data = varner_os_get_facebook_catalog_csv();
-    
-    // Attempt to write/refresh the static file for Nginx direct serving
+
     $upload_dir = wp_upload_dir();
     $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
-    $written = file_put_contents($file_path, $csv_data);
-    if ($written === false) {
-        varner_os_log_meta_sync("ERROR: Failed to write catalog CSV to {$file_path}", 'warning');
+
+    // Serve the cached static file if it's less than 60 seconds old to prevent
+    // regeneration abuse on this unauthenticated public endpoint.
+    $use_cache = file_exists($file_path) && (time() - filemtime($file_path)) < 60;
+    if ($use_cache) {
+        $csv_data = file_get_contents($file_path);
+    } else {
+        $csv_data = varner_os_get_facebook_catalog_csv();
+        $written = file_put_contents($file_path, $csv_data);
+        if ($written === false) {
+            varner_os_log_meta_sync("ERROR: Failed to write catalog CSV to {$file_path}", 'warning');
+        }
     }
 
     // Log Meta sync crawl event
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
     $is_facebook = (strpos(strtolower($ua), 'facebook') !== false || strpos(strtolower($ua), 'facebot') !== false);
-    $trigger = $is_facebook ? 'Meta Crawler' : 'Manual Request';
-    
+
     // Count the number of lines (approximate by newlines, minus header)
     $lines = substr_count($csv_data, "\n");
     $count = $lines > 0 ? $lines - 1 : 0;
-    
+
     if ($is_facebook) {
         varner_os_log_meta_sync("API Handshake: Success (Meta crawler synced {$count} items)");
     } else {
@@ -601,42 +607,10 @@ if (!empty($_GET['handoff'])) {
     }
 }
 
-// Priority 2: User is already logged into WordPress — skip the token gate entirely.
-// Reuse an existing active valid token if possible, otherwise generate and embed one.
-if (!$mobile_token_for_page && is_user_logged_in() && current_user_can('edit_posts')) {
-    $wp_user_id = get_current_user_id();
-    $active_key = 'varner_active_tokens_' . $wp_user_id;
-    $active_tokens = get_transient($active_key) ?: array();
-    
-    $valid_token = '';
-    if (is_array($active_tokens)) {
-        // Search newest first for reuse
-        foreach (array_reverse($active_tokens) as $t) {
-            $data = get_transient('varner_mobile_token_' . $t);
-            if ($data) {
-                $valid_token = $t;
-                break;
-            }
-        }
-    }
-
-    if ($valid_token) {
-        $mobile_token_for_page = $valid_token;
-    } else {
-        $auto_token = strtoupper(bin2hex(random_bytes(16)));
-        $token_data = array('user_id' => $wp_user_id, 'created_at' => time());
-        set_transient('varner_mobile_token_' . $auto_token, $token_data, 1800);
-        
-        $active_tokens = is_array($active_tokens) ? $active_tokens : array();
-        $active_tokens[] = $auto_token;
-        if (count($active_tokens) > 3) {
-            $oldest = array_shift($active_tokens);
-            delete_transient('varner_mobile_token_' . $oldest);
-        }
-        set_transient($active_key, $active_tokens, 1800);
-        
-        $mobile_token_for_page = $auto_token;
-    }
+// If a handoff token was resolved, set the cookie so the determine_current_user
+// cookie path can pick it up on the first API call (before WP session kicks in).
+if ($mobile_token_for_page) {
+    varner_set_mobile_token_cookie($mobile_token_for_page);
 }
 ?>
 window.varnerData = {
@@ -645,7 +619,6 @@ window.varnerData = {
     rest_url: '<?php echo esc_url_raw(rest_url()); ?>',
     site_url: '<?php echo esc_url_raw(home_url('/')); ?>',
     is_mobile_app: true,
-    mobile_token: '<?php echo esc_js($mobile_token_for_page); ?>',
     logo_url: '<?php echo function_exists('varner_get_brand_logo_url') ? esc_url(varner_get_brand_logo_url('white')) : ''; ?>'
 };
 </script>

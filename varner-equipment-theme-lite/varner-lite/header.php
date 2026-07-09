@@ -199,16 +199,20 @@
                         $brand_counts = get_transient( 'varner_brand_counts' );
                         if ( $brand_counts === false ) {
                             global $wpdb;
+                            $hidden_sql = '';
+                            if ( function_exists( 'varner_get_hidden_post_ids' ) ) {
+                                $hidden_ids = varner_get_hidden_post_ids();
+                                if ( ! empty( $hidden_ids ) ) {
+                                    $hidden_sql = 'AND p.ID NOT IN (' . implode( ',', $hidden_ids ) . ')';
+                                }
+                            }
                             $rows = $wpdb->get_results(
                                 "SELECT LOWER(pm.meta_value) AS make, COUNT(*) AS cnt
                                  FROM {$wpdb->postmeta} pm
                                  JOIN {$wpdb->posts} p ON p.ID = pm.post_id
                                  WHERE pm.meta_key = 'make' AND pm.meta_value != ''
                                    AND p.post_type = 'equipment' AND p.post_status = 'publish'
-                                   AND p.ID NOT IN (
-                                       SELECT post_id FROM {$wpdb->postmeta}
-                                       WHERE meta_key = 'show_on_website' AND meta_value = '0'
-                                   )
+                                   $hidden_sql
                                  GROUP BY LOWER(pm.meta_value)"
                             );
                             $brand_counts = array();

@@ -41,6 +41,13 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
                         <?php
                             $logo = $card['logo'] ?? '';
                             $pdf  = $card['application_pdf'] ?? '';
+                            // Undo esc_url_raw() corruption: http://filename → filename
+                            if ( preg_match( '/^https?:\/\/[^\/]+$/', $logo ) ) {
+                                $logo = preg_replace( '/^https?:\/\//', '', $logo );
+                            }
+                            if ( preg_match( '/^https?:\/\/[^\/]+$/', $pdf ) ) {
+                                $pdf  = preg_replace( '/^https?:\/\//', '', $pdf );
+                            }
                             if ( $logo && ! preg_match( '/^https?:\/\//', $logo ) ) {
                                 $logo_file = get_template_directory() . '/assets/' . $logo;
                                 $logo_url  = file_exists( $logo_file )

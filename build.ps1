@@ -95,7 +95,7 @@ python tools/zip_helper.py $pluginZip "varner-os-plugin-v23-unpacked/varner-os-p
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
 # Package Theme ZIP (files at root — required for WP admin upload compatibility)
-$themeZipName = "varner-equipment-theme-v23-lite.zip"
+$themeZipName = "varner-equipment-theme-v23-lite-4.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
 python -c "

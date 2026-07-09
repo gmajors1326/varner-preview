@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.245 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.245
+ * Description: Version 1.23.271 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.271
  * Author: hwy559.com
  */
 
@@ -12,6 +12,8 @@ require_once plugin_dir_path(__FILE__) . 'varner-backend.php';
 require_once plugin_dir_path(__FILE__) . 'rest-api.php';
 require_once plugin_dir_path(__FILE__) . 'varner-facebook-pwa.php';
 require_once plugin_dir_path(__FILE__) . 'varner-meta-sync.php';
+require_once plugin_dir_path(__FILE__) . 'varner-cookie-manager.php';
+require_once plugin_dir_path(__FILE__) . 'varner-analytics.php';
 
 // ─── Security Helper ─────────────────────────────────────────────────────────
 
@@ -27,7 +29,7 @@ function varner_os_hash_session_token( string $token ): string {
 
 // ─── Database Version & Auto-Upgrade ─────────────────────────────────────────
 
-define('VARNER_OS_DB_VERSION', '1.23.7');
+define('VARNER_OS_DB_VERSION', '1.23.8');
 
 add_action('plugins_loaded', 'varner_os_db_check');
 function varner_os_db_check(): void {
@@ -84,8 +86,28 @@ function varner_os_activate(): void {
         wp_schedule_event(time() + DAY_IN_SECONDS, 'daily', 'varner_os_cleanup_sessions');
     }
 
+    // Create analytics table
+    if (function_exists('varner_analytics_create_table')) {
+        varner_analytics_create_table();
+    }
+
+    // Schedule analytics cron jobs
+    if (function_exists('varner_analytics_create_table') && !wp_next_scheduled('varner_analytics_daily_rotate')) {
+        wp_schedule_event(strtotime('tomorrow midnight'), 'daily', 'varner_analytics_daily_rotate');
+    }
+    if (function_exists('varner_analytics_create_table') && !wp_next_scheduled('varner_analytics_daily_prune')) {
+        wp_schedule_event(strtotime('tomorrow midnight') + 300, 'daily', 'varner_analytics_daily_prune');
+    }
+
     // Generate/refresh the static facebook-catalog.csv file
     varner_os_write_facebook_catalog_file();
+
+    // Add composite index on wp_postmeta for inventory filter performance
+    $index_name = 'varner_meta_key_value';
+    $index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->postmeta} WHERE Key_name = '{$index_name}'");
+    if (empty($index_exists)) {
+        $wpdb->query("ALTER TABLE {$wpdb->postmeta} ADD INDEX {$index_name} (meta_key, meta_value(100))");
+    }
 }
 
 register_deactivation_hook(__FILE__, function (): void {
@@ -93,7 +115,34 @@ register_deactivation_hook(__FILE__, function (): void {
     if ($timestamp) {
         wp_unschedule_event($timestamp, 'varner_os_cleanup_sessions');
     }
+    $t = wp_next_scheduled('varner_analytics_daily_rotate');
+    if ($t) { wp_unschedule_event($t, 'varner_analytics_daily_rotate'); }
+    $t = wp_next_scheduled('varner_analytics_daily_prune');
+    if ($t) { wp_unschedule_event($t, 'varner_analytics_daily_prune'); }
 });
+
+// ─── Cached Helper: Hidden Post IDs ─────────────────────────────────────
+
+function varner_get_hidden_post_ids(): array {
+    global $wpdb;
+    $cache_key = 'varner_hidden_post_ids';
+    $ids = get_transient($cache_key);
+    if (false === $ids) {
+        $ids = $wpdb->get_col(
+            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'show_on_website' AND meta_value = '0'"
+        );
+        $ids = array_map('intval', $ids);
+        set_transient($cache_key, $ids, HOUR_IN_SECONDS);
+    }
+    return $ids;
+}
+
+add_action('updated_post_meta', 'varner_clear_hidden_post_ids_cache', 10, 3);
+function varner_clear_hidden_post_ids_cache($meta_id, $post_id, $meta_key): void {
+    if ($meta_key === 'show_on_website') {
+        delete_transient('varner_hidden_post_ids');
+    }
+}
 
 // ─── Session Logging Hooks ──────────────────────────────────────────────────
 
@@ -216,10 +265,8 @@ function varner_authenticate_mobile_token(int $user_id): int {
     }
 
     $token = '';
-    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token = sanitize_text_field($matches[1]);
+    if (isset($_COOKIE['varner_mobile_token'])) {
+        $token = sanitize_text_field($_COOKIE['varner_mobile_token']);
     }
     // Note: $_GET['mobile_token'] intentionally removed — GET params leak into logs.
 
@@ -352,12 +399,21 @@ add_action('admin_menu', function (): void {
     );
     add_submenu_page(
         'varner-os',
-        'Configuration',
-        'Configuration',
+        'Cookie Manager',
+        'Cookie Manager',
         'manage_options',
-        'varner-os-config',
-        'varner_render_configuration_page',
-        1
+        'varner-os-cookies',
+        'varner_render_cookie_manager_page',
+        2
+    );
+    add_submenu_page(
+        'varner-os',
+        'Analytics',
+        'Analytics',
+        'manage_options',
+        'varner-os-analytics',
+        'varner_render_analytics_page',
+        3
     );
     remove_menu_page('edit.php?post_type=equipment');
 }, 999);
@@ -577,10 +633,6 @@ add_action('admin_init', function (): void {
 // ─── Admin Page Renderers ────────────────────────────────────────────────────
 
 function varner_render_dashboard_page(): void {
-    $logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '';
-    if ($logo_url) {
-        echo '<div class="wrap" style="margin:0;padding:24px 0 0;text-align:center;background:#0a0a0b;"><img src="' . esc_url($logo_url) . '" alt="Varner Equipment" style="height:40px;width:auto;opacity:0.9;"></div>';
-    }
     echo '<div class="wrap" style="margin:0;padding:0;background:#0a0a0b;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
 }
 
@@ -720,7 +772,7 @@ add_action('admin_enqueue_scripts', function (string $hook): void {
     global $post;
 
     $is_equipment    = isset($post->post_type) && $post->post_type === 'equipment';
-    $is_varner_page  = isset($_GET['page']) && in_array($_GET['page'], array('varner-os', 'varner-os-config'), true);
+    $is_varner_page  = isset($_GET['page']) && in_array($_GET['page'], array('varner-os', 'varner-os-config', 'varner-os-analytics'), true);
     $is_block_editor = get_current_screen() && get_current_screen()->is_block_editor();
 
     if (!$is_equipment && !$is_varner_page && !$is_block_editor) return;

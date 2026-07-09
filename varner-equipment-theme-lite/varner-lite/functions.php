@@ -43,8 +43,9 @@ if( function_exists('acf_add_options_page') ) {
  * Enqueue scripts and styles.
  */
 function varner_theme_scripts() {
-	// Google Fonts - Inter
-	wp_enqueue_style( 'varner-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap', array(), null );
+	// Self-hosted Inter (no Google CDN dependency)
+	$inter_css = plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/inter.css' );
+	wp_enqueue_style( 'varner-fonts', $inter_css, array(), '1.0' );
 
 	// Compiled Tailwind CSS (replaces CDN)
 	wp_enqueue_style( 'varner-tailwind', get_template_directory_uri() . '/assets/css/tailwind.css', array(), filemtime( get_template_directory() . '/assets/css/tailwind.css' ) );
@@ -177,16 +178,21 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
         )";
     }
 
+    $hidden_sql = '';
+    if (function_exists('varner_get_hidden_post_ids')) {
+        $hidden_ids = varner_get_hidden_post_ids();
+        if (!empty($hidden_ids)) {
+            $hidden_sql = 'AND p.ID NOT IN (' . implode(',', $hidden_ids) . ')';
+        }
+    }
+
     $base = "FROM {$wpdb->postmeta} pm
              JOIN {$wpdb->posts} p ON p.ID = pm.post_id
              WHERE p.post_type = 'equipment'
                AND p.post_status = 'publish'
                AND pm.meta_value != ''
                $segment_clause
-               AND p.ID NOT IN (
-                   SELECT post_id FROM {$wpdb->postmeta}
-                   WHERE meta_key = 'show_on_website' AND meta_value = '0'
-               )";
+               $hidden_sql";
 
     $makes = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'make'
@@ -239,10 +245,7 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
                    AND pm.meta_value != ''
                    $segment_clause
                    $sub_cat_clause
-                   AND p.ID NOT IN (
-                       SELECT post_id FROM {$wpdb->postmeta}
-                       WHERE meta_key = 'show_on_website' AND meta_value = '0'
-                   )";
+                   $hidden_sql";
 
     $subcategories = array();
     if ( ! empty( $sub_cat_filter ) ) {
@@ -396,6 +399,83 @@ function varner_ensure_finance_page() {
 add_action( 'after_switch_theme', 'varner_ensure_finance_page' );
 add_action( 'init', 'varner_ensure_finance_page' );
 
+// Ensure Terms of Service page exists and uses the TOS template
+function varner_ensure_terms_of_service_page() {
+    $candidates = array( 'legal/terms-of-service', 'terms-of-service', 'legal/terms', 'terms' );
+    $found = null;
+    foreach ( $candidates as $candidate ) {
+        $page = get_page_by_path( $candidate );
+        if ( $page && ! is_wp_error( $page ) ) {
+            $found = $page;
+            break;
+        }
+    }
+    if ( ! $found ) {
+        $page_id = wp_insert_post( array(
+            'post_title'   => 'Terms of Service',
+            'post_name'    => 'terms-of-service',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+            'post_parent'  => varner_ensure_legal_parent_page(),
+        ) );
+        if ( is_wp_error( $page_id ) ) { return; }
+        $found = get_post( $page_id );
+    }
+    if ( $found && ! is_wp_error( $found ) ) {
+        update_post_meta( $found->ID, '_wp_page_template', 'page-terms-of-service.php' );
+    }
+}
+add_action( 'after_switch_theme', 'varner_ensure_terms_of_service_page' );
+add_action( 'init', 'varner_ensure_terms_of_service_page' );
+
+// Ensure Privacy Policy page exists and uses the Privacy Policy template
+function varner_ensure_privacy_policy_page() {
+    $candidates = array( 'legal/privacy-policy', 'privacy-policy', 'legal/privacy', 'privacy' );
+    $found = null;
+    foreach ( $candidates as $candidate ) {
+        $page = get_page_by_path( $candidate );
+        if ( $page && ! is_wp_error( $page ) ) {
+            $found = $page;
+            break;
+        }
+    }
+    if ( ! $found ) {
+        $page_id = wp_insert_post( array(
+            'post_title'   => 'Privacy Policy',
+            'post_name'    => 'privacy-policy',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+            'post_parent'  => varner_ensure_legal_parent_page(),
+        ) );
+        if ( is_wp_error( $page_id ) ) { return; }
+        $found = get_post( $page_id );
+    }
+    if ( $found && ! is_wp_error( $found ) ) {
+        update_post_meta( $found->ID, '_wp_page_template', 'page-privacy-policy.php' );
+    }
+}
+add_action( 'after_switch_theme', 'varner_ensure_privacy_policy_page' );
+add_action( 'init', 'varner_ensure_privacy_policy_page' );
+
+// Ensure /legal parent page exists for legal pages
+function varner_ensure_legal_parent_page() {
+    $parent = get_page_by_path( 'legal' );
+    if ( ! $parent ) {
+        $parent_id = wp_insert_post( array(
+            'post_title'   => 'Legal',
+            'post_name'    => 'legal',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+        ) );
+        if ( is_wp_error( $parent_id ) ) { return 0; }
+        return $parent_id;
+    }
+    return $parent->ID;
+}
+
 /**
  * Card Partial Loader
  */
@@ -423,7 +503,7 @@ function varner_include_equipment_card( $post_id = null ) {
 function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1 ) {
     $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
 
-    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
+    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
 
     $filters = array(
         'category'    => array_map( 'sanitize_text_field', (array) ( $_GET['category']    ?? [] ) ),
@@ -496,9 +576,18 @@ function varner_search_meta_fields( $search, $wp_query ) {
     $search = $search_and = '';
 
     foreach ( (array) $q['search_terms'] as $term ) {
-        $term = esc_sql( $wpdb->esc_like( $term ) );
-        $search .= "{$search_and}(($wpdb->posts.post_title LIKE '{$n}{$term}{$n}') OR ($wpdb->posts.post_content LIKE '{$n}{$term}{$n}') OR (EXISTS (SELECT 1 FROM {$wpdb->postmeta} WHERE post_id = {$wpdb->posts}.ID AND meta_key IN ('make','model','category','stock_number','vin') AND meta_value LIKE '{$n}{$term}{$n}')))";
-
+        $like    = '%' . $wpdb->esc_like( $term ) . '%';
+        $query   = "AND (
+            {$wpdb->posts}.post_title LIKE %s
+            OR {$wpdb->posts}.post_content LIKE %s
+            OR EXISTS (
+                SELECT 1 FROM {$wpdb->postmeta}
+                WHERE post_id = {$wpdb->posts}.ID
+                  AND meta_key IN ('make','model','category','stock_number','vin')
+                  AND meta_value LIKE %s
+            )
+        )";
+        $search .= $wpdb->prepare( "{$search_and}({$query})", $like, $like, $like );
         $search_and = ' AND ';
     }
 
@@ -620,6 +709,11 @@ add_action( 'wp_footer', function () {
 } );
 
 
+
+// Cookie consent banner — outputs in footer on every front-end page.
+add_action( 'wp_footer', function () {
+    get_template_part( 'partials/cookie-consent' );
+} );
 
 /**
  * Theme Setup

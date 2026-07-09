@@ -88,11 +88,11 @@ function varner_register_rest_routes(): void {
 
     register_rest_route($ns, '/brands', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_brands',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_brands', 'permission_callback' => $editor_auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_brands', 'permission_callback' => $auth),
     ));
     register_rest_route($ns, '/years', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_years',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_years', 'permission_callback' => $editor_auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_years', 'permission_callback' => $auth),
     ));
     register_rest_route($ns, '/categories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
@@ -150,6 +150,15 @@ function varner_register_rest_routes(): void {
         'methods'             => 'GET',
         'callback'            => 'varner_api_me',
         'permission_callback' => 'is_user_logged_in',
+    ));
+    // Nonce refresh — returns a fresh wp_rest nonce for the current session.
+    // permission_callback is __return_true because the endpoint must work even
+    // when the caller's nonce has expired (chicken-and-egg). Auth is validated
+    // inside the handler via wp_validate_auth_cookie().
+    register_rest_route($ns, '/session', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_session_nonce',
+        'permission_callback' => '__return_true',
     ));
     // Single-request bootstrap — returns all data the app needs on initial load.
     // Eliminates 7 parallel REST calls that trigger Cloudflare 429 rate limits.
@@ -391,6 +400,10 @@ function varner_api_save_list(string $param, string $option, WP_REST_Request $re
         }
     }
 
+    if (null === $raw_items) {
+        return new WP_Error('missing_key', "Payload must contain a '{$param}' key.", array('status' => 400));
+    }
+
     if (is_string($raw_items)) {
         $existing = get_option($option, array());
         if (!is_array($existing)) {
@@ -513,7 +526,7 @@ function varner_api_get_inventory(WP_REST_Request $request) {
         $args['posts_per_page'] = $per_page;
         $args['paged']          = $page;
     } else {
-        $args['posts_per_page'] = -1;
+        $args['posts_per_page'] = 500; // Safety cap — prevents memory exhaustion on large inventories.
     }
 
     $query = new WP_Query($args);
@@ -784,6 +797,29 @@ function varner_api_upload_media(WP_REST_Request $request) {
         return new WP_Error('file_too_large', "File exceeds the maximum upload size of {$max_mb}. Try a smaller file or compress the video.", array('status' => 413));
     }
 
+    // ── MIME-type whitelist — block executable / dangerous uploads ──
+    $allowed_mimes = array(
+        'jpg|jpeg|jpe' => 'image/jpeg',
+        'png'          => 'image/png',
+        'gif'          => 'image/gif',
+        'webp'         => 'image/webp',
+        'avif'         => 'image/avif',
+        'svg'          => 'image/svg+xml',
+        'mp4'          => 'video/mp4',
+        'webm'         => 'video/webm',
+        'mov'          => 'video/quicktime',
+        'pdf'          => 'application/pdf',
+    );
+    $wp_check = wp_check_filetype(basename($file['name']), $allowed_mimes);
+    if (empty($wp_check['ext']) || empty($wp_check['type'])) {
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        return new WP_Error(
+            'invalid_file_type',
+            sprintf('File type ".%s" is not allowed. Allowed: %s', esc_html($ext), implode(', ', array_unique($allowed_mimes))),
+            array('status' => 415)
+        );
+    }
+
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/image.php';
     require_once ABSPATH . 'wp-admin/includes/media.php';
@@ -1039,7 +1075,7 @@ function varner_api_bootstrap(): WP_REST_Response {
     $args = array(
         'post_type'      => 'equipment',
         'post_status'    => current_user_can('edit_others_posts') ? array('publish', 'draft') : 'publish',
-        'posts_per_page' => -1,
+        'posts_per_page' => 500, // Safety cap — same as /inventory.
         'orderby'        => 'date',
         'order'          => 'DESC',
     );
@@ -1176,8 +1212,8 @@ function _varner_sanitize_settings_data(array $params, array $defaults): array {
                     if (!is_array($card)) continue;
                     $cards[] = array(
                         'name'            => sanitize_text_field($card['name'] ?? ''),
-                        'logo'            => esc_url_raw($card['logo'] ?? ''),
-                        'application_pdf' => esc_url_raw($card['application_pdf'] ?? ''),
+                        'logo'            => sanitize_text_field($card['logo'] ?? ''),
+                        'application_pdf' => sanitize_text_field($card['application_pdf'] ?? ''),
                         'description'     => sanitize_text_field($card['description'] ?? ''),
                         'alt'             => sanitize_text_field($card['alt'] ?? ''),
                     );
@@ -1235,6 +1271,37 @@ function varner_api_save_preview_settings(WP_REST_Request $request) {
     return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
 }
 
+// ─── 8b. SESSION NONCE REFRESH ───────────────────────────────────────────────
+// Returns a fresh wp_rest nonce without requiring a valid nonce on the request
+// itself (permission_callback = __return_true). Auth is validated inside via
+// wp_validate_auth_cookie(), which reads the WP login cookie directly — this
+// bypasses the REST nonce gate so the endpoint works even when the caller's
+// nonce has expired (which is the whole reason they're calling this).
+
+function varner_api_session_nonce() {
+    // Priority 1: mobile-token jars (installed PWA / QR handoff) — the
+    // determine_current_user filter (priority 15) has already run for this
+    // REST request and set the user if a token was sent.
+    $uid = get_current_user_id();
+
+    // Priority 2: browser/same-jar — read the WP login cookie DIRECTLY.
+    // wp_validate_auth_cookie bypasses the REST nonce gate, so it works even
+    // when the stale nonce is what got us here.
+    if (!$uid) {
+        $uid = (int) wp_validate_auth_cookie('', 'logged_in');
+    }
+
+    if (!$uid || !user_can($uid, 'edit_posts')) {
+        return new WP_Error('rest_forbidden', 'No active session.', array('status' => 401));
+    }
+
+    wp_set_current_user($uid); // wp_create_nonce is user-scoped — set the user first
+    return rest_ensure_response(array(
+        'nonce'   => wp_create_nonce('wp_rest'),
+        'user_id' => $uid,
+    ));
+}
+
 // ─── 9. MOBILE TOKEN ─────────────────────────────────────────────────────────
 
 function varner_api_generate_mobile_token() {
@@ -1272,6 +1339,8 @@ function varner_api_generate_mobile_token() {
     set_transient($active_key, $active_tokens, 1800);
     set_transient($cooldown_key, 1, 60);
 
+    varner_set_mobile_token_cookie($token);
+
     // Fix 2: Use home_url() — never $_SERVER['HTTP_HOST'] (host header injection risk).
     // Fix 3B: Put handoff nonce in URL, NOT the raw token.
     $url = esc_url_raw(home_url('/mobile-app/?handoff=' . $nonce));
@@ -1284,6 +1353,29 @@ function varner_api_generate_mobile_token() {
 }
 
 // ─── 9b. MOBILE PASSWORD LOGIN (in-PWA, iOS-safe) ────────────────────────────
+
+// ─── httpOnly Cookie Helpers ─────────────────────────────────────────────────
+function varner_set_mobile_token_cookie(string $token): void {
+    if (is_ssl()) {
+        setcookie('varner_mobile_token', $token, array(
+            'expires'  => time() + 60, // TEMP: 60s for testing — revert to 1800 after
+            'path'     => '/',
+            'secure'   => true,
+            'httponly'  => true,
+            'samesite' => 'Lax',
+        ));
+    }
+}
+
+function varner_clear_mobile_token_cookie(): void {
+    setcookie('varner_mobile_token', '', array(
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'secure'   => is_ssl(),
+        'httponly'  => true,
+        'samesite' => 'Lax',
+    ));
+}
 //
 // Lets the PWA authenticate with username/password WITHOUT leaving the
 // /mobile-app/ manifest scope, so on iOS the auth cookie lands in the standalone
@@ -1331,6 +1423,7 @@ function varner_api_mobile_login(WP_REST_Request $request) {
 
     return rest_ensure_response(array(
         'token' => varner_mint_mobile_token($user->ID),
+        'nonce' => wp_create_nonce('wp_rest'),
         'user'  => array('display_name' => $user->display_name),
     ));
 }
