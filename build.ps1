@@ -84,7 +84,7 @@ $themePath = "varner-equipment-theme-lite\varner-lite"
 # Compile Tailwind CSS inside varner-lite (the master theme)
 Write-Host "Compiling Tailwind CSS..." -ForegroundColor Cyan
 Push-Location $themePath
-npx tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --minify
+npx tailwindcss -c ./tailwind.config.js -i ./src/input.css -o ./assets/css/tailwind.css --minify
 Pop-Location
 
 # Package Plugin ZIP
