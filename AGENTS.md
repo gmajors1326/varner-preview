@@ -5,14 +5,19 @@
 
 # Deployment Notes
 
-## WPEngine — Dev Site
+## WPEngine — Production Site (varnerequipment.com)
 - **Host:** varnerequipdev@varnerequipdev.ssh.wpengine.net
 - **SSH Key:** `~/.ssh/id_ed25519_wpe`
 - **WP Path:** `/sites/varnerequipdev`
+- **Note:** `varnerequipdev` is the single WPEngine install; `varnerequipment.com` is the domain pointed at it.
 
 ## Active Theme
 - **Slug:** `varner-equipment-theme-v23-lite-4` (NOT `varner-lite`)
 - Always verify active theme slug before deploying (`wp theme list`)
+
+## ZIP Packaging Rule
+
+**NEVER use `Compress-Archive` or `tar`.** Always use Python `zipfile` (via `tools/zip_helper.py` or the inline one-liner in AGENTS-DEPLOY-CHECKLIST.md). PowerShell zips use backslashes that Linux `unzip` mishandles, causing missing subdirectories on the server.
 
 ## Deploy Commands
 

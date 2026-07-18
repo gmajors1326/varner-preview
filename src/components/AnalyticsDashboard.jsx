@@ -64,6 +64,200 @@ function InfoTooltip({ text }) {
   );
 }
 
+function LocationPanel({ countries, regions }) {
+  const [tab, setTab] = useState('regions'); // 'regions' | 'countries'
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [sortCol, setSortCol] = useState('users');
+  const [sortDir, setSortDir] = useState('desc');
+
+  const isRegions = tab === 'regions';
+  const rawData = isRegions ? (regions || []) : (countries || []).slice(0, 20);
+
+  // Filter by search
+  const filtered = rawData.filter(row => {
+    const label = isRegions ? row.region : (row.name || row.country);
+    return label.toLowerCase().includes(search.toLowerCase());
+  });
+
+  // Sort
+  const sorted = [...filtered].sort((a, b) => {
+    const aVal = a[sortCol] ?? 0;
+    const bVal = b[sortCol] ?? 0;
+    if (typeof aVal === 'string') return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+  });
+
+  const totalRows = sorted.length;
+  const totalPages = Math.ceil(totalRows / rowsPerPage);
+  const pageData = sorted.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('desc');
+    }
+    setPage(0);
+  };
+
+  const handleTabChange = (t) => {
+    setTab(t);
+    setPage(0);
+    setSearch('');
+  };
+
+  const SortArrow = ({ col }) => {
+    if (sortCol !== col) return null;
+    return <span style={{ marginLeft: 4, fontSize: 11 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  };
+
+  const columns = [
+    { key: isRegions ? 'region' : 'name', label: isRegions ? 'Region' : 'Country', align: 'left', sortKey: isRegions ? 'region' : 'name' },
+    { key: 'users', label: 'Users', align: 'right' },
+    { key: 'views', label: 'Page Views', align: 'right' },
+    { key: 'new_users', label: 'New Users', align: 'right' },
+    { key: 'pct', label: '% of Total', align: 'right', fmt: v => `${v}%` },
+  ];
+
+  const cellStyle = { padding: '12px 16px', borderBottom: '1px solid #f1f5f9', fontSize: 13 };
+  const headerStyle = { ...cellStyle, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', borderBottom: '1px solid #e2e8f0', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' };
+
+  return (
+    <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: CARD_BORDER }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 0' }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#1e293b' }}>
+          Users by location
+          <InfoTooltip text="Geographic distribution of your visitors based on Accept-Language header" />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, padding: '16px 20px 0', borderBottom: '1px solid #e2e8f0' }}>
+        {[{ key: 'regions', label: 'Regions' }, { key: 'countries', label: 'Top 20 countries' }].map(t => (
+          <button
+            key={t.key}
+            onClick={() => handleTabChange(t.key)}
+            style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: tab === t.key ? 700 : 500,
+              color: tab === t.key ? '#1e293b' : '#64748b',
+              background: 'none',
+              border: 'none',
+              borderBottom: tab === t.key ? '2px solid #2563eb' : '2px solid transparent',
+              cursor: 'pointer',
+              marginBottom: -1,
+              transition: 'all 0.15s',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ position: 'relative', maxWidth: 240 }}>
+          <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 34px',
+              fontSize: 13,
+              border: '1px solid #e2e8f0',
+              borderRadius: 8,
+              outline: 'none',
+              color: '#334155',
+              background: '#fff',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {columns.map(col => (
+                <th
+                  key={col.key}
+                  onClick={() => handleSort(col.key === (isRegions ? 'region' : 'name') ? col.key : col.key)}
+                  style={{ ...headerStyle, textAlign: col.align }}
+                >
+                  {col.label}<SortArrow col={col.key} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {pageData.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} style={{ ...cellStyle, textAlign: 'center', color: '#94a3b8', padding: '32px 16px', fontWeight: 600 }}>
+                  {search ? 'No results match your search' : 'No location data yet'}
+                </td>
+              </tr>
+            ) : (
+              pageData.map((row, i) => (
+                <tr key={i} style={{ transition: 'background 0.1s' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  {columns.map(col => {
+                    const val = row[col.key];
+                    const isNameCol = col.key === 'region' || col.key === 'name';
+                    return (
+                      <td key={col.key} style={{ ...cellStyle, textAlign: col.align, fontWeight: isNameCol ? 600 : 400, color: isNameCol ? '#6d28d9' : '#334155' }}>
+                        {col.fmt ? col.fmt(val) : (typeof val === 'number' ? val.toLocaleString() : val)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalRows > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, padding: '12px 20px', borderTop: '1px solid #f1f5f9', fontSize: 13, color: '#64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>Rows per page:</span>
+            <select
+              value={rowsPerPage}
+              onChange={e => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
+              style={{ border: '1px solid #e2e8f0', borderRadius: 4, padding: '2px 4px', fontSize: 13, color: '#334155', background: '#fff', cursor: 'pointer' }}
+            >
+              {[5, 10, 25].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <span>{page * rowsPerPage + 1}–{Math.min((page + 1) * rowsPerPage, totalRows)} of {totalRows}</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button
+              disabled={page === 0}
+              onClick={() => setPage(p => p - 1)}
+              style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', cursor: page === 0 ? 'default' : 'pointer', opacity: page === 0 ? 0.4 : 1, fontSize: 14, color: '#334155' }}
+            >‹</button>
+            <button
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(p => p + 1)}
+              style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', cursor: page >= totalPages - 1 ? 'default' : 'pointer', opacity: page >= totalPages - 1 ? 0.4 : 1, fontSize: 14, color: '#334155' }}
+            >›</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AnalyticsDashboard() {
   const mountEl = document.getElementById('varner-analytics-app');
   const initialRange = mountEl?.getAttribute('data-range') || '30';
@@ -207,22 +401,17 @@ export default function AnalyticsDashboard() {
             )}
           </div>
 
-          <div className="bg-white rounded-xl border p-5" style={{ borderColor: CARD_BORDER }}>
-            <div className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">Top Countries</div>
-            <BarTable data={data?.top_countries} labelKey="country" valueKey="users" emptyMsg="No country data yet" />
-          </div>
         </div>
       </div>
 
-      {/* Row 3: Three equal cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Row 3: Users by Location panel */}
+      <LocationPanel countries={data?.top_countries} regions={data?.top_regions} />
+
+      {/* Row 4: Two cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border p-5" style={{ borderColor: CARD_BORDER }}>
           <div className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">New Users by Source</div>
           <BarTable data={data?.top_sources} labelKey="source" valueKey="new_users" emptyMsg="No source data yet" />
-        </div>
-        <div className="bg-white rounded-xl border p-5" style={{ borderColor: CARD_BORDER }}>
-          <div className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Users by Country</div>
-          <BarTable data={data?.top_countries} labelKey="country" valueKey="users" emptyMsg="No country data yet" />
         </div>
         <div className="bg-white rounded-xl border p-5" style={{ borderColor: CARD_BORDER }}>
           <div className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Top Pages</div>

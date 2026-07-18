@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings,
-  X, Menu, Copy, Plus, Upload, Download, Save, Zap, TrendingUp, CheckCircle2, Clock,
+  X, Menu, Copy, Plus, Save, Zap, TrendingUp, CheckCircle2, Clock,
   ChevronRight, Star, Eye, ArrowUpRight, Search, Edit2, Image as ImageIcon, Loader2
 } from 'lucide-react';
 
@@ -34,6 +34,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [manageParentCategory, setManageParentCategory] = useState('');
 
   const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
@@ -136,6 +137,7 @@ const App = () => {
       {inv.showBrandsModal && (
         <ManageListModal title="Manage Brands" items={inv.brands} inputValue={inv.newBrandInput}
           onInputChange={inv.setNewBrandInput} onAdd={inv.handleAddBrand} onDelete={inv.handleDeleteBrand}
+          onRename={(oldName, newName) => inv.handleRenameCategoryNode('brand', oldName, newName)}
           onClose={() => inv.setShowBrandsModal(false)} placeholder="New brand name..." />
       )}
       {inv.showYearsModal && (
@@ -145,35 +147,30 @@ const App = () => {
       )}
       {inv.showCategoriesModal && (
         <ManageListModal title="Manage Categories"
-          items={inv.categories}
+          items={Object.keys(inv.categoryTree || {})}
           inputValue={inv.newCategoryInput}
           onInputChange={inv.setNewCategoryInput}
-          onAdd={inv.handleAddCategory}
-          onDelete={inv.handleDeleteCategory}
+          onAdd={() => inv.handleAddCategoryNode('category', inv.newCategoryInput)}
+          onDelete={(name) => inv.handleDeleteCategoryNode('category', name)}
+          onRename={(oldName, newName) => inv.handleRenameCategoryNode('category', oldName, newName)}
           onClose={() => inv.setShowCategoriesModal(false)}
           placeholder="New category name..." />
       )}
       {inv.showSubcategoriesModal && (
         <ManageListModal title="Manage Subcategories"
-          items={inv.subcategories}
+          parents={Object.keys(inv.categoryTree || {})}
+          parentLabel="Parent Category"
+          selectedParent={manageParentCategory}
+          onParentChange={setManageParentCategory}
+          items={manageParentCategory ? Object.keys(inv.categoryTree[manageParentCategory] || {}) : []}
           inputValue={inv.newSubcategoryInput}
           onInputChange={inv.setNewSubcategoryInput}
-          onAdd={inv.handleAddSubcategory}
-          onDelete={inv.handleDeleteSubcategory}
-          onClose={() => inv.setShowSubcategoriesModal(false)}
+          onAdd={() => inv.handleAddCategoryNode('subcategory', inv.newSubcategoryInput, manageParentCategory)}
+          onDelete={(name) => inv.handleDeleteCategoryNode('subcategory', name, manageParentCategory)}
+          onRename={(oldName, newName) => inv.handleRenameCategoryNode('subcategory', oldName, newName, manageParentCategory)}
+          onClose={() => { inv.setShowSubcategoriesModal(false); setManageParentCategory(''); }}
           placeholder="New subcategory name..." />
       )}
-      {inv.showSubSubcategoriesModal && (
-        <ManageListModal title="Manage Sub-Subcategories"
-          items={inv.subSubcategories}
-          inputValue={inv.newSubSubcategoryInput}
-          onInputChange={inv.setNewSubSubcategoryInput}
-          onAdd={inv.handleAddSubSubcategory}
-          onDelete={inv.handleDeleteSubSubcategory}
-          onClose={() => inv.setShowSubSubcategoriesModal(false)}
-          placeholder="New sub-subcategory name..." />
-      )}
-
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
@@ -216,16 +213,7 @@ const App = () => {
                 <Plus size={16} /> <span className="hidden sm:inline">New Unit</span>
               </button>
             )}
-            {!isMobileApp && activeTab === 'all-inventory' && (
-              <a href="/wp-admin/admin.php?page=pmxi-admin-import" className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
-                <Upload size={16} /> <span className="hidden sm:inline">Import Inventory</span><span className="sm:hidden">Import</span>
-              </a>
-            )}
-            {!isMobileApp && activeTab === 'all-inventory' && (
-              <a href="/wp-admin/admin.php?page=pmxe-admin-manage" className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
-                <Download size={16} /> <span className="hidden sm:inline">Export Inventory</span><span className="sm:hidden">Export</span>
-              </a>
-            )}
+
             {(activeTab === 'inventory' || activeTab === 'all-inventory') && (
               <button onClick={activeTab === 'inventory' ? inv.handleSave : handleAddNewUnit}
                 className="bg-red-600 text-white p-3 sm:px-7 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800">
@@ -290,10 +278,9 @@ const App = () => {
                   years={inv.years}
                   categories={inv.categories}
                   subcategories={inv.subcategories}
-                  subSubcategories={inv.subSubcategories}
+                  categoryTree={inv.categoryTree}
                   handleCategorySelectChange={inv.handleCategorySelectChange}
                   handleSubcategorySelectChange={inv.handleSubcategorySelectChange}
-                  handleSubSubcategorySelectChange={inv.handleSubSubcategorySelectChange}
                   handleAddImages={inv.handleAddImages}
                   handleRemoveImage={inv.handleRemoveImage}
                   handleReorderImages={inv.handleReorderImages}
@@ -305,7 +292,6 @@ const App = () => {
                   setShowYearsModal={inv.setShowYearsModal}
                   setShowCategoriesModal={inv.setShowCategoriesModal}
                   setShowSubcategoriesModal={inv.setShowSubcategoriesModal}
-                  setShowSubSubcategoriesModal={inv.setShowSubSubcategoriesModal}
                   onUnitUpdated={inv.applyUnitUpdate}
                 />
               </ErrorBoundary>

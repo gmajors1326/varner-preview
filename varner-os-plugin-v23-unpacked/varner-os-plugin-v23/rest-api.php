@@ -96,15 +96,23 @@ function varner_register_rest_routes(): void {
     ));
     register_rest_route($ns, '/categories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_categories', 'permission_callback' => $auth),
     ));
     register_rest_route($ns, '/subcategories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_subcategories',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_subcategories', 'permission_callback' => $auth),
     ));
     register_rest_route($ns, '/sub-subcategories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_sub_subcategories',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_sub_subcategories', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/category-tree', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_category_tree',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_category_tree', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/category-tree/rename', array(
+        array('methods' => 'POST', 'callback' => 'varner_api_rename_category_node', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/category-tree/node', array(
+        array('methods' => 'POST',   'callback' => 'varner_api_category_tree_add',    'permission_callback' => $auth),
+        array('methods' => 'DELETE', 'callback' => 'varner_api_category_tree_delete', 'permission_callback' => $auth),
     ));
 
     register_rest_route($ns, '/videos', array(
@@ -449,7 +457,7 @@ function varner_default_categories(): array {
         'Utility Vehicles', 'Tractors', 'Planting Equipment', 'Tillage Equipment',
         'Hay and Forage Equipment', 'Chemical Applicators', 'Manure Handling',
         'Manure Spreaders', 'Grain Handling / Storage Equipment', 'Ag Trailers',
-        'Outdoor Power', 'Other Equipment', 'Turf Equipment', 'Trucks',
+        'Snow Equipment', 'Other Equipment', 'Turf Equipment', 'Trucks',
         'Semi-Trailers', 'Trailers',
     );
 }
@@ -462,17 +470,9 @@ function varner_api_get_categories(): WP_REST_Response {
     return rest_ensure_response($categories);
 }
 
-function varner_api_save_categories(WP_REST_Request $r): WP_REST_Response {
-    return varner_api_save_list('categories', 'varner_categories', $r);
-}
-
 function varner_api_get_subcategories(): WP_REST_Response {
     $items = get_option('varner_subcategories');
     return rest_ensure_response(is_array($items) ? $items : array());
-}
-
-function varner_api_save_subcategories(WP_REST_Request $r): WP_REST_Response {
-    return varner_api_save_list('subcategories', 'varner_subcategories', $r);
 }
 
 function varner_api_get_sub_subcategories(): WP_REST_Response {
@@ -480,8 +480,113 @@ function varner_api_get_sub_subcategories(): WP_REST_Response {
     return rest_ensure_response(is_array($items) ? $items : array());
 }
 
-function varner_api_save_sub_subcategories(WP_REST_Request $r): WP_REST_Response {
-    return varner_api_save_list('sub-subcategories', 'varner_sub_subcategories', $r);
+function varner_api_get_category_tree(): WP_REST_Response {
+    $tree = get_option('varner_category_tree', array());
+    return rest_ensure_response(is_array($tree) ? $tree : array());
+}
+
+function varner_api_save_category_tree(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $body = $r->get_json_params();
+    $tree = is_array($body) && isset($body['category_tree']) ? $body['category_tree'] : null;
+    if (!is_array($tree)) {
+        return new WP_Error('invalid_payload', 'Invalid category tree payload', array('status' => 400));
+    }
+    update_option('varner_category_tree', $tree);
+    if (function_exists('varner_derive_flat_options_from_tree')) {
+        varner_derive_flat_options_from_tree();
+    }
+    return rest_ensure_response($tree);
+}
+
+function varner_api_rename_category_node(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $type       = sanitize_text_field($r->get_param('type') ?? '');
+    $old        = sanitize_text_field($r->get_param('old_name') ?? '');
+    $new        = sanitize_text_field($r->get_param('new_name') ?? '');
+    $parent_cat = sanitize_text_field($r->get_param('parent_category') ?? '');
+    $parent_sub = sanitize_text_field($r->get_param('parent_subcategory') ?? '');
+
+    if (!$type || !$old || !$new) {
+        return new WP_Error('invalid_args', 'Missing required arguments: type, old_name, new_name', array('status' => 400));
+    }
+
+    // Make/brand renames are handled inline (they live in varner_brands, not the tree)
+    if ($type === 'make' || $type === 'brand') {
+        $brands = get_option('varner_brands', array());
+        if (!is_array($brands)) {
+            return new WP_Error('no_brands', 'Brands list not found', array('status' => 500));
+        }
+        $idx = array_search($old, $brands, true);
+        if ($idx === false) {
+            return new WP_Error('node_not_found', "Brand '{$old}' not found.", array('status' => 404));
+        }
+        $brands[$idx] = $new;
+        update_option('varner_brands', $brands);
+        $affected = varner_migrate_equipment_meta_scoped(array('make' => $old), 'make', $new);
+        return rest_ensure_response(array(
+            'success'        => true,
+            'category_tree'  => get_option('varner_category_tree', array()),
+            'brands'         => get_option('varner_brands', array()),
+            'affected_posts' => $affected,
+        ));
+    }
+
+    // Route category/subcategory/sub_subcategory through the single-source-of-truth mutate
+    $result = varner_category_tree_mutate('rename', array(
+        'type'              => $type,
+        'name'              => $old,
+        'new_name'          => $new,
+        'parent_category'   => $parent_cat,
+        'parent_subcategory' => $parent_sub,
+    ));
+
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    return rest_ensure_response(array(
+        'success'        => true,
+        'category_tree'  => $result['tree'],
+        'brands'         => get_option('varner_brands', array()),
+        'affected_posts' => $result['affected_posts'],
+    ));
+}
+
+function varner_api_category_tree_add(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $result = varner_category_tree_mutate('add', array(
+        'type'               => sanitize_text_field($r->get_param('type') ?? ''),
+        'name'               => sanitize_text_field($r->get_param('name') ?? ''),
+        'parent_category'    => sanitize_text_field($r->get_param('parent_category') ?? ''),
+        'parent_subcategory' => sanitize_text_field($r->get_param('parent_subcategory') ?? ''),
+    ));
+
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    return rest_ensure_response(array(
+        'success'       => true,
+        'category_tree' => $result['tree'],
+    ));
+}
+
+function varner_api_category_tree_delete(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $result = varner_category_tree_mutate('delete', array(
+        'type'               => sanitize_text_field($r->get_param('type') ?? ''),
+        'name'               => sanitize_text_field($r->get_param('name') ?? ''),
+        'parent_category'    => sanitize_text_field($r->get_param('parent_category') ?? ''),
+        'parent_subcategory' => sanitize_text_field($r->get_param('parent_subcategory') ?? ''),
+        'reassign_to'        => sanitize_text_field($r->get_param('reassign_to') ?? ''),
+    ));
+
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    return rest_ensure_response(array(
+        'success'        => true,
+        'category_tree'  => $result['tree'],
+        'affected_posts' => $result['affected_posts'],
+    ));
 }
 
 // ─── 3. INVENTORY CRUD ───────────────────────────────────────────────────────
@@ -617,11 +722,73 @@ function varner_api_get_deleted(WP_REST_Request $request): WP_REST_Response {
     return rest_ensure_response($items);
 }
 
+function varner_check_duplicate_vin_or_stock(array $data, int $exclude_post_id = 0) {
+    global $wpdb;
+    
+    // 1. Check Stock Number
+    $stock_number = sanitize_text_field($data['stockNumber'] ?? $data['stock_number'] ?? '');
+    if (!empty($stock_number)) {
+        $dup_stock_id = $wpdb->get_var($wpdb->prepare("
+            SELECT p.ID 
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} m ON p.ID = m.post_id
+            WHERE p.post_type = 'equipment'
+              AND p.post_status IN ('publish', 'draft')
+              AND m.meta_key = 'stock_number'
+              AND m.meta_value = %s
+              AND p.ID != %d
+            LIMIT 1
+        ", $stock_number, $exclude_post_id));
+        
+        if ($dup_stock_id) {
+            $dup_title = get_the_title($dup_stock_id);
+            return new WP_Error(
+                'duplicate_stock_number', 
+                "Stock Number '{$stock_number}' is already assigned to another unit: '{$dup_title}' (ID: {$dup_stock_id}).", 
+                array('status' => 409)
+            );
+        }
+    }
+    
+    // 2. Check VIN
+    $vin = sanitize_text_field($data['vin'] ?? '');
+    if (!empty($vin)) {
+        $dup_vin_id = $wpdb->get_var($wpdb->prepare("
+            SELECT p.ID 
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} m ON p.ID = m.post_id
+            WHERE p.post_type = 'equipment'
+              AND p.post_status IN ('publish', 'draft')
+              AND m.meta_key = 'vin'
+              AND m.meta_value = %s
+              AND p.ID != %d
+            LIMIT 1
+        ", $vin, $exclude_post_id));
+        
+        if ($dup_vin_id) {
+            $dup_title = get_the_title($dup_vin_id);
+            return new WP_Error(
+                'duplicate_vin', 
+                "VIN / Serial Number '{$vin}' is already assigned to another unit: '{$dup_title}' (ID: {$dup_vin_id}).", 
+                array('status' => 409)
+            );
+        }
+    }
+    
+    return null;
+}
+
 function varner_api_create_unit(WP_REST_Request $request) {
     $data    = $request->get_json_params();
     if (!is_array($data)) {
         return new WP_Error('invalid_body', 'Invalid JSON body', array('status' => 400));
     }
+    
+    $dup_error = varner_check_duplicate_vin_or_stock($data, 0);
+    if (is_wp_error($dup_error)) {
+        return $dup_error;
+    }
+
     $status  = (isset($data['stock_status']) && $data['stock_status'] === 'Draft') ? 'draft' : 'publish';
     $post_id = wp_insert_post(array(
         'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Unit'),
@@ -649,6 +816,12 @@ function varner_api_update_unit(WP_REST_Request $request) {
     if (!is_array($data)) {
         return new WP_Error('invalid_body', 'Invalid JSON body', array('status' => 400));
     }
+    
+    $dup_error = varner_check_duplicate_vin_or_stock($data, $post_id);
+    if (is_wp_error($dup_error)) {
+        return $dup_error;
+    }
+
     $post    = varner_api_validate_equipment($post_id);
     if (is_wp_error($post)) {
         return $post;
@@ -1134,6 +1307,7 @@ function varner_api_bootstrap(): WP_REST_Response {
     $categories       = (is_array($raw_categories) && !empty($raw_categories)) ? $raw_categories : varner_default_categories();
     $subcategories    = get_option('varner_subcategories', array());
     $sub_subcategories = get_option('varner_sub_subcategories', array());
+    $category_tree     = get_option('varner_category_tree', array());
 
     return rest_ensure_response(array(
         'inventory'         => $inventory,
@@ -1150,6 +1324,7 @@ function varner_api_bootstrap(): WP_REST_Response {
         'categories'        => $categories,
         'subcategories'     => $subcategories,
         'sub_subcategories' => $sub_subcategories,
+        'category_tree'     => $category_tree,
     ));
 }
 

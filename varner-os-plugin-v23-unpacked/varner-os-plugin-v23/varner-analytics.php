@@ -185,9 +185,10 @@ add_action('rest_api_init', function (): void {
         'permission_callback' => '__return_true',
         'args'                => array(
             'path' => array(
-                'required'          => true,
+                'required'          => false,
                 'sanitize_callback' => 'sanitize_text_field',
                 'validate_callback' => function ($v): bool {
+                    if (empty($v)) return true; // validated in callback after body parsing
                     return (bool) preg_match('#^/[a-zA-Z0-9/_.\-~%]*$#', $v);
                 },
             ),
@@ -202,6 +203,28 @@ add_action('rest_api_init', function (): void {
 });
 
 function varner_analytics_track(WP_REST_Request $request): WP_REST_Response|WP_Error {
+    // sendBeacon may send as text/plain — WP won't auto-parse the JSON body.
+    // Manually decode php://input and set params if WP didn't parse them.
+    if (!$request->get_param('path')) {
+        $raw = file_get_contents('php://input');
+        if ($raw) {
+            $body = json_decode($raw, true);
+            if (is_array($body)) {
+                foreach ($body as $k => $v) {
+                    if (is_string($v)) {
+                        $request->set_param($k, sanitize_text_field($v));
+                    }
+                }
+            }
+        }
+    }
+
+    // Validate path after fallback parsing
+    $path_val = $request->get_param('path');
+    if (empty($path_val) || !preg_match('#^/[a-zA-Z0-9/_.\-~%]*$#', $path_val)) {
+        return new WP_REST_Response(null, 204);
+    }
+
     $ip = varner_login_client_ip();
 
     // Rate limit: 60 req/min per IP
@@ -247,12 +270,27 @@ function varner_analytics_track(WP_REST_Request $request): WP_REST_Response|WP_E
     $classified = varner_analytics_classify_ua($ua);
 
     // Country (Accept-Language header heuristic)
+    // Scan ALL language tags for a region subtag, not just the first.
+    // Browsers often send "en,en-US;q=0.9" — bare language first, region later.
     $country = '';
     if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
         $al = sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT_LANGUAGE']));
-        if (preg_match('/^([a-z]{2})(?:[_-]|$)/i', $al, $m)) {
-            $country = strtoupper($m[1]);
+        if (preg_match_all('/[a-z]{2}[_-]([A-Za-z]{2})\b/', $al, $matches)) {
+            // Use the first region subtag found (highest-priority tag with a region)
+            $country = strtoupper($matches[1][0]);
         }
+        
+        // Normalize language-only or custom locales
+        if (empty($country)) {
+            if (preg_match('/^en\b/i', $al)) {
+                $country = 'US';
+            } elseif (preg_match('/^zh\b/i', $al)) {
+                $country = 'CN';
+            }
+        }
+        
+        if ($country === 'EN') $country = 'US';
+        if ($country === 'ZH') $country = 'CN';
     }
 
     global $wpdb;
@@ -317,82 +355,8 @@ add_action('rest_api_init', function (): void {
     ));
 });
 
-function varner_analytics_fake_data(string $range): array {
-    $days = (int) $range;
-    $now  = time();
-    $seed_daily = 120;
-
-    $timeseries = array();
-    for ($i = $days - 1; $i >= 0; $i--) {
-        $date = date('Y-m-d', strtotime("-{$i} days"));
-        $base = $seed_daily + rand(-30, 30);
-        $timeseries[] = array('date' => $date, 'users' => max(0, $base + ($i === 0 ? rand(10, 40) : 0)));
-    }
-
-    $total_users = array_sum(array_column($timeseries, 'users'));
-    $today_users = end($timeseries)['users'];
-
-    $sources = array(
-        array('source' => 'Google Organic', 'new_users' => rand(200, 400)),
-        array('source' => 'Direct',         'new_users' => rand(100, 250)),
-        array('source' => 'Facebook',       'new_users' => rand(60, 150)),
-        array('source' => 'YouTube',        'new_users' => rand(30, 80)),
-        array('source' => 'Bing',           'new_users' => rand(10, 40)),
-    );
-
-    $countries = array(
-        array('country' => 'US', 'users' => rand(500, 900)),
-        array('country' => 'CA', 'users' => rand(50, 120)),
-        array('country' => 'GB', 'users' => rand(30, 70)),
-        array('country' => 'AU', 'users' => rand(20, 50)),
-        array('country' => 'DE', 'users' => rand(10, 30)),
-    );
-
-    $pages = array(
-        array('path' => '/inventory/all-units',      'views' => rand(300, 600)),
-        array('path' => '/',                          'views' => rand(250, 500)),
-        array('path' => '/inventory/new',             'views' => rand(150, 300)),
-        array('path' => '/inventory/used',            'views' => rand(100, 200)),
-        array('path' => '/brands',                    'views' => rand(50, 150)),
-    );
-
-    $referrers = array(
-        array('source' => 'Google',    'count' => rand(200, 400)),
-        array('source' => 'Direct',    'count' => rand(150, 300)),
-        array('source' => 'Facebook',  'count' => rand(80, 180)),
-        array('source' => 'YouTube',   'count' => rand(40, 100)),
-        array('source' => 'Bing',      'count' => rand(20, 60)),
-    );
-
-    return array(
-        'range' => array(
-            'start' => date('Y-m-d', strtotime("-{$days} days")),
-            'end'   => date('Y-m-d'),
-            'days'  => $days,
-        ),
-        'kpis' => array(
-            'users'                 => $total_users,
-            'new_users'             => (int) round($total_users * 0.65),
-            'avg_engagement_seconds' => rand(120, 240),
-        ),
-        'timeseries'    => $timeseries,
-        'realtime'      => array(
-            'active_last_30min' => rand(3, 15),
-            'per_minute'        => array_map(function () { return rand(0, 5); }, range(1, 30)),
-        ),
-        'top_pages'     => $pages,
-        'top_referrers' => $referrers,
-        'top_sources'   => $sources,
-        'top_countries' => $countries,
-        'devices'       => array(
-            'mobile'  => rand(40, 60),
-            'desktop' => rand(25, 40),
-            'tablet'  => rand(5, 15),
-        ),
-    );
-}
-
 function varner_analytics_rest_summary(WP_REST_Request $request): WP_REST_Response {
+    global $wpdb;
     $range = $request->get_param('range');
     $cache_key = 'varner_analytics_summary_' . $range;
     $cached = get_transient($cache_key);
@@ -400,8 +364,330 @@ function varner_analytics_rest_summary(WP_REST_Request $request): WP_REST_Respon
         return rest_ensure_response($cached);
     }
 
-    $data = varner_analytics_fake_data($range);
+    $days = (int) $range;
+    $table = varner_analytics_db_table();
+    $since = date('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+    $total_users = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(DISTINCT ip_hash) FROM {$table} WHERE created_at >= %s", $since
+    ));
+
+    $new_users = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(DISTINCT t1.ip_hash) FROM {$table} t1
+         WHERE t1.created_at >= %s
+         AND NOT EXISTS (
+             SELECT 1 FROM {$table} t2
+             WHERE t2.ip_hash = t1.ip_hash AND t2.created_at < %s
+         )", $since, $since
+    ));
+
+    $timeseries_raw = $wpdb->get_results($wpdb->prepare(
+        "SELECT DATE(created_at) as date, COUNT(DISTINCT ip_hash) as users
+         FROM {$table} WHERE created_at >= %s
+         GROUP BY DATE(created_at) ORDER BY date ASC", $since
+    ), ARRAY_A);
+
+    $ts_lookup = array();
+    foreach ($timeseries_raw as $row) {
+        $ts_lookup[$row['date']] = (int) $row['users'];
+    }
+    $timeseries = array();
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $d = date('Y-m-d', strtotime("-{$i} days"));
+        $timeseries[] = array('date' => $d, 'users' => $ts_lookup[$d] ?? 0);
+    }
+
+    $realtime_since = date('Y-m-d H:i:s', strtotime('-30 minutes'));
+    $active_last_30min = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(DISTINCT ip_hash) FROM {$table} WHERE created_at >= %s", $realtime_since
+    ));
+
+    $per_minute_raw = $wpdb->get_results($wpdb->prepare(
+        "SELECT DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as minute, COUNT(*) as hits
+         FROM {$table} WHERE created_at >= %s
+         GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d %H:%i')
+         ORDER BY minute ASC", $realtime_since
+    ), ARRAY_A);
+
+    $pm_lookup = array();
+    foreach ( (array) $per_minute_raw as $row ) {
+        $pm_lookup[$row['minute']] = (int) $row['hits'];
+    }
+    $per_minute = array();
+    for ($m = 29; $m >= 0; $m--) {
+        $per_minute[] = $pm_lookup[date('Y-m-d H:i', strtotime("-{$m} minutes"))] ?? 0;
+    }
+
+    $top_pages = $wpdb->get_results($wpdb->prepare(
+        "SELECT page_path as path, COUNT(*) as views
+         FROM {$table} WHERE created_at >= %s
+         GROUP BY page_path ORDER BY views DESC LIMIT 10", $since
+    ), ARRAY_A);
+
+    $top_referrers = $wpdb->get_results($wpdb->prepare(
+        "SELECT referrer_host as source, COUNT(*) as count
+         FROM {$table} WHERE created_at >= %s AND referrer_host != ''
+         GROUP BY referrer_host ORDER BY count DESC LIMIT 10", $since
+    ), ARRAY_A);
+
+    $top_countries_raw = $wpdb->get_results($wpdb->prepare(
+        "SELECT country,
+                COUNT(DISTINCT ip_hash) as users,
+                COUNT(*) as views
+         FROM {$table} WHERE created_at >= %s AND country != ''
+         GROUP BY country ORDER BY users DESC", $since
+    ), ARRAY_A);
+
+    // Count new users per country (first-time visitors in this period)
+    $new_users_by_country = $wpdb->get_results($wpdb->prepare(
+        "SELECT t1.country, COUNT(DISTINCT t1.ip_hash) as new_users
+         FROM {$table} t1
+         WHERE t1.created_at >= %s AND t1.country != ''
+         AND NOT EXISTS (
+             SELECT 1 FROM {$table} t2
+             WHERE t2.ip_hash = t1.ip_hash AND t2.created_at < %s
+         )
+         GROUP BY t1.country", $since, $since
+    ), ARRAY_A);
+
+    $new_users_lookup = array();
+    foreach ($new_users_by_country as $row) {
+        $code = strtoupper($row['country']);
+        if ($code === 'EN') $code = 'US';
+        if ($code === 'ZH') $code = 'CN';
+        if (!isset($new_users_lookup[$code])) {
+            $new_users_lookup[$code] = 0;
+        }
+        $new_users_lookup[$code] += (int) $row['new_users'];
+    }
+
+    // Build enriched country data with full names and regions
+    $region_map = varner_analytics_country_to_region();
+    $country_names = varner_analytics_country_names();
+    $total_views_all = 0;
+    
+    // Group and aggregate records to merge normalized codes and exclude raw language codes
+    $normalized_countries = array();
+    foreach ($top_countries_raw as $row) {
+        $code = strtoupper($row['country']);
+        if ($code === 'EN') $code = 'US';
+        if ($code === 'ZH') $code = 'CN';
+
+        // Skip any raw language codes or invalid country codes (such as EN, ZH, etc.)
+        if (!isset($country_names[$code])) {
+            continue;
+        }
+
+        if (!isset($normalized_countries[$code])) {
+            $normalized_countries[$code] = array(
+                'country'    => $code,
+                'name'       => $country_names[$code],
+                'region'     => $region_map[$code] ?? 'Other',
+                'users'      => 0,
+                'views'      => 0,
+                'new_users'  => $new_users_lookup[$code] ?? 0,
+            );
+        }
+        $normalized_countries[$code]['users'] += (int) $row['users'];
+        $normalized_countries[$code]['views'] += (int) $row['views'];
+        $total_views_all += (int) $row['views'];
+    }
+
+    $top_countries = array_values($normalized_countries);
+
+    // Add percentage
+    foreach ($top_countries as &$c) {
+        $c['pct'] = $total_views_all > 0 ? round(($c['views'] / $total_views_all) * 100, 1) : 0;
+    }
+    unset($c);
+
+    // Sort by users descending
+    usort($top_countries, function ($a, $b) { return $b['users'] - $a['users']; });
+
+    // Aggregate by region
+    $region_agg = array();
+    foreach ($top_countries as $c) {
+        $r = $c['region'];
+        if (!isset($region_agg[$r])) {
+            $region_agg[$r] = array('region' => $r, 'users' => 0, 'views' => 0, 'new_users' => 0);
+        }
+        $region_agg[$r]['users']     += $c['users'];
+        $region_agg[$r]['views']     += $c['views'];
+        $region_agg[$r]['new_users'] += $c['new_users'];
+    }
+    // Add percentages and sort
+    $top_regions = array_values($region_agg);
+    foreach ($top_regions as &$r) {
+        $r['pct'] = $total_views_all > 0 ? round(($r['views'] / $total_views_all) * 100, 1) : 0;
+    }
+    unset($r);
+    usort($top_regions, function ($a, $b) { return $b['users'] - $a['users']; });
+
+    $devices_raw = $wpdb->get_results($wpdb->prepare(
+        "SELECT ua_device, COUNT(DISTINCT ip_hash) as cnt
+         FROM {$table} WHERE created_at >= %s
+         GROUP BY ua_device", $since
+    ), ARRAY_A);
+
+    $devices = array('mobile' => 0, 'desktop' => 0, 'tablet' => 0);
+    foreach ($devices_raw as $row) {
+        if (isset($devices[$row['ua_device']])) {
+            $devices[$row['ua_device']] = (int) $row['cnt'];
+        }
+    }
+
+    $data = array(
+        'range' => array(
+            'start' => date('Y-m-d', strtotime("-{$days} days")),
+            'end'   => date('Y-m-d'),
+            'days'  => $days,
+        ),
+        'kpis' => array(
+            'users'                  => $total_users,
+            'new_users'              => $new_users,
+            'avg_engagement_seconds' => 0,
+        ),
+        'timeseries'    => $timeseries,
+        'realtime'      => array(
+            'active_last_30min' => $active_last_30min,
+            'per_minute'        => $per_minute,
+        ),
+        'top_pages'     => $top_pages,
+        'top_referrers' => $top_referrers,
+        'top_sources'   => array_map(function ($r) {
+            return array('source' => $r['source'], 'new_users' => $r['count']);
+        }, $top_referrers),
+        'top_countries' => $top_countries,
+        'top_regions'   => $top_regions,
+        'devices'       => $devices,
+    );
 
     set_transient($cache_key, $data, 5 * MINUTE_IN_SECONDS);
     return rest_ensure_response($data);
+}
+
+// ─── Country / Region Lookup Tables ───────────────────────────────────────────
+
+function varner_analytics_country_to_region(): array {
+    return array(
+        // Northern America
+        'US' => 'Northern America', 'CA' => 'Northern America', 'MX' => 'Northern America',
+        'BM' => 'Northern America', 'GL' => 'Northern America', 'PM' => 'Northern America',
+        // Central America
+        'GT' => 'Central America', 'BZ' => 'Central America', 'HN' => 'Central America',
+        'SV' => 'Central America', 'NI' => 'Central America', 'CR' => 'Central America', 'PA' => 'Central America',
+        // Caribbean
+        'CU' => 'Caribbean', 'JM' => 'Caribbean', 'HT' => 'Caribbean', 'DO' => 'Caribbean',
+        'PR' => 'Caribbean', 'TT' => 'Caribbean', 'BS' => 'Caribbean', 'BB' => 'Caribbean',
+        // South America
+        'BR' => 'South America', 'AR' => 'South America', 'CO' => 'South America',
+        'CL' => 'South America', 'PE' => 'South America', 'VE' => 'South America',
+        'EC' => 'South America', 'BO' => 'South America', 'PY' => 'South America',
+        'UY' => 'South America', 'GY' => 'South America', 'SR' => 'South America',
+        // Northern Europe
+        'GB' => 'Northern Europe', 'IE' => 'Northern Europe', 'SE' => 'Northern Europe',
+        'NO' => 'Northern Europe', 'DK' => 'Northern Europe', 'FI' => 'Northern Europe',
+        'IS' => 'Northern Europe', 'LT' => 'Northern Europe', 'LV' => 'Northern Europe',
+        'EE' => 'Northern Europe',
+        // Western Europe
+        'FR' => 'Western Europe', 'DE' => 'Western Europe', 'NL' => 'Western Europe',
+        'BE' => 'Western Europe', 'CH' => 'Western Europe', 'AT' => 'Western Europe',
+        'LU' => 'Western Europe', 'LI' => 'Western Europe', 'MC' => 'Western Europe',
+        // Southern Europe
+        'ES' => 'Southern Europe', 'IT' => 'Southern Europe', 'PT' => 'Southern Europe',
+        'GR' => 'Southern Europe', 'HR' => 'Southern Europe', 'RS' => 'Southern Europe',
+        'SI' => 'Southern Europe', 'BA' => 'Southern Europe', 'ME' => 'Southern Europe',
+        'MK' => 'Southern Europe', 'AL' => 'Southern Europe', 'MT' => 'Southern Europe',
+        // Eastern Europe
+        'RU' => 'Eastern Europe', 'PL' => 'Eastern Europe', 'UA' => 'Eastern Europe',
+        'CZ' => 'Eastern Europe', 'RO' => 'Eastern Europe', 'HU' => 'Eastern Europe',
+        'SK' => 'Eastern Europe', 'BG' => 'Eastern Europe', 'BY' => 'Eastern Europe',
+        'MD' => 'Eastern Europe',
+        // Eastern Asia
+        'CN' => 'Eastern Asia', 'JP' => 'Eastern Asia', 'KR' => 'Eastern Asia',
+        'TW' => 'Eastern Asia', 'HK' => 'Eastern Asia', 'MO' => 'Eastern Asia', 'MN' => 'Eastern Asia',
+        // South-eastern Asia
+        'ID' => 'South-eastern Asia', 'PH' => 'South-eastern Asia', 'VN' => 'South-eastern Asia',
+        'TH' => 'South-eastern Asia', 'MY' => 'South-eastern Asia', 'SG' => 'South-eastern Asia',
+        'MM' => 'South-eastern Asia', 'KH' => 'South-eastern Asia', 'LA' => 'South-eastern Asia',
+        'BN' => 'South-eastern Asia', 'TL' => 'South-eastern Asia',
+        // Southern Asia
+        'IN' => 'Southern Asia', 'PK' => 'Southern Asia', 'BD' => 'Southern Asia',
+        'LK' => 'Southern Asia', 'NP' => 'Southern Asia', 'AF' => 'Southern Asia',
+        'MV' => 'Southern Asia', 'BT' => 'Southern Asia',
+        // Western Asia
+        'TR' => 'Western Asia', 'SA' => 'Western Asia', 'AE' => 'Western Asia',
+        'IL' => 'Western Asia', 'IQ' => 'Western Asia', 'IR' => 'Western Asia',
+        'JO' => 'Western Asia', 'LB' => 'Western Asia', 'KW' => 'Western Asia',
+        'QA' => 'Western Asia', 'BH' => 'Western Asia', 'OM' => 'Western Asia',
+        'YE' => 'Western Asia', 'SY' => 'Western Asia', 'PS' => 'Western Asia',
+        'GE' => 'Western Asia', 'AM' => 'Western Asia', 'AZ' => 'Western Asia', 'CY' => 'Western Asia',
+        // Central Asia
+        'KZ' => 'Central Asia', 'UZ' => 'Central Asia', 'TM' => 'Central Asia',
+        'KG' => 'Central Asia', 'TJ' => 'Central Asia',
+        // Northern Africa
+        'EG' => 'Northern Africa', 'DZ' => 'Northern Africa', 'MA' => 'Northern Africa',
+        'TN' => 'Northern Africa', 'LY' => 'Northern Africa', 'SD' => 'Northern Africa',
+        // Sub-Saharan Africa
+        'NG' => 'Sub-Saharan Africa', 'ZA' => 'Sub-Saharan Africa', 'KE' => 'Sub-Saharan Africa',
+        'ET' => 'Sub-Saharan Africa', 'GH' => 'Sub-Saharan Africa', 'TZ' => 'Sub-Saharan Africa',
+        'UG' => 'Sub-Saharan Africa', 'CM' => 'Sub-Saharan Africa', 'CI' => 'Sub-Saharan Africa',
+        'SN' => 'Sub-Saharan Africa', 'ZW' => 'Sub-Saharan Africa', 'AO' => 'Sub-Saharan Africa',
+        'MZ' => 'Sub-Saharan Africa', 'MG' => 'Sub-Saharan Africa', 'CD' => 'Sub-Saharan Africa',
+        'ML' => 'Sub-Saharan Africa', 'BF' => 'Sub-Saharan Africa', 'NE' => 'Sub-Saharan Africa',
+        'RW' => 'Sub-Saharan Africa', 'MW' => 'Sub-Saharan Africa', 'ZM' => 'Sub-Saharan Africa',
+        'NA' => 'Sub-Saharan Africa', 'BW' => 'Sub-Saharan Africa', 'MU' => 'Sub-Saharan Africa',
+        // Oceania
+        'AU' => 'Oceania', 'NZ' => 'Oceania', 'FJ' => 'Oceania', 'PG' => 'Oceania',
+        'WS' => 'Oceania', 'TO' => 'Oceania', 'GU' => 'Oceania',
+    );
+}
+
+function varner_analytics_country_names(): array {
+    return array(
+        'US' => 'United States', 'CA' => 'Canada', 'MX' => 'Mexico',
+        'GB' => 'United Kingdom', 'IE' => 'Ireland', 'FR' => 'France', 'DE' => 'Germany',
+        'NL' => 'Netherlands', 'BE' => 'Belgium', 'CH' => 'Switzerland', 'AT' => 'Austria',
+        'ES' => 'Spain', 'IT' => 'Italy', 'PT' => 'Portugal', 'GR' => 'Greece',
+        'SE' => 'Sweden', 'NO' => 'Norway', 'DK' => 'Denmark', 'FI' => 'Finland',
+        'PL' => 'Poland', 'CZ' => 'Czech Republic', 'RO' => 'Romania', 'HU' => 'Hungary',
+        'SK' => 'Slovakia', 'BG' => 'Bulgaria', 'HR' => 'Croatia', 'RS' => 'Serbia',
+        'SI' => 'Slovenia', 'LT' => 'Lithuania', 'LV' => 'Latvia', 'EE' => 'Estonia',
+        'UA' => 'Ukraine', 'BY' => 'Belarus', 'MD' => 'Moldova', 'RU' => 'Russia',
+        'TR' => 'Turkey', 'IL' => 'Israel', 'SA' => 'Saudi Arabia', 'AE' => 'UAE',
+        'QA' => 'Qatar', 'KW' => 'Kuwait', 'BH' => 'Bahrain', 'OM' => 'Oman',
+        'JO' => 'Jordan', 'LB' => 'Lebanon', 'IQ' => 'Iraq', 'IR' => 'Iran',
+        'SY' => 'Syria', 'YE' => 'Yemen', 'GE' => 'Georgia', 'AM' => 'Armenia',
+        'AZ' => 'Azerbaijan', 'CY' => 'Cyprus', 'PS' => 'Palestine',
+        'CN' => 'China', 'JP' => 'Japan', 'KR' => 'South Korea', 'TW' => 'Taiwan',
+        'HK' => 'Hong Kong', 'MO' => 'Macao', 'MN' => 'Mongolia',
+        'IN' => 'India', 'PK' => 'Pakistan', 'BD' => 'Bangladesh', 'LK' => 'Sri Lanka',
+        'NP' => 'Nepal', 'AF' => 'Afghanistan', 'MV' => 'Maldives', 'BT' => 'Bhutan',
+        'ID' => 'Indonesia', 'PH' => 'Philippines', 'VN' => 'Vietnam', 'TH' => 'Thailand',
+        'MY' => 'Malaysia', 'SG' => 'Singapore', 'MM' => 'Myanmar', 'KH' => 'Cambodia',
+        'LA' => 'Laos', 'BN' => 'Brunei', 'TL' => 'Timor-Leste',
+        'KZ' => 'Kazakhstan', 'UZ' => 'Uzbekistan', 'TM' => 'Turkmenistan',
+        'KG' => 'Kyrgyzstan', 'TJ' => 'Tajikistan',
+        'AU' => 'Australia', 'NZ' => 'New Zealand', 'FJ' => 'Fiji', 'PG' => 'Papua New Guinea',
+        'BR' => 'Brazil', 'AR' => 'Argentina', 'CO' => 'Colombia', 'CL' => 'Chile',
+        'PE' => 'Peru', 'VE' => 'Venezuela', 'EC' => 'Ecuador', 'BO' => 'Bolivia',
+        'PY' => 'Paraguay', 'UY' => 'Uruguay', 'GY' => 'Guyana', 'SR' => 'Suriname',
+        'GT' => 'Guatemala', 'BZ' => 'Belize', 'HN' => 'Honduras', 'SV' => 'El Salvador',
+        'NI' => 'Nicaragua', 'CR' => 'Costa Rica', 'PA' => 'Panama',
+        'CU' => 'Cuba', 'JM' => 'Jamaica', 'HT' => 'Haiti', 'DO' => 'Dominican Republic',
+        'PR' => 'Puerto Rico', 'TT' => 'Trinidad & Tobago', 'BS' => 'Bahamas', 'BB' => 'Barbados',
+        'EG' => 'Egypt', 'DZ' => 'Algeria', 'MA' => 'Morocco', 'TN' => 'Tunisia',
+        'LY' => 'Libya', 'SD' => 'Sudan',
+        'NG' => 'Nigeria', 'ZA' => 'South Africa', 'KE' => 'Kenya', 'ET' => 'Ethiopia',
+        'GH' => 'Ghana', 'TZ' => 'Tanzania', 'UG' => 'Uganda', 'CM' => 'Cameroon',
+        'CI' => 'Ivory Coast', 'SN' => 'Senegal', 'ZW' => 'Zimbabwe', 'AO' => 'Angola',
+        'MZ' => 'Mozambique', 'MG' => 'Madagascar', 'CD' => 'DR Congo',
+        'ML' => 'Mali', 'BF' => 'Burkina Faso', 'NE' => 'Niger', 'RW' => 'Rwanda',
+        'MW' => 'Malawi', 'ZM' => 'Zambia', 'NA' => 'Namibia', 'BW' => 'Botswana',
+        'MU' => 'Mauritius', 'IS' => 'Iceland', 'LU' => 'Luxembourg', 'MT' => 'Malta',
+        'AL' => 'Albania', 'BA' => 'Bosnia & Herzegovina', 'ME' => 'Montenegro',
+        'MK' => 'North Macedonia', 'MC' => 'Monaco', 'LI' => 'Liechtenstein',
+        'BM' => 'Bermuda', 'GL' => 'Greenland', 'GU' => 'Guam',
+        'WS' => 'Samoa', 'TO' => 'Tonga', 'PM' => 'Saint Pierre & Miquelon',
+    );
 }

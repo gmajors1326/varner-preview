@@ -117,7 +117,7 @@ export const InventoryTable = ({
             {isLoading ? (
               <div className="p-20 text-center flex flex-col items-center gap-4">
                 <Loader2 size={24} className="text-slate-300 animate-spin" />
-                <span className="text-slate-300 font-black uppercase text-xs tracking-widest">Loading inventory…</span>
+                <span className="text-slate-300 font-black uppercase text-xs tracking-widest">Loading Inventory...</span>
               </div>
             ) : filteredInventory.length === 0 ? (
               <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</div>
@@ -248,9 +248,9 @@ export const InventoryTable = ({
                           </td>
                           <td className="px-6 py-5 text-right">
                             <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                              <button onClick={() => onEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit" aria-label={`Edit ${item.year} ${item.make} ${item.model}`}><Edit2 size={16} /></button>
+                              <button onClick={() => onEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit" aria-label={`Edit ${item.year} ${item.make} ${item.model}`}><Edit2 size={16} /></button>
                               <button onClick={() => onClone(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone" aria-label={`Clone ${item.year} ${item.make} ${item.model}`}><Copy size={16} /></button>
-                              <button onClick={() => onDelete(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete" aria-label={`Delete ${item.year} ${item.make} ${item.model}`}><X size={16} /></button>
+                              <button onClick={() => onDelete(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete" aria-label={`Delete ${item.year} ${item.make} ${item.model}`}><X size={16} /></button>
                             </div>
                           </td>
                         </tr>
@@ -353,7 +353,7 @@ export const InventoryTable = ({
                         <button onClick={() => onClone(item.wpId)} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-1.5">
                           <Copy size={14} /> Clone
                         </button>
-                        <button onClick={() => onDelete(item.wpId, item.stock)} className="flex-1 bg-red-50 text-red-600 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                        <button onClick={() => onDelete(item.wpId, item.stock)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-1.5">
                           <X size={14} /> Delete
                         </button>
                       </div>

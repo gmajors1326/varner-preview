@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.271 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.271
+ * Description: Version 1.23.303 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.303
  * Author: hwy559.com
  */
 
@@ -14,6 +14,7 @@ require_once plugin_dir_path(__FILE__) . 'varner-facebook-pwa.php';
 require_once plugin_dir_path(__FILE__) . 'varner-meta-sync.php';
 require_once plugin_dir_path(__FILE__) . 'varner-cookie-manager.php';
 require_once plugin_dir_path(__FILE__) . 'varner-analytics.php';
+require_once plugin_dir_path(__FILE__) . 'varner-category-tree.php';
 
 // ─── Security Helper ─────────────────────────────────────────────────────────
 
@@ -107,6 +108,11 @@ function varner_os_activate(): void {
     $index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->postmeta} WHERE Key_name = '{$index_name}'");
     if (empty($index_exists)) {
         $wpdb->query("ALTER TABLE {$wpdb->postmeta} ADD INDEX {$index_name} (meta_key, meta_value(100))");
+    }
+
+    // Seed category tree from CATEGORY_TREE + inferred unit usage
+    if (function_exists('varner_seed_category_tree')) {
+        varner_seed_category_tree();
     }
 }
 
@@ -639,14 +645,6 @@ function varner_render_dashboard_page(): void {
 function varner_render_configuration_page(): void {
     echo '<div class="wrap" style="margin:0;padding:0;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
 
-    $wpaip_link = admin_url('admin.php?page=pmxi-admin-import');
-    echo '<div class="wrap" style="padding:16px 24px;margin-top:-8px;">';
-    echo '  <div class="notice notice-info" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">';
-    echo '    <div><strong>Import Inventory:</strong> Use WP All Import Pro to run or schedule inventory imports.</div>';
-    echo '    <a class="button button-primary" href="' . esc_url($wpaip_link) . '">Open WP All Import</a>';
-    echo '  </div>';
-    echo '</div>';
-
     global $wpdb;
     $table    = $wpdb->prefix . 'varner_user_sessions';
     $sessions = $wpdb->get_results("SELECT id, user_id, login_at, logout_at, ip, ended_reason FROM {$table} ORDER BY login_at DESC LIMIT 25");
@@ -765,6 +763,16 @@ add_action('wp_enqueue_scripts', function (): void {
         varner_enqueue_react_assets();
     }
 });
+
+// ─── Analytics Tracking Beacon ────────────────────────────────────────────────
+
+add_action('wp_head', function (): void {
+    if (is_admin() || is_user_logged_in()) return;
+    ?>
+<script>
+(function(){var r=<?php echo json_encode(esc_url_raw(rest_url('varner/v1/track/pageview'))); ?>,p=window.location.pathname,u=navigator.userAgent;if(navigator.webdriver||/bot|crawler|spider/i.test(u))return;var d=JSON.stringify({path:p,referrer:document.referrer,ua:u}),b=new Blob([d],{type:'application/json'});navigator.sendBeacon?navigator.sendBeacon(r,b):fetch(r,{method:'POST',body:d,keepalive:!0,headers:{'Content-Type':'application/json'}})})();
+</script>
+<?php }, 0);
 
 // ─── Admin Asset & CSS Enqueue ───────────────────────────────────────────────
 

@@ -10,6 +10,7 @@ export function setNonce(n) { if (typeof n === 'string' && n) _nonce = n; }
 // Fetch a fresh nonce from our own cookie-validated endpoint.
 // NOT the REST index — /wp-json/ does not expose a nonce (verified).
 let _nonceRefreshPromise = null;
+let _hasSettled = false;
 async function refreshNonce() {
   if (_nonceRefreshPromise) return _nonceRefreshPromise;
   _nonceRefreshPromise = (async () => {
@@ -112,6 +113,10 @@ export async function apiFetch(path, options = {}) {
       if (res.status === 403 && attempt === 0) {
         const errBody = await res.clone().json().catch(() => ({}));
         if (errBody.code === 'rest_cookie_invalid_nonce') {
+          if (!_hasSettled) {
+            _hasSettled = true;
+            await new Promise(r => setTimeout(r, 400));
+          }
           if (await refreshNonce()) continue;        // got a fresh nonce → retry once
           // refresh failed → session is actually gone; fall into the re-auth path below
           if (window.varnerData?.is_mobile_app) {
@@ -125,8 +130,11 @@ export async function apiFetch(path, options = {}) {
         window.dispatchEvent(new CustomEvent('varner:token-expired'));
       }
 
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message ?? `Request failed: ${res.status}`);
+      const errBody = await res.json().catch(() => ({}));
+      const error = new Error(errBody.message ?? `Request failed: ${res.status}`);
+      error.code = errBody.code;
+      error.data = errBody.data;
+      throw error;
     }
     return res.json();
   }

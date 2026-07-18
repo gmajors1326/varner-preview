@@ -109,7 +109,7 @@ add_filter('acf/settings/load_json', function (array $paths): array {
 function varner_default_brands(): array {
     return array(
         'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief',
-        'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
+        'CM Truck Beds', 'Other', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
         'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra',
         'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers',
         'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor',
@@ -250,7 +250,7 @@ function varner_get_equipment_fields_config(): array {
         'price'             => array('type' => 'number', 'public' => true),
         'call_for_price'    => array('type' => 'bool', 'public' => true),
         'condition'         => array('type' => 'text', 'default' => 'New', 'public' => true),
-        'stock_status'      => array('type' => 'text', 'default' => 'Draft', 'public' => true),
+        'stock_status'      => array('type' => 'text', 'default' => 'In Stock', 'public' => true),
         'category'          => array('type' => 'text', 'public' => true),
         'subcategory'       => array('type' => 'text', 'public' => true),
         'sub_subcategory'   => array('type' => 'text', 'public' => true),
@@ -640,3 +640,41 @@ function varner_backend_get_settings_defaults(): array {
 // Note: varner_get_theme_settings_defaults() is defined in the theme's functions.php.
 // The plugin accesses settings defaults directly via varner_backend_get_settings_defaults().
 // A second definition here was removed to prevent a PHP fatal 'Cannot redeclare function' error.
+
+/**
+ * Block common AI crawler bots via robots.txt
+ */
+add_filter('robots_txt', function (string $output, bool $public): string {
+    $crawlers = array(
+        'User-agent: GPTBot',
+        'Disallow: /',
+        'User-agent: ChatGPT-User',
+        'Disallow: /',
+        'User-agent: Google-Extended',
+        'Disallow: /',
+        'User-agent: Anthropic-AI',
+        'Disallow: /',
+        'User-agent: Claude-Web',
+        'Disallow: /',
+        'User-agent: ClaudeBot',
+        'Disallow: /',
+        'User-agent: CCBot',
+        'Disallow: /',
+        'User-agent: Omgilibot',
+        'Disallow: /',
+        'User-agent: FacebookBot',
+        'Disallow: /',
+        'User-agent: Diffbot',
+        'Disallow: /',
+        'User-agent: Bytespider',
+        'Disallow: /',
+        'User-agent: ImagesiftBot',
+        'Disallow: /',
+        'User-agent: PerplexityBot',
+        'Disallow: /',
+        'User-agent: Cohesive-Bot',
+        'Disallow: /',
+    );
+    return $output . "\n" . implode("\n", $crawlers) . "\n";
+}, 10, 2);
+

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import JSZip from 'jszip';
-import { Download, Image as ImageIcon, Loader2, CheckCircle2, Facebook, Copy, Check, ExternalLink } from 'lucide-react';
+import { Download, Image as ImageIcon, Loader2, CheckCircle2, Facebook, Copy, Check, ExternalLink, Save } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 
 const toJpegBlob = (blob, quality = 0.9) =>
@@ -43,7 +43,7 @@ const htmlToPlainText = (html) => {
   return text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+\n/g, '\n').trim();
 };
 
-const CopyRow = ({ label, value }) => {
+const CopyRow = ({ label, value, onChange, multiline }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -58,23 +58,36 @@ const CopyRow = ({ label, value }) => {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 group hover:border-blue-200 transition-all">
-      <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-        <p className="text-sm font-bold text-slate-900 truncate">{value || '\u2014'}</p>
+    <div className="flex flex-col p-4 bg-slate-50 rounded-xl border border-slate-100 group hover:border-blue-200 transition-all gap-2">
+      <div className="flex items-center justify-between">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+        <button
+          onClick={handleCopy}
+          disabled={!value}
+          className={`p-2 rounded-lg shrink-0 transition-all ${
+            copied
+              ? 'bg-green-100 text-green-600'
+              : 'bg-white text-slate-400 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
+          } disabled:opacity-30 disabled:cursor-not-allowed`}
+          aria-label={`Copy ${label}`}
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
       </div>
-      <button
-        onClick={handleCopy}
-        disabled={!value}
-        className={`ml-3 p-2.5 rounded-xl shrink-0 transition-all ${
-          copied
-            ? 'bg-green-100 text-green-600'
-            : 'bg-white text-slate-400 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
-        } disabled:opacity-30 disabled:cursor-not-allowed`}
-        aria-label={`Copy ${label}`}
-      >
-        {copied ? <Check size={16} /> : <Copy size={16} />}
-      </button>
+      {multiline ? (
+        <textarea
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-y min-h-[80px]"
+        />
+      ) : (
+        <input
+          type="text"
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+        />
+      )}
     </div>
   );
 };
@@ -86,6 +99,9 @@ export const MarketplaceQuickPost = ({ unitData, onUnitUpdated }) => {
   const [postedDate, setPostedDate] = useState(unitData?.marketplace_posted_date || null);
   const [marking, setMarking] = useState(false);
   const [openedFacebook, setOpenedFacebook] = useState(false);
+  const [editFields, setEditFields] = useState({ title: '', price: '', description: '' });
+  const [savingDesc, setSavingDesc] = useState(false);
+  const [savedDesc, setSavedDesc] = useState(false);
 
   React.useEffect(() => {
     setPosted(Boolean(unitData?.marketplace_posted));
@@ -97,6 +113,47 @@ export const MarketplaceQuickPost = ({ unitData, onUnitUpdated }) => {
     setZipError('');
     setOpenedFacebook(false);
   }, [unitData?.id]);
+
+  React.useEffect(() => {
+    if (unitData?.id) {
+      setEditFields({
+        title: unitData.title || '',
+        price: unitData.price ? `$${Number(unitData.price).toLocaleString()}` : '',
+        description: htmlToPlainText(unitData.description),
+      });
+    }
+  }, [unitData?.id, unitData?.title, unitData?.price, unitData?.description]);
+
+  React.useEffect(() => {
+    if (savedDesc) {
+      const t = setTimeout(() => setSavedDesc(false), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [savedDesc]);
+
+  const handleSaveFields = async () => {
+    if (!unitData?.id) return;
+    setSavingDesc(true);
+    setSavedDesc(false);
+    try {
+      const payload = {
+        title: editFields.title || 'Untitled Unit',
+        description: editFields.description || '',
+      };
+      const priceRaw = (editFields.price || '').replace(/[^0-9.]/g, '');
+      if (priceRaw) payload.price = parseFloat(priceRaw);
+      const updated = await apiFetch(`/inventory/${unitData.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      setSavedDesc(true);
+      if (onUnitUpdated && updated) onUnitUpdated(updated);
+    } catch (err) {
+      console.error('Failed to save fields:', err);
+    } finally {
+      setSavingDesc(false);
+    }
+  };
 
   const images = unitData.images || [];
 
@@ -296,9 +353,17 @@ export const MarketplaceQuickPost = ({ unitData, onUnitUpdated }) => {
             Copy Listing Fields
           </p>
           <div className="space-y-2">
-            <CopyRow label="Title" value={unitData.title} />
-            <CopyRow label="Price" value={unitData.price ? `$${Number(unitData.price).toLocaleString()}` : ''} />
-            <CopyRow label="Description" value={htmlToPlainText(unitData.description)} />
+            <CopyRow label="Title" value={editFields.title} onChange={v => setEditFields(f => ({ ...f, title: v }))} />
+            <CopyRow label="Price" value={editFields.price} onChange={v => setEditFields(f => ({ ...f, price: v }))} />
+            <CopyRow label="Description" value={editFields.description} onChange={v => setEditFields(f => ({ ...f, description: v }))} multiline />
+            <button
+              onClick={handleSaveFields}
+              disabled={savingDesc || !unitData?.id}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 bg-slate-950 text-white hover:bg-black disabled:opacity-40 shadow-lg shadow-slate-200"
+            >
+              {savingDesc ? <Loader2 size={14} className="animate-spin" /> : savedDesc ? <CheckCircle2 size={14} /> : <Save size={14} />}
+              {savingDesc ? 'Saving...' : savedDesc ? 'Saved!' : 'Save Changes'}
+            </button>
           </div>
         </div>
 

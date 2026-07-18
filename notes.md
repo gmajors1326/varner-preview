@@ -130,6 +130,14 @@ SELECT post_id, action, display_name, summary, created_at FROM wp_varner_invento
 - Sessions endpoint already gated with `manage_options` — no change needed.
 - Build (vite): `dist/` generated with index + assets. Chunk size warning on JS (767 kB) — consider code-splitting.
 
+### Hero Search Bar — Z-Index stacking trap
+The hero section has three stacking layers:
+- Content div (title/buttons): `z-40`
+- Search bar div: historically `z-30` (CLICKS DON'T WORK — content div intercepts)
+- Background media: `z-0`
+
+If the hero search bar ever becomes visible but unclickable, check that its z-index is ABOVE `z-40`. Current fix: `z-50`. This breaks whenever someone rearranges the hero section or adds a new layer without checking the search bar's z-index.
+
 ### WP Engine SSH
 ```
 Host:     varnerequipdev.ssh.wpengine.net

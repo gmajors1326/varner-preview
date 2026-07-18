@@ -103,17 +103,18 @@ import zipfile, os
 src = os.path.abspath('varner-equipment-theme-lite/varner-lite')
 exclude_dirs = {'src', '.git', '__pycache__'}
 exclude_files = {'.DS_Store', 'tailwind.config.js', 'nul', 'package.json'}
+zip_basename = os.path.basename(r'$themeZip')
+theme_slug = os.path.splitext(zip_basename)[0]
 with zipfile.ZipFile(r'$themeZip', 'w', zipfile.ZIP_DEFLATED) as z:
     for root, dirs, files in os.walk(src):
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         dirs.sort(); files.sort()
         for f in files:
             if f.startswith('.git') or f in exclude_files or f.endswith('.md'): continue
-            if f.endswith('.md'): continue
             fp = os.path.join(root, f)
-            arcname = os.path.relpath(fp, src).replace(os.sep, '/')
+            arcname = theme_slug + '/' + os.path.relpath(fp, src).replace(os.sep, '/')
             z.write(fp, arcname)
-print('Theme ZIP: files at root level (no prefix)')
+print(f'Theme ZIP: files wrapped under {theme_slug}/')
 "
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Box, Facebook, Settings, ChevronRight, ChevronDown, Star, Eye, Save, Copy,
   Loader2
@@ -25,10 +25,9 @@ export const UnitEditorPanel = ({
   years,
   categories,
   subcategories,
-  subSubcategories,
+  categoryTree,
   handleCategorySelectChange,
   handleSubcategorySelectChange,
-  handleSubSubcategorySelectChange,
   handleAddImages,
   handleRemoveImage,
   handleReorderImages,
@@ -40,29 +39,19 @@ export const UnitEditorPanel = ({
   setShowYearsModal,
   setShowCategoriesModal,
   setShowSubcategoriesModal,
-  setShowSubSubcategoriesModal,
   onUnitUpdated,
 }) => {
+  const brandSelectRef = useRef(null);
   // Build category option lists
   const allCategories = Array.from(new Set([
-    ...Object.keys(CATEGORY_TREE),
-    ...categories,
+    ...Object.keys(categoryTree || {}),
     ...(unitData.category ? [unitData.category] : [])
   ])).sort();
 
-  const subTree = CATEGORY_TREE[unitData.category] || {};
-  const predefinedSubcategories = Object.keys(subTree);
+  const subTree = (categoryTree && categoryTree[unitData.category]) || {};
   const allSubcategories = Array.from(new Set([
-    ...predefinedSubcategories,
-    ...subcategories,
+    ...Object.keys(subTree),
     ...(unitData.subcategory ? [unitData.subcategory] : [])
-  ])).sort();
-
-  const predefinedSubSubcategories = (unitData.subcategory && subTree[unitData.subcategory]) || [];
-  const allSubSubcategories = Array.from(new Set([
-    ...predefinedSubSubcategories,
-    ...subSubcategories,
-    ...(unitData.sub_subcategory ? [unitData.sub_subcategory] : [])
   ])).sort();
 
   return (
@@ -117,23 +106,6 @@ export const UnitEditorPanel = ({
                     </button>
                   </div>
 
-                  {/* Sub-Subcategory */}
-                  <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Sub-Subcategory</label>
-                    <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                      <select value={unitData.sub_subcategory || ''} onChange={e => handleSubSubcategorySelectChange(e.target.value)}
-                        className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
-                        style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                                <option value="">-- Select Sub-Subcategory --</option>
-                        {allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
-                      </select>
-                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
-                    </div>
-                    <button type="button" onClick={() => setShowSubSubcategoriesModal(true)}
-                      className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
-                      <Settings size={14} /> Manage Sub-Subcategories
-                    </button>
-                  </div>
                 </div>
                 {fieldErrors.category && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.category}</p>}
               </div>
@@ -144,12 +116,11 @@ export const UnitEditorPanel = ({
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Brand / Manufacturer</label>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                    <select key={`brand-select-${brands.length}`} value={unitData.make}
+                  <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px] cursor-pointer"
+                    onClick={() => brandSelectRef.current?.click()}>
+                    <select ref={brandSelectRef} key={`brand-select-${brands.length}`} value={unitData.make}
                       onChange={e => {
-                        const v = e.target.value;
-                        handleInputChange('make', v);
-                        handleInputChange('title', `${unitData.year} ${v} ${unitData.model}`.trim());
+                        handleInputChange('make', e.target.value);
                       }}
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
@@ -178,9 +149,7 @@ export const UnitEditorPanel = ({
                     <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
                       <select value={unitData.year}
                         onChange={e => {
-                          const v = e.target.value;
-                          handleInputChange('year', v);
-                          handleInputChange('title', `${v} ${unitData.make} ${unitData.model}`.trim());
+                          handleInputChange('year', e.target.value);
                         }}
                         className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
@@ -201,7 +170,7 @@ export const UnitEditorPanel = ({
               </div>
               <div className="flex-1">
                 <InputField label="Model" value={unitData.model}
-                  onChange={v => { handleInputChange('model', v); handleInputChange('title', `${unitData.year} ${unitData.make} ${v}`.trim()); }}
+                  onChange={v => { handleInputChange('model', v); }}
                   error={fieldErrors.model} />
               </div>
             </div>

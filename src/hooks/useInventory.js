@@ -16,17 +16,16 @@ export function useInventory(showToast, setActiveTab) {
   const [years, setYears] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  const [subSubcategories, setSubSubcategories] = useState([]);
+  const [categoryTree, setCategoryTree] = useState({});
   const [showBrandsModal, setShowBrandsModal] = useState(false);
   const [showYearsModal, setShowYearsModal] = useState(false);
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [showSubcategoriesModal, setShowSubcategoriesModal] = useState(false);
-  const [showSubSubcategoriesModal, setShowSubSubcategoriesModal] = useState(false);
   const [newBrandInput, setNewBrandInput] = useState('');
   const [newYearInput, setNewYearInput] = useState('');
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [newSubcategoryInput, setNewSubcategoryInput] = useState('');
-  const [newSubSubcategoryInput, setNewSubSubcategoryInput] = useState('');
+
   const [fieldErrors, setFieldErrors] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [sessionList, setSessionList] = useState([]);
@@ -44,7 +43,6 @@ export function useInventory(showToast, setActiveTab) {
       ...prev,
       category: val,
       subcategory: '',
-      sub_subcategory: '',
     }));
   };
 
@@ -52,14 +50,6 @@ export function useInventory(showToast, setActiveTab) {
     setUnitData(prev => ({
       ...prev,
       subcategory: val,
-      sub_subcategory: '',
-    }));
-  };
-
-  const handleSubSubcategorySelectChange = (val) => {
-    setUnitData(prev => ({
-      ...prev,
-      sub_subcategory: val,
     }));
   };
 
@@ -141,7 +131,7 @@ export function useInventory(showToast, setActiveTab) {
   const loadCategories = useCallback(() => {
     apiFetch('/categories').then(setCategories).catch(e => console.error('Varner OS: Failed to load categories:', e));
     apiFetch('/subcategories').then(setSubcategories).catch(e => console.error('Varner OS: Failed to load subcategories:', e));
-    apiFetch('/sub-subcategories').then(setSubSubcategories).catch(e => console.error('Varner OS: Failed to load sub-subcategories:', e));
+    apiFetch('/category-tree').then(setCategoryTree).catch(e => console.error('Varner OS: Failed to load category tree:', e));
   }, []);
 
   useEffect(() => {
@@ -179,8 +169,8 @@ export function useInventory(showToast, setActiveTab) {
   }, [showYearsModal, loadYears]);
 
   useEffect(() => {
-    if (showCategoriesModal || showSubcategoriesModal || showSubSubcategoriesModal) loadCategories();
-  }, [showCategoriesModal, showSubcategoriesModal, showSubSubcategoriesModal, loadCategories]);
+    if (showCategoriesModal || showSubcategoriesModal) loadCategories();
+  }, [showCategoriesModal, showSubcategoriesModal, loadCategories]);
 
   const handleListAdd = async (endpoint, current, newVal, setter, inputSetter) => {
     const name = newVal.trim();
@@ -203,19 +193,134 @@ export function useInventory(showToast, setActiveTab) {
   const handleDeleteBrand = (n) => handleListDelete('brands', brands, n, setBrands, 'make');
   const handleAddYear = () => handleListAdd('years', years, newYearInput, setYears, setNewYearInput);
   const handleDeleteYear = (n) => handleListDelete('years', years, n, setYears, 'year');
-  const handleAddCategory = () => handleListAdd('categories', categories, newCategoryInput, setCategories, setNewCategoryInput);
-  const handleDeleteCategory = (n) => handleListDelete('categories', categories, n, setCategories, 'category');
-  const handleAddSubcategory = () => handleListAdd('subcategories', subcategories, newSubcategoryInput, setSubcategories, setNewSubcategoryInput);
-  const handleDeleteSubcategory = (n) => handleListDelete('subcategories', subcategories, n, setSubcategories, 'subcategory');
-  const handleAddSubSubcategory = () => handleListAdd('sub-subcategories', subSubcategories, newSubSubcategoryInput, setSubSubcategories, setNewSubSubcategoryInput);
-  const handleDeleteSubSubcategory = (n) => handleListDelete('sub-subcategories', subSubcategories, n, setSubSubcategories, 'sub_subcategory');
+  const handleAddCategoryNode = async (type, name, parentCat = null, parentSub = null) => {
+    const term = name.trim();
+    if (!term) return;
+
+    try {
+      const body = { type, name: term };
+      if (parentCat) body.parent_category = parentCat;
+      if (parentSub) body.parent_subcategory = parentSub;
+
+      const response = await apiFetch('/category-tree/node', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      if (response && response.category_tree) {
+        setCategoryTree(response.category_tree);
+      }
+
+      if (type === 'category') setNewCategoryInput('');
+      else if (type === 'subcategory') setNewSubcategoryInput('');
+    } catch (e) {
+      showToast('Failed to add category item: ' + e.message, 'error');
+    }
+  };
+
+  const handleDeleteCategoryNode = async (type, name, parentCat = null, parentSub = null) => {
+    const target = name.trim();
+    if (!target) return;
+
+    if (!window.confirm(`Delete "${name}"${type === 'category' ? ' and all its subcategories' : ''}?`)) return;
+
+    try {
+      const body = { type, name: target };
+      if (parentCat) body.parent_category = parentCat;
+      if (parentSub) body.parent_subcategory = parentSub;
+
+      const response = await apiFetch('/category-tree/node', {
+        method: 'DELETE',
+        body: JSON.stringify(body),
+      });
+
+      if (response && response.category_tree) {
+        setCategoryTree(response.category_tree);
+      }
+
+      if (type === 'category' && unitData.category === target) {
+        setUnitData(prev => ({ ...prev, category: '', subcategory: '' }));
+      } else if (type === 'subcategory' && unitData.subcategory === target) {
+        setUnitData(prev => ({ ...prev, subcategory: '' }));
+      }
+
+      showToast(`Deleted "${name}" successfully.`);
+    } catch (e) {
+      if (e.code === 'has_units') {
+        const count = e.data?.affected_posts || 'some';
+        if (type === 'category') {
+          showToast(`Cannot delete "${name}": ${count} unit(s) are assigned. Reassign units first.`, 'error');
+          return;
+        }
+        if (type === 'subcategory') {
+          const reassign = window.prompt(`"${name}" has ${count} unit(s) assigned. Enter a subcategory to reassign them to (or cancel to abort):`);
+          if (reassign && reassign.trim()) {
+            try {
+              const retryBody = { type, name: target, reassign_to: reassign.trim() };
+              if (parentCat) retryBody.parent_category = parentCat;
+              const retry = await apiFetch('/category-tree/node', {
+                method: 'DELETE',
+                body: JSON.stringify(retryBody),
+              });
+              if (retry && retry.category_tree) setCategoryTree(retry.category_tree);
+              showToast(`Deleted "${name}" — units reassigned to "${reassign.trim()}".`);
+            } catch (retryErr) {
+              showToast('Failed to delete: ' + (retryErr.message || 'unknown error'), 'error');
+            }
+          }
+          return;
+        }
+      }
+      if (e.code === 'category_not_empty') {
+        showToast(`Cannot delete "${name}": remove subcategories first.`, 'error');
+        return;
+      }
+      showToast('Failed to delete category item: ' + e.message, 'error');
+    }
+  };
+
+  const handleRenameCategoryNode = async (type, oldName, newName, parentCat = null, parentSub = null) => {
+    try {
+      const response = await apiFetch('/category-tree/rename', {
+        method: 'POST',
+        body: JSON.stringify({
+          type,
+          old_name: oldName,
+          new_name: newName,
+          parent_category: parentCat,
+          parent_subcategory: parentSub
+        })
+      });
+      if (response && response.success) {
+        setCategoryTree(response.category_tree);
+        if (response.brands) {
+          setBrands(response.brands);
+        }
+        showToast(`Successfully renamed and migrated ${response.affected_posts} units.`);
+        
+        // Update loaded unitData locally
+        if (type === 'category' && unitData.category === oldName) {
+          setUnitData(prev => ({ ...prev, category: newName }));
+        } else if (type === 'subcategory' && unitData.subcategory === oldName) {
+          setUnitData(prev => ({ ...prev, subcategory: newName }));
+        } else if (type === 'sub_subcategory' && unitData.sub_subcategory === oldName) {
+          setUnitData(prev => ({ ...prev, sub_subcategory: newName }));
+        } else if ((type === 'make' || type === 'brand') && unitData.make === oldName) {
+          setUnitData(prev => ({ ...prev, make: newName }));
+        }
+
+        // Reload inventory list to reflect updated DB records
+        loadInventory();
+      }
+    } catch (e) {
+      showToast('Failed to rename category or brand item: ' + e.message, 'error');
+    }
+  };
+
 
   const handleInputChange = (field, value) => {
     setUnitData(prev => {
       const next = { ...prev, [field]: value };
-      if (['year', 'make', 'model'].includes(field)) {
-        next.title = `${next.year || ''} ${next.make || ''} ${next.model || ''}`.trim();
-      }
       return next;
     });
 
@@ -310,7 +415,6 @@ export function useInventory(showToast, setActiveTab) {
   const handleSave = async () => {
     const required = [
       ['title', 'Public Inventory Title'],
-      ['year', 'Year'],
       ['make', 'Brand / Manufacturer'],
       ['model', 'Model'],
       ['category', 'Category'],
@@ -559,30 +663,27 @@ export function useInventory(showToast, setActiveTab) {
   return {
     isSaving, isLoading, isUploadingImages,
     inventoryList, deletedHistory, unitData, setUnitData,
-    brands, years, categories, subcategories, subSubcategories,
+    brands, years, categories, subcategories,
+    categoryTree, setCategoryTree,
     applyUnitUpdate,
-    setCategories, setSubcategories, setSubSubcategories,
+    setCategories, setSubcategories,
     showBrandsModal, setShowBrandsModal,
     showYearsModal, setShowYearsModal,
     showCategoriesModal, setShowCategoriesModal,
     showSubcategoriesModal, setShowSubcategoriesModal,
-    showSubSubcategoriesModal, setShowSubSubcategoriesModal,
     newBrandInput, setNewBrandInput,
     newYearInput, setNewYearInput,
     newCategoryInput, setNewCategoryInput,
     newSubcategoryInput, setNewSubcategoryInput,
-    newSubSubcategoryInput, setNewSubSubcategoryInput,
     fieldErrors, setFieldErrors,
     currentUser, sessionList, isSessionsLoading,
     activityList, isActivityLoading,
     isPublicMode,
     loadInventory, loadSessions, loadActivity,
-    handleCategorySelectChange, handleSubcategorySelectChange, handleSubSubcategorySelectChange,
+    handleCategorySelectChange, handleSubcategorySelectChange,
     handleAddBrand, handleDeleteBrand,
     handleAddYear, handleDeleteYear,
-    handleAddCategory, handleDeleteCategory,
-    handleAddSubcategory, handleDeleteSubcategory,
-    handleAddSubSubcategory, handleDeleteSubSubcategory,
+    handleAddCategoryNode, handleDeleteCategoryNode, handleRenameCategoryNode,
     handleInputChange,
     handleAddImages, handleRemoveImage, handleReorderImages,
     handleAddImplement, handleUpdateImplement, handleRemoveImplement, handleImplementImageUpload,

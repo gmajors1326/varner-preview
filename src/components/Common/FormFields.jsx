@@ -95,7 +95,7 @@ export const TextAreaField = ({ label, value, onChange }) => (
         onChange={onChange}
         modules={{ clipboard: { matchVisual: false }, toolbar: [
           [{ header: [1, 2, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
+          ['bold', 'italic', 'underline', 'strike', 'link'],
           [{ color: COLOR_PALETTE }, { background: COLOR_PALETTE }],
           [{ list: 'ordered'}, { list: 'bullet' }],
           ['clean']

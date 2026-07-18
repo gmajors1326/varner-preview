@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Plus, Upload, Download, History, CheckCircle2 } from 'lucide-react';
+import { Zap, Plus, History, CheckCircle2 } from 'lucide-react';
 
 const METRIC_COLORS = {
   blue:  { text: 'bg-blue-50 text-blue-600',  bg: 'bg-blue-50'  },
@@ -26,19 +26,11 @@ export const MetricCard = ({ icon, label, value, subtext, color }) => {
 export const QuickActions = ({ onAdd }) => (
   <div className="bg-white rounded-[2rem] p-5 sm:p-8 border border-slate-200/60 shadow-xl">
     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2"><Zap size={14} className="text-red-600"/>Quick Operations</h4>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 max-w-sm gap-4">
       <button onClick={onAdd} className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
         <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform"><Plus size={20} className="text-red-600"/></div>
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Add Unit</span>
       </button>
-      <a href="/wp-admin/admin.php?page=pmxi-admin-import" className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
-        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform"><Upload size={20} className="text-slate-700"/></div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Import Inventory</span>
-      </a>
-      <a href="/wp-admin/admin.php?page=pmxe-admin-manage" className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-transparent hover:border-red-500 hover:bg-white transition-all group">
-        <div className="p-3 bg-white rounded-xl shadow-md mb-3 group-hover:scale-110 transition-transform"><Download size={20} className="text-slate-700"/></div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">Export Inventory</span>
-      </a>
     </div>
   </div>
 );
