@@ -37,8 +37,7 @@ export const UnitEditorPanel = ({
   handleImplementImageUpload,
   setShowBrandsModal,
   setShowYearsModal,
-  setShowCategoriesModal,
-  setShowSubcategoriesModal,
+  setShowCategoryManager,
   onUnitUpdated,
 }) => {
   const brandSelectRef = useRef(null);
@@ -82,7 +81,7 @@ export const UnitEditorPanel = ({
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
                     </div>
-                    <button type="button" onClick={() => setShowCategoriesModal(true)}
+                    <button type="button" onClick={() => setShowCategoryManager(true)}
                       className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
                       <Settings size={14} /> Manage Categories
                     </button>
@@ -100,9 +99,9 @@ export const UnitEditorPanel = ({
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
                     </div>
-                    <button type="button" onClick={() => setShowSubcategoriesModal(true)}
+                    <button type="button" onClick={() => setShowCategoryManager(true)}
                       className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
-                      <Settings size={14} /> Manage Subcategories
+                      <Settings size={14} /> Manage Categories
                     </button>
                   </div>
 

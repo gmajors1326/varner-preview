@@ -13,6 +13,7 @@ import { useMobileAuth } from './hooks/useMobileAuth';
 
 import { SidebarLogo, SidebarContent, FilterTag, MappingRow } from './components/Common/Navigation';
 import { ManageListModal } from './components/Common/Modals';
+import { CategoryTreePanel } from './components/CategoryTreePanel';
 import { InputField, TextAreaField, SelectField, QUILL_STYLES } from './components/Common/FormFields';
 import { MetricCard, QuickActions, RecentActivity } from './components/Common/DashboardCards';
 import { InventoryTable } from './components/InventoryTable';
@@ -34,7 +35,6 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
-  const [manageParentCategory, setManageParentCategory] = useState('');
 
   const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
@@ -145,31 +145,14 @@ const App = () => {
           onInputChange={inv.setNewYearInput} onAdd={inv.handleAddYear} onDelete={inv.handleDeleteYear}
           onClose={() => inv.setShowYearsModal(false)} placeholder="New year (e.g. 2028)..." />
       )}
-      {inv.showCategoriesModal && (
-        <ManageListModal title="Manage Categories"
-          items={Object.keys(inv.categoryTree || {})}
-          inputValue={inv.newCategoryInput}
-          onInputChange={inv.setNewCategoryInput}
-          onAdd={() => inv.handleAddCategoryNode('category', inv.newCategoryInput)}
-          onDelete={(name) => inv.handleDeleteCategoryNode('category', name)}
-          onRename={(oldName, newName) => inv.handleRenameCategoryNode('category', oldName, newName)}
-          onClose={() => inv.setShowCategoriesModal(false)}
-          placeholder="New category name..." />
-      )}
-      {inv.showSubcategoriesModal && (
-        <ManageListModal title="Manage Subcategories"
-          parents={Object.keys(inv.categoryTree || {})}
-          parentLabel="Parent Category"
-          selectedParent={manageParentCategory}
-          onParentChange={setManageParentCategory}
-          items={manageParentCategory ? Object.keys(inv.categoryTree[manageParentCategory] || {}) : []}
-          inputValue={inv.newSubcategoryInput}
-          onInputChange={inv.setNewSubcategoryInput}
-          onAdd={() => inv.handleAddCategoryNode('subcategory', inv.newSubcategoryInput, manageParentCategory)}
-          onDelete={(name) => inv.handleDeleteCategoryNode('subcategory', name, manageParentCategory)}
-          onRename={(oldName, newName) => inv.handleRenameCategoryNode('subcategory', oldName, newName, manageParentCategory)}
-          onClose={() => { inv.setShowSubcategoriesModal(false); setManageParentCategory(''); }}
-          placeholder="New subcategory name..." />
+      {inv.showCategoryManager && (
+        <CategoryTreePanel
+          categoryTree={inv.categoryTree}
+          onAddCategory={inv.handleAddCategoryNode}
+          onAddSubcategory={inv.handleAddCategoryNode}
+          onRename={inv.handleRenameCategoryNode}
+          onDelete={inv.handleDeleteCategoryNode}
+          onClose={() => inv.setShowCategoryManager(false)} />
       )}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -290,8 +273,7 @@ const App = () => {
                   handleImplementImageUpload={inv.handleImplementImageUpload}
                   setShowBrandsModal={inv.setShowBrandsModal}
                   setShowYearsModal={inv.setShowYearsModal}
-                  setShowCategoriesModal={inv.setShowCategoriesModal}
-                  setShowSubcategoriesModal={inv.setShowSubcategoriesModal}
+                  setShowCategoryManager={inv.setShowCategoryManager}
                   onUnitUpdated={inv.applyUnitUpdate}
                 />
               </ErrorBoundary>
