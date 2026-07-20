@@ -146,7 +146,7 @@ $schema = array(
             $is_last = ( $i === count( $crumbs ) - 1 );
         ?>
             <?php if ( $i > 0 ) : ?>
-                <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/>
                 </svg>
             <?php endif; ?>
@@ -157,7 +157,7 @@ $schema = array(
                 </span>
             <?php else : ?>
                 <a href="<?php echo esc_url( $crumb['url'] ); ?>"
-                   class="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors">
+                   class="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-red-600 transition-colors">
                     <?php echo esc_html( $crumb['label'] ); ?>
                 </a>
             <?php endif; ?>

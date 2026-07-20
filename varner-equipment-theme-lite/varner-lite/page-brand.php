@@ -222,7 +222,7 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
                     <h2 class="text-red-500 font-black uppercase tracking-[0.3em] text-sm mb-2">Authorized Dealer</h2>
                 </div>
                 
-                <p class="text-slate-300 text-xl font-medium max-w-2xl leading-relaxed">
+                <p class="text-slate-500 text-xl font-medium max-w-2xl leading-relaxed">
                     Explore our current selection of <span class="text-white font-bold"><?php echo esc_html( $brand_name ); ?></span> equipment. 
                     From new arrivals to certified pre-owned units, find the perfect machine for your operation.
                 </p>
@@ -230,9 +230,9 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4">
                     <div class="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
                         <span class="text-3xl font-black text-white"><?php echo number_format_i18n( $total_units ); ?></span>
-                        <span class="text-slate-400 font-black uppercase tracking-widest text-xs leading-tight">Units<br/>Available</span>
+                        <span class="text-slate-500 font-black uppercase tracking-widest text-xs leading-tight">Units<br/>Available</span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-400 font-black uppercase tracking-[0.2em] text-xs">
+                    <div class="flex items-center gap-2 text-slate-500 font-black uppercase tracking-[0.2em] text-xs">
                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         Live Inventory Tracking
                     </div>

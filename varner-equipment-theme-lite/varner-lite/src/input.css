@@ -74,3 +74,34 @@ html { background-color: #020617; }
     box-shadow: none;
     cursor: default;
 }
+
+/* Tighten line and paragraph spacing in equipment specs/descriptions */
+.prose.prose-tight p {
+    margin-top: 0.25em !important;
+    margin-bottom: 0.25em !important;
+    line-height: 1.5;
+}
+.prose.prose-tight ul, 
+.prose.prose-tight ol {
+    margin-top: 0.25em !important;
+    margin-bottom: 0.25em !important;
+    padding-left: 1.25em !important;
+}
+.prose.prose-tight li {
+    margin-top: 0.1em !important;
+    margin-bottom: 0.1em !important;
+}
+.prose.prose-tight h1,
+.prose.prose-tight h2,
+.prose.prose-tight h3,
+.prose.prose-tight h4 {
+    margin-top: 0.75em !important;
+    margin-bottom: 0.25em !important;
+}
+.prose.prose-tight > :first-child {
+    margin-top: 0 !important;
+}
+.prose.prose-tight > :last-child {
+    margin-bottom: 0 !important;
+}
+

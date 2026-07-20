@@ -121,7 +121,7 @@ $finance_url    = add_query_arg( array(
                 </div>
 
                 <!-- Photos count -->
-                <p class="text-center text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                <p class="text-center text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3">
                     Photos (<?php echo count( $images ); ?>)
                 </p>
 
@@ -149,7 +149,7 @@ $finance_url    = add_query_arg( array(
                 <!-- Brand + Title + Category -->
                 <div>
                     <?php if ( $make ) : ?>
-                    <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
+                    <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
                     <?php endif; ?>
                     <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight">
                         <?php echo esc_html( $title_text ); ?>
@@ -157,13 +157,29 @@ $finance_url    = add_query_arg( array(
                     <?php if ( $category ) : ?>
                     <p class="text-red-600 text-[11px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></p>
                     <?php endif; ?>
+                    <?php
+                    $detail_subcat    = get_field('subcategory', $post_id);
+                    $detail_subsubcat = get_field('sub_subcategory', $post_id);
+                    // Normalize subcategory (may be serialized array from migration)
+                    if ( is_string( $detail_subcat ) ) {
+                        $maybe = @unserialize( $detail_subcat );
+                        if ( is_array( $maybe ) ) $detail_subcat = implode( ', ', array_filter( $maybe ) );
+                    } elseif ( is_array( $detail_subcat ) ) {
+                        $detail_subcat = implode( ', ', array_filter( $detail_subcat ) );
+                    }
+                    if ( $detail_subcat ) : ?>
+                    <p class="text-slate-700 text-[9px] font-bold uppercase tracking-widest mt-0.5"><?php echo esc_html( $detail_subcat ); ?></p>
+                    <?php endif; ?>
+                    <?php if ( $detail_subsubcat ) : ?>
+                    <p class="text-slate-600 text-[9px] font-bold uppercase tracking-widest mt-0.5"><?php echo esc_html( $detail_subsubcat ); ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Price -->
                 <div class="border-t border-slate-200 pt-5">
                     <div class="flex items-baseline gap-2">
                         <?php if ( strpos($formatted_price, 'Call') === false ) : ?>
-                        <span class="text-xs font-black uppercase tracking-widest text-slate-400">USD</span>
+                        <span class="text-xs font-black uppercase tracking-widest text-slate-500">USD</span>
                         <span class="text-4xl font-black text-red-600 tracking-tight">$<?php echo esc_html( $formatted_price ); ?></span>
                         <?php else : ?>
                         <span class="text-4xl font-black text-red-600 tracking-tight"><?php echo esc_html( $formatted_price ); ?></span>
@@ -171,9 +187,9 @@ $finance_url    = add_query_arg( array(
                     </div>
                     <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
                     <div class="flex items-center gap-2 mt-2 text-[12px] text-slate-500 font-bold flex-wrap">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                         <a href="<?php echo esc_url( $finance_url ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
-                        <span class="text-slate-200">|</span>
+                        <span class="text-slate-500">|</span>
                         <span>Payments as low as <strong class="text-slate-700">USD $<?php echo number_format( $monthly_payment, 2 ); ?>*</strong></span>
                     </div>
                     <?php endif; ?>
@@ -193,7 +209,7 @@ $finance_url    = add_query_arg( array(
                         <span class="font-black text-slate-900 text-[11px] uppercase tracking-widest">Machine Location: </span>
                         <span class="text-slate-600 font-bold">1375 Highway 50, Delta, Colorado 81416</span>
                         <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener"
-                           class="inline-flex ml-1 text-slate-400 hover:text-red-600 transition-colors align-middle">
+                           class="inline-flex ml-1 text-slate-500 hover:text-red-600 transition-colors align-middle p-2 -m-2" aria-label="Get directions">
                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         </a>
                     </div>
@@ -201,7 +217,7 @@ $finance_url    = add_query_arg( array(
 
                 <!-- Seller Information -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Seller Information</h3>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Seller Information</h3>
                     <div class="flex flex-col sm:flex-row gap-4 justify-between">
                         <div>
                             <p class="font-black text-slate-900 text-sm">Varner Equipment</p>
@@ -262,10 +278,10 @@ $finance_url    = add_query_arg( array(
                             if ( ! $value ) continue;
                         ?>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-8 py-4 w-44 text-[11px] font-black uppercase tracking-widest text-slate-400 align-top bg-slate-50/60 border-r border-slate-100"><?php echo esc_html( $label ); ?></td>
+                            <td class="px-8 py-4 w-44 text-[11px] font-black uppercase tracking-widest text-slate-500 align-top bg-slate-50/60 border-r border-slate-100"><?php echo esc_html( $label ); ?></td>
                             <td class="px-8 py-4 text-sm font-bold text-slate-700">
                                 <?php if ( $type === 'html' ) : ?>
-                                <div class="prose prose-sm max-w-none"><?php echo wp_kses_post( $value ); ?></div>
+                                <div class="prose prose-sm prose-tight max-w-none"><?php echo wp_kses_post( make_clickable( $value ) ); ?></div>
                                 <?php else : ?>
                                 <?php echo nl2br( esc_html( $value ) ); ?>
                                 <?php endif; ?>

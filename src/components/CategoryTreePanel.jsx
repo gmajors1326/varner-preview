@@ -3,17 +3,25 @@ import { X, Edit2, Plus, ChevronRight } from 'lucide-react';
 
 export const CategoryTreePanel = ({
   categoryTree,
-  onAddCategory,
-  onAddSubcategory,
+  onAdd,
   onRename,
   onDelete,
   onClose,
+  initialCategory = '',
+  initialSubcategory = '',
 }) => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newSubName, setNewSubName] = useState('');
-  const [addingSubFor, setAddingSubFor] = useState(null);
+  const [newSubSubName, setNewSubSubName] = useState('');
+  const [addingSubFor, setAddingSubFor] = useState(
+    initialCategory && !initialSubcategory ? initialCategory : null
+  );
+  const [addingSubSubFor, setAddingSubSubFor] = useState(
+    initialCategory && initialSubcategory
+      ? { cat: initialCategory, sub: initialSubcategory }
+      : null
+  );
   const [renaming, setRenaming] = useState(null);
-  const [reassign, setReassign] = useState(null);
   const panelRef = useRef(null);
   const prevFocusRef = useRef(null);
 
@@ -57,43 +65,47 @@ export const CategoryTreePanel = ({
   const handleAddCategory = async () => {
     const name = newCategoryName.trim();
     if (!name) return;
-    const ok = await onAddCategory('category', name);
+    const ok = await onAdd('category', name);
     if (ok) setNewCategoryName('');
   };
 
   const handleAddSubcategory = async (parentCat) => {
     const name = newSubName.trim();
     if (!name || !parentCat) return;
-    const ok = await onAddSubcategory('subcategory', name, parentCat);
+    const ok = await onAdd('subcategory', name, parentCat);
     if (ok) {
       setNewSubName('');
       setAddingSubFor(null);
     }
   };
 
-  const handleRename = async (type, oldName, newName, parentCat) => {
-    if (!newName || newName === oldName) return;
-    await onRename(type, oldName, newName, parentCat);
-    setRenaming(null);
-  };
-
-  const handleDelete = async (type, name, parentCat) => {
-    const result = await onDelete(type, name, parentCat);
-    if (result && result.needsReassign) {
-      setReassign({ type, name, parentCat, affectedPosts: result.affectedPosts, siblings: result.siblings });
+  const handleAddSubSubcategory = async (parentCat, parentSub) => {
+    const name = newSubSubName.trim();
+    if (!name || !parentCat || !parentSub) return;
+    const ok = await onAdd('sub_subcategory', name, parentCat, parentSub);
+    if (ok) {
+      setNewSubSubName('');
+      setAddingSubSubFor(null);
     }
   };
 
-  const handleReassignDelete = async (targetSub) => {
-    if (!reassign || !targetSub) return;
-    await onDelete(reassign.type, reassign.name, reassign.parentCat, targetSub);
-    setReassign(null);
+  const handleRename = async (type, oldName, newName, parentCat, parentSub = null) => {
+    if (!newName || newName === oldName) return;
+    await onRename(type, oldName, newName, parentCat, parentSub);
+    setRenaming(null);
+  };
+
+  const handleDelete = async (type, name, parentCat, parentSub = null) => {
+    await onDelete(type, name, parentCat, parentSub);
   };
 
   const handleCancelRename = () => setRenaming(null);
   const handleCancelAddSub = () => { setAddingSubFor(null); setNewSubName(''); };
+  const handleCancelAddSubSub = () => { setAddingSubSubFor(null); setNewSubSubName(''); };
 
-  const categories = Object.keys(categoryTree || {}).sort();
+  const categories = (categoryTree && typeof categoryTree === 'object' && !Array.isArray(categoryTree))
+    ? Object.keys(categoryTree).sort()
+    : [];
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[9998] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Manage Categories" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -123,8 +135,11 @@ export const CategoryTreePanel = ({
           {categories.length === 0 && (
             <p className="text-center text-slate-300 font-black text-xs uppercase tracking-widest py-10">No categories yet. Add one above.</p>
           )}
-          {categories.map(cat => {
-            const subs = Object.keys(categoryTree[cat] || {}).sort();
+          {Array.isArray(categories) && categories.map(cat => {
+            const catNode = categoryTree && typeof categoryTree === 'object' && !Array.isArray(categoryTree) ? categoryTree[cat] : null;
+            const subs = (catNode && typeof catNode === 'object' && !Array.isArray(catNode))
+              ? Object.keys(catNode).sort()
+              : [];
             return (
               <div key={cat}>
                 <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl group hover:bg-red-50 transition-colors">
@@ -177,62 +192,102 @@ export const CategoryTreePanel = ({
                 )}
 
                 {/* Subcategories */}
-                {subs.map(sub => (
-                  <div key={`${cat}-${sub}`}>
-                    <div className="flex items-center justify-between px-4 py-2.5 ml-6 mt-0.5 bg-white rounded-xl group hover:bg-amber-50 transition-colors border border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <ChevronRight size={12} className="text-slate-300 rotate-90 shrink-0" />
-                        <span className="font-bold text-sm text-slate-700">{sub}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button onClick={() => setRenaming({ type: 'subcategory', name: sub, parentCat: cat })}
-                          className="text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Rename ${sub}`} title="Rename">
-                          <Edit2 size={12} />
-                        </button>
-                        <button onClick={() => handleDelete('subcategory', sub, cat)}
-                          className="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Delete ${sub}`} title="Delete">
-                          <X size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Rename inline for subcategory */}
-                    {renaming && renaming.type === 'subcategory' && renaming.name === sub && renaming.parentCat === cat && (
-                      <div className="ml-14 mt-1 mb-2 flex gap-2">
-                        <input type="text" defaultValue={sub} autoFocus
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleRename('subcategory', sub, e.target.value, cat);
-                            if (e.key === 'Escape') handleCancelRename();
-                          }}
-                          onBlur={e => handleRename('subcategory', sub, e.target.value, cat)}
-                          className="flex-1 border-2 border-blue-400 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none transition-colors" />
-                        <button onClick={handleCancelRename} className="text-slate-400 hover:text-slate-700 p-1"><X size={16} /></button>
-                      </div>
-                    )}
-
-                    {/* Reassign on delete */}
-                    {reassign && reassign.name === sub && reassign.parentCat === cat && (
-                      <div className="ml-14 mt-1 mb-2 p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-                        <p className="text-[10px] font-black text-amber-800 uppercase tracking-wider">
-                          Move {reassign.affectedPosts} unit(s) to:
-                        </p>
-                        <div className="flex gap-2">
-                          <select
-                            defaultValue=""
-                            onChange={e => handleReassignDelete(e.target.value)}
-                            className="flex-1 border-2 border-amber-300 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-amber-500 bg-white"
-                          >
-                            <option value="" disabled>-- Select subcategory --</option>
-                            {reassign.siblings.map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                          <button onClick={() => setReassign(null)}
-                            className="text-slate-400 hover:text-slate-700 p-1"><X size={16} /></button>
+                {Array.isArray(subs) && subs.map(sub => {
+                  const subsubs = (catNode && catNode[sub] && Array.isArray(catNode[sub])) ? catNode[sub] : [];
+                  return (
+                    <div key={`${cat}-${sub}`} className="space-y-1">
+                      <div className="flex items-center justify-between px-4 py-2.5 ml-6 mt-0.5 bg-white rounded-xl group hover:bg-amber-50 transition-colors border border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <ChevronRight size={12} className="text-slate-300 rotate-90 shrink-0" />
+                          <span className="font-bold text-sm text-slate-700">{sub}</span>
                         </div>
-                        <p className="text-[9px] text-amber-600 font-bold">Select a subcategory to move units into, then the delete will complete.</p>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => setAddingSubSubFor(addingSubSubFor && addingSubSubFor.cat === cat && addingSubSubFor.sub === sub ? null : { cat, sub })}
+                            className="text-slate-400 hover:text-green-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Add sub-subcategory under ${sub}`} title="Add sub-subcategory">
+                            <Plus size={14} />
+                          </button>
+                          <button onClick={() => setRenaming({ type: 'subcategory', name: sub, parentCat: cat })}
+                            className="text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Rename ${sub}`} title="Rename">
+                            <Edit2 size={12} />
+                          </button>
+                          <button onClick={() => handleDelete('subcategory', sub, cat)}
+                            className="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Delete ${sub}`} title="Delete">
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Rename inline for subcategory */}
+                      {renaming && renaming.type === 'subcategory' && renaming.name === sub && renaming.parentCat === cat && (
+                        <div className="ml-14 mt-1 mb-2 flex gap-2">
+                          <input type="text" defaultValue={sub} autoFocus
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleRename('subcategory', sub, e.target.value, cat);
+                              if (e.key === 'Escape') handleCancelRename();
+                            }}
+                            onBlur={e => handleRename('subcategory', sub, e.target.value, cat)}
+                            className="flex-1 border-2 border-blue-400 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none transition-colors" />
+                          <button onClick={handleCancelRename} className="text-slate-400 hover:text-slate-700 p-1"><X size={16} /></button>
+                        </div>
+                      )}
+
+                      {/* Add sub-subcategory inline */}
+                      {addingSubSubFor && addingSubSubFor.cat === cat && addingSubSubFor.sub === sub && (
+                        <div className="ml-14 mt-1 mb-2 flex gap-2">
+                          <input type="text" value={newSubSubName} onChange={e => setNewSubSubName(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleAddSubSubcategory(cat, sub)}
+                            placeholder={`Sub-subcategory under ${cat} › ${sub}...`}
+                            className="flex-1 border-2 border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-green-500 transition-colors" autoFocus />
+                          <button onClick={() => handleAddSubSubcategory(cat, sub)}
+                            className="bg-green-600 text-white px-3 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-green-700 transition-colors shrink-0">
+                            Add
+                          </button>
+                          <button onClick={handleCancelAddSubSub}
+                            className="text-slate-400 hover:text-slate-700 p-1">
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Sub-subcategories list */}
+                      {subsubs.length > 0 && (
+                        <div className="ml-14 pl-2 border-l border-slate-200 space-y-1 py-1">
+                          {subsubs.map(ss => (
+                            <div key={`${cat}-${sub}-${ss}`}>
+                              <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50/50 rounded-lg group hover:bg-slate-100 transition-colors border border-slate-100/50">
+                                <span className="font-bold text-xs text-slate-500">{ss}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <button onClick={() => setRenaming({ type: 'sub_subcategory', name: ss, parentCat: cat, parentSub: sub })}
+                                    className="text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Rename ${ss}`} title="Rename">
+                                    <Edit2 size={10} />
+                                  </button>
+                                  <button onClick={() => handleDelete('sub_subcategory', ss, cat, sub)}
+                                    className="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 p-1" aria-label={`Delete ${ss}`} title="Delete">
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Rename inline for sub-subcategory */}
+                              {renaming && renaming.type === 'sub_subcategory' && renaming.name === ss && renaming.parentCat === cat && renaming.parentSub === sub && (
+                                <div className="mt-1 mb-1 flex gap-2">
+                                  <input type="text" defaultValue={ss} autoFocus
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') handleRename('sub_subcategory', ss, e.target.value, cat, sub);
+                                      if (e.key === 'Escape') handleCancelRename();
+                                    }}
+                                    onBlur={e => handleRename('sub_subcategory', ss, e.target.value, cat, sub)}
+                                    className="flex-1 border-2 border-blue-400 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none transition-colors" />
+                                  <button onClick={handleCancelRename} className="text-slate-400 hover:text-slate-700 p-1"><X size={14} /></button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}

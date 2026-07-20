@@ -89,6 +89,13 @@
 
     <link rel="canonical" href="<?php echo esc_url($canonical_url); ?>">
 
+    <!-- Preload critical fonts to avoid Cumulative Layout Shift (CLS) -->
+    <link rel="preload" href="<?php echo esc_url( plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/Inter.woff2' ) ); ?>" as="font" type="font/woff2" crossorigin>
+
+    <!-- Preconnect to important third-party origins -->
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://i.ytimg.com">
+
     <?php wp_head(); ?>
 </head>
 <body <?php body_class('bg-white text-slate-900 selection:bg-red-100 selection:text-red-600'); ?>>
@@ -140,7 +147,7 @@
                         <?php 
                         $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('red') : '';
                         ?>
-                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain">
+                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain" width="200" height="80">
                     </a>
 
                     <!-- MOBILE MENU TOGGLE -->
@@ -152,7 +159,7 @@
 
                 <!-- CENTERED ADDRESS -->
                 <div class="flex justify-center text-center w-full lg:w-auto">
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto" aria-label="Get directions to Varner Equipment">
                         <svg class="w-6 h-6 lg:w-8 lg:h-8 text-red-600 group-hover:text-slate-900 transition-colors shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         <div class="flex flex-col text-center">
                             <span class="font-black text-slate-900 uppercase tracking-tighter text-lg lg:text-xl xl:text-2xl leading-none whitespace-nowrap"><?php echo esc_html($addr_1); ?></span>
@@ -180,7 +187,7 @@
                         <div class="group relative" data-dropdown>
                             <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true">
                                 Inventory
-                                <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                <svg class="w-3 h-3 text-slate-500 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
                             <!-- Dropdown Menu -->
                             <div class="absolute left-0 top-full mt-2 w-56 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
@@ -245,39 +252,6 @@
                         }
                         ?>
 
-                        <!-- BRANDS DROPDOWN (MEGA MENU) -->
-                        <div class="group relative" data-dropdown>
-                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true">
-                                Brands
-                                <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-                            
-                            <!-- Mega Menu Content -->
-                            <div class="absolute left-0 lg:-left-48 top-full mt-2 w-[90vw] max-w-5xl bg-white border-t-4 border-red-600 shadow-[0_20px_50px_rgba(0,0,0,0.2)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-4 p-8 rounded-b-2xl">
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-1">
-                                    <?php 
-                                    $col_items = ceil( count( $all_brands ) / 4 );
-                                    $chunks = array_chunk( $all_brands, $col_items );
-                                    for ( $i = 0; $i < 4; $i++ ) {
-                                        $col_brands = $chunks[$i] ?? array();
-                                        echo '<div class="flex flex-col">';
-                                        foreach ( $col_brands as $brand ) {
-                                            $ext = ( strtolower( $brand ) === 'interstate' ) ? 'https://www.interstatebatteries.com' : '';
-                                            varner_brand_link_nav( $brand, $brand_counts, $ext );
-                                        }
-                                        echo '</div>';
-                                    }
-                                    ?>
-                                </div>
-                                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
-                                    <div class="flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                                        <span class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Authorized Premium Dealer</span>
-                                    </div>
-                                    <a href="<?php echo esc_url( home_url( '/brands' ) ); ?>" class="text-[9px] font-black uppercase tracking-[0.2em] text-red-600 hover:text-slate-900 transition-colors flex items-center gap-2">Explore All Brand Partnerships</a>
-                                </div>
-                            </div>
-                        </div>
                         
                         <div class="group relative" data-dropdown>
                             <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true">Financing</button>
@@ -331,31 +305,6 @@
                         </div>
                     </div>
 
-                    <div class="border-b border-white/5">
-                        <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false">
-                            Brands
-                            <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
-                        </button>
-                        <div class="hidden bg-white/5 py-2 px-8 flex flex-col">
-                            <?php 
-                            foreach ( $all_brands as $brand ) {
-                                $normalized_lookup = preg_replace( '/[^a-z0-9]/', '', strtolower( $brand ) );
-                                $count  = $brand_counts[ $normalized_lookup ] ?? 0;
-                                $slug   = sanitize_title( $brand );
-                                $ext    = ( strtolower( $brand ) === 'interstate' ) ? 'https://www.interstatebatteries.com' : '';
-                                $href   = $ext ?: home_url( '/brands/' . $slug );
-                                $target = $ext ? ' target="_blank" rel="noopener"' : '';
-                                $dim    = $count === 0 ? ' opacity-40' : '';
-                                $badge  = $count > 0 ? '<span class="ml-auto shrink-0 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full leading-none">' . $count . '</span>' : '';
-                                
-                                echo '<a href="' . esc_url( $href ) . '"' . $target . ' class="flex items-center justify-between py-3 text-xs font-bold uppercase text-slate-400 hover:text-white border-b border-white/5 last:border-0 transition-colors' . $dim . '">';
-                                echo esc_html( $brand ) . $badge;
-                                echo '</a>';
-                            }
-                            ?>
-                            <a href="<?php echo esc_url( home_url( '/brands' ) ); ?>" class="block py-4 mt-2 text-center text-xs font-black uppercase tracking-[0.2em] text-red-500 hover:text-white">Explore All Brand Partnerships</a>
-                        </div>
-                    </div>
                     <div class="border-b border-white/5">
                         <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false">
                             Financing

@@ -218,9 +218,24 @@
             var ticking = false;
             var speed = 0.25;
 
-            function updateParallax() {
+            // Cache dimensions to avoid forced reflows on scroll
+            var heroOffsetTop = 0;
+            var heroHeight = 0;
+            var winHeight = window.innerHeight;
+
+            function updateDimensions() {
+                // Get offset from top of document
                 var rect = hero.getBoundingClientRect();
-                var scrollProgress = Math.min(Math.max((window.innerHeight - rect.top) / (window.innerHeight + rect.height), 0), 1);
+                var scrollTop = window.scrollY || window.pageYOffset;
+                heroOffsetTop = rect.top + scrollTop;
+                heroHeight = rect.height;
+                winHeight = window.innerHeight;
+            }
+
+            function updateParallax() {
+                var scrollTop = window.scrollY || window.pageYOffset;
+                var rectTop = heroOffsetTop - scrollTop;
+                var scrollProgress = Math.min(Math.max((winHeight - rectTop) / (winHeight + heroHeight), 0), 1);
                 var translateY = (scrollProgress * 60 * speed);
                 media.style.transform = 'translate3d(0,' + translateY + 'px,0)';
                 ticking = false;
@@ -233,9 +248,17 @@
                 }
             }
 
+            function onResize() {
+                updateDimensions();
+                onScroll();
+            }
+
+            // Initialize cached values
+            updateDimensions();
             updateParallax();
+
             window.addEventListener('scroll', onScroll, { passive: true });
-            window.addEventListener('resize', onScroll);
+            window.addEventListener('resize', onResize);
         })();
     </script>
 
@@ -363,7 +386,7 @@
          * Reveal on Scroll: Cinematic Entry Animations
          */
         (function() {
-            const reveals = document.querySelectorAll('.reveal-on-scroll');
+            const reveals = document.querySelectorAll('.reveal-on-scroll, .reveal-on-scroll-below');
             
             const observerOptions = {
                 threshold: 0.15,
@@ -411,7 +434,7 @@
                 referrer: ref,
                 ua: ua
             });
-            navigator.sendBeacon(restUrl, payload);
+            navigator.sendBeacon(restUrl, new Blob([payload], {type: 'application/json'}));
         }
 
         if (window.VarnerCookies && typeof window.VarnerCookies.waitForConsent === 'function') {

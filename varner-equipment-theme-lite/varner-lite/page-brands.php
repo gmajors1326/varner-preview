@@ -132,7 +132,7 @@ function varner_brand_featured_unit( $brand_slug ) {
     <div class="max-w-7xl mx-auto px-4 space-y-6">
         <div class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.3em]">Brands</div>
         <h1 class="text-4xl md:text-6xl font-black tracking-tighter">Brands We Carry</h1>
-        <p class="text-slate-300 max-w-2xl font-bold">Explore inventory by manufacturer. Each card links to live units for that brand.</p>
+        <p class="text-slate-500 max-w-2xl font-bold">Explore inventory by manufacturer. Each card links to live units for that brand.</p>
     </div>
 </section>
 
@@ -147,7 +147,7 @@ function varner_brand_featured_unit( $brand_slug ) {
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all p-5 flex flex-col gap-4">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Brand</div>
+                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Brand</div>
                     <div class="text-2xl font-black text-slate-900 tracking-tight leading-tight"><?php echo esc_html( $brand_name ); ?></div>
                     <div class="text-xs font-black uppercase tracking-[0.3em] text-red-600 mt-1"><?php echo intval( $brand->qty ); ?> Units</div>
                 </div>

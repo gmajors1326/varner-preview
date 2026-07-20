@@ -18,6 +18,7 @@ export const InventoryTable = ({
   onClone,
   onToggle,
   onToggleDraft,
+  categoryTree,
 }) => {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
@@ -32,7 +33,8 @@ export const InventoryTable = ({
       <div className="hidden xl:block">
         <FilterSidebar horizontal inventoryList={inventoryList} filters={activeFilters}
           searchQuery={searchQuery} onFilterChange={onFilterChange}
-          onKeywordSearch={onSearch} onClearAll={onClearFilters} />
+          onKeywordSearch={onSearch} onClearAll={onClearFilters}
+          categoryTree={categoryTree} />
       </div>
 
       {/* Active filters bar */}
@@ -45,7 +47,7 @@ export const InventoryTable = ({
               {searchQuery.toUpperCase()}
             </span>
           )}
-          {['makes', 'status', 'categories', 'models', 'conditions'].flatMap(key =>
+          {['makes', 'status', 'categories', 'subcategories', 'sub_subcategories', 'models', 'conditions'].flatMap(key =>
             activeFilters[key].map(v => (
               <FilterTag key={`${key}-${v}`} label={v.toUpperCase()}
                 onRemove={() => onFilterChange(key, activeFilters[key].filter(x => x !== v))} />
@@ -91,7 +93,8 @@ export const InventoryTable = ({
               </div>
               <FilterSidebar inventoryList={inventoryList} filters={activeFilters}
                 searchQuery={searchQuery} onFilterChange={onFilterChange}
-                onKeywordSearch={onSearch} onClearAll={onClearFilters} />
+                onKeywordSearch={onSearch} onClearAll={onClearFilters}
+                categoryTree={categoryTree} />
             </div>
           </div>
         )}
@@ -164,9 +167,9 @@ export const InventoryTable = ({
                           <td className="px-6 py-5">
                             <div className="flex flex-col gap-0.5">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.category}</span>
-                              {item.subcategory && (
+                              {item.subcategory && (Array.isArray(item.subcategory) ? item.subcategory.length > 0 : item.subcategory !== '') && (
                                 <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                                  &raquo; {item.subcategory}
+                                  &raquo; {Array.isArray(item.subcategory) ? item.subcategory.join(', ') : item.subcategory}
                                   {item.sub_subcategory && ` \u203A ${item.sub_subcategory}`}
                                 </span>
                               )}

@@ -302,6 +302,10 @@ function varner_format_unit(int $post_id, string $context = 'edit'): ?array {
             $val = function_exists('get_field') ? get_field($key, $post_id) : null;
         } else {
             $val = array_key_exists($key, $bulk) ? $bulk[$key][0] : null;
+            // Subcategory may be stored as a serialized array after migration
+            if ($key === 'subcategory' && is_string($val)) {
+                $val = maybe_unserialize($val);
+            }
         }
 
         if ($meta['type'] === 'bool') {
@@ -319,6 +323,22 @@ function varner_format_unit(int $post_id, string $context = 'edit'): ?array {
 
     if ($context === 'public' && !empty($data['call_for_price'])) {
         $data['price'] = '';
+    }
+
+    // ── Multi-subcategory read coercion ──────────────────────────────
+    // subcategory is transitioning from a single string to an array of
+    // strings. Coerce at the read layer so every consumer always gets
+    // an array, regardless of what is stored in postmeta.
+    if (isset($data['subcategory'])) {
+        $raw_sub = $data['subcategory'];
+        if (is_array($raw_sub)) {
+            // Already an array (post-migration or serialized) — filter empties
+            $data['subcategory'] = array_values(array_filter($raw_sub, 'strlen'));
+        } elseif (is_string($raw_sub) && $raw_sub !== '') {
+            $data['subcategory'] = array($raw_sub);
+        } else {
+            $data['subcategory'] = array();
+        }
     }
 
     $gallery = function_exists('get_field') ? get_field('gallery', $post_id) : array();
@@ -395,6 +415,17 @@ function varner_save_unit_fields(int $post_id, array $data): void {
                 $clean = nl2br($clean);
             }
             update_field($key, $clean, $post_id);
+        } elseif ($key === 'subcategory') {
+            // ── Multi-subcategory write coercion ────────────────────────
+            // Accept string or array; always store as a serialized array.
+            if (is_array($val)) {
+                $arr = array_values(array_filter(array_map('sanitize_text_field', $val), 'strlen'));
+            } elseif (is_string($val) && $val !== '') {
+                $arr = array(sanitize_text_field($val));
+            } else {
+                $arr = array();
+            }
+            update_post_meta($post_id, 'subcategory', $arr);
         } else {
             update_field($key, sanitize_text_field($val), $post_id);
         }
@@ -678,3 +709,52 @@ add_filter('robots_txt', function (string $output, bool $public): string {
     return $output . "\n" . implode("\n", $crawlers) . "\n";
 }, 10, 2);
 
+// ─── One-Time Migration: subcategory string → array ─────────────────────────
+// Converts every equipment post's subcategory meta from a plain string to a
+// serialized one-element array. Idempotent: skips values already stored as
+// arrays. Gated by option flag so it runs exactly once.
+
+add_action('admin_init', 'varner_migrate_subcategory_to_array');
+function varner_migrate_subcategory_to_array(): void {
+    if (get_option('varner_subcategory_migrated_to_array')) {
+        return; // Already ran
+    }
+
+    global $wpdb;
+
+    $post_ids = $wpdb->get_col(
+        "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'equipment' AND post_status IN ('publish', 'draft', 'trash')"
+    );
+
+    if (empty($post_ids)) {
+        update_option('varner_subcategory_migrated_to_array', time());
+        return;
+    }
+
+    $migrated = 0;
+    $skipped  = 0;
+
+    foreach ($post_ids as $pid) {
+        $raw = get_post_meta($pid, 'subcategory', true);
+
+        // Already a serialized array — skip
+        if (is_array($raw)) {
+            $skipped++;
+            continue;
+        }
+
+        // String → one-element array (or empty array)
+        $arr = ($raw !== '' && $raw !== null && $raw !== false)
+            ? array((string) $raw)
+            : array();
+
+        update_post_meta($pid, 'subcategory', $arr);
+        $migrated++;
+    }
+
+    update_option('varner_subcategory_migrated_to_array', time());
+
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log("[Varner OS] Subcategory migration complete: {$migrated} converted, {$skipped} already arrays, out of " . count($post_ids) . " total.");
+    }
+}

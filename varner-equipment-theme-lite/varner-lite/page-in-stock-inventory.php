@@ -76,7 +76,7 @@ $total           = $inventory_query->found_posts;
                     </div>
                     <?php else : ?>
                     <div class="bg-white rounded-2xl border border-slate-200 p-16 text-center">
-                        <div class="text-slate-300 text-6xl mb-4">⊘</div>
+                        <div class="text-slate-500 text-6xl mb-4">⊘</div>
                         <p class="text-slate-500 font-black uppercase tracking-widest text-sm">No units match your current filters.</p>
                         <a href="<?php echo esc_url( get_permalink() ); ?>" class="inline-block mt-6 bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-colors">
                             Clear All Filters

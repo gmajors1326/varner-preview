@@ -1,7 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 
-export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, onKeywordSearch, onClearAll, horizontal = false }) => {
+const MultiSelectDropdown = ({ label, options, selected, onChange, disabled, placeholder = 'All' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const toggleOption = (val) => {
+    const next = selected.includes(val)
+      ? selected.filter(v => v !== val)
+      : [...selected, val];
+    onChange(next);
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-56">
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">{label}</p>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-left hover:bg-white focus:border-red-500 outline-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <span className="truncate">
+          {selected.length === 0 ? placeholder : `${selected.length} Selected`}
+        </span>
+        <ChevronDown size={16} className="text-slate-400 flex-shrink-0 ml-2" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-xl p-3 max-h-60 overflow-y-auto">
+          {options.length === 0 ? (
+            <p className="text-xs text-slate-400 italic p-1">No options available</p>
+          ) : (
+            <div className="space-y-1">
+              {options.map(opt => {
+                const checked = selected.includes(opt);
+                return (
+                  <label key={opt} className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors text-xs font-bold text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleOption(opt)}
+                      className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300 transition-all cursor-pointer"
+                    />
+                    <span className="truncate select-none">{opt}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterChange, onKeywordSearch, onClearAll, horizontal = false, categoryTree }) => {
   const [sections, setSections] = useState({
     listingType: true, category: true, manufacturer: true,
     model: true, year: true, price: true, condition: false,
@@ -42,6 +106,45 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
     ? filters.makes
     : Object.keys(modelsByMake).sort((a, b) => (makeCounts[b] || 0) - (makeCounts[a] || 0));
   const displayMakeGroups = showAllModels ? makesForModels : makesForModels.slice(0, 3);
+
+  const selectedCats = filters.categories || [];
+  let subOptions = [];
+  if (categoryTree && typeof categoryTree === 'object' && !Array.isArray(categoryTree)) {
+    if (selectedCats.length > 0) {
+      selectedCats.forEach(cat => {
+        const node = categoryTree[cat];
+        if (node && typeof node === 'object' && !Array.isArray(node)) {
+          subOptions = [...subOptions, ...Object.keys(node)];
+        }
+      });
+    } else {
+      Object.values(categoryTree).forEach(node => {
+        if (node && typeof node === 'object' && !Array.isArray(node)) {
+          subOptions = [...subOptions, ...Object.keys(node)];
+        }
+      });
+    }
+  }
+  subOptions = [...new Set(subOptions)].sort();
+
+  const selectedSubs = filters.subcategories || [];
+  let ssOptions = [];
+  if (categoryTree && typeof categoryTree === 'object' && !Array.isArray(categoryTree)) {
+    const catsToQuery = selectedCats.length > 0 ? selectedCats : Object.keys(categoryTree);
+    catsToQuery.forEach(cat => {
+      const node = categoryTree[cat];
+      if (node && typeof node === 'object' && !Array.isArray(node)) {
+        const subsToQuery = selectedSubs.length > 0 ? selectedSubs : Object.keys(node);
+        subsToQuery.forEach(sub => {
+          const subNode = node[sub];
+          if (Array.isArray(subNode)) {
+            ssOptions = [...ssOptions, ...subNode];
+          }
+        });
+      }
+    });
+  }
+  ssOptions = [...new Set(ssOptions)].sort();
 
   const SectionHeader = ({ label, sKey, applied }) => (
     <button onClick={() => toggleSection(sKey)}
@@ -110,22 +213,33 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
           </div>
 
           {/* Category Dropdown */}
-          <div className="w-56">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Category</p>
-            <div className="relative">
-              <select 
-                value={filters.categories[0] || ""} 
-                onChange={e => onFilterChange('categories', e.target.value ? [e.target.value] : [])}
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 pr-10 text-sm font-bold focus:bg-white focus:border-red-500 outline-none transition-all appearance-none cursor-pointer"
-              >
-                <option value="">All Categories</option>
-                {allCategories.map(cat => <option key={cat} value={cat}>{cat} ({countOf('category', cat)})</option>)}
-              </select>
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-                <ChevronDown size={16} />
-              </div>
-            </div>
-          </div>
+          <MultiSelectDropdown
+            label="Category"
+            options={allCategories}
+            selected={filters.categories}
+            onChange={val => onFilterChange('categories', val)}
+            placeholder="All Categories"
+          />
+
+          {/* Subcategory Dropdown */}
+          <MultiSelectDropdown
+            label="Subcategory"
+            options={subOptions}
+            selected={filters.subcategories}
+            onChange={val => onFilterChange('subcategories', val)}
+            placeholder={filters.categories.length > 0 ? "All Subcategories" : "Select category first"}
+            disabled={filters.categories.length === 0}
+          />
+
+          {/* Sub-Subcategory Dropdown */}
+          <MultiSelectDropdown
+            label="Sub-Subcategory"
+            options={ssOptions}
+            selected={filters.sub_subcategories}
+            onChange={val => onFilterChange('sub_subcategories', val)}
+            placeholder={filters.subcategories.length > 0 ? "All Sub-Subcategories" : "Select subcategory first"}
+            disabled={filters.subcategories.length === 0 || ssOptions.length === 0}
+          />
 
           {/* Manufacturer Dropdown */}
           <div className="w-56">
@@ -256,6 +370,30 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
               <CheckRow key={cat} label={cat} count={countOf('category', cat)}
                 checked={filters.categories.includes(cat)} onChange={() => toggleArr('categories', cat)} />
             ))}
+            {selectedCats.length > 0 && subOptions.length > 0 && (
+              <div className="mt-3 space-y-3 pl-2 border-l-2 border-slate-100">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Subcategories</p>
+                  <div className="max-h-40 overflow-y-auto space-y-1 pr-1 border border-slate-100 rounded-lg p-1.5 bg-slate-50/50">
+                    {subOptions.map(sub => (
+                      <CheckRow key={sub} label={sub}
+                        checked={filters.subcategories.includes(sub)} onChange={() => toggleArr('subcategories', sub)} />
+                    ))}
+                  </div>
+                </div>
+                {filters.subcategories.length > 0 && ssOptions.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Sub-Subcategories</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1 pr-1 border border-slate-100 rounded-lg p-1.5 bg-slate-50/50">
+                      {ssOptions.map(ss => (
+                        <CheckRow key={ss} label={ss}
+                          checked={filters.sub_subcategories.includes(ss)} onChange={() => toggleArr('sub_subcategories', ss)} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </fieldset>
         )}
 

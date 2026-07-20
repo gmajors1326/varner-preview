@@ -56,7 +56,7 @@ get_header(); ?>
 
                 <!-- HOURS -->
                 <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-xl">
-                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400 mb-6 border-b border-slate-100 pb-4">Business Hours</h3>
+                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500 mb-6 border-b border-slate-100 pb-4">Business Hours</h3>
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-black uppercase text-slate-500">Mon - Fri</span>
@@ -124,7 +124,7 @@ get_header(); ?>
                                     <input type="hidden" name="captcha_hash" value="<?php echo esc_attr($captcha['hash']); ?>">
                                 </div>
                                 <div class="flex-1 w-full">
-                                    <label for="contact-captcha" class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Security Sum <span class="text-red-600">(*)</span></label>
+                                    <label for="contact-captcha" class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 block">Security Sum <span class="text-red-600">(*)</span></label>
                                     <input type="number" name="captcha_answer" id="contact-captcha" required placeholder="Result" class="w-full bg-white border-2 border-slate-200 rounded-xl px-5 py-3 font-black text-slate-900 focus:border-red-500 outline-none transition-all shadow-sm">
                                 </div>
                             </div>

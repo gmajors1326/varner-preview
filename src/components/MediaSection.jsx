@@ -37,7 +37,7 @@ export const MiniCarousel = ({ images = [], alt = '' }) => {
 
   return (
     <div className="relative w-full h-full group/mc">
-      {images.map((src, i) => (
+      {Array.isArray(images) && images.map((src, i) => (
         <img key={i} src={src} alt={alt}
              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${i === idx ? 'opacity-100' : 'opacity-0'}`}
              onError={e => { e.target.onerror = null; e.target.src = fallback; }}/>
@@ -54,7 +54,7 @@ export const MiniCarousel = ({ images = [], alt = '' }) => {
           <ChevronRight size={11}/>
         </button>
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
-          {images.map((_, i) => (
+          {Array.isArray(images) && images.map((_, i) => (
             <div key={i} className={`rounded-full transition-all duration-300 ${i === idx ? 'w-2 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50'}`}/>
           ))}
         </div>
@@ -162,7 +162,7 @@ export const MediaSection = ({ title, images, onAddFiles, onRemove, onReorder, i
             items={images || []}
             strategy={rectSortingStrategy}
           >
-            {images && images.map((img, i) => (
+            {Array.isArray(images) && images.map((img, i) => (
               <SortableImage key={img} img={img} i={i} onRemove={onRemove} />
             ))}
           </SortableContext>

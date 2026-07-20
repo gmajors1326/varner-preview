@@ -73,7 +73,114 @@ function sanitizePayload(obj) {
 const MAX_RETRIES = 2;
 const RETRY_DELAYS = [1500, 3000]; // ms — escalating backoff
 
+const MOCK_CATEGORY_TREE = {
+  "Utility Vehicles": { "Utility": [] },
+  "Tractors": {
+    "175 HP to 299 HP": [],
+    "100 HP to 174 HP": [],
+    "40 HP to 99 HP": [],
+    "Less than 40 HP": []
+  },
+  "Planting Equipment": { "Other": [] },
+  "Tillage Equipment": {
+    "Chisel Plows": [],
+    "Disks": [],
+    "Plows": [],
+    "Rippers": [],
+    "Rotary Tillage": [],
+    "Row Crop Cultivators": [],
+    "Other": []
+  },
+  "Hay and Forage Equipment": {
+    "Bale Accumulators / Movers": [],
+    "Disc Mowers": [],
+    "Mower Conditioners/Windrowers": ["Self-Propelled", "Pull-Type", "Mounted"],
+    "Hay Rakes": [],
+    "Tedders": [],
+    "Rotary Mowers": [],
+    "Round Balers": [],
+    "Square Balers": ["Large", "Small"],
+    "Tub Grinders/Bale Processors": [],
+    "Other": []
+  },
+  "Chemical Applicators": { "Sprayers": ["3 pt/Mounted"] },
+  "Grain Handling / Storage Equipment": { "Grain Augers": [] },
+  "Ag Trailers": { "Other": [] },
+  "Snow Equipment": {
+    "Lawn Mowers": ["Riding"],
+    "Snow Blowers": []
+  },
+  "Implements": {
+    "Blades/Box Scrapers": [],
+    "Manure Spreaders": ["Dry"]
+  },
+  "Turf Equipment": { "Mowers": ["Fairway"] },
+  "Trucks": {
+    "Pickup Trucks": ["1/2 Ton"],
+    "Service Trucks / Utility Trucks / Mechanic Trucks": [],
+    "Truck Bodies Only": ["Other"]
+  },
+  "Semi-Trailers": { "Log Trailers": [] },
+  "Trailers": {
+    "Car Hauler Trailers": ["Enclosed", "Open"],
+    "Cargo / Enclosed Trailers": [],
+    "Dump Trailers": [],
+    "Flatbed / Tag Trailers": [],
+    "Livestock Trailers": [],
+    "Tilt Trailers": [],
+    "Landscaping Trailers": [],
+    "Utility Trailers": ["ATV", "Snowmobile"],
+    "Other Trailers": []
+  }
+};
+
+function handleMockApi(path, options) {
+  const cleanPath = path.split('?')[0];
+  if (cleanPath === '/me') {
+    return Promise.resolve({ id: 1, name: 'Greg', roles: ['administrator', 'editor'] });
+  }
+  if (cleanPath === '/brands') {
+    return Promise.resolve(['Mahindra', 'Zetor', 'Titan Trailers', 'Big Tex']);
+  }
+  if (cleanPath === '/years') {
+    return Promise.resolve(['2026', '2025', '2024', '2023', '2022']);
+  }
+  if (cleanPath === '/categories') {
+    return Promise.resolve(Object.keys(MOCK_CATEGORY_TREE));
+  }
+  if (cleanPath === '/subcategories') {
+    const subs = [];
+    Object.values(MOCK_CATEGORY_TREE).forEach(o => {
+      if (Array.isArray(o)) {
+        subs.push(...o);
+      } else if (o && typeof o === 'object') {
+        subs.push(...Object.keys(o));
+      }
+    });
+    return Promise.resolve([...new Set(subs)]);
+  }
+  if (cleanPath === '/category-tree') {
+    return Promise.resolve(MOCK_CATEGORY_TREE);
+  }
+  if (cleanPath === '/inventory') {
+    return Promise.resolve({ items: [], total: 0 });
+  }
+  if (cleanPath === '/inventory/deleted') {
+    return Promise.resolve({ items: [], total: 0 });
+  }
+  if (cleanPath === '/session' || cleanPath === '/sessions') {
+    return Promise.resolve({ items: [] });
+  }
+  if (cleanPath === '/ledger') {
+    return Promise.resolve({ items: [] });
+  }
+  return Promise.resolve({});
+}
+
 export async function apiFetch(path, options = {}) {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return handleMockApi(path, options);
+  }
   const headers = {
     'Content-Type': 'application/json',
     'X-WP-Nonce': _nonce,

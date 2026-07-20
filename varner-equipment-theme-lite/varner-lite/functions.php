@@ -10,6 +10,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once get_template_directory() . '/inc/form-handlers.php';
 
 /**
+ * Fix WordPress Admin Bar ARIA Roles (Accessibility Tree Fix)
+ * Only prints when the admin bar is active on the frontend.
+ */
+function varner_admin_bar_accessibility_fix() {
+    if ( is_admin_bar_showing() ) {
+        ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var adminBar = document.getElementById('wpadminbar');
+            if (adminBar) {
+                var topMenus = adminBar.querySelectorAll('.ab-top-menu, .ab-sub-wrapper > ul');
+                topMenus.forEach(function(menu) {
+                    menu.setAttribute('role', 'menu');
+                });
+                var menuItems = adminBar.querySelectorAll('#wpadminbar li');
+                menuItems.forEach(function(item) {
+                    item.setAttribute('role', 'none');
+                });
+                var abLinks = adminBar.querySelectorAll('#wpadminbar .ab-item');
+                abLinks.forEach(function(link) {
+                    link.setAttribute('role', 'menuitem');
+                });
+            }
+        });
+        </script>
+        <?php
+    }
+}
+add_action( 'wp_footer', 'varner_admin_bar_accessibility_fix', 100 );
+
+/**
  * ACF Fallback: Prevents site crashes if ACF plugin is deactivated.
  */
 if ( ! function_exists( 'get_field' ) ) {
@@ -249,11 +280,35 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
 
     $subcategories = array();
     if ( ! empty( $sub_cat_filter ) ) {
-        $subcategories = $wpdb->get_results(
-            "SELECT pm.meta_value AS val, COUNT(*) AS cnt $sub_base AND pm.meta_key = 'subcategory'
-             GROUP BY pm.meta_value ORDER BY cnt DESC",
-            OBJECT_K
+        $raw_results = $wpdb->get_results(
+            "SELECT pm.meta_value AS val $sub_base AND pm.meta_key = 'subcategory'",
+            OBJECT
         );
+        $counts = array();
+        foreach ( $raw_results as $row ) {
+            $val = $row->val;
+            if ( is_string( $val ) ) {
+                $val = maybe_unserialize( $val );
+            }
+            if ( is_array( $val ) ) {
+                foreach ( $val as $sub ) {
+                    $sub = trim( $sub );
+                    if ( $sub !== '' ) {
+                        $counts[$sub] = ( $counts[$sub] ?? 0 ) + 1;
+                    }
+                }
+            } elseif ( is_string( $val ) && trim( $val ) !== '' ) {
+                $sub = trim( $val );
+                $counts[$sub] = ( $counts[$sub] ?? 0 ) + 1;
+            }
+        }
+        arsort( $counts );
+        foreach ( $counts as $sub => $cnt ) {
+            $subcategories[$sub] = (object) array(
+                'val' => $sub,
+                'cnt' => $cnt
+            );
+        }
     }
 
     return compact( 'makes', 'categories', 'subcategories', 'conditions', 'year_range', 'price_range' );
@@ -514,7 +569,24 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
 
     foreach ( $filters as $key => $vals ) {
         if ( $vals ) {
-            $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+            if ( $key === 'subcategory' ) {
+                $sub_query = array( 'relation' => 'OR' );
+                foreach ( $vals as $subcat ) {
+                    $sub_query[] = array(
+                        'key'     => 'subcategory',
+                        'value'   => $subcat,
+                        'compare' => '='
+                    );
+                    $sub_query[] = array(
+                        'key'     => 'subcategory',
+                        'value'   => '"' . $subcat . '"',
+                        'compare' => 'LIKE'
+                    );
+                }
+                $meta[] = $sub_query;
+            } else {
+                $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+            }
         }
     }
 
@@ -577,7 +649,7 @@ function varner_search_meta_fields( $search, $wp_query ) {
 
     foreach ( (array) $q['search_terms'] as $term ) {
         $like    = '%' . $wpdb->esc_like( $term ) . '%';
-        $query   = "AND (
+        $query   = "(
             {$wpdb->posts}.post_title LIKE %s
             OR {$wpdb->posts}.post_content LIKE %s
             OR EXISTS (

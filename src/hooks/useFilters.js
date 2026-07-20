@@ -3,7 +3,8 @@ import { useState, useMemo } from 'react';
 const DEFAULT_FILTERS = {
   status: [], categories: [], makes: [], models: [],
   yearMin: '', yearMax: '', priceMin: '', priceMax: '',
-  conditions: [], stockSearch: '', vinSearch: ''
+  conditions: [], stockSearch: '', vinSearch: '',
+  subcategories: [], sub_subcategories: []
 };
 
 export function useFilters(inventoryList, isPublicMode) {
@@ -11,7 +12,17 @@ export function useFilters(inventoryList, isPublicMode) {
   const [activeFilters, setActiveFilters] = useState(DEFAULT_FILTERS);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const handleFilterChange = (key, value) => setActiveFilters(prev => ({ ...prev, [key]: value }));
+  const handleFilterChange = (key, value) => setActiveFilters(prev => {
+    const next = { ...prev, [key]: value };
+    if (key === 'categories') {
+      next.subcategories = [];
+      next.sub_subcategories = [];
+    }
+    if (key === 'subcategories') {
+      next.sub_subcategories = [];
+    }
+    return next;
+  });
 
   const handleClearFilters = () => {
     setActiveFilters(DEFAULT_FILTERS);
@@ -38,6 +49,8 @@ export function useFilters(inventoryList, isPublicMode) {
       if (activeFilters.conditions.length && !activeFilters.conditions.includes(item.condition)) return false;
       if (activeFilters.stockSearch && !item.stock?.toLowerCase().includes(activeFilters.stockSearch.toLowerCase())) return false;
       if (activeFilters.vinSearch && !item.vin?.toLowerCase().includes(activeFilters.vinSearch.toLowerCase())) return false;
+      if (activeFilters.subcategories.length && !activeFilters.subcategories.some(sub => Array.isArray(item.subcategory) ? item.subcategory.includes(sub) : item.subcategory === sub)) return false;
+      if (activeFilters.sub_subcategories.length && !activeFilters.sub_subcategories.includes(item.sub_subcategory)) return false;
       return true;
     });
   }, [inventoryList, isPublicMode, searchQuery, activeFilters]);

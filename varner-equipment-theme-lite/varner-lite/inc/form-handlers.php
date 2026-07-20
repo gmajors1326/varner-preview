@@ -271,7 +271,7 @@ function varner_handle_parts_request_submit() {
     $recipient = varner_dept_email( 'parts_email' );
     wp_mail( $recipient, "Parts Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
-    wp_safe_redirect( home_url( '/contact?request=sent' ) );
+    wp_safe_redirect( esc_url_raw( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) ) );
     exit;
 }
 
@@ -303,7 +303,7 @@ function varner_handle_service_request_submit() {
     $recipient = varner_dept_email( 'service_email' );
     wp_mail( $recipient, "Service Request: $fname $lname ($make $model)", $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
 
-    wp_safe_redirect( home_url( '/contact?request=sent' ) );
+    wp_safe_redirect( esc_url_raw( add_query_arg( 'request', 'sent', wp_get_referer() ?: home_url() ) ) );
     exit;
 }
 

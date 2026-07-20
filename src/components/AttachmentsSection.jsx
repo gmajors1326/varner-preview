@@ -13,7 +13,7 @@ export const AttachmentsSection = ({ attachments = [], onAdd, onChange, onRemove
       </div>
       <input type="file" accept="image/*" className="hidden" ref={ref} onChange={e => { if (e.target.files?.[0] && editingIndex !== null) onImageUpload(editingIndex, e.target.files[0]); e.target.value = null; setEditingIndex(null); }}/>
       <div className="space-y-6">
-        {attachments.map((imp, i) => (
+        {Array.isArray(attachments) && attachments.map((imp, i) => (
           <div key={i} className="bg-slate-50 rounded-[1.5rem] p-6 border-2 border-slate-100 flex flex-col md:flex-row gap-6 relative group">
             <button onClick={() => onRemove(i)} aria-label="Remove attachment" className="absolute -top-3 -right-3 bg-red-600 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10"><X size={16}/></button>
             <div className="w-full md:w-40 aspect-square bg-white rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 relative">

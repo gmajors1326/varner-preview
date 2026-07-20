@@ -51,7 +51,7 @@ $total = count(get_posts($count_args));
 
                 <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
                         Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
                     </p>
                 </div>
@@ -67,10 +67,10 @@ $total = count(get_posts($count_args));
                     <?php else : ?>
                         <div class="col-span-full bg-white rounded-3xl border-2 border-dashed border-slate-200 p-20 text-center shadow-inner">
                             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             </div>
                             <p class="text-slate-900 font-black uppercase tracking-widest text-sm mb-2">No Units Found</p>
-                            <p class="text-slate-400 font-bold text-xs mb-8">Try adjusting your filters to find what you're looking for.</p>
+                            <p class="text-slate-500 font-bold text-xs mb-8">Try adjusting your filters to find what you're looking for.</p>
                             <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg active:scale-95">
                                 Reset All Filters
                             </a>

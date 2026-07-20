@@ -18,6 +18,18 @@ get_header(); ?>
             </p>
         </div>
 
+        <?php if ( isset($_GET['request']) && $_GET['request'] === 'sent' ) : ?>
+            <div class="mb-12 bg-green-50 border-2 border-green-500/30 text-green-800 p-6 rounded-3xl flex items-center gap-4">
+                <div class="bg-green-500 text-white p-2.5 rounded-2xl shadow-lg shadow-green-900/10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div>
+                    <h4 class="font-black uppercase tracking-tight text-lg">Service Request Sent Successfully</h4>
+                    <p class="text-sm text-green-700/80 font-bold mt-0.5">Thank you! We have received your service request and our service department will contact you shortly.</p>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- FORM CARD -->
         <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
             <div class="bg-slate-950 p-8 text-white flex items-center justify-between">
@@ -27,7 +39,7 @@ get_header(); ?>
                     </div>
                     <div>
                         <h2 class="text-xl font-black uppercase tracking-tight">Service Department</h2>
-                        <p class="text-xs text-slate-400 font-black uppercase tracking-[0.2em]">Authorized Service Center • Delta, CO</p>
+                        <p class="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">Authorized Service Center • Delta, CO</p>
                     </div>
                 </div>
                 <div class="hidden sm:block text-right">
@@ -44,7 +56,7 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">01</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Customer Contact Information</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Customer Contact Information</h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
@@ -105,7 +117,7 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">02</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Equipment Being Serviced</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Equipment Being Serviced</h3>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div class="space-y-2">
@@ -135,7 +147,7 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">03</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Describe Service Needs</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Describe Service Needs</h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div class="md:col-span-2 space-y-2">
@@ -145,7 +157,7 @@ get_header(); ?>
                         <div class="space-y-2">
                             <label for="svc-appointment-date" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Preferred Appointment Date <span class="text-red-600">(*)</span></label>
                             <input type="date" name="appointment_date" id="svc-appointment-date" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm cursor-pointer">
-                            <p class="text-[9px] font-bold text-slate-400 mt-2 italic">* Our team will contact you to confirm availability.</p>
+                            <p class="text-[9px] font-bold text-slate-500 mt-2 italic">* Our team will contact you to confirm availability.</p>
                         </div>
                     </div>
                 </div>
@@ -154,7 +166,7 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">04</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Prior Service History</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Prior Service History</h3>
                     </div>
                     <div class="bg-slate-50 rounded-3xl p-8 border-2 border-slate-100 space-y-8">
                         <div class="flex flex-col md:flex-row md:items-center gap-6">
@@ -187,7 +199,7 @@ get_header(); ?>
                 <div class="space-y-6 pt-4 border-t border-slate-100">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="text-red-600 font-black text-xl">05</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Security Verification</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Security Verification</h3>
                     </div>
                     <div class="bg-slate-900 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-8 border-b-4 border-red-600 shadow-xl">
                         <div class="flex items-center gap-4">
@@ -201,7 +213,7 @@ get_header(); ?>
                             </div>
                         </div>
                         <div class="flex-1 w-full">
-                            <label for="svc-captcha" class="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">What is the sum? <span class="text-red-500">(*)</span></label>
+                            <label for="svc-captcha" class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block ml-1">What is the sum? <span class="text-red-500">(*)</span></label>
                             <input type="number" name="captcha_answer" id="svc-captcha" required placeholder="Type answer here..." class="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-6 py-4 font-black text-white focus:border-red-500 focus:bg-slate-950 outline-none transition-all shadow-inner">
                         </div>
                         <div class="hidden md:block">
@@ -216,7 +228,7 @@ get_header(); ?>
                         Submit Service Request
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
-                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest mt-6">Secure Submission • Varner Equipment Internal Use Only</p>
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-widest mt-6">Secure Submission • Varner Equipment Internal Use Only</p>
                 </div>
             </form>
         </div>

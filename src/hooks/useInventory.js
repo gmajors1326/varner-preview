@@ -4,6 +4,48 @@ import { apiFetch, uploadFile } from '../utils/api';
 import { apiToLocal, apiToListItem } from '../utils/helpers';
 import { DEFAULT_EMPTY_UNIT, getCategoryLabel } from '../constants/inventoryConstants';
 
+function normalizeCategoryTree(tree) {
+  if (!tree || typeof tree !== 'object' || Array.isArray(tree)) {
+    return {};
+  }
+  
+  const normalized = {};
+  for (const [cat, subTree] of Object.entries(tree)) {
+    if (!subTree) {
+      normalized[cat] = {};
+      continue;
+    }
+    
+    const normalizedSub = {};
+    if (Array.isArray(subTree)) {
+      subTree.forEach(sub => {
+        if (sub && typeof sub === 'string') {
+          normalizedSub[sub] = [];
+        }
+      });
+    } else if (typeof subTree === 'object') {
+      for (const [sub, ssTree] of Object.entries(subTree)) {
+        if (!ssTree) {
+          normalizedSub[sub] = [];
+          continue;
+        }
+        
+        if (Array.isArray(ssTree)) {
+          normalizedSub[sub] = ssTree.filter(item => typeof item === 'string');
+        } else if (typeof ssTree === 'object') {
+          normalizedSub[sub] = Object.keys(ssTree);
+        } else {
+          normalizedSub[sub] = [];
+        }
+      }
+    }
+    
+    normalized[cat] = normalizedSub;
+  }
+  
+  return normalized;
+}
+
 export function useInventory(showToast, setActiveTab) {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,25 +83,50 @@ export function useInventory(showToast, setActiveTab) {
   const prevCategoryManagerOpen = useRef(false);
 
   const updateCategoryStateFromTree = (tree) => {
-    setCategoryTree(tree);
-    setCategories(Object.keys(tree).sort());
-    const subs = [...new Set(Object.values(tree).flatMap(o => Object.keys(o)))].sort();
-    setSubcategories(subs);
+    const normalized = normalizeCategoryTree(tree);
+    setCategoryTree(normalized);
+    
+    const cats = (normalized && typeof normalized === 'object' && !Array.isArray(normalized))
+      ? Object.keys(normalized).sort()
+      : [];
+    setCategories(cats);
+    
+    const subs = [];
+    if (normalized && typeof normalized === 'object' && !Array.isArray(normalized)) {
+      Object.values(normalized).forEach(subObj => {
+        if (subObj && typeof subObj === 'object' && !Array.isArray(subObj)) {
+          Object.keys(subObj).forEach(sub => {
+            subs.push(sub);
+          });
+        }
+      });
+    }
+    setSubcategories([...new Set(subs)].sort());
   };
 
   const handleCategorySelectChange = (val) => {
     setUnitData(prev => ({
       ...prev,
       category: val,
-      subcategory: '',
+      subcategory: [],
+      sub_subcategory: '',
     }));
   };
 
-  const handleSubcategorySelectChange = (val) => {
-    setUnitData(prev => ({
-      ...prev,
-      subcategory: val,
-    }));
+  const handleSubcategoryToggle = (sub) => {
+    console.log('[Varner OS] handleSubcategoryToggle triggered for sub:', sub);
+    setUnitData(prev => {
+      const current = Array.isArray(prev.subcategory) ? prev.subcategory : [];
+      const updated = current.includes(sub)
+        ? current.filter(x => x !== sub)
+        : [...current, sub];
+      console.log('[Varner OS] Updated subcategory array:', updated);
+      return {
+        ...prev,
+        subcategory: updated,
+        sub_subcategory: '',
+      };
+    });
   };
 
   const loadInventory = useCallback(async () => {
@@ -140,7 +207,7 @@ export function useInventory(showToast, setActiveTab) {
   const loadCategories = useCallback(() => {
     apiFetch('/categories').then(setCategories).catch(e => console.error('Varner OS: Failed to load categories:', e));
     apiFetch('/subcategories').then(setSubcategories).catch(e => console.error('Varner OS: Failed to load subcategories:', e));
-    apiFetch('/category-tree').then(setCategoryTree).catch(e => console.error('Varner OS: Failed to load category tree:', e));
+    apiFetch('/category-tree').then(t => setCategoryTree(normalizeCategoryTree(t))).catch(e => console.error('Varner OS: Failed to load category tree:', e));
   }, []);
 
   useEffect(() => {
@@ -206,7 +273,7 @@ export function useInventory(showToast, setActiveTab) {
   const handleDeleteBrand = (n) => handleListDelete('brands', brands, n, setBrands, 'make');
   const handleAddYear = () => handleListAdd('years', years, newYearInput, setYears, setNewYearInput);
   const handleDeleteYear = (n) => handleListDelete('years', years, n, setYears, 'year');
-  const handleAddCategoryNode = async (type, name, parentCat = null) => {
+  const handleAddCategoryNode = async (type, name, parentCat = null, parentSub = null) => {
     const term = name.trim();
     if (!term) return false;
 
@@ -214,6 +281,7 @@ export function useInventory(showToast, setActiveTab) {
     try {
       const body = { type, name: term };
       if (parentCat) body.parent_category = parentCat;
+      if (parentSub) body.parent_subcategory = parentSub;
 
       const response = await apiFetch('/category-tree/node', {
         method: 'POST',
@@ -235,19 +303,22 @@ export function useInventory(showToast, setActiveTab) {
     }
   };
 
-  const handleDeleteCategoryNode = async (type, name, parentCat = null, reassignTo = null) => {
+  const handleDeleteCategoryNode = async (type, name, parentCat = null, parentSub = null, reassignTo = null) => {
     const target = name.trim();
     if (!target) return { success: false };
 
     const msg = type === 'category'
       ? `Delete "${name}" and all its subcategories?`
-      : `Delete "${name}"?`;
+      : type === 'subcategory'
+        ? `Delete "${name}"?`
+        : `Delete sub-subcategory "${name}"?`;
     if (!window.confirm(msg)) return { success: false, cancelled: true };
 
     categoryMutating.current = true;
     try {
       const body = { type, name: target };
       if (parentCat) body.parent_category = parentCat;
+      if (parentSub) body.parent_subcategory = parentSub;
       if (reassignTo) body.reassign_to = reassignTo;
 
       const response = await apiFetch('/category-tree/node', {
@@ -260,32 +331,25 @@ export function useInventory(showToast, setActiveTab) {
       }
 
       if (type === 'category' && unitData.category === target) {
-        setUnitData(prev => ({ ...prev, category: '', subcategory: '' }));
-      } else if (type === 'subcategory' && unitData.subcategory === target) {
-        setUnitData(prev => ({ ...prev, subcategory: '' }));
+        setUnitData(prev => ({ ...prev, category: '', subcategory: [], sub_subcategory: '' }));
+      } else if (type === 'subcategory' && (Array.isArray(unitData.subcategory) ? unitData.subcategory.includes(target) : unitData.subcategory === target)) {
+        setUnitData(prev => ({
+          ...prev,
+          subcategory: Array.isArray(prev.subcategory) ? prev.subcategory.filter(x => x !== target) : [],
+          sub_subcategory: ''
+        }));
+      } else if (type === 'sub_subcategory' && unitData.sub_subcategory === target) {
+        setUnitData(prev => ({ ...prev, sub_subcategory: '' }));
       }
 
       showToast(`Deleted "${name}" successfully.`);
       return { success: true };
     } catch (e) {
-      if (e.code === 'has_units') {
+      if (e.code === 'has_units' || e.code === 'category_not_empty') {
         const count = e.data?.affected_posts || 'some';
-        if (type === 'category') {
-          showToast(`Cannot delete "${name}": ${count} unit(s) are assigned. Reassign units first.`, 'error');
-          return { success: false, code: 'has_units', affectedPosts: count };
-        }
-        if (!reassignTo) {
-          const siblings = parentCat && categoryTree[parentCat]
-            ? Object.keys(categoryTree[parentCat]).filter(s => s !== target)
-            : [];
-          return { success: false, code: 'has_units', affectedPosts: count, needsReassign: true, parentCat, siblings };
-        }
-        showToast('Failed to delete: ' + (e.message || 'unknown error'), 'error');
-        return { success: false, code: 'has_units' };
-      }
-      if (e.code === 'category_not_empty') {
-        showToast(`Cannot delete "${name}": remove subcategories first.`, 'error');
-        return { success: false, code: 'category_not_empty' };
+        const typeLabel = type === 'category' ? 'category' : type === 'subcategory' ? 'subcategory' : 'sub-subcategory';
+        showToast(`Cannot delete "${name}": ${count} unit(s) are assigned to this ${typeLabel}. Filter inventory by "${name}" to move them first.`, 'error');
+        return { success: false, code: e.code, affectedPosts: count };
       }
       showToast('Failed to delete category item: ' + e.message, 'error');
       return { success: false };
@@ -294,7 +358,7 @@ export function useInventory(showToast, setActiveTab) {
     }
   };
 
-  const handleRenameCategoryNode = async (type, oldName, newName, parentCat = null) => {
+  const handleRenameCategoryNode = async (type, oldName, newName, parentCat = null, parentSub = null) => {
     categoryMutating.current = true;
     try {
       const response = await apiFetch('/category-tree/rename', {
@@ -304,6 +368,7 @@ export function useInventory(showToast, setActiveTab) {
           old_name: oldName,
           new_name: newName,
           parent_category: parentCat,
+          parent_subcategory: parentSub,
         })
       });
       if (response && response.success) {
@@ -318,8 +383,16 @@ export function useInventory(showToast, setActiveTab) {
         // Update loaded unitData locally
         if (type === 'category' && unitData.category === oldName) {
           setUnitData(prev => ({ ...prev, category: newName }));
-        } else if (type === 'subcategory' && unitData.subcategory === oldName) {
-          setUnitData(prev => ({ ...prev, subcategory: newName }));
+        } else if (type === 'subcategory') {
+          setUnitData(prev => {
+            const current = Array.isArray(prev.subcategory) ? prev.subcategory : (prev.subcategory ? [prev.subcategory] : []);
+            if (current.includes(oldName)) {
+              return { ...prev, subcategory: current.map(x => x === oldName ? newName : x) };
+            }
+            return prev;
+          });
+        } else if (type === 'sub_subcategory' && unitData.sub_subcategory === oldName) {
+          setUnitData(prev => ({ ...prev, sub_subcategory: newName }));
         } else if ((type === 'make' || type === 'brand') && unitData.make === oldName) {
           setUnitData(prev => ({ ...prev, make: newName }));
         }
@@ -695,7 +768,7 @@ export function useInventory(showToast, setActiveTab) {
     activityList, isActivityLoading,
     isPublicMode,
     loadInventory, loadSessions, loadActivity,
-    handleCategorySelectChange, handleSubcategorySelectChange,
+    handleCategorySelectChange, handleSubcategoryToggle,
     handleAddBrand, handleDeleteBrand,
     handleAddYear, handleDeleteYear,
     handleAddCategoryNode, handleDeleteCategoryNode, handleRenameCategoryNode,

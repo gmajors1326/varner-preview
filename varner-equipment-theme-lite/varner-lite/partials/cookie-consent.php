@@ -9,7 +9,7 @@ $version     = function_exists( 'varner_cookie_get_effective_version' )
         <div class="flex flex-col gap-6">
             <div class="flex-1 min-w-0">
                 <p class="text-xs font-black uppercase tracking-widest text-white mb-2">Cookie Notice</p>
-                <p class="text-xs font-bold text-slate-400 leading-relaxed">
+                <p class="text-xs font-bold text-slate-500 leading-relaxed">
                     We use cookies to enhance your browsing experience, analyze site traffic, and serve relevant content.
                     By clicking "Accept All", you consent to our use of cookies.
                     See our <a href="<?php echo esc_url( $privacy_url ); ?>" class="text-red-500 hover:text-red-400 underline transition-colors">Privacy Policy</a> for details.

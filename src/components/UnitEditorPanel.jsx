@@ -27,7 +27,7 @@ export const UnitEditorPanel = ({
   subcategories,
   categoryTree,
   handleCategorySelectChange,
-  handleSubcategorySelectChange,
+  handleSubcategoryToggle,
   handleAddImages,
   handleRemoveImage,
   handleReorderImages,
@@ -42,16 +42,33 @@ export const UnitEditorPanel = ({
 }) => {
   const brandSelectRef = useRef(null);
   // Build category option lists
+  const safeKeys = (obj) => (obj && typeof obj === 'object' && !Array.isArray(obj) ? Object.keys(obj) : []);
   const allCategories = Array.from(new Set([
-    ...Object.keys(categoryTree || {}),
+    ...safeKeys(categoryTree),
     ...(unitData.category ? [unitData.category] : [])
   ])).sort();
 
-  const subTree = (categoryTree && categoryTree[unitData.category]) || {};
+  const rawSubTree = (categoryTree && typeof categoryTree === 'object' && !Array.isArray(categoryTree) && safeKeys(categoryTree).includes(unitData.category))
+    ? categoryTree[unitData.category]
+    : null;
+  const subTree = (rawSubTree && typeof rawSubTree === 'object' && !Array.isArray(rawSubTree)) ? rawSubTree : {};
+  const selectedSubs = Array.isArray(unitData.subcategory)
+    ? unitData.subcategory
+    : (unitData.subcategory ? [unitData.subcategory] : []);
+
   const allSubcategories = Array.from(new Set([
-    ...Object.keys(subTree),
-    ...(unitData.subcategory ? [unitData.subcategory] : [])
+    ...safeKeys(subTree),
+    ...selectedSubs
   ])).sort();
+
+  const allSubSubcategories = Array.from(new Set(
+    selectedSubs.flatMap(sub => {
+      const rawSubSub = (subTree && typeof subTree === 'object' && !Array.isArray(subTree) && safeKeys(subTree).includes(sub))
+        ? subTree[sub]
+        : null;
+      return Array.isArray(rawSubSub) ? rawSubSub : [];
+    })
+  )).sort();
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
@@ -77,7 +94,7 @@ export const UnitEditorPanel = ({
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
                                                 <option value="">-- Select Category --</option>
-                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                        {Array.isArray(allCategories) && allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
                     </div>
@@ -89,13 +106,44 @@ export const UnitEditorPanel = ({
 
                   {/* Subcategory */}
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Subcategory</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Subcategories (Select Multiple)</label>
+                    <div className="bg-slate-50 border-2 border-slate-100 rounded-xl p-3 shadow-sm overflow-y-auto" style={{ height: '140px', minHeight: '140px' }}>
+                      {allSubcategories.length === 0 ? (
+                        <p className="text-slate-400 text-xs italic p-2">Select a category first</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {allSubcategories.map(sub => {
+                            const isChecked = selectedSubs.includes(sub);
+                            return (
+                              <label key={sub} className="flex items-center gap-2.5 px-2 py-1.5 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors text-xs font-bold text-slate-800">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleSubcategoryToggle(sub)}
+                                  className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300 transition-all cursor-pointer"
+                                />
+                                <span className="truncate select-none">{sub}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <button type="button" onClick={() => setShowCategoryManager(true)}
+                      className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
+                      <Settings size={14} /> Manage Categories
+                    </button>
+                  </div>
+
+                  {/* Sub-Subcategory */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Sub-Subcategory</label>
                     <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
-                      <select value={unitData.subcategory || ''} onChange={e => handleSubcategorySelectChange(e.target.value)}
+                      <select value={unitData.sub_subcategory || ''} onChange={e => handleInputChange('sub_subcategory', e.target.value)}
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                                <option value="">-- Select Subcategory --</option>
-                        {allSubcategories.map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                        <option value="">-- Select Sub-Subcategory --</option>
+                        {Array.isArray(allSubSubcategories) && allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
                       </select>
                       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
                     </div>
@@ -124,7 +172,7 @@ export const UnitEditorPanel = ({
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
                                             <option value="">-- Select Brand --</option>
-                      {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                      {Array.isArray(brands) && brands.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
                   </div>
@@ -316,10 +364,9 @@ export const UnitEditorPanel = ({
               </div>
             </div>
 
-            {/* Description + Seller Info */}
+            {/* Description */}
             <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-50">
               <TextAreaField label="Public Description / Features" value={unitData.description} onChange={v => handleInputChange('description', v)} />
-              <TextAreaField label="Seller Information Template" value={unitData.sellerInfo} onChange={v => handleInputChange('sellerInfo', v)} />
             </div>
           </div>
         </div>

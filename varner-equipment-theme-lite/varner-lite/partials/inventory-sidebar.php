@@ -83,7 +83,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                 <form method="get" action="" id="varner-inventory-filter-form" class="space-y-8">
                     
                     <div>
-                        <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
                         <div class="space-y-2">
                             <input type="text" name="s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
                             <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
@@ -92,25 +92,25 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="filter-stock-number" class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Stock #</label>
+                            <label for="filter-stock-number" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">Stock #</label>
                             <input type="text" name="stock_number" id="filter-stock-number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
                         </div>
                         <div>
-                            <label for="filter-vin" class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">VIN / Serial</label>
+                            <label for="filter-vin" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">VIN / Serial</label>
                             <input type="text" name="vin" id="filter-vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
                         </div>
                     </div>
 
                     <fieldset>
-                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</legend>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Category</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_categories as $cat_key => $cat_obj ) : ?>
                                 <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
                                     <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" />
+                                        <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" onchange="this.form.submit()" />
                                         <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
                                     </span>
-                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($cat_obj->cnt); ?>)</span>
+                                    <span class="text-[9px] font-black text-slate-500">(<?php echo intval($cat_obj->cnt); ?>)</span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -121,15 +121,15 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                     if ( ! empty( $fallback_subcategories ) ) : 
                     ?>
                     <fieldset>
-                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Subcategory</legend>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Subcategory</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_subcategories as $subcat_key => $subcat_obj ) : ?>
                                 <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
                                     <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" />
+                                        <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" onchange="this.form.submit()" />
                                         <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $subcat_key ); ?></span>
                                     </span>
-                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($subcat_obj->cnt); ?>)</span>
+                                    <span class="text-[9px] font-black text-slate-500">(<?php echo intval($subcat_obj->cnt); ?>)</span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -137,15 +137,15 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                     <?php endif; ?>
 
                     <fieldset>
-                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</legend>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Manufacturer</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_makes as $make_key => $make_obj ) : ?>
                                 <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
                                     <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" />
+                                        <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" onchange="this.form.submit()" />
                                         <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
                                     </span>
-                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($make_obj->cnt); ?>)</span>
+                                    <span class="text-[9px] font-black text-slate-500">(<?php echo intval($make_obj->cnt); ?>)</span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -153,7 +153,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <?php if ( $facet_show_condition ) : ?>
                     <fieldset>
-                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</legend>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Condition</legend>
                         <div class="flex gap-2">
                             <?php 
                             $conditions_to_show = array('New', 'Used');
@@ -162,7 +162,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                                 $exists = isset($fallback_conditions[$cond_key]);
                             ?>
                                 <label class="flex-1 text-center cursor-pointer group">
-                                    <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" />
+                                    <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" onchange="this.form.submit()" />
                                     <div class="v-cond-btn py-2 rounded-xl border <?php echo $is_checked ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
                                         <?php echo esc_html( $cond_key ); ?>
                                     </div>
@@ -177,13 +177,13 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Price Range</h3>
                             <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_price_display"></span>
                         </div>
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
                                 <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                                <span class="text-slate-300">-</span>
+                                <span class="text-slate-500">-</span>
                                 <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
@@ -195,13 +195,13 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Year</h3>
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Year</h3>
                             <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_year_display"></span>
                         </div>
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
                                 <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                                <span class="text-slate-300">-</span>
+                                <span class="text-slate-500">-</span>
                                 <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
@@ -211,9 +211,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         </div>
                     </div>
 
-                    <div class="pt-4 border-t border-slate-100">
-                        <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg active:scale-95">Apply Filters</button>
-                    </div>
+
 
                 </form>
             </div>
@@ -271,6 +269,16 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
         }
       });
     });
+
+    // Auto-submit form when any checkbox is toggled (category, subcategory, make, condition)
+    var filterForm = document.getElementById('varner-inventory-filter-form');
+    if (filterForm) {
+      filterForm.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          filterForm.submit();
+        });
+      });
+    }
 
     // Mobile filter accordion toggle
     var filterToggle = document.getElementById('vne-mobile-filter-toggle');

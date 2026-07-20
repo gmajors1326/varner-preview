@@ -129,10 +129,26 @@ $finance_url    = add_query_arg( array(
         <!-- Brand / Manufacturer + Title + Category -->
         <div class="min-h-[85px]">
             <?php if ( $make ) : ?>
-            <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5"><?php echo esc_html( strtoupper( $make ) ); ?></div>
+            <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-0.5"><?php echo esc_html( strtoupper( $make ) ); ?></div>
             <?php endif; ?>
             <h3 class="font-black text-slate-900 text-[15px] leading-snug line-clamp-2"><?php echo esc_html( $title_text ); ?></h3>
             <div class="text-red-600 text-xs font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></div>
+            <?php
+            $card_subcat    = isset($subcategory) ? $subcategory : get_field('subcategory', $post_id);
+            $card_subsubcat = isset($sub_subcategory) ? $sub_subcategory : get_field('sub_subcategory', $post_id);
+            // Normalize subcategory (may be serialized array from migration)
+            if ( is_string( $card_subcat ) ) {
+                $maybe = @unserialize( $card_subcat );
+                if ( is_array( $maybe ) ) $card_subcat = implode( ', ', array_filter( $maybe ) );
+            } elseif ( is_array( $card_subcat ) ) {
+                $card_subcat = implode( ', ', array_filter( $card_subcat ) );
+            }
+            if ( $card_subcat ) : ?>
+            <div class="text-slate-700 text-[9px] font-bold uppercase tracking-widest mt-0.5"><?php echo esc_html( $card_subcat ); ?></div>
+            <?php endif; ?>
+            <?php if ( $card_subsubcat ) : ?>
+            <div class="text-slate-600 text-[9px] font-bold uppercase tracking-widest mt-0.5"><?php echo esc_html( $card_subsubcat ); ?></div>
+            <?php endif; ?>
         </div>
 
         <!-- Price -->
@@ -147,7 +163,7 @@ $finance_url    = add_query_arg( array(
             <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
             <div class="flex items-center gap-1 text-[11px] text-slate-500 font-medium mt-1">
                 Payments as low as USD $<?php echo number_format( $monthly_payment, 2 ); ?>*
-                <a href="<?php echo esc_url( $finance_url ); ?>" class="text-red-500 hover:text-red-600 shrink-0">
+                <a href="<?php echo esc_url( $finance_url ); ?>" class="text-red-500 hover:text-red-600 shrink-0 p-2 -m-2" aria-label="Apply for financing">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
             </div>
@@ -172,20 +188,20 @@ $finance_url    = add_query_arg( array(
         <!-- Specs -->
         <div class="border-t border-slate-100 pt-4 space-y-2.5 text-xs text-slate-700">
             <div class="flex gap-2 min-h-[1rem]">
-                <span class="text-slate-400 font-bold w-24 shrink-0">Stock Number:</span>
+                <span class="text-slate-500 font-bold w-24 shrink-0">Stock Number:</span>
                 <span class="font-bold"><?php echo esc_html( $stock_number ?: 'N/A' ); ?></span>
             </div>
             <div class="flex gap-2 min-h-[1rem]">
-                <span class="text-slate-400 font-bold w-24 shrink-0">Length:</span>
+                <span class="text-slate-500 font-bold w-24 shrink-0">Length:</span>
                 <span class="font-bold"><?php echo esc_html( $length ?: 'Standard' ); ?></span>
             </div>
 
             <!-- Expandable location -->
             <details class="group">
                 <summary class="flex items-center gap-2 cursor-pointer list-none select-none">
-                    <span class="text-slate-400 font-bold w-24 shrink-0">Location:</span>
+                    <span class="text-slate-500 font-bold w-24 shrink-0">Location:</span>
                     <span class="font-bold">Delta, Colorado</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 group-open:rotate-180 transition-transform ml-auto shrink-0"><polyline points="6 9 12 15 18 9"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-open:rotate-180 transition-transform ml-auto shrink-0"><polyline points="6 9 12 15 18 9"/></svg>
                 </summary>
                 <div class="mt-2 pl-1 text-slate-500 font-medium leading-relaxed">
                     Varner Equipment<br>
@@ -198,17 +214,17 @@ $finance_url    = add_query_arg( array(
         <!-- Contact buttons -->
         <div class="border-t border-slate-100 pt-4 flex gap-2">
             <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>"
-               class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">
+               class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3.5 rounded-lg hover:bg-slate-50 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 E-mail Us
             </a>
             <a href="tel:9708740612"
-               class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3 rounded-lg hover:bg-slate-50 transition-all">
+               class="flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-wide border border-slate-200 text-slate-600 py-3.5 rounded-lg hover:bg-slate-50 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.72a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 (970) 874-0612
             </a>
         </div>
-        <div class="text-center text-[9px] text-slate-400 font-bold tracking-wide">Seller: Varner Equipment</div>
+        <div class="text-center text-[9px] text-slate-500 font-bold tracking-wide">Seller: Varner Equipment</div>
 
     </div><!-- /.card body -->
     <!-- Accent stripe -->

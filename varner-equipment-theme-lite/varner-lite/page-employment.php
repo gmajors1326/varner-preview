@@ -29,7 +29,7 @@ get_header();
 
                     <?php if ( empty( $jobs ) ) : ?>
                     <div class="bg-white p-8 rounded-3xl shadow-lg border-2 border-dashed border-slate-200 text-center py-12">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-500 mb-4">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
@@ -69,7 +69,7 @@ get_header();
                 <!-- Application Form -->
                 <div id="apply" class="bg-slate-950 p-8 md:p-10 rounded-[3rem] text-white">
                     <h3 class="text-3xl font-black tracking-tighter uppercase mb-2">Submit Application</h3>
-                    <p class="text-sm text-slate-400 font-bold mb-8">Fill out the form below or email your resume to <?php echo esc_html( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?></p>
+                    <p class="text-sm text-slate-500 font-bold mb-8">Fill out the form below or email your resume to <?php echo esc_html( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?></p>
 
                     <?php if ( $submitted ) : ?>
                     <div class="bg-green-600 text-white rounded-2xl px-6 py-4 mb-6 font-bold text-sm">
@@ -83,28 +83,28 @@ get_header();
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="emp-first-name" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">First Name</label>
+                                <label for="emp-first-name" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">First Name</label>
                                 <input type="text" name="first_name" id="emp-first-name" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                             <div>
-                                <label for="emp-last-name" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Last Name</label>
+                                <label for="emp-last-name" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Last Name</label>
                                 <input type="text" name="last_name" id="emp-last-name" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="emp-email" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Email Address</label>
+                                <label for="emp-email" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Email Address</label>
                                 <input type="email" name="email" id="emp-email" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                             <div>
-                                <label for="emp-phone" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Phone Number</label>
+                                <label for="emp-phone" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Phone Number</label>
                                 <input type="tel" name="phone" id="emp-phone" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white" required>
                             </div>
                         </div>
 
                         <div>
-                            <label for="emp-position" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Position Applied For</label>
+                            <label for="emp-position" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Position Applied For</label>
                             <select name="position" id="emp-position" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white">
                                 <?php foreach ( $jobs as $job ) : ?>
                                 <option value="<?php echo esc_attr( $job['job_title'] ); ?>"><?php echo esc_html( $job['job_title'] ); ?></option>
@@ -114,14 +114,14 @@ get_header();
                         </div>
 
                         <div>
-                            <label for="emp-cover-letter" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Brief Cover Letter / Experience</label>
+                            <label for="emp-cover-letter" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Brief Cover Letter / Experience</label>
                             <textarea name="cover_letter" id="emp-cover-letter" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white resize-none" required></textarea>
                         </div>
 
                         <div>
-                            <label for="emp-resume" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Upload Resume</label>
+                            <label for="emp-resume" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Upload Resume</label>
                             <input type="file" name="resume" accept=".pdf,.doc,.docx"
-                                class="w-full text-sm text-slate-400
+                                class="w-full text-sm text-slate-500
                                     file:mr-4 file:py-2 file:px-5
                                     file:rounded-lg file:border-0
                                     file:text-xs file:font-black file:uppercase file:tracking-widest
@@ -140,7 +140,7 @@ get_header();
                                 <input type="hidden" name="captcha_hash" value="<?php echo esc_attr($captcha['hash']); ?>">
                             </div>
                             <div class="flex-1 w-full">
-                                <label for="emp-captcha" class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">What is the sum? <span class="text-red-500">*</span></label>
+                                <label for="emp-captcha" class="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2">What is the sum? <span class="text-red-500">*</span></label>
                                 <input type="number" name="captcha_answer" id="emp-captcha" required placeholder="Type answer here..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-red-600 text-white">
                             </div>
                         </div>

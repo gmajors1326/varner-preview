@@ -350,9 +350,6 @@ function varner_seed_category_tree(): void {
 
     foreach ((array) $posts as $post) {
         $cat = trim($post['category'] ?? '');
-        $sub = trim($post['subcategory'] ?? '');
-        $ss  = trim($post['sub_subcategory'] ?? '');
-
         if (!$cat) continue;
 
         // Ensure category exists in tree
@@ -360,13 +357,29 @@ function varner_seed_category_tree(): void {
             $tree[$cat] = array();
         }
 
-        if ($sub) {
-            // Ensure subcategory exists under category
+        // Subcategory — raw meta_value may be a serialized array after migration
+        $sub_raw = $post['subcategory'] ?? '';
+        $sub_unser = maybe_unserialize($sub_raw);
+        $sub_names = is_array($sub_unser)
+            ? array_filter($sub_unser, 'strlen')
+            : (is_string($sub_unser) && $sub_unser !== '' ? array($sub_unser) : array());
+
+        // Sub-subcategory — may also be serialized in future
+        $ss_raw = $post['sub_subcategory'] ?? '';
+        $ss_unser = maybe_unserialize($ss_raw);
+        $ss_names = is_array($ss_unser)
+            ? array_filter($ss_unser, 'strlen')
+            : (is_string($ss_unser) && $ss_unser !== '' ? array($ss_unser) : array());
+
+        foreach ($sub_names as $sub) {
+            $sub = trim($sub);
+            if (!$sub) continue;
             if (!isset($tree[$cat][$sub])) {
                 $tree[$cat][$sub] = array();
             }
-
-            if ($ss) {
+            foreach ($ss_names as $ss) {
+                $ss = trim($ss);
+                if (!$ss) continue;
                 if (!in_array($ss, $tree[$cat][$sub], true)) {
                     $tree[$cat][$sub][] = $ss;
                 }
@@ -378,54 +391,65 @@ function varner_seed_category_tree(): void {
     $flat_subs = get_option('varner_subcategories', array());
     if (is_array($flat_subs)) {
         foreach ($flat_subs as $sub) {
-            $sub = trim($sub);
-            if (!$sub) continue;
-            // Check if already in the tree under any category
-            $found = false;
-            foreach ($tree as $c => $subs) {
-                if (isset($subs[$sub])) {
-                    $found = true;
-                    break;
+            // Flat options may contain serialized strings from a previous poisoned tree
+            $sub_unser = maybe_unserialize($sub);
+            if (is_array($sub_unser)) {
+                foreach ($sub_unser as $s) {
+                    $s = is_string($s) ? trim($s) : '';
+                    if ($s === '') continue;
+                    _varner_seed_orphan_sub($tree, $s);
                 }
+                continue;
             }
-            if (!$found) {
-                // Orphan fallback: put under 'Uncategorized'
-                if (!isset($tree['Uncategorized'])) {
-                    $tree['Uncategorized'] = array();
-                }
-                $tree['Uncategorized'][$sub] = array();
-            }
+            $sub = is_string($sub_unser) ? trim($sub_unser) : '';
+            if ($sub === '') continue;
+            _varner_seed_orphan_sub($tree, $sub);
         }
     }
 
     $flat_ss = get_option('varner_sub_subcategories', array());
     if (is_array($flat_ss)) {
         foreach ($flat_ss as $ss) {
-            $ss = trim($ss);
-            if (!$ss) continue;
-            // Check if already in the tree
-            $found = false;
-            foreach ($tree as $c => $subs) {
-                foreach ($subs as $s => $sub_subs) {
-                    if (in_array($ss, $sub_subs, true)) {
-                        $found = true;
-                        break 2;
-                    }
+            $ss_unser = maybe_unserialize($ss);
+            if (is_array($ss_unser)) {
+                foreach ($ss_unser as $s) {
+                    $s = is_string($s) ? trim($s) : '';
+                    if ($s === '') continue;
+                    _varner_seed_orphan_ss($tree, $s);
                 }
+                continue;
             }
-            if (!$found) {
-                // Orphan fallback: put under 'Uncategorized' -> 'General'
-                if (!isset($tree['Uncategorized'])) {
-                    $tree['Uncategorized'] = array();
-                }
-                if (!isset($tree['Uncategorized']['General'])) {
-                    $tree['Uncategorized']['General'] = array();
-                }
-                $tree['Uncategorized']['General'][] = $ss;
-            }
+            $ss = is_string($ss_unser) ? trim($ss_unser) : '';
+            if ($ss === '') continue;
+            _varner_seed_orphan_ss($tree, $ss);
         }
     }
 
     update_option('varner_category_tree', $tree);
     varner_derive_flat_options_from_tree();
+}
+
+function _varner_seed_orphan_sub(array &$tree, string $sub): void {
+    foreach ($tree as $c => $subs) {
+        if (isset($subs[$sub])) return;
+    }
+    if (!isset($tree['Uncategorized'])) {
+        $tree['Uncategorized'] = array();
+    }
+    $tree['Uncategorized'][$sub] = array();
+}
+
+function _varner_seed_orphan_ss(array &$tree, string $ss): void {
+    foreach ($tree as $c => $subs) {
+        foreach ($subs as $s => $sub_subs) {
+            if (in_array($ss, $sub_subs, true)) return;
+        }
+    }
+    if (!isset($tree['Uncategorized'])) {
+        $tree['Uncategorized'] = array();
+    }
+    if (!isset($tree['Uncategorized']['General'])) {
+        $tree['Uncategorized']['General'] = array();
+    }
+    $tree['Uncategorized']['General'][] = $ss;
 }

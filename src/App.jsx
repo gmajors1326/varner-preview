@@ -148,11 +148,12 @@ const App = () => {
       {inv.showCategoryManager && (
         <CategoryTreePanel
           categoryTree={inv.categoryTree}
-          onAddCategory={inv.handleAddCategoryNode}
-          onAddSubcategory={inv.handleAddCategoryNode}
+          onAdd={inv.handleAddCategoryNode}
           onRename={inv.handleRenameCategoryNode}
           onDelete={inv.handleDeleteCategoryNode}
-          onClose={() => inv.setShowCategoryManager(false)} />
+          onClose={() => inv.setShowCategoryManager(false)}
+          initialCategory={inv.unitData.category}
+          initialSubcategory={inv.unitData.subcategory} />
       )}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -242,6 +243,7 @@ const App = () => {
                   onClone={(wpId) => inv.handleFullEdit(wpId).then(inv.handleClone)}
                   onToggle={inv.handleToggleBoolean}
                   onToggleDraft={inv.handleToggleDraft}
+                  categoryTree={inv.categoryTree}
                 />
               </ErrorBoundary>
             )}
@@ -263,7 +265,7 @@ const App = () => {
                   subcategories={inv.subcategories}
                   categoryTree={inv.categoryTree}
                   handleCategorySelectChange={inv.handleCategorySelectChange}
-                  handleSubcategorySelectChange={inv.handleSubcategorySelectChange}
+                  handleSubcategoryToggle={inv.handleSubcategoryToggle}
                   handleAddImages={inv.handleAddImages}
                   handleRemoveImage={inv.handleRemoveImage}
                   handleReorderImages={inv.handleReorderImages}

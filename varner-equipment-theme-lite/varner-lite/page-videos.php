@@ -8,7 +8,7 @@ get_header();
             <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em]">Varner Equipment</div>
             <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase"><?php echo esc_html( get_the_title() ?: 'Product Videos' ); ?></h1>
             <?php if (get_the_content()): ?>
-                <div class="text-slate-300 max-w-2xl font-bold">
+                <div class="text-slate-500 max-w-2xl font-bold">
                     <?php the_content(); ?>
                 </div>
             <?php endif; ?>
@@ -82,7 +82,7 @@ get_header();
                                                     ),
                                                 ));
                                             } else {
-                                                echo '<div class="absolute inset-0 flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Video Unavailable</div>';
+                                                echo '<div class="absolute inset-0 flex items-center justify-center text-slate-500 font-bold uppercase text-xs tracking-widest">Video Unavailable</div>';
                                             }
                                             ?>
                                         </div>
@@ -93,7 +93,7 @@ get_header();
                                 <?php endwhile; wp_reset_postdata(); ?>
                             </div>
                         <?php else: ?>
-                            <p class="text-slate-400 font-bold uppercase text-xs tracking-widest">No videos in this category yet.</p>
+                            <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">No videos in this category yet.</p>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -101,7 +101,7 @@ get_header();
             <?php else: ?>
                 <div class="bg-white p-12 rounded-[2rem] shadow-xl border-4 border-slate-100 text-center">
                     <p class="text-slate-500 font-bold mb-4">No video categories found.</p>
-                    <p class="text-slate-400 text-sm">Please add categories and videos in the WordPress dashboard.</p>
+                    <p class="text-slate-500 text-sm">Please add categories and videos in the WordPress dashboard.</p>
                 </div>
             <?php endif; ?>
 

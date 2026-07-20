@@ -92,14 +92,14 @@
         </div>
 
         <!-- QUICK SEARCH UTILITY (Bottom of Hero) -->
-        <div class="relative lg:absolute bottom-0 lg:bottom-12 left-0 right-0 z-30 reveal-on-scroll delay-1000 mt-8 lg:mt-0 w-full">
+        <div class="relative lg:absolute bottom-0 lg:bottom-12 left-0 right-0 z-50 reveal-on-scroll delay-1000 mt-8 lg:mt-0 w-full">
             <div class="max-w-7xl mx-auto px-4 py-6 lg:py-0">
                 <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/30 flex flex-col lg:flex-row gap-3 items-center">
                     <div class="flex-1 w-full">
-                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-12 px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400">
+                        <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-12 px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400" aria-label="Search inventory">
                     </div>
                     <div class="w-full lg:w-48">
-                        <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-12 px-3 bg-slate-50 rounded-lg font-black uppercase text-xs tracking-widest border border-transparent outline-none cursor-pointer">
+                        <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-12 px-3 bg-slate-50 rounded-lg font-black uppercase text-xs tracking-widest border border-transparent outline-none cursor-pointer" aria-label="Filter by equipment type">
                             <option value="" disabled selected hidden>Select Type</option>
                             <option value="all">All Types</option>
                             <option value="__new__">New</option>
@@ -238,7 +238,7 @@
     </section>
 
     <!-- SUPPORT HUB BAR (Under Hero) -->
-    <section id="section-support" class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll">
+    <section id="section-support" class="py-12 bg-white relative z-20 overflow-hidden reveal-on-scroll-below">
         <div class="max-w-7xl mx-auto px-4">
             <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-2 grid grid-cols-1 lg:grid-cols-3 gap-2">
                 <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'support_hub_service_link', '/services/service-request' ) ) ); ?>" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
@@ -247,7 +247,7 @@
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1">Request Service</div>
-                        <div class="text-xs font-black uppercase tracking-widest text-slate-400">Certified Techs</div>
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-500">Certified Techs</div>
                     </div>
                 </a>
 
@@ -257,7 +257,7 @@
                     </div>
                     <div>
                         <div class="font-black uppercase tracking-tighter text-lg leading-none mb-1">Order Parts</div>
-                        <div class="text-xs font-black uppercase tracking-widest text-slate-400">OEM Components</div>
+                        <div class="text-xs font-black uppercase tracking-widest text-slate-500">OEM Components</div>
                     </div>
                 </a>
 
@@ -275,7 +275,7 @@
     </section>
 
     <!-- CATEGORY GRID -->
-    <section id="section-categories" class="pt-32 pb-24 bg-slate-100 reveal-on-scroll">
+    <section id="section-categories" class="pt-32 pb-24 bg-slate-100 reveal-on-scroll-below">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
@@ -415,7 +415,7 @@
                     <?php
                     $yt_video_id = varner_get_theme_setting( 'youtube_video_id', 'goF_3TspZ6k' );
                     $yt_custom_thumb = varner_get_theme_setting( 'youtube_custom_thumbnail', '' );
-                    $yt_thumb_url = $yt_custom_thumb ? $yt_custom_thumb : "https://img.youtube.com/vi/{$yt_video_id}/maxresdefault.jpg";
+                    $yt_thumb_url = $yt_custom_thumb ? $yt_custom_thumb : "https://i.ytimg.com/vi/{$yt_video_id}/maxresdefault.jpg";
                     ?>
                     <div id="yt-player-container" 
                          class="aspect-video bg-slate-900 rounded-2xl md:rounded-[2rem] overflow-hidden border border-slate-800 md:border-2 shadow-2xl relative group cursor-pointer w-full"
@@ -452,7 +452,13 @@
                         <?php echo wp_kses_post( varner_get_theme_setting( 'cta_text' ) ); ?>
                     </p>
                     <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'cta_button_link', '/dealer-info/about-us' ) ) ); ?>" class="inline-block bg-slate-900 text-white px-10 py-5 sm:px-12 sm:py-6 rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-xl hover:bg-red-600 hover:text-white transition-all w-full sm:w-auto">
-                        <?php echo esc_html( varner_get_theme_setting( 'cta_button_text', 'Learn more' ) ); ?>
+                        <?php 
+                        $cta_btn_text = varner_get_theme_setting( 'cta_button_text', 'Learn More About Varner Equipment' );
+                        if ( strtolower( trim( $cta_btn_text ) ) === 'learn more' ) {
+                            $cta_btn_text = 'Learn More About Varner Equipment';
+                        }
+                        echo esc_html( $cta_btn_text ); 
+                        ?>
                     </a>
                 </div>
             </div>
