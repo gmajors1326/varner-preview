@@ -68,7 +68,7 @@ function varner_generate_xml_sitemap() {
 	$equipment_query = new WP_Query( array(
 		'post_type'      => array( 'equipment', 'varner_equipment' ),
 		'post_status'    => 'publish',
-		'posts_per_page' => 500,
+		'posts_per_page' => -1,
 		'fields'         => 'ids',
 	) );
 
