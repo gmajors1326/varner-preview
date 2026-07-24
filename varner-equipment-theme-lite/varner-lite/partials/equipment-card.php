@@ -66,6 +66,8 @@ $finance_url    = add_query_arg( array(
                style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
                 <img src="<?php echo esc_url( $img_url ); ?>"
                      alt="<?php echo esc_attr( $alt_desc ); ?>"
+                     width="400"
+                     height="275"
                      loading="lazy"
                      class="w-full h-full object-cover">
             </a>

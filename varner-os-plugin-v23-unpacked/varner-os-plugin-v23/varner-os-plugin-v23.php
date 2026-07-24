@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.328 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.328
+ * Description: Version 1.23.340 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.340
  * Author: hwy559.com
  */
 

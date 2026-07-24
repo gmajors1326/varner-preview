@@ -219,12 +219,11 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
             
             <div class="flex-1 text-center md:text-left space-y-6">
                 <div>
-                    <h2 class="text-red-500 font-black uppercase tracking-[0.3em] text-sm mb-2">Authorized Dealer</h2>
+                    <h2 class="text-red-500 font-black uppercase tracking-[0.3em] text-sm mb-2">Authorized <?php echo esc_html( $brand_name ); ?> Dealer in Colorado</h2>
                 </div>
                 
-                <p class="text-slate-500 text-xl font-medium max-w-2xl leading-relaxed">
-                    Explore our current selection of <span class="text-white font-bold"><?php echo esc_html( $brand_name ); ?></span> equipment. 
-                    From new arrivals to certified pre-owned units, find the perfect machine for your operation.
+                <p class="text-slate-400 text-lg font-bold max-w-2xl leading-relaxed">
+                    Varner Equipment Delta CO is your authorized <span class="text-white font-bold"><?php echo esc_html( $brand_name ); ?></span> dealer serving Delta, Montrose, Olathe, Grand Junction, and Colorado's Western Slope. Explore our current inventory of new and certified pre-owned <?php echo esc_html( $brand_name ); ?> machinery.
                 </p>
 
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4">

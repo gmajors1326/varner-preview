@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once get_template_directory() . '/inc/form-handlers.php';
+require_once get_template_directory() . '/partials/schema-jsonld.php';
 
 /**
  * Fix WordPress Admin Bar ARIA Roles (Accessibility Tree Fix)
@@ -90,7 +91,7 @@ add_action( 'wp_enqueue_scripts', 'varner_theme_scripts' );
  * Theme Setup
  */
 function varner_theme_setup() {
-	add_theme_support( 'title-tag' );
+	remove_theme_support( 'title-tag' );
 	add_theme_support( 'post-thumbnails' );
 	
 	// Register navigation menus if needed later
@@ -320,56 +321,73 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
 function varner_get_segment_seo($slug) {
     $segments = array(
         'all-units' => array(
-            'title' => 'All Inventory',
+            'title' => 'All Equipment for Sale | Tractors & Trailers | Delta, CO',
             'h1'    => 'Complete Collection',
             'sub'   => 'Browse our full inventory of new and used tractors, trailers, and farm attachments.',
-            'blurb' => 'Varner Equipment is Colorado\'s Western Slope premier agricultural and commercial machinery dealership. Browse our complete live inventory of premium farm tractors, utility trailers, and implements available today in Delta.',
+            'blurb' => 'Browse Varner Equipment\'s full inventory of new and used tractors, trailers, hay tools, and attachments for sale in Delta, CO.',
             'filter' => array()
         ),
         'new'       => array(
-            'title' => 'New Inventory',
+            'title' => 'New Tractors & Trailers for Sale | Varner Equipment, CO',
             'h1'    => 'New Equipment',
             'sub'   => 'Explore the latest agricultural machinery and commercial trailers from top brands.',
-            'blurb' => 'We carry brand-new Mahindra tractors, Deutz-Fahr tractors, Big Tex trailers, CM Truck Beds, and more. Find the latest heavy-duty machinery for your commercial or farm operation.',
+            'blurb' => 'Shop new Mahindra and TYM tractors, Big Tex and CM trailers, and hay equipment at Varner Equipment in Delta, CO. Financing available.',
             'filter' => array('condition' => array('New'))
         ),
         'used'      => array(
-            'title' => 'Used Inventory',
+            'title' => 'Used Tractors & Trailers for Sale | Delta, CO',
             'h1'    => 'Proven Performance',
             'sub'   => 'High-quality, reliable, and pre-owned tractors, trailers, and machinery.',
-            'blurb' => 'Browse our fully inspected, certified pre-owned farm equipment, tractors, and utility trailers. Get proven heavy-duty performance at a great value on the Western Slope.',
+            'blurb' => 'Browse quality used and pre-owned tractors, trailers, and farm equipment, inspected and ready to work, at Varner Equipment in Delta, CO.',
             'filter' => array('condition' => array('Used'))
         ),
         'tractors'  => array(
-            'title' => 'Tractors',
+            'title' => 'Tractors for Sale | Mahindra & TYM | Delta, CO',
             'h1'    => 'Heavy-Duty Tractors',
             'sub'   => 'Find the perfect tractor for your acreage, farm, or commercial job site.',
-            'blurb' => 'From Mahindra compact tractors to high-horsepower Deutz-Fahr agricultural workhorses, we supply the backbone of Colorado\'s ranching operations. Explore our live tractor inventory with local parts and service support.',
+            'blurb' => 'Shop new and used tractors from Mahindra, TYM, and Deutz Fahr at Varner Equipment in Delta, CO. Compact, utility, and high-horsepower models.',
             'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))
         ),
         'trailers'  => array(
-            'title' => 'Trailers',
+            'title' => 'Trailers for Sale | Big Tex & CM | Delta, CO',
             'h1'    => 'Commercial Trailers',
             'sub'   => 'Commercial dump trailers, flatbeds, utility trailers, and truck beds.',
-            'blurb' => 'Haul with confidence. We stock premium trailers from Big Tex, Titan, and Triton, including heavy-duty dump trailers, goosenecks, equipment haulers, and utility models in Delta, Colorado.',
+            'blurb' => 'Shop utility, dump, and flatbed trailers from Big Tex, CM, and Triton at Varner Equipment in Delta, CO. New and used for work and hauling.',
+            'keywords' => 'trailer dealer western Colorado, commercial trailers Western Slope, Big Tex trailers Delta Colorado, dump trailers Montrose CO, utility trailers for sale Delta CO, trailer dealer near Grand Junction',
             'filter' => array('category' => array('Commercial Trailers', 'Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))
         ),
+        'utility-trailers' => array(
+            'title' => 'Utility Trailers for Sale | Western Colorado | Delta, CO',
+            'h1'    => 'Utility Trailers For Sale in Western Colorado',
+            'sub'   => 'New & pre-owned single-axle, tandem-axle, and landscape utility trailers in Delta, Montrose & Western CO.',
+            'blurb' => 'Shop utility trailers from Big Tex and CM at Varner Equipment in Delta, CO. Durable, road-ready trailers for hauling across Western Colorado.',
+            'keywords' => 'utility trailers for sale western colorado, utility trailers Delta CO, utility trailers Montrose CO, Big Tex utility trailers Colorado, utility trailers Grand Junction, landscape trailers Western Slope, single axle utility trailers for sale Colorado',
+            'filter' => array('category' => array('Utility Trailers', 'Trailers', 'Commercial Trailers'))
+        ),
+        'dump-trailers' => array(
+            'title' => 'Dump Trailers for Sale | Big Tex | Delta & Montrose, CO',
+            'h1'    => 'Dump Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-Duty Hydraulic Dump Trailers in Delta, Montrose, and Grand Junction CO.',
+            'blurb' => 'Shop heavy-duty dump trailers from Big Tex and CM at Varner Equipment in Delta, CO. Built for ranch, farm, and construction hauling.',
+            'keywords' => 'dump trailers Montrose CO, dump trailers for sale western colorado, Big Tex dump trailers Colorado, heavy duty dump trailers Delta CO',
+            'filter' => array('category' => array('Dump Trailers', 'Trailers', 'Commercial Trailers'))
+        ),
         'attachments' => array(
-            'title' => 'Attachments',
+            'title' => 'Tractor Attachments & Implements | Varner Equipment, CO',
             'h1'    => 'Attachments & Implements',
             'sub'   => 'Loaders, mowers, cutters, and implements to maximize utility.',
-            'blurb' => 'Get more done. Equip your tractor with premium attachments, loaders, backhoes, rotary cutters, and mowers. Maximize the versatility of your equipment for ranching, landscaping, or farming.',
+            'blurb' => 'Find loaders, mowers, blades, and work-ready attachments for your tractor at Varner Equipment in Delta, CO. New and used implements in stock.',
             'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))
         ),
         'hay-equipment' => array(
-            'title' => 'Hay Equipment',
+            'title' => 'Hay Equipment for Sale | Rakes & Mowers | Delta, CO',
             'h1'    => 'Hay & Harvest',
             'sub'   => 'Precision balers, rakes, tedders, and hay tools from Krone and McHale.',
-            'blurb' => 'From precision round balers to heavy-duty disc mowers and rakes, we carry industry-leading Krone and McHale hay tools. Achieve optimal forage quality and harvesting efficiency.',
+            'blurb' => 'Shop hay equipment - rakes, mowers, and Krone and MacDon hay tools - at Varner Equipment in Delta, CO. Built for small acreage to full operations.',
             'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))
         ),
         'misc'      => array(
-            'title' => 'Miscellaneous',
+            'title' => 'Miscellaneous Equipment | Varner Equipment, Delta CO',
             'h1'    => 'Misc. Equipment',
             'sub'   => 'Explore miscellaneous tools, accessories, and farm equipment.',
             'blurb' => 'Find unique agricultural tools, commercial power equipment, and utility vehicles. Quality equipment and accessories to support your homestead, ranch, or commercial operation.',
@@ -379,25 +397,59 @@ function varner_get_segment_seo($slug) {
     return $segments[$slug] ?? null;
 }
 
+require_once get_template_directory() . '/inc/sitemap.php';
+require_once get_template_directory() . '/inc/brands-data.php';
+
 add_filter( 'query_vars', function( $vars ) { 
     $vars[] = 'inventory_segment'; 
     $vars[] = 'brand_name';
+    $vars[] = 'varner_sitemap';
+    $vars[] = 'brands_hub';
     return $vars; 
 });
 
 add_action( 'init', function() {
-    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
+    add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
+    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
+    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
+    add_rewrite_rule('^brands/?$', 'index.php?brands_hub=1', 'top');
     add_rewrite_rule('^brands/([^/]+)/?$', 'index.php?brand_name=$matches[1]', 'top');
 });
 
+add_action( 'init', function () {
+    $flag = get_option( 'varner_brands_rewrite_v' );
+    if ( $flag !== '2' ) {
+        flush_rewrite_rules( false );
+        update_option( 'varner_brands_rewrite_v', '2' );
+    }
+}, 99 );
+
+add_action( 'template_redirect', function() {
+    if ( get_query_var('varner_sitemap') === 'inventory' ) {
+        varner_generate_xml_sitemap();
+    }
+});
+
 add_filter( 'template_include', function( $template ) {
+    if ( get_query_var( 'brands_hub' ) ) {
+        $t = locate_template( 'page-brands.php' );
+        if ( $t ) return $t;
+    }
+    $brand_slug = get_query_var( 'brand_name' );
+    if ( $brand_slug && ! get_query_var( 'inventory_segment' ) ) {
+        if ( varner_get_brand( sanitize_title( $brand_slug ) ) ) {
+            $t = locate_template( 'single-brand.php' );
+            if ( $t ) return $t;
+        } else {
+            global $wp_query;
+            $wp_query->set_404();
+            status_header( 404 );
+            return locate_template( '404.php' ) ?: $template;
+        }
+    }
     if ( get_query_var('inventory_segment') ) {
         $listing_template = locate_template('page-equipment-listing.php');
         if ( $listing_template ) return $listing_template;
-    }
-    if ( get_query_var('brand_name') ) {
-        $brand_template = locate_template('page-brand.php');
-        if ( $brand_template ) return $brand_template;
     }
     if ( is_page() ) {
         $about_template = locate_template( 'page-about-us.php' );

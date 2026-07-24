@@ -1,190 +1,85 @@
 <?php
 /**
- * Template Name: Brands
- * Description: Shows all brands with a featured unit card per brand.
+ * Silent Brands Hub — /brands/
+ * Location: wp-content/themes/varner-equipment-theme-v23-lite-4/page-brands.php
+ * Hidden from nav; reachable via footer link + sitemap; indexable.
  */
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 get_header();
-
-global $wpdb;
-
-$hidden_sql = '';
-if ( function_exists( 'varner_get_hidden_post_ids' ) ) {
-    $hidden_ids = varner_get_hidden_post_ids();
-    if ( ! empty( $hidden_ids ) ) {
-        $hidden_sql = 'AND p.ID NOT IN (' . implode( ',', $hidden_ids ) . ')';
-    }
-}
-
-$brands = $wpdb->get_results(
-    $wpdb->prepare(
-        "SELECT pm.meta_value AS make, COUNT(*) as qty
-         FROM {$wpdb->postmeta} pm
-         JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-         WHERE pm.meta_key = %s AND pm.meta_value != ''
-           AND p.post_type = %s AND p.post_status = 'publish'
-           $hidden_sql
-         GROUP BY pm.meta_value
-         ORDER BY pm.meta_value ASC",
-        'make',
-        'equipment'
-    )
-);
-
-function varner_resolve_brand_logo( $brand_name ) {
-    $slug      = sanitize_title( $brand_name );
-    $flat_slug = preg_replace( '/[^a-z0-9]/i', '', strtolower( $brand_name ) );
-
-    // Media library by title/slug
-    $candidates = array_filter( array( $slug, sanitize_title( $brand_name ) ) );
-    foreach ( array_unique( $candidates ) as $cand ) {
-        $found = get_posts( array(
-            'post_type'      => 'attachment',
-            'name'           => $cand,
-            'post_status'    => 'inherit',
-            'posts_per_page' => 1,
-            'orderby'        => 'date',
-            'order'          => 'DESC',
-        ) );
-        if ( $found ) {
-            return wp_get_attachment_image_url( $found[0]->ID, 'large' );
-        }
-    }
-
-    // Theme assets with _white suffix
-    $asset_names = array_unique( array_filter( array(
-        $slug . '_white.png',
-        $slug . '-white.png',
-        str_replace( '-', '_', $slug ) . '_white.png',
-        $flat_slug ? $flat_slug . '_white.png' : '',
-    ) ) );
-    foreach ( $asset_names as $fname ) {
-        foreach ( array( '/assets/', '/images/' ) as $subdir ) {
-            $dir = get_template_directory() . $subdir . $fname;
-            if ( file_exists( $dir ) ) {
-                return get_template_directory_uri() . $subdir . $fname;
-            }
-        }
-    }
-
-    return '';
-}
-
-function varner_brand_featured_unit( $brand_slug ) {
-    $args = array(
-        'post_type'      => 'equipment',
-        'post_status'    => 'publish',
-        'meta_key'       => 'make',
-        'meta_value'     => $brand_slug,
-        'posts_per_page' => 1,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
-    );
-    $q = new WP_Query( $args );
-    if ( ! $q->have_posts() ) return null;
-    $q->the_post();
-    $post_id        = get_the_ID();
-    $year           = get_field( 'year', $post_id );
-    $make           = get_field( 'make', $post_id );
-    $model          = get_field( 'model', $post_id );
-    $category       = get_field( 'category', $post_id );
-    $condition      = get_field( 'condition', $post_id );
-    $stock_status   = get_field( 'stock_status', $post_id );
-    $price          = get_field( 'price', $post_id );
-    $call_for_price = get_field( 'call_for_price', $post_id );
-    $formatted_price = ( $call_for_price || $price === '' || $price === null )
-        ? 'Call For Price'
-        : ( is_numeric( $price ) ? 'USD $' . number_format( $price ) : (string) $price );
-
-    $card_images    = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
-    $image_url      = ! empty( $card_images ) ? $card_images[0] : get_template_directory_uri() . '/assets/VE_Tractor_Icon.png';
-
-    $status_label = '';
-    $status_color = '';
-    if ( $stock_status ) {
-        $lc = strtolower( trim( $stock_status ) );
-        if ( $lc === 'sold' ) {
-            $status_label = 'Sold';
-            $status_color = 'bg-red-600';
-        } elseif ( in_array( $lc, array( 'sale pending', 'pending sale', 'pending' ), true ) ) {
-            $status_label = 'Sale Pending';
-            $status_color = 'bg-amber-500';
-        }
-    }
-
-    $data = array(
-        'post_id'   => $post_id,
-        'title'     => trim( "$year $make $model" ) ?: get_the_title(),
-        'category'  => $category,
-        'condition' => $condition,
-        'price'     => $formatted_price,
-        'image'     => $image_url,
-        'permalink' => get_permalink( $post_id ),
-        'status'    => $status_label,
-        'status_color' => $status_color,
-    );
-    wp_reset_postdata();
-    return $data;
-}
+$brands = varner_get_brands();
 ?>
+<main id="main-content" class="max-w-7xl mx-auto px-4 py-10">
 
-<section class="py-16 bg-slate-950 text-white">
-    <div class="max-w-7xl mx-auto px-4 space-y-6">
-        <div class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.3em]">Brands</div>
-        <h1 class="text-4xl md:text-6xl font-black tracking-tighter">Brands We Carry</h1>
-        <p class="text-slate-500 max-w-2xl font-bold">Explore inventory by manufacturer. Each card links to live units for that brand.</p>
-    </div>
-</section>
+    <nav aria-label="Breadcrumb" class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">
+        <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="hover:text-red-600">Home</a>
+        <span class="mx-2">/</span><span class="text-slate-900">Brands</span>
+    </nav>
 
-<section class="py-16 bg-slate-100">
-    <div class="max-w-7xl mx-auto px-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <?php if ( $brands ) : foreach ( $brands as $brand ) :
-            $brand_name = $brand->make;
-            $brand_logo = varner_resolve_brand_logo( $brand_name );
-            $featured   = varner_brand_featured_unit( $brand_name );
-            $filter_url = add_query_arg( 'make', rawurlencode( $brand_name ), home_url( '/inventory' ) );
+    <header class="mb-10">
+        <h1 class="text-3xl md:text-5xl font-black tracking-tighter text-slate-900">Shop Equipment by Brand</h1>
+        <p class="mt-3 max-w-2xl text-slate-600">
+            Varner Equipment carries the tractor, trailer, and hay brands that Western Colorado
+            depends on. Explore each lineup and browse live inventory in Delta, CO.
+        </p>
+    </header>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <?php foreach ( $brands as $slug => $b ) :
+            $logo_path = get_template_directory() . '/assets/brands/' . $b['logo'];
+            $logo_url  = get_template_directory_uri() . '/assets/brands/' . $b['logo'];
+            $has_logo  = ! empty( $b['logo'] ) && file_exists( $logo_path );
         ?>
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between gap-3">
-                <div>
-                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Brand</div>
-                    <div class="text-2xl font-black text-slate-900 tracking-tight leading-tight"><?php echo esc_html( $brand_name ); ?></div>
-                    <div class="text-xs font-black uppercase tracking-[0.3em] text-red-600 mt-1"><?php echo intval( $brand->qty ); ?> Units</div>
-                </div>
-                <?php if ( $brand_logo ) : ?>
-                    <img src="<?php echo esc_url( $brand_logo ); ?>" alt="<?php echo esc_attr( $brand_name ); ?>" class="h-12 md:h-14 max-w-[200px] w-auto object-contain drop-shadow" />
+        <a href="<?php echo esc_url( home_url( '/brands/' . $slug . '/' ) ); ?>"
+           class="group flex flex-col rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:border-red-500 transition-all bg-white">
+            <div class="h-16 flex items-center mb-4">
+                <?php if ( $has_logo ) : ?>
+                    <img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $b['name'] ); ?> logo"
+                         class="max-h-16 w-auto object-contain" width="180" height="64" loading="lazy">
+                <?php else : ?>
+                    <span class="text-2xl font-black tracking-tighter text-slate-900"><?php echo esc_html( $b['name'] ); ?></span>
                 <?php endif; ?>
             </div>
-
-            <?php if ( $featured ) : ?>
-            <a href="<?php echo esc_url( $featured['permalink'] ); ?>" class="block rounded-xl overflow-hidden border border-slate-100 hover:border-red-200 transition-all shadow-sm hover:shadow-md">
-                <div class="aspect-[16/10] bg-slate-100 relative">
-                    <img src="<?php echo esc_url( $featured['image'] ); ?>" alt="<?php echo esc_attr( $featured['title'] ); ?>" class="w-full h-full object-cover">
-                    <?php if ( $featured['condition'] ) : ?>
-                        <span class="absolute top-2 left-2 bg-slate-900/80 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md"><?php echo esc_html( $featured['condition'] ); ?></span>
-                    <?php endif; ?>
-                    <?php if ( $featured['status'] ) : ?>
-                        <span class="absolute top-2 right-2 <?php echo esc_attr( $featured['status_color'] ); ?> text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow"><?php echo esc_html( $featured['status'] ); ?></span>
-                    <?php endif; ?>
-                </div>
-                <div class="p-3 space-y-1">
-                    <div class="text-sm font-black text-slate-900 leading-tight line-clamp-2"><?php echo esc_html( $featured['title'] ); ?></div>
-                    <div class="text-xs font-black uppercase tracking-[0.3em] text-slate-500"><?php echo esc_html( $featured['category'] ?: 'Inventory' ); ?></div>
-                    <div class="text-base font-black text-slate-800"><?php echo esc_html( $featured['price'] ); ?></div>
-                </div>
-            </a>
-            <?php else : ?>
-            <div class="p-4 rounded-xl border border-dashed border-slate-200 text-slate-500 text-sm font-bold">No units found for this brand yet.</div>
-            <?php endif; ?>
-
-            <div class="flex gap-2">
-                <a href="<?php echo esc_url( $filter_url ); ?>" class="flex-1 text-center bg-red-600 text-white py-2.5 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-all">View Brand Inventory</a>
-            </div>
-        </div>
-        <?php endforeach; else : ?>
-            <p>No brands found.</p>
-        <?php endif; ?>
+            <span class="text-[11px] font-black uppercase tracking-widest text-red-600"><?php echo esc_html( $b['category'] ); ?></span>
+            <p class="mt-2 text-sm text-slate-600 leading-relaxed"><?php echo esc_html( $b['tagline'] ); ?></p>
+            <span class="mt-4 inline-flex items-center gap-1 text-sm font-black text-slate-900 group-hover:text-red-600">
+                View <?php echo esc_html( $b['name'] ); ?> &rarr;
+            </span>
+        </a>
+        <?php endforeach; ?>
     </div>
-</section>
+</main>
 
-<?php get_footer(); ?>
+<?php
+/* BreadcrumbList + ItemList JSON-LD for the hub */
+$item_els = array();
+$pos = 1;
+foreach ( $brands as $slug => $b ) {
+    $item_els[] = array(
+        '@type'    => 'ListItem',
+        'position' => $pos++,
+        'name'     => $b['name'],
+        'url'      => home_url( '/brands/' . $slug . '/' ),
+    );
+}
+$hub_ld = array(
+    '@context' => 'https://schema.org',
+    '@graph'   => array(
+        array(
+            '@type'           => 'BreadcrumbList',
+            'itemListElement' => array(
+                array( '@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => home_url( '/' ) ),
+                array( '@type' => 'ListItem', 'position' => 2, 'name' => 'Brands', 'item' => home_url( '/brands/' ) ),
+            ),
+        ),
+        array(
+            '@type'           => 'ItemList',
+            'name'            => 'Equipment Brands at Varner Equipment',
+            'numberOfItems'   => count( $item_els ),
+            'itemListElement' => $item_els,
+        ),
+    ),
+);
+echo '<script type="application/ld+json">' . wp_json_encode( $hub_ld, JSON_UNESCAPED_SLASHES ) . '</script>';
+
+get_footer();

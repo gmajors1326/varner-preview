@@ -41,6 +41,7 @@
                     <li><a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="hover:text-red-500 transition-colors">New</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="hover:text-red-500 transition-colors">Used</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="hover:text-red-500 transition-colors">Tractors</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="hover:text-red-500 transition-colors">Trailers</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/attachments' ) ); ?>" class="hover:text-red-500 transition-colors">Attachments</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="hover:text-red-500 transition-colors">Hay Equipment</a></li>
                 </ul>
@@ -170,8 +171,34 @@
             </div>
         </div>
         
+        <!-- WESTERN COLORADO REGIONAL SEO LINK HUB -->
+        <div class="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-900 text-slate-400">
+            <h5 class="text-xs font-black uppercase tracking-[0.3em] text-red-500 mb-4 text-center">Western Colorado Equipment Hub</h5>
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-bold">
+                <a href="<?php echo esc_url( home_url( '/inventory/tractors/' ) ); ?>" class="hover:text-white transition-colors">Mahindra Tractors Delta CO</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/big-tex/' ) ); ?>" class="hover:text-white transition-colors">Big Tex Trailers Montrose CO</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers/' ) ); ?>" class="hover:text-white transition-colors">Utility Trailers Western Colorado</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers/' ) ); ?>" class="hover:text-white transition-colors">Dump Trailers Montrose & Grand Junction</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/tym/' ) ); ?>" class="hover:text-white transition-colors">TYM Tractors Colorado</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/deutz-fahr/' ) ); ?>" class="hover:text-white transition-colors">Deutz Fahr Tractors Western Slope</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/krone/' ) ); ?>" class="hover:text-white transition-colors">Krone Hay Tools Delta</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/inventory/attachments/' ) ); ?>" class="hover:text-white transition-colors">Tractor Attachments Delta CO</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/' ) ); ?>" class="hover:text-white transition-colors">Shop by Brand</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/sitemap-inventory.xml' ) ); ?>" class="hover:text-white transition-colors">XML Sitemap</a>
+            </div>
+        </div>
+
         <!-- COPYRIGHT BAR -->
-        <div class="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-white/10 text-center">
+        <div class="max-w-7xl mx-auto px-4 mt-8 pt-8 border-t border-white/10 text-center">
             <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mb-2">&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</p>
             <div class="text-xs text-slate-500 font-bold uppercase tracking-widest flex justify-center gap-2">
                 <a href="<?php echo esc_url( home_url( '/legal/terms-of-service' ) ); ?>" class="hover:text-red-500 transition-colors">Terms of Service</a>

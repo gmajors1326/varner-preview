@@ -29,7 +29,7 @@ if ( ! defined( 'VARNER_BUSINESS_ID' ) ) {
  * it as seller.
  */
 function varner_localbusiness_schema() {
-	if ( ! ( is_front_page() || is_page( 'contact' ) ) ) {
+	if ( ! ( is_front_page() || is_page( 'contact' ) || is_page( 'dealer-info/contact' ) || is_page( 202 ) ) ) {
 		return;
 	}
 
@@ -48,10 +48,8 @@ function varner_localbusiness_schema() {
 		: get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
 
 	// Phone to E.164-ish format for schema.
-	$phone_tel = '+1-' . preg_replace( '/[^0-9]/', '', $phone );
-	$phone_tel = substr( $phone_tel, 0, 3 ) . '-' . substr( preg_replace( '/[^0-9]/', '', $phone ), 0, 3 )
-	           . '-' . substr( preg_replace( '/[^0-9]/', '', $phone ), 3, 3 )
-	           . '-' . substr( preg_replace( '/[^0-9]/', '', $phone ), 6 );
+	$digits    = preg_replace( '/[^0-9]/', '', $phone );
+	$phone_tel = '+1-' . substr( $digits, 0, 3 ) . '-' . substr( $digits, 3, 3 ) . '-' . substr( $digits, 6 );
 
 	// Build sameAs array from known socials + custom links.
 	$same_as = array();
@@ -78,7 +76,36 @@ function varner_localbusiness_schema() {
 		'telephone'      => $phone_tel,
 		'email'          => $email,
 		'priceRange'     => '$$$',
-		'description'    => 'Family-owned farm, ranch, and agricultural equipment dealership on Colorado\'s Western Slope, carrying Mahindra tractors and Big Tex and CM trailers, with parts and service in Delta.',
+		'description'    => 'Varner Equipment Delta CO — Premier Mahindra dealer Colorado & TYM tractors Colorado source, stocking Big Tex trailers Delta Colorado, Deutz-Fahr tractors Colorado, Krone equipment dealer Colorado, and Western trailers Delta CO.',
+		'keywords'       => 'utility trailers for sale western colorado, Mahindra tractors Delta CO, Mahindra dealer Colorado, Big Tex trailers Delta Colorado, Big Tex dealer western Colorado, Deutz-Fahr tractors Colorado, Krone equipment dealer Colorado, Western trailers Delta CO, Varner Equipment Delta CO, TYM tractors Colorado, tractor dealer Delta CO, tractor dealer western Colorado, used tractors Delta Colorado, trailer dealer Montrose CO, farm equipment dealer Delta County, agricultural equipment Delta Colorado, hay equipment dealer Colorado, utility trailers for sale Delta CO, dump trailers Montrose CO, equipment financing Delta CO, tractor parts near Delta CO, tractor service Delta Colorado, Varner Equipment inventory, Varner Equipment tractors for sale, Varner Equipment trailers for sale, Varner Equipment Delta Colorado reviews',
+		'knowsAbout'     => array(
+			'utility trailers for sale western colorado',
+			'Mahindra tractors Delta CO',
+			'Mahindra dealer Colorado',
+			'Big Tex trailers Delta Colorado',
+			'Big Tex dealer western Colorado',
+			'Deutz-Fahr tractors Colorado',
+			'Krone equipment dealer Colorado',
+			'Western trailers Delta CO',
+			'Varner Equipment Delta CO',
+			'TYM tractors Colorado',
+			'tractor dealer Delta CO',
+			'tractor dealer western Colorado',
+			'used tractors Delta Colorado',
+			'trailer dealer Montrose CO',
+			'farm equipment dealer Delta County',
+			'agricultural equipment Delta Colorado',
+			'hay equipment dealer Colorado',
+			'utility trailers for sale Delta CO',
+			'dump trailers Montrose CO',
+			'equipment financing Delta CO',
+			'tractor parts near Delta CO',
+			'tractor service Delta Colorado',
+			'Varner Equipment inventory',
+			'Varner Equipment tractors for sale',
+			'Varner Equipment trailers for sale',
+			'Varner Equipment Delta Colorado reviews',
+		),
 		'address'        => array(
 			'@type'           => 'PostalAddress',
 			'streetAddress'   => $addr_1,
@@ -128,7 +155,8 @@ function varner_localbusiness_schema() {
 		. wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
 		. '</script>' . "\n";
 }
-add_action( 'wp_head', 'varner_localbusiness_schema', 20 );
+// LocalBusiness schema is emitted directly in header.php
+// add_action( 'wp_head', 'varner_localbusiness_schema', 20 );
 
 
 /**
@@ -197,6 +225,7 @@ function varner_listing_schema() {
 			'@type'           => 'Offer',
 			'priceCurrency'   => 'USD',
 			'price'           => number_format( $price, 2, '.', '' ),
+			'validFrom'       => date( 'Y-m-d', strtotime( '-1 month' ) ),
 			'priceValidUntil' => date( 'Y-m-d', strtotime( '+1 year' ) ),
 			'availability'    => $out_of_stock
 				? 'https://schema.org/OutOfStock'
@@ -206,6 +235,42 @@ function varner_listing_schema() {
 				: 'https://schema.org/UsedCondition',
 			'url'             => get_permalink( $id ),
 			'seller'          => array( '@id' => VARNER_BUSINESS_ID ),
+			'shippingDetails' => array(
+				'@type'               => 'OfferShippingDetails',
+				'shippingRate'        => array(
+					'@type'    => 'MonetaryAmount',
+					'value'    => '0.00',
+					'currency' => 'USD',
+				),
+				'shippingDestination' => array(
+					'@type'          => 'DefinedRegion',
+					'addressCountry' => 'US',
+					'addressRegion'  => array( 'CO', 'UT', 'WY', 'NM' ),
+				),
+				'deliveryTime'        => array(
+					'@type'        => 'ShippingDeliveryTime',
+					'handlingTime' => array(
+						'@type'    => 'QuantitativeValue',
+						'minValue' => 0,
+						'maxValue' => 2,
+						'unitCode' => 'DAY',
+					),
+					'transitTime'  => array(
+						'@type'    => 'QuantitativeValue',
+						'minValue' => 1,
+						'maxValue' => 5,
+						'unitCode' => 'DAY',
+					),
+				),
+			),
+			'hasMerchantReturnPolicy' => array(
+				'@type'                => 'MerchantReturnPolicy',
+				'applicableCountry'    => 'US',
+				'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+				'merchantReturnDays'   => 30,
+				'returnMethod'         => 'https://schema.org/ReturnInStore',
+				'returnFees'           => 'https://schema.org/FreeReturn',
+			),
 		);
 	}
 
@@ -213,4 +278,146 @@ function varner_listing_schema() {
 		. wp_json_encode( $product, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
 		. '</script>' . "\n";
 }
-add_action( 'wp_head', 'varner_listing_schema', 20 );
+// Product schema is emitted directly in header.php
+// add_action( 'wp_head', 'varner_listing_schema', 20 );
+
+
+/**
+ * 3) INVENTORY ITEMLIST SCHEMA
+ * ─────────────────────────────
+ * Output on inventory catalog / archive pages (all-inventory, in-stock, showroom).
+ * Emits an ItemList schema detailing the featured equipment items.
+ */
+function varner_inventory_itemlist_schema() {
+	if ( ! ( is_page_template( array( 'page-all-inventory.php', 'page-showroom-inventory.php', 'page-in-stock-inventory.php', 'page-equipment-listing.php' ) )
+		|| is_page( array( 'all-inventory', 'showroom-inventory', 'in-stock-inventory', 'inventory', 'all-units' ) )
+		|| get_query_var( 'inventory_segment' )
+		|| is_post_type_archive( 'equipment' )
+		|| is_tax( array( 'equipment_category', 'brand' ) ) ) ) {
+		return;
+	}
+
+	$args = array(
+		'post_type'      => 'equipment',
+		'posts_per_page' => 24,
+		'post_status'    => 'publish',
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	);
+
+	$query = new WP_Query( $args );
+	if ( ! $query->have_posts() ) {
+		return;
+	}
+
+	$list_items = array();
+	$position   = 1;
+
+	while ( $query->have_posts() ) {
+		$query->the_post();
+		$id    = get_the_ID();
+		$year  = get_field( 'year',  $id );
+		$make  = get_field( 'make',  $id );
+		$model = get_field( 'model', $id );
+
+		$title = trim( implode( ' ', array_filter( array( $year, $make, $model ) ) ) );
+		if ( '' === $title ) {
+			$title = get_the_title();
+		}
+
+		$list_items[] = array(
+			'@type'    => 'ListItem',
+			'position' => $position++,
+			'name'     => $title,
+			'url'      => get_permalink(),
+		);
+	}
+	wp_reset_postdata();
+
+	$item_list = array(
+		'@context'        => 'https://schema.org',
+		'@type'           => 'ItemList',
+		'name'            => get_the_title() ?: 'Varner Equipment Inventory',
+		'numberOfItems'   => count( $list_items ),
+		'itemListElement' => $list_items,
+	);
+
+	echo "\n" . '<script type="application/ld+json">'
+		. wp_json_encode( $item_list, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+		. '</script>' . "\n";
+}
+add_action( 'wp_head', 'varner_inventory_itemlist_schema', 20 );
+
+
+/**
+ * 4) PRODUCT VIDEOOBJECT SCHEMA
+ * ──────────────────────────────
+ * Output on the product videos page.
+ * Emits VideoObject schema for each embedded YouTube video.
+ */
+function varner_video_schema() {
+	if ( ! ( is_page_template( 'page-videos.php' )
+		|| is_page( array( 'videos', 'product-videos', '200', '892' ) )
+		|| is_page( 200 )
+		|| is_page( 892 )
+		|| is_post_type_archive( 'video' ) ) ) {
+		return;
+	}
+
+	$args = array(
+		'post_type'      => 'video',
+		'posts_per_page' => 50,
+		'post_status'    => 'publish',
+	);
+
+	$query = new WP_Query( $args );
+	if ( ! $query->have_posts() ) {
+		return;
+	}
+
+	$video_objects = array();
+
+	while ( $query->have_posts() ) {
+		$query->the_post();
+		$id           = get_the_ID();
+		$youtube_link = (string) get_field( 'youtube_link', $id );
+
+		// Extract YouTube video ID
+		$video_id = '';
+		if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $youtube_link, $matches ) ) {
+			$video_id = $matches[1];
+		}
+
+		if ( ! $video_id ) {
+			continue;
+		}
+
+		$title       = get_the_title();
+		$description = wp_strip_all_tags( get_the_content() );
+		if ( ! $description ) {
+			$description = $title . ' - Product Walkthrough by Varner Equipment in Delta, Colorado.';
+		}
+
+		$video_objects[] = array(
+			'@context'     => 'https://schema.org',
+			'@type'        => 'VideoObject',
+			'name'         => $title,
+			'description'  => $description,
+			'thumbnailUrl' => array(
+				"https://img.youtube.com/vi/{$video_id}/maxresdefault.jpg",
+				"https://img.youtube.com/vi/{$video_id}/hqdefault.jpg",
+			),
+			'uploadDate'   => get_the_date( 'c', $id ),
+			'embedUrl'     => "https://www.youtube.com/embed/{$video_id}",
+		);
+	}
+	wp_reset_postdata();
+
+	foreach ( $video_objects as $video_schema ) {
+		echo "\n" . '<script type="application/ld+json">'
+			. wp_json_encode( $video_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+			. '</script>' . "\n";
+	}
+}
+add_action( 'wp_head', 'varner_video_schema', 20 );
+

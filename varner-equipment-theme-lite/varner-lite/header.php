@@ -6,8 +6,8 @@
     
     <?php
     // Dynamic SEO Logic
-    $seo_description = "Varner Equipment - Colorado's premier dealer for Mahindra tractors, Big Tex trailers, and heavy equipment. Quality machines for agricultural and industrial operations in Delta, CO.";
-    $seo_keywords = "Mahindra tractors, Big Tex trailers, Deutz-Fahr, heavy equipment Colorado, farm equipment Delta CO, trailers for sale, agricultural machinery";
+    $seo_description = "Varner Equipment Delta CO — Premier source for utility trailers for sale western colorado, Big Tex trailers, Mahindra & TYM tractors across Western Colorado.";
+    $seo_keywords = "utility trailers for sale western colorado, Mahindra tractors Delta CO, Mahindra dealer Colorado, Big Tex trailers Delta Colorado, Big Tex dealer western Colorado, Deutz-Fahr tractors Colorado, Krone equipment dealer Colorado, Western trailers Delta CO, Varner Equipment Delta CO, TYM tractors Colorado, tractor dealer Delta CO, tractor dealer western Colorado, used tractors Delta Colorado, trailer dealer Montrose CO, farm equipment dealer Delta County, agricultural equipment Delta Colorado, hay equipment dealer Colorado, utility trailers for sale Delta CO, dump trailers Montrose CO, equipment financing Delta CO, tractor parts near Delta CO, tractor service Delta Colorado, Varner Equipment inventory, Varner Equipment tractors for sale, Varner Equipment trailers for sale, Varner Equipment Delta Colorado reviews";
     $og_title = get_bloginfo('name');
     $og_url = home_url(add_query_arg(null, null));
     $og_image = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
@@ -19,9 +19,9 @@
         $make = get_field('make', $post_id);
         $model = get_field('model', $post_id);
         $cat = get_field('category', $post_id);
-        $seo_description = "View details for this $year $make $model $cat at Varner Equipment. Your trusted source for high-performance heavy equipment in Delta, Colorado.";
-        $seo_keywords = "$make $model, $cat for sale, Varner Equipment inventory, $make dealer Colorado";
-        $og_title = "$year $make $model | Varner Equipment";
+        $seo_description = "View pricing & specs for this $year $make $model $cat at Varner Equipment Delta CO. Your trusted $make dealer Colorado for heavy equipment in Delta, CO.";
+        $seo_keywords = "$make $model for sale Colorado, $make $model price Delta CO, $make dealer Colorado, Varner Equipment inventory, $make $cat for sale Delta CO";
+        $og_title = "$year $make $model | Varner Equipment Delta CO";
         $og_type = 'product';
         $images = varner_get_card_images($post_id);
         if (!empty($images)) $og_image = $images[0];
@@ -29,9 +29,50 @@
         $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
         $seo = function_exists('varner_get_segment_seo') ? varner_get_segment_seo($slug) : null;
         if ($seo) {
-            $seo_description = $seo['blurb'] ?: ($seo['sub'] . " Browse our live inventory at Varner Equipment.");
-            $og_title = $seo['h1'] . " | Varner Equipment";
+            $seo_description = $seo['blurb'] ?: ($seo['sub'] . " Browse live inventory at Varner Equipment Delta CO.");
+            $seo_keywords = $seo['keywords'] ?? $seo_keywords;
+            $og_title = $seo['title'] ?? ($seo['h1'] . " | Varner Equipment Delta CO");
         }
+    } elseif ( get_query_var( 'brands_hub' ) ) {
+        $og_title        = "Shop by Brand | Tractors, Trailers & Hay Equipment | Varner Equipment";
+        $seo_description = "Explore every brand Varner Equipment carries in Delta, CO - Mahindra, TYM, and Deutz Fahr tractors, Big Tex, CM and Triton trailers, plus Krone and MacDon hay tools.";
+        $canonical_url   = home_url( '/brands/' );
+    } elseif ( get_query_var( 'brand_name' ) && function_exists( 'varner_get_brand' ) && ( $b = varner_get_brand( sanitize_title( get_query_var( 'brand_name' ) ) ) ) ) {
+        $og_title        = $b['name'] . " " . $b['category'] . " | Varner Equipment Delta CO";
+        $seo_description = $b['tagline'] . " Shop " . $b['name'] . " at Varner Equipment in Delta, CO, serving Western Colorado.";
+        $seo_keywords    = $b['keywords'];
+        $canonical_url   = home_url( '/brands/' . sanitize_title( get_query_var( 'brand_name' ) ) . '/' );
+        $og_image        = ( ! empty( $b['logo'] ) && file_exists( get_template_directory() . '/assets/brands/' . $b['logo'] ) )
+            ? get_template_directory_uri() . '/assets/brands/' . $b['logo']
+            : $og_image;
+    } elseif ( is_page( array( 'parts-request', 'online-parts-store' ) ) || is_page_template('page-parts-request.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'parts-request' ) !== false ) {
+        $seo_description = "Request parts for your tractor, trailer, or equipment from Varner Equipment in Delta, CO. Extensive parts inventory and fast turnaround.";
+        $seo_keywords = "tractor parts near Delta CO, Mahindra parts Colorado, Big Tex parts, farm equipment parts Delta County, TYM tractor parts, Varner Equipment parts";
+        $og_title = "Parts Request | Tractor & Trailer Parts | Delta, CO";
+    } elseif ( is_page( array( 'service-request', 'services' ) ) || is_page_template('page-service-request.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'service-request' ) !== false ) {
+        $seo_description = "Request service for your tractor, trailer, or equipment at Varner Equipment in Delta, CO. Expert technicians for maintenance and repairs.";
+        $seo_keywords = "tractor service Delta Colorado, equipment repair Delta County, Mahindra tractor service, tractor mechanic near me, farm machinery repair Delta CO";
+        $og_title = "Service Request | Equipment Repair & Maintenance | Delta CO";
+    } elseif ( is_page( array( 'finance', 'financing' ) ) || is_page_template('page-finance.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'finance' ) !== false ) {
+        $seo_description = "Apply for tractor and trailer financing through Wells Fargo, Sheffield, DLL, and AgDirect, or estimate monthly payments with our calculator. Delta, CO.";
+        $seo_keywords = "equipment financing Delta CO, tractor financing Colorado, trailer financing Montrose, AgDirect, Sheffield Finance, Wells Fargo, low rate tractor loans";
+        $og_title = "Financing & Payment Calculator | Varner Equipment, Delta CO";
+    } elseif ( is_page( array( 'about-us', 'about', 'dealer-info' ) ) || is_page_template('page-about-us.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'about' ) !== false ) {
+        $seo_description = "Varner Equipment is a family-run dealership in Delta, CO offering Mahindra, TYM, Big Tex, and Krone equipment, plus expert parts and service.";
+        $seo_keywords = "Varner Equipment Delta Colorado reviews, Varner Equipment inventory, Varner Equipment tractors for sale, Varner Equipment trailers for sale, farm equipment dealer Delta County, tractor dealer near me";
+        $og_title = "About Us | Family-Owned Equipment Dealer in Delta, CO";
+    } elseif ( is_page( array( 'videos', 'product-videos' ) ) || is_page_template('page-videos.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'videos' ) !== false ) {
+        $seo_description = "Watch tractor and trailer demos, how-to guides, and equipment walkarounds from Varner Equipment in Delta, CO. Subscribe on our YouTube channel.";
+        $og_title = "Product & How-To Videos | Varner Equipment, Delta CO";
+    } elseif ( is_page( array( 'employment', 'careers' ) ) || is_page_template('page-employment.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'employment' ) !== false ) {
+        $seo_description = "Join the team at Varner Equipment, a family-owned equipment dealership in Delta, CO. View current job openings and apply today.";
+        $og_title = "Careers & Employment | Varner Equipment, Delta CO";
+    } elseif ( is_page( 'contact' ) || is_page_template('page-contact.php') || strpos( $_SERVER['REQUEST_URI'] ?? '', 'contact' ) !== false ) {
+        $seo_description = "Contact Varner Equipment at 1375 US-50, Delta, CO. Call 970-874-0612 for sales, parts, service, and financing on farm and ag equipment.";
+        $og_title = "Contact Varner Equipment | Delta, CO | 970-874-0612";
+    } elseif ( is_front_page() || is_home() || ( $_SERVER['REQUEST_URI'] ?? '' ) === '/' ) {
+        $seo_description = "Family-owned farm and agricultural equipment dealer in Delta, CO. Shop tractors, trailers, and hay equipment across Colorado's Western Slope.";
+        $og_title = "Varner Equipment | Western Colorado's Top Equipment Dealer";
     }
 
     // Win 4: Detect active search/filter parameters to add noindex and override canonical URL
@@ -65,8 +106,14 @@
     }
 
     $og_url = $canonical_url;
+
+    // Visible <title>: reuse the per-page og:title; upgrade only the generic homepage default
+    $seo_title = ( $og_title === get_bloginfo('name') )
+        ? "Varner Equipment | Western Colorado's Top Equipment Dealer"
+        : $og_title;
     ?>
 
+    <title><?php echo esc_html( $seo_title ); ?></title>
     <meta name="description" content="<?php echo esc_attr($seo_description); ?>">
     <meta name="keywords" content="<?php echo esc_attr($seo_keywords); ?>">
     <?php if ( $has_active_filters ) : ?>
@@ -92,9 +139,142 @@
     <!-- Preload critical fonts to avoid Cumulative Layout Shift (CLS) -->
     <link rel="preload" href="<?php echo esc_url( plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/Inter.woff2' ) ); ?>" as="font" type="font/woff2" crossorigin>
 
-    <!-- Preconnect to important third-party origins -->
-    <link rel="preconnect" href="https://www.googletagmanager.com">
-    <link rel="preconnect" href="https://i.ytimg.com">
+    <!-- Resource hints: DNS prefetch to avoid idle TLS connection warnings while speeding up DNS -->
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://i.ytimg.com">
+
+    <!-- LocalBusiness JSON-LD -->
+    <?php
+    $ld_business = array(
+        '@context'   => 'https://schema.org',
+        '@type'      => 'LocalBusiness',
+        '@id'        => home_url('/#business'),
+        'name'       => 'Varner Equipment',
+        'url'        => home_url('/'),
+        'telephone'  => '+1-970-874-0612',
+        'image'      => get_template_directory_uri() . '/assets/VarnerEquipment_red.png',
+        'priceRange' => '$$',
+        'address'    => array(
+            '@type'           => 'PostalAddress',
+            'streetAddress'   => '1375 US-50',
+            'addressLocality' => 'Delta',
+            'addressRegion'   => 'CO',
+            'postalCode'      => '81416',
+            'addressCountry'  => 'US',
+        ),
+        'geo' => array(
+            '@type'     => 'GeoCoordinates',
+            'latitude'  => 38.7652,
+            'longitude' => -108.1061,
+        ),
+        'openingHoursSpecification' => array(
+            array('@type'=>'OpeningHoursSpecification','dayOfWeek'=>array('Monday','Tuesday','Wednesday','Thursday','Friday'),'opens'=>'08:00','closes'=>'17:00'),
+            array('@type'=>'OpeningHoursSpecification','dayOfWeek'=>'Saturday','opens'=>'09:00','closes'=>'12:00'),
+        ),
+        'sameAs' => array(
+            'https://www.facebook.com/varnerequipment',
+            'https://www.youtube.com/@VarnerEquipment',
+        ),
+        'areaServed' => array('Delta','Montrose','Grand Junction','Olathe','Cedaredge','Hotchkiss','Paonia','Western Colorado'),
+    );
+    ?>
+    <script type="application/ld+json"><?php echo wp_json_encode( $ld_business, JSON_UNESCAPED_SLASHES ); ?></script>
+
+    <!-- Product JSON-LD (Single Equipment) -->
+    <?php if ( is_singular('equipment') && function_exists('get_field') ) :
+        $post_id     = get_the_ID();
+        $price       = get_field('price', $post_id);
+        $condition   = (string) get_field('condition', $post_id);
+        $stock       = get_field('stock_number', $post_id);
+        $hours       = get_field('hours', $post_id);
+        $hp          = get_field('horsepower', $post_id);
+        $vin         = get_field('vin', $post_id);
+        $has_price   = is_numeric($price) && (float) $price > 0 && ! get_field('call_for_price', $post_id);
+        
+        $ld_product  = array(
+            '@context'    => 'https://schema.org',
+            '@type'       => 'Product',
+            'name'        => trim( "$year $make $model" ),
+            'sku'         => $stock ?: (string) get_the_ID(),
+            'mpn'         => $stock ?: (string) get_the_ID(),
+            'image'       => $og_image,
+            'description' => $seo_description,
+            'brand'       => array( '@type' => 'Brand', 'name' => $make ?: 'Varner Equipment' ),
+            'offers'      => array(
+                '@type'         => 'Offer',
+                'url'           => get_permalink(),
+                'priceCurrency' => 'USD',
+                'availability'  => 'https://schema.org/InStock',
+                'itemCondition' => ( stripos( $condition, 'used' ) !== false )
+                    ? 'https://schema.org/UsedCondition'
+                    : 'https://schema.org/NewCondition',
+                'seller'        => array( '@type' => 'LocalBusiness', 'name' => 'Varner Equipment' ),
+            ),
+        );
+        if ( $has_price ) {
+            $ld_product['offers']['price'] = (string) $price;
+        }
+
+        $add_props = array();
+        if ( ! empty( $hours ) ) $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Hours', 'value' => (string) $hours );
+        if ( ! empty( $hp ) )    $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Horsepower', 'value' => (string) $hp );
+        if ( ! empty( $vin ) )   $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'VIN', 'value' => (string) $vin );
+        if ( ! empty( $add_props ) ) $ld_product['additionalProperty'] = $add_props;
+
+        echo '<script type="application/ld+json">' . wp_json_encode( $ld_product, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+    endif; ?>
+
+    <!-- ItemList JSON-LD (Category / Inventory Listing Pages) -->
+    <?php if ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) :
+        $list_query = new WP_Query( array(
+            'post_type'      => array( 'equipment', 'varner_equipment' ),
+            'post_status'    => 'publish',
+            'posts_per_page' => 10,
+            'fields'         => 'ids',
+        ) );
+        if ( $list_query->have_posts() ) :
+            $items = array();
+            $pos = 1;
+            foreach ( $list_query->posts as $item_id ) {
+                $items[] = array(
+                    '@type'    => 'ListItem',
+                    'position' => $pos++,
+                    'url'      => get_permalink( $item_id ),
+                    'name'     => get_the_title( $item_id ),
+                );
+            }
+            $ld_itemlist = array(
+                '@context'        => 'https://schema.org',
+                '@type'           => 'ItemList',
+                'numberOfItems'   => count( $items ),
+                'itemListElement' => $items,
+            );
+            echo '<script type="application/ld+json">' . wp_json_encode( $ld_itemlist, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+        endif;
+    endif; ?>
+
+    <!-- BreadcrumbList JSON-LD -->
+    <?php if ( ! is_front_page() && ! is_home() ) :
+        $breadcrumbs = array(
+            array( '@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => home_url('/') ),
+        );
+        $pos = 2;
+        if ( is_singular('equipment') ) {
+            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => 'Inventory', 'item' => home_url('/inventory/all-units/') );
+            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => get_the_title(), 'item' => get_permalink() );
+        } elseif ( get_query_var('inventory_segment') ) {
+            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => 'Inventory', 'item' => home_url('/inventory/all-units/') );
+            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => ucfirst( str_replace( '-', ' ', get_query_var('inventory_segment') ) ), 'item' => $canonical_url );
+        } else {
+            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => get_the_title(), 'item' => $canonical_url );
+        }
+        $ld_breadcrumbs = array(
+            '@context'        => 'https://schema.org',
+            '@type'           => 'BreadcrumbList',
+            'itemListElement' => $breadcrumbs,
+        );
+        echo '<script type="application/ld+json">' . wp_json_encode( $ld_breadcrumbs, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+    endif; ?>
 
     <?php wp_head(); ?>
 </head>
@@ -178,7 +358,7 @@
             </div>
 
             <!-- NAVIGATION ROW (Desktop) -->
-            <div class="hidden lg:block bg-slate-50 border-t border-slate-200 border-b-4 border-red-600 w-full">
+            <div class="hidden lg:block bg-slate-50 border-t border-t-slate-200 border-b-4 border-b-red-600 w-full">
                 <div class="max-w-7xl mx-auto px-4">
                     <nav class="flex items-center justify-center gap-3 xl:gap-8 py-4 flex-wrap relative" aria-label="Primary Navigation">
                         <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Home</a>
@@ -301,7 +481,9 @@
                             <a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">New</a>
                             <a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Used</a>
                             <a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Tractors</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">All Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Utility Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Dump Trailers</a>
                         </div>
                     </div>
 

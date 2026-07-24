@@ -163,7 +163,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                             ?>
                                 <label class="flex-1 text-center cursor-pointer group">
                                     <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" onchange="this.form.submit()" />
-                                    <div class="v-cond-btn py-2 rounded-xl border <?php echo $is_checked ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
+                                    <div class="v-cond-btn py-2 rounded-xl <?php echo $is_checked ? 'bg-slate-900 border-2 border-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
                                         <?php echo esc_html( $cond_key ); ?>
                                     </div>
                                 </label>
