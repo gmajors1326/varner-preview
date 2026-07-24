@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.340 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.340
+ * Description: Version 1.23.342 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.342
  * Author: hwy559.com
  */
 
@@ -770,7 +770,7 @@ add_action('wp_head', function (): void {
     if (is_admin() || is_user_logged_in()) return;
     ?>
 <script>
-(function(){var r=<?php echo json_encode(esc_url_raw(rest_url('varner/v1/track/pageview'))); ?>,p=window.location.pathname,u=navigator.userAgent;if(navigator.webdriver||/bot|crawler|spider/i.test(u))return;var d=JSON.stringify({path:p,referrer:document.referrer,ua:u}),b=new Blob([d],{type:'application/json'});navigator.sendBeacon?navigator.sendBeacon(r,b):fetch(r,{method:'POST',body:d,keepalive:!0,headers:{'Content-Type':'application/json'}})})();
+(function(){function sendTrack(){var r=<?php echo json_encode(esc_url_raw(rest_url('varner/v1/track/pageview'))); ?>,p=window.location.pathname,u=navigator.userAgent;if(navigator.webdriver||/bot|crawler|spider/i.test(u))return;var d=JSON.stringify({path:p,referrer:document.referrer,ua:u}),b=new Blob([d],{type:'application/json'});navigator.sendBeacon?navigator.sendBeacon(r,b):fetch(r,{method:'POST',body:d,keepalive:!0,headers:{'Content-Type':'application/json'}});}if(document.prerendering){document.addEventListener('prerenderingchange',sendTrack,{once:true});}else{sendTrack();}})();
 </script>
 <?php }, 0);
 

@@ -12,8 +12,11 @@ if ( ! function_exists('get_field') ) {
     return;
 }
 
-// 1. Identify the segment (slug) from the query or page title
+// 1. Identify the segment (slug) and brand from the query or page title
 $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
+$brand_slug = get_query_var('brand_name');
+$brand_obj = $brand_slug && function_exists('varner_get_brand') ? varner_get_brand(sanitize_title($brand_slug)) : null;
+
 $seo = varner_get_segment_seo($slug);
 
 // Fallback to "All Inventory" style if no specific SEO data found
@@ -25,6 +28,13 @@ if (!$seo) {
         'blurb' => '',
         'filter' => array()
     );
+}
+
+if ($brand_obj) {
+    $seo['h1'] = $brand_obj['name'] . ' ' . ($seo['h1'] ?? ucfirst($slug));
+    $seo['sub'] = 'Explore in-stock ' . $brand_obj['name'] . ' ' . strtolower($seo['h1'] ?? '') . ' at Varner Equipment in Delta, CO.';
+    $seo['blurb'] = 'Browse live inventory of ' . $brand_obj['name'] . ' units. Inspected, clear pricing, and backed by local service across Western Colorado.';
+    $seo['filter']['make'] = array($brand_obj['make']);
 }
 
 // 2. Build Query

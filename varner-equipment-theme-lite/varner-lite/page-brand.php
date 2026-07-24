@@ -26,7 +26,7 @@ if ( $brand_slug ) {
             'tym'     => 'TYM',
             'zetor'   => 'Zetor',
             'krone'   => 'Krone',
-            'macdon'  => 'MacDon',
+            'macdon'  => 'Macdon',
             'mchale'  => 'McHale',
             'roxr'    => 'ROXR',
             'titan trailers' => 'Titan Trailers',

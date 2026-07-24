@@ -82,6 +82,13 @@ function varner_get_brands() {
             'keywords' => 'Krone equipment dealer Colorado, Krone hay tools Delta, Krone mower rake western Colorado',
             'logo' => 'krone.png',
         ),
+        'macdon' => array(
+            'name' => 'Macdon', 'make' => 'Macdon', 'category' => 'Hay Equipment',
+            'tagline' => 'Premium windrowers and headers for the hay professional.',
+            'description' => 'Macdon sets the standard for self-propelled windrowers and mower-conditioners, prized for cut quality and reliability. A go-to for commercial hay operations in Delta County.',
+            'keywords' => 'Macdon hay equipment Colorado, Macdon windrower Delta CO, Macdon dealer western Colorado',
+            'logo' => 'macdon.png',
+        ),
         'mahindra' => array(
             'name' => 'Mahindra', 'make' => 'Mahindra', 'category' => 'Tractors',
             'tagline' => 'The world\'s highest-selling tractor brand by volume.',

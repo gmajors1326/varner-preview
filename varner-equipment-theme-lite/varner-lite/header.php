@@ -3,7 +3,20 @@
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "source": "document",
+          "where": {
+            "href_matches": "/equipment/*"
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+    </script>
+
     <?php
     // Dynamic SEO Logic
     $seo_description = "Varner Equipment Delta CO — Premier source for utility trailers for sale western colorado, Big Tex trailers, Mahindra & TYM tractors across Western Colorado.";
@@ -25,6 +38,16 @@
         $og_type = 'product';
         $images = varner_get_card_images($post_id);
         if (!empty($images)) $og_image = $images[0];
+    } elseif ( get_query_var('inventory_segment') && get_query_var('brand_name') ) {
+        $seg = get_query_var('inventory_segment');
+        $b_slug = sanitize_title(get_query_var('brand_name'));
+        $b_obj = function_exists('varner_get_brand') ? varner_get_brand($b_slug) : null;
+        $b_name = $b_obj ? $b_obj['name'] : ucfirst($b_slug);
+        $s_seo = function_exists('varner_get_segment_seo') ? varner_get_segment_seo($seg) : null;
+        $s_name = $s_seo ? $s_seo['h1'] : ucfirst($seg);
+        $og_title = "$b_name $s_name for Sale | Varner Equipment Delta CO";
+        $seo_description = "Shop in-stock $b_name $s_name at Varner Equipment in Delta, CO. Serving Western Colorado with high-quality tractors, trailers, and implements.";
+        $canonical_url = home_url( "/inventory/$seg/$b_slug/" );
     } elseif ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) {
         $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
         $seo = function_exists('varner_get_segment_seo') ? varner_get_segment_seo($slug) : null;
@@ -35,7 +58,7 @@
         }
     } elseif ( get_query_var( 'brands_hub' ) ) {
         $og_title        = "Shop by Brand | Tractors, Trailers & Hay Equipment | Varner Equipment";
-        $seo_description = "Explore every brand Varner Equipment carries in Delta, CO - Mahindra, TYM, and Deutz Fahr tractors, Big Tex, CM and Triton trailers, plus Krone and MacDon hay tools.";
+        $seo_description = "Explore every brand Varner Equipment carries in Delta, CO - Mahindra, TYM, and Deutz Fahr tractors, Big Tex, CM and Triton trailers, plus Krone and Macdon hay tools.";
         $canonical_url   = home_url( '/brands/' );
     } elseif ( get_query_var( 'brand_name' ) && function_exists( 'varner_get_brand' ) && ( $b = varner_get_brand( sanitize_title( get_query_var( 'brand_name' ) ) ) ) ) {
         $og_title        = $b['name'] . " " . $b['category'] . " | Varner Equipment Delta CO";

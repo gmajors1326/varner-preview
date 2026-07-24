@@ -383,7 +383,7 @@ function varner_get_segment_seo($slug) {
             'title' => 'Hay Equipment for Sale | Rakes & Mowers | Delta, CO',
             'h1'    => 'Hay & Harvest',
             'sub'   => 'Precision balers, rakes, tedders, and hay tools from Krone and McHale.',
-            'blurb' => 'Shop hay equipment - rakes, mowers, and Krone and MacDon hay tools - at Varner Equipment in Delta, CO. Built for small acreage to full operations.',
+            'blurb' => 'Shop hay equipment - rakes, mowers, and Krone and Macdon hay tools - at Varner Equipment in Delta, CO. Built for small acreage to full operations.',
             'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))
         ),
         'misc'      => array(
@@ -399,17 +399,20 @@ function varner_get_segment_seo($slug) {
 
 require_once get_template_directory() . '/inc/sitemap.php';
 require_once get_template_directory() . '/inc/brands-data.php';
+require_once get_template_directory() . '/inc/indexing-api.php';
 
 add_filter( 'query_vars', function( $vars ) { 
     $vars[] = 'inventory_segment'; 
     $vars[] = 'brand_name';
     $vars[] = 'varner_sitemap';
     $vars[] = 'brands_hub';
+    $vars[] = 'indexnow_key';
     return $vars; 
 });
 
 add_action( 'init', function() {
     add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
+    add_rewrite_rule('^([a-f0-9]{32})\.txt$', 'index.php?indexnow_key=$matches[1]', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
     add_rewrite_rule('^brands/?$', 'index.php?brands_hub=1', 'top');
@@ -418,9 +421,9 @@ add_action( 'init', function() {
 
 add_action( 'init', function () {
     $flag = get_option( 'varner_brands_rewrite_v' );
-    if ( $flag !== '2' ) {
+    if ( $flag !== '3' ) {
         flush_rewrite_rules( false );
-        update_option( 'varner_brands_rewrite_v', '2' );
+        update_option( 'varner_brands_rewrite_v', '3' );
     }
 }, 99 );
 
@@ -436,7 +439,39 @@ add_filter( 'template_include', function( $template ) {
         if ( $t ) return $t;
     }
     $brand_slug = get_query_var( 'brand_name' );
-    if ( $brand_slug && ! get_query_var( 'inventory_segment' ) ) {
+    $segment    = get_query_var( 'inventory_segment' );
+
+    // Two-tier brand + category facet route: /inventory/<segment>/<brand>/
+    if ( $segment && $brand_slug ) {
+        $brand = function_exists( 'varner_get_brand' ) ? varner_get_brand( sanitize_title( $brand_slug ) ) : null;
+        if ( ! $brand ) {
+            global $wp_query;
+            $wp_query->set_404();
+            status_header( 404 );
+            return locate_template( '404.php' ) ?: $template;
+        }
+        // Guard: check if this brand + segment combo has at least 1 unit in stock
+        $meta_query = array(
+            array( 'key' => 'make', 'value' => $brand['make'], 'compare' => '=' ),
+        );
+        $combo_query = new WP_Query( array(
+            'post_type'      => 'equipment',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_query'     => $meta_query,
+        ) );
+        if ( ! $combo_query->have_posts() ) {
+            global $wp_query;
+            $wp_query->set_404();
+            status_header( 404 );
+            return locate_template( '404.php' ) ?: $template;
+        }
+        $listing_template = locate_template( 'page-equipment-listing.php' );
+        if ( $listing_template ) return $listing_template;
+    }
+
+    if ( $brand_slug && ! $segment ) {
         if ( varner_get_brand( sanitize_title( $brand_slug ) ) ) {
             $t = locate_template( 'single-brand.php' );
             if ( $t ) return $t;
@@ -447,8 +482,8 @@ add_filter( 'template_include', function( $template ) {
             return locate_template( '404.php' ) ?: $template;
         }
     }
-    if ( get_query_var('inventory_segment') ) {
-        $listing_template = locate_template('page-equipment-listing.php');
+    if ( $segment ) {
+        $listing_template = locate_template( 'page-equipment-listing.php' );
         if ( $listing_template ) return $listing_template;
     }
     if ( is_page() ) {
