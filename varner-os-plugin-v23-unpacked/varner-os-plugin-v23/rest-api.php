@@ -1050,7 +1050,7 @@ function varner_api_get_sessions(WP_REST_Request $request): WP_REST_Response {
     global $wpdb;
     $table = $wpdb->prefix . 'varner_user_sessions';
 
-    $active_sessions = $wpdb->get_results("SELECT id, user_id, session_token, login_at, last_activity_at FROM {$table} WHERE logout_at IS NULL");
+    $active_sessions = $wpdb->get_results($wpdb->prepare("SELECT id, user_id, session_token, login_at, last_activity_at FROM %i WHERE logout_at IS NULL", $table));
 
     if ($active_sessions) {
         foreach ($active_sessions as $sess) {

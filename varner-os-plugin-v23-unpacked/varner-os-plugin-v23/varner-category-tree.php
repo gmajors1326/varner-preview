@@ -336,17 +336,17 @@ function varner_seed_category_tree(): void {
 
     global $wpdb;
     // 1. Scan all equipment posts to infer parents from actual usage
-    $posts = $wpdb->get_results("
+    $posts = $wpdb->get_results($wpdb->prepare("
         SELECT p.ID, 
                m_cat.meta_value as category, 
                m_sub.meta_value as subcategory, 
                m_ss.meta_value as sub_subcategory
-        FROM {$wpdb->posts} p
-        LEFT JOIN {$wpdb->postmeta} m_cat ON p.ID = m_cat.post_id AND m_cat.meta_key = 'category'
-        LEFT JOIN {$wpdb->postmeta} m_sub ON p.ID = m_sub.post_id AND m_sub.meta_key = 'subcategory'
-        LEFT JOIN {$wpdb->postmeta} m_ss ON p.ID = m_ss.post_id AND m_ss.meta_key = 'sub_subcategory'
+        FROM %i p
+        LEFT JOIN %i m_cat ON p.ID = m_cat.post_id AND m_cat.meta_key = 'category'
+        LEFT JOIN %i m_sub ON p.ID = m_sub.post_id AND m_sub.meta_key = 'subcategory'
+        LEFT JOIN %i m_ss ON p.ID = m_ss.post_id AND m_ss.meta_key = 'sub_subcategory'
         WHERE p.post_type = 'equipment' AND p.post_status IN ('publish', 'draft')
-    ", ARRAY_A);
+    ", $wpdb->posts, $wpdb->postmeta, $wpdb->postmeta, $wpdb->postmeta), ARRAY_A);
 
     foreach ((array) $posts as $post) {
         $cat = trim($post['category'] ?? '');

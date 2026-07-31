@@ -105,9 +105,9 @@ function varner_os_activate(): void {
 
     // Add composite index on wp_postmeta for inventory filter performance
     $index_name = 'varner_meta_key_value';
-    $index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->postmeta} WHERE Key_name = '{$index_name}'");
+    $index_exists = $wpdb->get_results($wpdb->prepare("SHOW INDEX FROM %i WHERE Key_name = %s", $wpdb->postmeta, $index_name));
     if (empty($index_exists)) {
-        $wpdb->query("ALTER TABLE {$wpdb->postmeta} ADD INDEX {$index_name} (meta_key, meta_value(100))");
+        $wpdb->query($wpdb->prepare("ALTER TABLE %i ADD INDEX %i (meta_key, meta_value(100))", $wpdb->postmeta, $index_name));
     }
 
     // Seed category tree from CATEGORY_TREE + inferred unit usage
@@ -135,7 +135,7 @@ function varner_get_hidden_post_ids(): array {
     $ids = get_transient($cache_key);
     if (false === $ids) {
         $ids = $wpdb->get_col(
-            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'show_on_website' AND meta_value = '0'"
+            $wpdb->prepare("SELECT DISTINCT post_id FROM %i WHERE meta_key = %s AND meta_value = %s", $wpdb->postmeta, 'show_on_website', '0')
         );
         $ids = array_map('intval', $ids);
         set_transient($cache_key, $ids, HOUR_IN_SECONDS);
@@ -647,7 +647,7 @@ function varner_render_configuration_page(): void {
 
     global $wpdb;
     $table    = $wpdb->prefix . 'varner_user_sessions';
-    $sessions = $wpdb->get_results("SELECT id, user_id, login_at, logout_at, ip, ended_reason FROM {$table} ORDER BY login_at DESC LIMIT 25");
+    $sessions = $wpdb->get_results($wpdb->prepare("SELECT id, user_id, login_at, logout_at, ip, ended_reason FROM %i ORDER BY login_at DESC LIMIT 25", $table));
     echo '<div class="wrap" style="padding:16px 24px;">';
     echo '<h2 style="margin:16px 0 8px;">Recent Sessions (last 25)</h2>';
     echo '<table class="widefat fixed striped" style="max-width:900px;">';

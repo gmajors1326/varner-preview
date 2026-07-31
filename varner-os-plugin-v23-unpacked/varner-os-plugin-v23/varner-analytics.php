@@ -38,7 +38,7 @@ function varner_analytics_create_table(): void {
 add_action('plugins_loaded', function (): void {
     global $wpdb;
     $table = varner_analytics_db_table();
-    if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
+    if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) {
         varner_analytics_create_table();
     }
 });

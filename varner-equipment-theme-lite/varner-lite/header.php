@@ -413,7 +413,7 @@
                             if ( function_exists( 'varner_get_hidden_post_ids' ) ) {
                                 $hidden_ids = varner_get_hidden_post_ids();
                                 if ( ! empty( $hidden_ids ) ) {
-                                    $hidden_sql = 'AND p.ID NOT IN (' . implode( ',', $hidden_ids ) . ')';
+                                    $hidden_sql = 'AND p.ID NOT IN (' . implode( ',', array_map( 'intval', $hidden_ids ) ) . ')';
                                 }
                             }
                             $rows = $wpdb->get_results(
