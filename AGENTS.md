@@ -2,6 +2,7 @@
 
 - **Read ALL `.md` files in project root before ANY action** — AGENTS.md, DEPLOY.md, SKILL.md, etc. Failure to do this wasted ~15 tool calls on one deploy.
 - Deploy procedure is in AGENTS-DEPLOY-CHECKLIST.md. Read it before every deploy.
+- **Agent conduct:** Follow `.agents/skills/tight-reasoning/SKILL.md` for all output discipline. Rules there govern visible reasoning length, mistake acknowledgment, and hypothesis reporting.
 
 # Deployment Notes
 
