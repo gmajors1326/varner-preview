@@ -2,7 +2,7 @@
 
 **Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
-**Last updated:** June 17, 2026
+**Last updated:** July 30, 2026
 **Maintainer:** Greg
 
 ---
@@ -155,6 +155,14 @@ These are **not** code-review items; they gate production go-live.
 
 6. **Production deployment.**
    All work to date is on dev. Go-live is its own checklist: provisioning, real staff accounts, domain email, SPF/DKIM, migrated inventory, and DNS cutover.
+
+7. **Post-incident (Jul 30): production is a second install — finish the split resolution.**
+   Production is **not** `varnerequipdev`. It is a second WP Engine install, `varnerequipme1`, on which `varnerequipment.com` is a primary domain. `DEPLOY.md`, `AGENTS-DEPLOY-CHECKLIST.md`, and §2/§6 of this file still target `varnerequipdev` (this file lists Production as TBD) — that doc error is the root cause of the Jul 30 incident: deploys and some editing flows were pointed at the wrong install for months. Execute in order:
+   - **7 dev-only units → Ashley** (the dev-vs-me1 diff minus the 15 migrated Jul 30): keep / delete / already handled elsewhere.
+   - **Plugin sync me1 → `1.23.361`.** Confirmed 2026-07-30: me1 is on **`1.23.360`**, local source is **`1.23.361`** — single-patch jump, no intermediates. Deploy per the runbook (SSH stream → `wp plugin install --force` → deactivate/reactivate → cache flush) against the **me1** host/path.
+   - **Correct the deploy docs** (`DEPLOY.md`, `AGENTS-DEPLOY-CHECKLIST.md`, this file) to name `varnerequipme1` as the production deploy target.
+   **Ordering rationale:** the docs correction goes LAST so the plugin sync in the middle step is the first deploy executed against the corrected target and validates the new procedure before it is written down as canonical.
+   **Deferred indefinitely:** the ~20 units that exist on both installs with divergent `post_modified` timestamps — both databases received live edits during the split period. Reconciliation needs per-unit postmeta review (price, hours, photos), not a mechanical merge. Revisit if Ashley reports specific discrepancies; otherwise me1's version stands canonical.
 
 ---
 
