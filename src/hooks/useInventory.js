@@ -114,13 +114,11 @@ export function useInventory(showToast, setActiveTab) {
   };
 
   const handleSubcategoryToggle = (sub) => {
-    console.log('[Varner OS] handleSubcategoryToggle triggered for sub:', sub);
     setUnitData(prev => {
       const current = Array.isArray(prev.subcategory) ? prev.subcategory : [];
       const updated = current.includes(sub)
         ? current.filter(x => x !== sub)
         : [...current, sub];
-      console.log('[Varner OS] Updated subcategory array:', updated);
       return {
         ...prev,
         subcategory: updated,
