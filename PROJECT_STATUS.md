@@ -166,6 +166,10 @@ These are **not** code-review items; they gate production go-live.
    **Known gotchas:**
    - **PWA merge gate:** before merging `feature/pwa-unify` to main, run `git rm --cached NOTES.md` on the branch as a standalone commit. The uppercase duplicate is tracked only on that branch; merging without removing it causes a case-collision conflict on case-insensitive filesystems.
    - **WPE-incident deploy gate:** do not push plugin `1.23.361` to me1 while WP Engine is actively degraded (404s / login issues); wait until WPE status is green.
+   **Deferred hardening (post-WPE-incident):**
+   - Rotate `.env` credentials (WP admin, WPE, OpenRouter) and migrate to a secrets manager; add a pre-commit hook that blocks `.env` from being staged even with `-f`.
+   - Resolve `blocks/varner-editor.php` source/shipped duplication via a `build.ps1` copy step (single source of truth) or a canonical-path load.
+   **Branch topology cleanup (post-PWA-merge):** `main` on origin is ~8,900 lines behind the deployed production lineage (missing `varner-analytics.php`, `varner-category-tree.php`, `varner-cookie-manager.php`). The real source-of-truth is `feature/pwa-unify`. After PWA merges, verify `main` reflects deployed reality and archive/delete any stale parallel branches.
 
 ---
 
