@@ -64,15 +64,22 @@ function varner_generate_xml_sitemap() {
 		}
 	}
 
-	// 3. Single Equipment Custom Posts
-	$equipment_query = new WP_Query( array(
-		'post_type'      => array( 'equipment', 'varner_equipment' ),
-		'post_status'    => 'publish',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-	) );
+	// 3. Single Equipment Custom Posts (paginated at 5,000 to bound the query)
+	$per_page = 5000;
+	$page     = 1;
+	while ( true ) {
+		$equipment_query = new WP_Query( array(
+			'post_type'      => array( 'equipment', 'varner_equipment' ),
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'fields'         => 'ids',
+		) );
 
-	if ( $equipment_query->have_posts() ) {
+		if ( ! $equipment_query->have_posts() ) {
+			break;
+		}
+
 		foreach ( $equipment_query->posts as $post_id ) {
 			$permalink = get_permalink( $post_id );
 			$mod_date  = get_the_modified_date( 'Y-m-d', $post_id ) ?: $today;
@@ -83,6 +90,11 @@ function varner_generate_xml_sitemap() {
 			echo "    <priority>0.80</priority>\n";
 			echo "  </url>\n";
 		}
+
+		if ( count( $equipment_query->posts ) < $per_page ) {
+			break;
+		}
+		$page++;
 	}
 
 	echo '</urlset>';
