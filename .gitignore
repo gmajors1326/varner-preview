@@ -31,3 +31,17 @@ diag.b64
 # Archived old theme
 _archive/
 
+# OS / editor junk
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.bak
+*.swp
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+
