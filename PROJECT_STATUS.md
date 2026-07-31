@@ -163,6 +163,9 @@ These are **not** code-review items; they gate production go-live.
    - **Correct the deploy docs** (`DEPLOY.md`, `AGENTS-DEPLOY-CHECKLIST.md`, this file) to name `varnerequipme1` as the production deploy target.
    **Ordering rationale:** the docs correction goes LAST so the plugin sync in the middle step is the first deploy executed against the corrected target and validates the new procedure before it is written down as canonical.
    **Deferred indefinitely:** the ~20 units that exist on both installs with divergent `post_modified` timestamps — both databases received live edits during the split period. Reconciliation needs per-unit postmeta review (price, hours, photos), not a mechanical merge. Revisit if Ashley reports specific discrepancies; otherwise me1's version stands canonical.
+   **Known gotchas:**
+   - **PWA merge gate:** before merging `feature/pwa-unify` to main, run `git rm --cached NOTES.md` on the branch as a standalone commit. The uppercase duplicate is tracked only on that branch; merging without removing it causes a case-collision conflict on case-insensitive filesystems.
+   - **WPE-incident deploy gate:** do not push plugin `1.23.361` to me1 while WP Engine is actively degraded (404s / login issues); wait until WPE status is green.
 
 ---
 
