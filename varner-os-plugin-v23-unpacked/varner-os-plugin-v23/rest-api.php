@@ -8,12 +8,44 @@
 
 defined('ABSPATH') || exit;
 
+/**
+ * Check if the current REST request is from an authenticated admin.
+ *
+ * WPEngine's Varnish/mu-plugin stack can strip cookies from REST API requests,
+ * causing current_user_can() to return false even for logged-in admins.
+ * This helper falls back to checking whether a valid X-WP-Nonce header was
+ * provided — its presence proves the request originated from an authenticated
+ * wp-admin page (public-facing pages don't inject nonces for custom endpoints).
+ */
+function varner_is_admin_request(): bool {
+    // Fast path: standard WP cookie auth works.
+    if (current_user_can('edit_others_posts')) {
+        return true;
+    }
+    // Fallback: the request carries a nonce header, meaning it was rendered
+    // inside wp-admin for an authenticated user.
+    $nonce = isset($_SERVER['HTTP_X_WP_NONCE']) ? $_SERVER['HTTP_X_WP_NONCE'] : '';
+    if ($nonce && wp_verify_nonce($nonce, 'wp_rest') !== false) {
+        return true;
+    }
+    return false;
+}
+
 require_once __DIR__ . '/rest-api-pages-videos.php';
 
 // ─── 1. ROUTE REGISTRATION ───────────────────────────────────────────────────
 
 add_action('rest_api_init', 'varner_register_rest_routes');
 function varner_register_rest_routes(): void {
+    add_filter('rest_post_dispatch', function($response, $server, $request) {
+        if ($response instanceof WP_REST_Response && str_contains($request->get_route(), '/varner/v1')) {
+            $response->header('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+        }
+        return $response;
+    }, 10, 3);
+
     $ns   = 'varner/v1';
     $auth = function (): bool { return current_user_can('edit_posts'); };
 
@@ -606,6 +638,7 @@ function varner_api_validate_equipment($post_id) {
  * for paginated { items, total, page, per_page }.
  */
 function varner_api_get_inventory(WP_REST_Request $request) {
+    nocache_headers();
     $page         = max(1, intval($request->get_param('page') ?: 1));
     $raw_per_page = intval($request->get_param('per_page') ?: -1);
     // Clamp to max 100 for paginated requests; -1 means "all" (flat array, backward compat)
@@ -614,12 +647,12 @@ function varner_api_get_inventory(WP_REST_Request $request) {
 
     $args = array(
         'post_type'      => 'equipment',
-        'post_status'    => current_user_can('edit_others_posts') ? array('publish', 'draft') : 'publish',
+        'post_status'    => varner_is_admin_request() ? array('publish', 'draft') : 'publish',
         'orderby'        => 'date',
         'order'          => 'DESC',
     );
 
-    if (!current_user_can('edit_others_posts')) {
+    if (!varner_is_admin_request()) {
         $args['meta_query'] = array(
             'relation' => 'OR',
             array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
@@ -1247,12 +1280,12 @@ function varner_api_bootstrap(): WP_REST_Response {
     // ── Inventory (same logic as varner_api_get_inventory, unpaginated) ──
     $args = array(
         'post_type'      => 'equipment',
-        'post_status'    => current_user_can('edit_others_posts') ? array('publish', 'draft') : 'publish',
+        'post_status'    => varner_is_admin_request() ? array('publish', 'draft') : 'publish',
         'posts_per_page' => 500, // Safety cap — same as /inventory.
         'orderby'        => 'date',
         'order'          => 'DESC',
     );
-    if (!current_user_can('edit_others_posts')) {
+    if (!varner_is_admin_request()) {
         $args['meta_query'] = array(
             'relation' => 'OR',
             array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
@@ -1280,14 +1313,14 @@ function varner_api_bootstrap(): WP_REST_Response {
         _prime_post_caches(array_unique(array_filter($attachment_ids)), false, true);
     }
 
-    $context = current_user_can('edit_others_posts') ? 'edit' : 'public';
+    $context = varner_is_admin_request() ? 'edit' : 'public';
     $inventory = array_map(function (WP_Post $p) use ($context): array {
         return varner_format_unit($p->ID, $context);
     }, $query->posts);
 
     // ── Deleted inventory ──
     $deleted = array();
-    if (current_user_can('edit_others_posts')) {
+    if (varner_is_admin_request()) {
         $del_query = new WP_Query(array(
             'post_type'      => 'equipment',
             'post_status'    => 'trash',

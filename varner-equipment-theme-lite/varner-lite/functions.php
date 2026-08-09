@@ -228,19 +228,19 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
 
     $makes = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'make'
-         GROUP BY pm.meta_value ORDER BY cnt DESC",
+         GROUP BY pm.meta_value ORDER BY pm.meta_value ASC",
         OBJECT_K
     );
 
     $categories = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'category'
-         GROUP BY pm.meta_value ORDER BY cnt DESC",
+         GROUP BY pm.meta_value ORDER BY pm.meta_value ASC",
         OBJECT_K
     );
 
     $conditions = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'condition'
-         GROUP BY pm.meta_value ORDER BY cnt DESC",
+         GROUP BY pm.meta_value ORDER BY pm.meta_value ASC",
         OBJECT_K
     );
 
@@ -303,7 +303,7 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
                 $counts[$sub] = ( $counts[$sub] ?? 0 ) + 1;
             }
         }
-        arsort( $counts );
+        uksort( $counts, 'strnatcasecmp' );
         foreach ( $counts as $sub => $cnt ) {
             $subcategories[$sub] = (object) array(
                 'val' => $sub,
@@ -431,7 +431,45 @@ add_action( 'template_redirect', function() {
     if ( get_query_var('varner_sitemap') === 'inventory' ) {
         varner_generate_xml_sitemap();
     }
-});
+
+    $uri  = $_SERVER['REQUEST_URI'] ?? '';
+    $path = strtolower( trim( (string) parse_url( $uri, PHP_URL_PATH ), '/' ) );
+
+    // 1. Sandhills / TractorHouse legacy query strings
+    if ( strpos( $uri, '?/listing/' ) !== false || strpos( $uri, '?/listings/' ) !== false ) {
+        wp_redirect( home_url( '/inventory/all-units/' ), 301 );
+        exit;
+    }
+
+    // 2. Legacy inventory sub-pages
+    if ( $path === 'all-inventory' || $path === 'inventory/in-stock-inventory' || $path === 'inventory/showroom-inventory' || $path === 'in-stock-inventory' || $path === 'showroom-inventory' ) {
+        wp_redirect( home_url( '/inventory/all-units/' ), 301 );
+        exit;
+    }
+
+    // 3. Brand landing pages (/brands/slug/ or /brands/slug)
+    if ( preg_match( '#^brands/([^/]+)$#i', $path, $m ) ) {
+        $brand_slug = sanitize_title( $m[1] );
+        if ( ! function_exists( 'varner_get_brand' ) || ! varner_get_brand( $brand_slug ) ) {
+            wp_redirect( home_url( '/brands/' ), 301 );
+            exit;
+        }
+    }
+
+    // 4. Missing equipment / inventory items or 404s
+    if ( is_404() ) {
+        if ( strpos( $path, 'inventory/' ) === 0 || strpos( $path, 'equipment/' ) === 0 ) {
+            wp_redirect( home_url( '/inventory/all-units/' ), 301 );
+            exit;
+        }
+        if ( get_query_var( 'paged' ) > 1 || get_query_var( 'page' ) > 1 ) {
+            $clean_url = strtok( home_url( add_query_arg( array(), array() ) ), '?' );
+            $clean_url = preg_replace( '#/page/\d+/?#', '/', $clean_url );
+            wp_redirect( $clean_url, 301 );
+            exit;
+        }
+    }
+}, 1 );
 
 add_filter( 'template_include', function( $template ) {
     if ( get_query_var( 'brands_hub' ) ) {
@@ -445,10 +483,8 @@ add_filter( 'template_include', function( $template ) {
     if ( $segment && $brand_slug ) {
         $brand = function_exists( 'varner_get_brand' ) ? varner_get_brand( sanitize_title( $brand_slug ) ) : null;
         if ( ! $brand ) {
-            global $wp_query;
-            $wp_query->set_404();
-            status_header( 404 );
-            return locate_template( '404.php' ) ?: $template;
+            wp_redirect( home_url( '/inventory/' . sanitize_title( $segment ) . '/' ), 301 );
+            exit;
         }
         // Guard: check if this brand + segment combo has at least 1 unit in stock
         $meta_query = array(
@@ -462,10 +498,8 @@ add_filter( 'template_include', function( $template ) {
             'meta_query'     => $meta_query,
         ) );
         if ( ! $combo_query->have_posts() ) {
-            global $wp_query;
-            $wp_query->set_404();
-            status_header( 404 );
-            return locate_template( '404.php' ) ?: $template;
+            wp_redirect( home_url( '/inventory/' . sanitize_title( $segment ) . '/' ), 301 );
+            exit;
         }
         $listing_template = locate_template( 'page-equipment-listing.php' );
         if ( $listing_template ) return $listing_template;
@@ -476,10 +510,8 @@ add_filter( 'template_include', function( $template ) {
             $t = locate_template( 'single-brand.php' );
             if ( $t ) return $t;
         } else {
-            global $wp_query;
-            $wp_query->set_404();
-            status_header( 404 );
-            return locate_template( '404.php' ) ?: $template;
+            wp_redirect( home_url( '/brands/' ), 301 );
+            exit;
         }
     }
     if ( $segment ) {
@@ -499,6 +531,19 @@ add_filter( 'template_include', function( $template ) {
     }
     return $template;
 }, 30);
+
+// Exclude legacy & unlisted pages from WordPress core wp-sitemap.xml
+add_filter( 'wp_sitemaps_posts_query_args', function( $args, $post_type ) {
+    if ( $post_type === 'page' ) {
+        $args['post_name__not_in'] = array(
+            'in-stock-inventory', 'showroom-inventory',
+            'bale-king', 'baumalight', 'beaver-valley', 'cm-truck-beds',
+            'custom-made', 'degelman', 'donahue', 'hackett', 'maschio',
+            'massey-ferguson', 'maxon', 'mchale', 'speeco', 'tidenberg'
+        );
+    }
+    return $args;
+}, 10, 2 );
 
 // Ensure About page uses the About template if present
 function varner_ensure_about_page_template() {
@@ -1069,6 +1114,35 @@ function varner_exclude_sold_from_sitemaps( $args, $post_type ) {
 add_filter( 'wp_sitemaps_posts_query_args', 'varner_exclude_sold_from_sitemaps', 100, 2 );
 
 /**
+ * Exclude dead pages (legacy inventory + unknown-brand landing pages) from the
+ * native core sitemap so Google stops crawling URLs that now 301-redirect.
+ */
+function varner_exclude_dead_pages_from_sitemap( $args, $post_type ) {
+    if ( 'page' !== $post_type ) {
+        return $args;
+    }
+    $dead_page_ids = array();
+    $dead_slugs    = array(
+        'inventory/in-stock-inventory',
+        'inventory/showroom-inventory',
+        'bale-king', 'baumalight', 'beaver-valley', 'cm-truck-beds', 'custom-made',
+        'degelman', 'donahue', 'hackett', 'maschio', 'massey-ferguson',
+        'maxon', 'mchale', 'speeco', 'tidenberg',
+    );
+    foreach ( $dead_slugs as $path ) {
+        $page = get_page_by_path( $path );
+        if ( $page && ! is_wp_error( $page ) ) {
+            $dead_page_ids[] = $page->ID;
+        }
+    }
+    if ( ! empty( $dead_page_ids ) ) {
+        $args['post__not_in'] = array_merge( isset( $args['post__not_in'] ) ? (array) $args['post__not_in'] : array(), $dead_page_ids );
+    }
+    return $args;
+}
+add_filter( 'wp_sitemaps_posts_query_args', 'varner_exclude_dead_pages_from_sitemap', 20, 2 );
+
+/**
  * Exclude Sold / Pending / Draft from Yoast SEO XML sitemaps
  */
 function varner_exclude_sold_from_yoast_sitemap( $url, $type, $post ) {
@@ -1091,5 +1165,67 @@ add_filter( 'wpseo_robots', function( $robots ) {
     }
     return $robots;
 }, 100 );
+
+/**
+ * Generate 100% Valid robots.txt for Google & Lighthouse SEO Compliance
+ */
+add_filter( 'robots_txt', function ( $output, $public ) {
+    $site_url = home_url();
+    $robots  = "User-agent: *\n";
+    $robots .= "Disallow: /wp-admin/\n";
+    $robots .= "Allow: /wp-admin/admin-ajax.php\n\n";
+    $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap.xml' ) . "\n";
+    $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap-inventory.xml' ) . "\n\n";
+
+    $ai_bots = array(
+        'GPTBot', 'ChatGPT-User', 'Google-Extended', 'Anthropic-AI',
+        'ClaudeBot', 'Claude-Web', 'CCBot', 'Omgilibot', 'FacebookBot',
+        'Diffbot', 'Bytespider', 'ImagesiftBot', 'PerplexityBot', 'Cohesive-Bot'
+    );
+    foreach ( $ai_bots as $bot ) {
+        $robots .= "User-agent: " . $bot . "\n";
+        $robots .= "Disallow: /\n\n";
+    }
+    return trim( $robots ) . "\n";
+}, 999, 2 );
+
+/**
+ * 🔒 SECURITY HARDENING: Block Public User Enumeration & REST User Endpoints
+ */
+add_filter( 'rest_authentication_errors', function ( $result ) {
+    if ( ! empty( $result ) ) {
+        return $result;
+    }
+    $req_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( ! is_user_logged_in() && ( strpos( $req_uri, '/wp/v2/users' ) !== false || strpos( $req_uri, 'wp/v2/users' ) !== false ) ) {
+        return new WP_Error( 'rest_user_cannot_view', 'User enumeration is disabled.', array( 'status' => 401 ) );
+    }
+    return $result;
+} );
+
+add_filter( 'rest_endpoints', function ( $endpoints ) {
+    if ( ! is_user_logged_in() ) {
+        unset( $endpoints['/wp/v2/users'] );
+        unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
+    }
+    return $endpoints;
+} );
+
+add_action( 'template_redirect', function () {
+    if ( is_author() || ( isset( $_GET['author'] ) && ! is_admin() ) ) {
+        wp_die( 'User enumeration is disabled.', 'Access Denied', array( 'response' => 403 ) );
+    }
+} );
+
+add_filter( 'oembed_response_data', function ( $data ) {
+    if ( isset( $data['author_name'] ) ) {
+        unset( $data['author_name'] );
+    }
+    if ( isset( $data['author_url'] ) ) {
+        unset( $data['author_url'] );
+    }
+    return $data;
+} );
+
 
 

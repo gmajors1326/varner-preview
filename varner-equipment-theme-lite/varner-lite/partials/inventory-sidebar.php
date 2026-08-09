@@ -85,7 +85,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                     <div>
                         <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
                         <div class="space-y-2">
-                            <input type="text" name="s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
+                            <input type="text" name="s" id="filter-search-s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" aria-label="Search Keyword" />
                             <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
                         </div>
                     </div>
@@ -182,13 +182,13 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         </div>
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
-                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Minimum Price" />
                                 <span class="text-slate-500">-</span>
-                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Maximum Price" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
-                                <input id="<?php echo $uid; ?>_price_range_min" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_min_value !== '' ? $price_min_value : $price_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                                <input id="<?php echo $uid; ?>_price_range_max" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_max_value !== '' ? $price_max_value : $price_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                                <input id="<?php echo $uid; ?>_price_range_min" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_min_value !== '' ? $price_min_value : $price_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Minimum Price Slider" />
+                                <input id="<?php echo $uid; ?>_price_range_max" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_max_value !== '' ? $price_max_value : $price_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Maximum Price Slider" />
                             </div>
                         </div>
                     </div>
@@ -200,13 +200,13 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         </div>
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
-                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Minimum Year" />
                                 <span class="text-slate-500">-</span>
-                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Maximum Year" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
-                                <input id="<?php echo $uid; ?>_year_range_min" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_min_value !== '' ? $year_min_value : $year_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                                <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                                <input id="<?php echo $uid; ?>_year_range_min" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_min_value !== '' ? $year_min_value : $year_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Minimum Year Slider" />
+                                <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Maximum Year Slider" />
                             </div>
                         </div>
                     </div>

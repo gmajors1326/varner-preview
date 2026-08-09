@@ -87,13 +87,13 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
   };
 
   const countOf = (field, val) => inventoryList.filter(i => i[field] === val).length;
-  const allStatuses   = [...new Set(inventoryList.map(i => i.status).filter(Boolean))].sort();
-  const allCategories = [...new Set(inventoryList.map(i => i.category).filter(Boolean))].sort();
-  const allConditions = [...new Set(inventoryList.map(i => i.condition).filter(Boolean))].sort();
+  const allStatuses   = [...new Set(inventoryList.map(i => i.status).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  const allCategories = [...new Set(inventoryList.map(i => i.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  const allConditions = [...new Set(inventoryList.map(i => i.condition).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
   const makeCounts = {};
   inventoryList.forEach(i => { if (i.make) makeCounts[i.make] = (makeCounts[i.make] || 0) + 1; });
-  const sortedMakes = Object.keys(makeCounts).sort((a, b) => makeCounts[b] - makeCounts[a]);
+  const sortedMakes = Object.keys(makeCounts).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
   const displayMakes = showAllMakes ? sortedMakes : sortedMakes.slice(0, 5);
 
   const modelsByMake = {};
@@ -104,7 +104,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
   });
   const makesForModels = filters.makes.length > 0
     ? filters.makes
-    : Object.keys(modelsByMake).sort((a, b) => (makeCounts[b] || 0) - (makeCounts[a] || 0));
+    : Object.keys(modelsByMake).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
   const displayMakeGroups = showAllModels ? makesForModels : makesForModels.slice(0, 3);
 
   const selectedCats = filters.categories || [];
@@ -125,7 +125,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
       });
     }
   }
-  subOptions = [...new Set(subOptions)].sort();
+  subOptions = [...new Set(subOptions)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
   const selectedSubs = filters.subcategories || [];
   let ssOptions = [];
@@ -144,7 +144,7 @@ export const FilterSidebar = ({ inventoryList, filters, searchQuery, onFilterCha
       }
     });
   }
-  ssOptions = [...new Set(ssOptions)].sort();
+  ssOptions = [...new Set(ssOptions)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
   const SectionHeader = ({ label, sKey, applied }) => (
     <button onClick={() => toggleSection(sKey)}

@@ -673,9 +673,12 @@ function varner_backend_get_settings_defaults(): array {
 // A second definition here was removed to prevent a PHP fatal 'Cannot redeclare function' error.
 
 /**
- * Block common AI crawler bots via robots.txt
+ * Block common AI crawler bots via robots.txt and sanitize output for Lighthouse SEO compliance
  */
 add_filter('robots_txt', function (string $output, bool $public): string {
+    // Strip Crawl-delay directives that cause Lighthouse validation warnings
+    $output = preg_replace('/Crawl-delay:\s*\d+/i', '', $output);
+    
     $crawlers = array(
         'User-agent: GPTBot',
         'Disallow: /',
@@ -706,8 +709,8 @@ add_filter('robots_txt', function (string $output, bool $public): string {
         'User-agent: Cohesive-Bot',
         'Disallow: /',
     );
-    return $output . "\n" . implode("\n", $crawlers) . "\n";
-}, 10, 2);
+    return trim($output) . "\n\n" . implode("\n", $crawlers) . "\n";
+}, 999, 2);
 
 // ─── One-Time Migration: subcategory string → array ─────────────────────────
 // Converts every equipment post's subcategory meta from a plain string to a
@@ -758,3 +761,49 @@ function varner_migrate_subcategory_to_array(): void {
         error_log("[Varner OS] Subcategory migration complete: {$migrated} converted, {$skipped} already arrays, out of " . count($post_ids) . " total.");
     }
 }
+
+/**
+ * 🔒 SECURITY HARDENING: Block Public User Enumeration & REST User Endpoints
+ */
+add_filter( 'rest_authentication_errors', function ( $result ) {
+    if ( ! empty( $result ) ) {
+        return $result;
+    }
+    $req_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( ! is_user_logged_in() && ( strpos( $req_uri, '/wp/v2/users' ) !== false || strpos( $req_uri, 'wp/v2/users' ) !== false ) ) {
+        return new WP_Error( 'rest_user_cannot_view', 'User enumeration is disabled.', array( 'status' => 401 ) );
+    }
+    return $result;
+} );
+
+add_filter( 'rest_endpoints', function ( $endpoints ) {
+    if ( ! is_user_logged_in() ) {
+        if ( isset( $endpoints['/wp/v2/users'] ) ) {
+            unset( $endpoints['/wp/v2/users'] );
+        }
+        if ( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) {
+            unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
+        }
+    }
+    return $endpoints;
+} );
+
+// 2. Block author parameter query enumeration (e.g. ?author=1 or /author/username/)
+add_action( 'template_redirect', function () {
+    if ( is_author() || ( isset( $_GET['author'] ) && ! is_admin() ) ) {
+        wp_safe_redirect( home_url( '/' ), 301 );
+        exit;
+    }
+} );
+
+// 3. Prevent oEmbed user discovery (/wp-json/oembed/1.0/embed?url=...)
+add_filter( 'oembed_response_data', function ( $data ) {
+    if ( isset( $data['author_name'] ) ) {
+        unset( $data['author_name'] );
+    }
+    if ( isset( $data['author_url'] ) ) {
+        unset( $data['author_url'] );
+    }
+    return $data;
+} );
+

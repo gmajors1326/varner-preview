@@ -10,6 +10,26 @@
  * Monthly payment: 10 % APR, 60 months
  */
 
+// Ensure required variables are set if caller passed none or used get_template_part()
+if ( ! isset( $post_id ) || empty( $post_id ) ) {
+    $post_id = get_the_ID();
+}
+if ( ! isset( $price ) )           { $price = get_field( 'price', $post_id ); }
+if ( ! isset( $formatted_price ) ) { $formatted_price = function_exists('varner_format_price') ? varner_format_price( $price ) : ( ( is_numeric($price) && $price > 0 ) ? number_format( $price, 2 ) : 'Call For Price' ); }
+if ( ! isset( $year ) )            { $year = get_field( 'year', $post_id ); }
+if ( ! isset( $make ) )            { $make = get_field( 'make', $post_id ); }
+if ( ! isset( $model ) )           { $model = get_field( 'model', $post_id ); }
+if ( ! isset( $category ) )        { $category = get_field( 'category', $post_id ); }
+if ( ! isset( $condition ) )       { $condition = get_field( 'condition', $post_id ); }
+if ( ! isset( $stock_number ) )    { $stock_number = get_field( 'stock_number', $post_id ); }
+if ( ! isset( $length ) )          { $length = get_field( 'length', $post_id ); }
+if ( ! isset( $images ) || ! is_array( $images ) || empty( $images ) ) {
+    $images = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
+}
+if ( empty( $images ) ) {
+    $images = array( get_template_directory_uri() . '/assets/VarnerEquipment_red.png' );
+}
+
 $monthly_payment = '';
 if ( is_numeric( $price ) && $price > 0 ) {
     $r               = 0.10 / 12;
@@ -92,7 +112,7 @@ $finance_url    = add_query_arg( array(
 
             <!-- Lightbox trigger icon -->
             <button type="button"
-                    class="vne-lightbox-trigger absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity bg-black/60 text-white p-2 rounded-lg backdrop-blur-sm hover:bg-black/80"
+                    class="vne-lightbox-trigger absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity w-10 h-10 flex items-center justify-center bg-black/60 text-white rounded-xl backdrop-blur-sm hover:bg-black/80 shadow-lg"
                     aria-label="View photos"
                     data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
                     data-start="<?php echo esc_url( $images[0] ?? '' ); ?>">
@@ -101,12 +121,12 @@ $finance_url    = add_query_arg( array(
 
             <?php if ( count( $images ) > 1 ) : ?>
             <!-- Prev arrow -->
-            <button class="vne-prev absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 z-10 hover:bg-black/70"
+            <button class="vne-prev absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 z-10 hover:bg-black/80 shadow-lg"
                     aria-label="Previous image">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <!-- Next arrow -->
-            <button class="vne-next absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 z-10 hover:bg-black/70"
+            <button class="vne-next absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 z-10 hover:bg-black/80 shadow-lg"
                     aria-label="Next image">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
@@ -115,11 +135,13 @@ $finance_url    = add_query_arg( array(
 
         <!-- Carousel dots -->
         <?php if ( count( $images ) > 1 ) : ?>
-        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            <?php foreach ( $images as $i => $img_url ) : ?>
-            <button class="vne-dot w-2.5 h-2.5 rounded-full border-2 border-white shadow transition-all"
-                    style="opacity:<?php echo $i === 0 ? '1' : '0.4'; ?>; background:white;"
-                    aria-label="Image <?php echo $i + 1; ?>"></button>
+        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-0.5 z-10 items-center justify-center max-w-[90%] overflow-hidden">
+            <?php foreach ( array_slice( $images, 0, 8 ) as $i => $img_url ) : ?>
+            <button class="vne-dot w-6 h-6 flex items-center justify-center p-1 cursor-pointer z-10 focus:outline-none"
+                    aria-label="Image <?php echo $i + 1; ?>">
+                <span class="vne-dot-indicator block w-2 h-2 rounded-full border-2 border-white shadow transition-all bg-white"
+                      style="opacity:<?php echo $i === 0 ? '1' : '0.4'; ?>;"></span>
+            </button>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
@@ -175,7 +197,8 @@ $finance_url    = add_query_arg( array(
         <!-- Financing button -->
         <div class="flex gap-2">
             <a href="<?php echo esc_url( $finance_url ); ?>"
-               class="flex-1 text-center text-[9px] font-black uppercase tracking-wide border-2 border-slate-700 text-slate-700 py-2.5 px-1 rounded-lg hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all leading-tight">
+               class="flex-1 text-center text-[9px] font-black uppercase tracking-wide border-2 border-slate-700 text-slate-700 py-2.5 px-1 rounded-lg hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all leading-tight"
+               aria-label="Apply for financing">
                 *Apply for<br>Financing
             </a>
         </div>

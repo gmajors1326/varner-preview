@@ -71,20 +71,20 @@
 
         <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 lg:pb-48 pb-12">
             <div class="max-w-3xl space-y-8">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl reveal-on-scroll">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_title' ) ); ?>
                 </h1>
-                <div class="text-xl text-white font-bold max-w-xl leading-relaxed drop-shadow-md reveal-on-scroll delay-300 hero-subtitle-container">
+                <div class="text-xl text-white font-bold max-w-xl leading-relaxed drop-shadow-md hero-subtitle-container">
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-6 items-start">
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all reveal-on-scroll delay-400">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-500">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all reveal-on-scroll delay-700">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all">
                         Online Parts
                     </a>
                 </div>
@@ -92,7 +92,7 @@
         </div>
 
         <!-- QUICK SEARCH UTILITY (Bottom of Hero) -->
-        <div class="relative lg:absolute bottom-0 lg:bottom-12 left-0 right-0 z-50 reveal-on-scroll delay-1000 mt-8 lg:mt-0 w-full">
+        <div class="relative lg:absolute bottom-0 lg:bottom-12 left-0 right-0 z-50 mt-8 lg:mt-0 w-full">
             <div class="max-w-7xl mx-auto px-4 py-6 lg:py-0">
                 <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/30 flex flex-col lg:flex-row gap-3 items-center">
                     <div class="flex-1 w-full">
@@ -282,7 +282,7 @@
                     <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Operations Segments</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Browse by Category</h2>
                 </div>
-                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-white border border-slate-300 px-6 py-3 rounded-xl text-slate-900 font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-sm">See All Inventory</a>
             </div>
             <?php
             $segment_filters = array(
@@ -356,10 +356,10 @@
 
             <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
                 <div>
-                    <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Hand-Picked Inventory Ledger</div>
+                    <div class="text-red-700 font-black text-xs uppercase tracking-[0.4em] mb-4">Hand-Picked Inventory Ledger</div>
                     <h2 class="text-5xl font-black text-slate-900 tracking-tighter uppercase">Featured Inventory</h2>
                 </div>
-                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-slate-100 px-6 py-3 rounded-xl text-slate-500 font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-200 hover:text-red-600 transition-all shadow-sm">See All Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="bg-white border border-slate-300 px-6 py-3 rounded-xl text-slate-900 font-black uppercase text-xs tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-sm">See All Inventory</a>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

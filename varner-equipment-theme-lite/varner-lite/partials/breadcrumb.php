@@ -16,39 +16,102 @@ $crumbs[] = array(
     'url'   => home_url( '/' ),
 );
 
+// ── Virtual pages (from parse_request router) ─────────────────
+if ( defined( 'VARNER_VIRTUAL_PAGE' ) ) {
+    $virtual_path = VARNER_VIRTUAL_PAGE;
+    if ( $virtual_path === 'services/service-request' ) {
+        $crumbs[] = array( 'label' => 'Services', 'url' => home_url( '/services' ) );
+        $crumbs[] = array( 'label' => 'Service Request', 'url' => '' );
+    } elseif ( $virtual_path === 'services/parts-request' ) {
+        $crumbs[] = array( 'label' => 'Services', 'url' => home_url( '/services' ) );
+        $crumbs[] = array( 'label' => 'Parts Request', 'url' => '' );
+    } elseif ( $virtual_path === 'dealer-info/about-us' ) {
+        $crumbs[] = array( 'label' => 'Dealer Info', 'url' => home_url( '/dealer-info' ) );
+        $crumbs[] = array( 'label' => 'About Us', 'url' => '' );
+    } elseif ( $virtual_path === 'dealer-info/our-team' ) {
+        $crumbs[] = array( 'label' => 'Dealer Info', 'url' => home_url( '/dealer-info' ) );
+        $crumbs[] = array( 'label' => 'Our Team', 'url' => '' );
+    } elseif ( $virtual_path === 'dealer-info/employment' ) {
+        $crumbs[] = array( 'label' => 'Dealer Info', 'url' => home_url( '/dealer-info' ) );
+        $crumbs[] = array( 'label' => 'Employment', 'url' => '' );
+    } else {
+        $virtual_titles = array(
+            'services'       => 'Services',
+            'dealer-info'    => 'Dealer Info',
+            'videos'         => 'Videos',
+            'product-videos' => 'Product Videos',
+            'finance'        => 'Finance',
+            'financing'      => 'Financing',
+            'contact'        => 'Contact',
+            'brands'         => 'Brands',
+        );
+        $title = $virtual_titles[ $virtual_path ] ?? '';
+        if ( ! $title ) {
+            $path_parts = explode( '/', $virtual_path );
+            $title = ucwords( str_replace( '-', ' ', end( $path_parts ) ) );
+        }
+        $crumbs[] = array( 'label' => $title, 'url' => '' );
+    }
+}
 // ── Equipment detail page ────────────────────────────────────
-if ( is_singular( 'equipment' ) ) {
-    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/all-inventory' ) );
+elseif ( is_singular( 'equipment' ) ) {
+    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/inventory/all-units' ) );
 
     $category = get_field( 'category' );
     if ( $category ) {
         // Map category to its segment slug
         $seg_map = array(
-            'Compact Tractors'    => 'tractors',
-            'Utility Tractors'    => 'tractors',
-            'Tractors'            => 'tractors',
-            'Commercial Trailers' => 'trailers',
-            'Dump Trailers'       => 'trailers',
-            'Flatbed Trailers'    => 'trailers',
-            'Utility Trailers'    => 'trailers',
-            'Horse Trailers'      => 'trailers',
-            'Livestock Trailers'  => 'trailers',
-            'Trailers'            => 'trailers',
-            'Implements'          => 'attachments',
-            'Attachments'         => 'attachments',
-            'Loaders'             => 'attachments',
-            'Hay Equipment'       => 'hay-equipment',
-            'Balers'              => 'hay-equipment',
-            'Rakes'               => 'hay-equipment',
-            'Tedders'             => 'hay-equipment',
+            'Compact Tractors'          => 'tractors',
+            'Utility Tractors'          => 'tractors',
+            'Tractors'                  => 'tractors',
+            'Farm Tractors'             => 'tractors',
+            'Commercial Trailers'       => 'trailers',
+            'Dump Trailers'             => 'dump-trailers',
+            'Flatbed Trailers'          => 'trailers',
+            'Flatbed / Tag Trailers'    => 'trailers',
+            'Utility Trailers'          => 'utility-trailers',
+            'Horse Trailers'            => 'trailers',
+            'Livestock Trailers'        => 'trailers',
+            'Ag Trailers'               => 'trailers',
+            'Semi-Trailers'             => 'trailers',
+            'Car Hauler Trailers'       => 'trailers',
+            'Cargo / Enclosed Trailers' => 'trailers',
+            'Tilt Trailers'             => 'trailers',
+            'Landscaping Trailers'      => 'trailers',
+            'Other Trailers'            => 'trailers',
+            'Trailers'                  => 'trailers',
+            'Implements'                => 'attachments',
+            'Attachments'               => 'attachments',
+            'Loaders'                   => 'attachments',
+            'Mowers'                    => 'attachments',
+            'Hay Equipment'             => 'hay-equipment',
+            'Balers'                    => 'hay-equipment',
+            'Rakes'                     => 'hay-equipment',
+            'Tedders'                   => 'hay-equipment',
         );
-        $seg_slug = $seg_map[ $category ] ?? 'misc';
+
+        if ( isset( $seg_map[ $category ] ) ) {
+            $seg_slug = $seg_map[ $category ];
+        } elseif ( stripos( $category, 'trailer' ) !== false ) {
+            $seg_slug = 'trailers';
+        } elseif ( stripos( $category, 'tractor' ) !== false ) {
+            $seg_slug = 'tractors';
+        } elseif ( stripos( $category, 'hay' ) !== false || stripos( $category, 'baler' ) !== false || stripos( $category, 'rake' ) !== false ) {
+            $seg_slug = 'hay-equipment';
+        } elseif ( stripos( $category, 'implement' ) !== false || stripos( $category, 'attachment' ) !== false || stripos( $category, 'loader' ) !== false || stripos( $category, 'mower' ) !== false ) {
+            $seg_slug = 'attachments';
+        } else {
+            $seg_slug = 'misc';
+        }
+
         $seg_labels = array(
-            'tractors'      => 'Tractors',
-            'trailers'      => 'Trailers',
-            'attachments'   => 'Attachments',
-            'hay-equipment' => 'Hay Equipment',
-            'misc'          => 'Misc.',
+            'tractors'         => 'Tractors',
+            'trailers'         => 'Trailers',
+            'utility-trailers' => 'Utility Trailers',
+            'dump-trailers'    => 'Dump Trailers',
+            'attachments'      => 'Attachments',
+            'hay-equipment'    => 'Hay Equipment',
+            'misc'             => 'Misc.',
         );
         $crumbs[] = array(
             'label' => $seg_labels[ $seg_slug ] ?? $category,
@@ -65,13 +128,15 @@ if ( is_singular( 'equipment' ) ) {
 
 // ── Inventory segment pages (e.g. /inventory/tractors) ──────
 elseif ( get_query_var( 'inventory_segment' ) ) {
-    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/all-inventory' ) );
+    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/inventory/all-units' ) );
     $seg = get_query_var( 'inventory_segment' );
     $seg_labels = array(
         'new'           => 'New',
         'used'          => 'Used',
         'tractors'      => 'Tractors',
         'trailers'      => 'Trailers',
+        'utility-trailers' => 'Utility Trailers',
+        'dump-trailers' => 'Dump Trailers',
         'attachments'   => 'Attachments',
         'hay-equipment' => 'Hay Equipment',
         'misc'          => 'Misc.',
@@ -97,7 +162,7 @@ elseif ( is_page() && get_page_template_slug() === 'page-brands.php' ) {
 
 // ── Showroom / In-Stock ───────────────────────────────────────
 elseif ( is_page() && in_array( get_page_template_slug(), array( 'page-showroom-inventory.php', 'page-in-stock-inventory.php' ) ) ) {
-    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/all-inventory' ) );
+    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/inventory/all-units' ) );
     $crumbs[] = array( 'label' => get_the_title(), 'url' => '' );
 }
 
@@ -111,12 +176,33 @@ elseif ( is_page() && in_array( get_page_template_slug(), array( 'page-service-r
 elseif ( is_page() ) {
     $parent_id = wp_get_post_parent_id( get_the_ID() );
     if ( $parent_id ) {
-        $crumbs[] = array(
-            'label' => get_the_title( $parent_id ),
-            'url'   => get_permalink( $parent_id ),
-        );
+        $parent_title = get_the_title( $parent_id );
+        if ( ! empty( $parent_title ) ) {
+            $crumbs[] = array(
+                'label' => $parent_title,
+                'url'   => get_permalink( $parent_id ),
+            );
+        }
     }
-    $crumbs[] = array( 'label' => get_the_title(), 'url' => '' );
+    $page_title = get_the_title();
+    $crumbs[] = array( 'label' => $page_title ?: 'Page', 'url' => '' );
+}
+
+// ── Fallback for other standard post types/archives ───────────
+else {
+    $fallback_title = '';
+    if ( is_single() ) {
+        $fallback_title = get_the_title();
+    } elseif ( is_archive() ) {
+        $fallback_title = get_the_archive_title();
+    } elseif ( is_search() ) {
+        $fallback_title = 'Search Results';
+    } elseif ( is_404() ) {
+        $fallback_title = 'Page Not Found';
+    }
+    if ( ! empty( $fallback_title ) ) {
+        $crumbs[] = array( 'label' => $fallback_title, 'url' => '' );
+    }
 }
 
 // Don't render if we only have "Home"
@@ -128,8 +214,8 @@ foreach ( $crumbs as $i => $crumb ) {
     $schema_items[] = array(
         '@type'    => 'ListItem',
         'position' => $i + 1,
-        'name'     => $crumb['label'],
-        'item'     => ! empty( $crumb['url'] ) ? $crumb['url'] : ( get_permalink() ?: home_url( '/' ) ),
+        'name'     => $crumb['label'] ?: 'Page',
+        'item'     => ! empty( $crumb['url'] ) ? $crumb['url'] : home_url( add_query_arg( null, null ) ),
     );
 }
 $schema = array(

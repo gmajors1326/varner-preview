@@ -1,6 +1,6 @@
-const API = window.varnerData?.rest_url
-  ? window.varnerData.rest_url.replace(/\/$/, '') + '/varner/v1'
-  : '/wp-json/varner/v1';
+const API = (typeof window !== 'undefined' && window.location?.origin)
+  ? window.location.origin.replace(/\/$/, '') + '/wp-json/varner/v1'
+  : (window.varnerData?.rest_url ? window.varnerData.rest_url.replace(/\/$/, '') + '/varner/v1' : '/wp-json/varner/v1');
 
 let _nonce = window.varnerData?.nonce ?? '';
 

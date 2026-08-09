@@ -69,7 +69,18 @@ get_header();
         <h2 class="text-2xl font-black tracking-tighter text-slate-900 mb-6"><?php echo esc_html( $brand['name'] ); ?> Currently in Stock</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php while ( $units->have_posts() ) : $units->the_post();
-                get_template_part( 'partials/equipment-card' );
+                $post_id        = get_the_ID();
+                $year           = get_field( 'year', $post_id );
+                $make           = get_field( 'make', $post_id );
+                $model          = get_field( 'model', $post_id );
+                $category       = get_field( 'category', $post_id );
+                $condition      = get_field( 'condition', $post_id );
+                $price          = get_field( 'price', $post_id );
+                $formatted_price = function_exists('varner_format_price') ? varner_format_price( $price ) : ( ( is_numeric($price) && $price > 0 ) ? number_format( $price, 2 ) : 'Call For Price' );
+                $stock_number   = get_field( 'stock_number', $post_id );
+                $length         = get_field( 'length', $post_id );
+                $images         = function_exists('varner_get_card_images') ? varner_get_card_images( $post_id ) : array();
+                include get_template_directory() . '/partials/equipment-card.php';
             endwhile; ?>
         </div>
     <?php else : ?>

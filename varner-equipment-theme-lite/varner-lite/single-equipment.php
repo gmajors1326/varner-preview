@@ -100,6 +100,7 @@ $finance_url    = add_query_arg( array(
                     <img src="<?php echo esc_url( $img_url ); ?>"
                          alt="<?php echo esc_attr( $alt_desc ); ?>"
                          loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
+                         <?php if ( $i === 0 ) echo 'fetchpriority="high"'; ?>
                          class="vne-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                          style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>">
                     <?php endforeach; ?>

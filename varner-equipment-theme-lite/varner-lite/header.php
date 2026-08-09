@@ -159,6 +159,12 @@
 
     <link rel="canonical" href="<?php echo esc_url($canonical_url); ?>">
 
+    <?php
+    $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('red') : '';
+    if ( $brand_logo_url ) : ?>
+        <link rel="preload" href="<?php echo esc_url( $brand_logo_url ); ?>" as="image" fetchpriority="high">
+    <?php endif; ?>
+
     <!-- Preload critical fonts to avoid Cumulative Layout Shift (CLS) -->
     <link rel="preload" href="<?php echo esc_url( plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/Inter.woff2' ) ); ?>" as="font" type="font/woff2" crossorigin>
 
@@ -204,48 +210,9 @@
     <script type="application/ld+json"><?php echo wp_json_encode( $ld_business, JSON_UNESCAPED_SLASHES ); ?></script>
 
     <!-- Product JSON-LD (Single Equipment) -->
-    <?php if ( is_singular('equipment') && function_exists('get_field') ) :
-        $post_id     = get_the_ID();
-        $price       = get_field('price', $post_id);
-        $condition   = (string) get_field('condition', $post_id);
-        $stock       = get_field('stock_number', $post_id);
-        $hours       = get_field('hours', $post_id);
-        $hp          = get_field('horsepower', $post_id);
-        $vin         = get_field('vin', $post_id);
-        $has_price   = is_numeric($price) && (float) $price > 0 && ! get_field('call_for_price', $post_id);
-        
-        $ld_product  = array(
-            '@context'    => 'https://schema.org',
-            '@type'       => 'Product',
-            'name'        => trim( "$year $make $model" ),
-            'sku'         => $stock ?: (string) get_the_ID(),
-            'mpn'         => $stock ?: (string) get_the_ID(),
-            'image'       => $og_image,
-            'description' => $seo_description,
-            'brand'       => array( '@type' => 'Brand', 'name' => $make ?: 'Varner Equipment' ),
-            'offers'      => array(
-                '@type'         => 'Offer',
-                'url'           => get_permalink(),
-                'priceCurrency' => 'USD',
-                'availability'  => 'https://schema.org/InStock',
-                'itemCondition' => ( stripos( $condition, 'used' ) !== false )
-                    ? 'https://schema.org/UsedCondition'
-                    : 'https://schema.org/NewCondition',
-                'seller'        => array( '@type' => 'LocalBusiness', 'name' => 'Varner Equipment' ),
-            ),
-        );
-        if ( $has_price ) {
-            $ld_product['offers']['price'] = (string) $price;
-        }
-
-        $add_props = array();
-        if ( ! empty( $hours ) ) $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Hours', 'value' => (string) $hours );
-        if ( ! empty( $hp ) )    $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Horsepower', 'value' => (string) $hp );
-        if ( ! empty( $vin ) )   $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'VIN', 'value' => (string) $vin );
-        if ( ! empty( $add_props ) ) $ld_product['additionalProperty'] = $add_props;
-
-        echo '<script type="application/ld+json">' . wp_json_encode( $ld_product, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
-    endif; ?>
+    <?php if ( is_singular('equipment') && function_exists('varner_listing_schema') ) {
+        varner_listing_schema();
+    } ?>
 
     <!-- ItemList JSON-LD (Category / Inventory Listing Pages) -->
     <?php if ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) :
@@ -276,28 +243,6 @@
         endif;
     endif; ?>
 
-    <!-- BreadcrumbList JSON-LD -->
-    <?php if ( ! is_front_page() && ! is_home() ) :
-        $breadcrumbs = array(
-            array( '@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => home_url('/') ),
-        );
-        $pos = 2;
-        if ( is_singular('equipment') ) {
-            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => 'Inventory', 'item' => home_url('/inventory/all-units/') );
-            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => get_the_title(), 'item' => get_permalink() );
-        } elseif ( get_query_var('inventory_segment') ) {
-            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => 'Inventory', 'item' => home_url('/inventory/all-units/') );
-            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => ucfirst( str_replace( '-', ' ', get_query_var('inventory_segment') ) ), 'item' => $canonical_url );
-        } else {
-            $breadcrumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => get_the_title(), 'item' => $canonical_url );
-        }
-        $ld_breadcrumbs = array(
-            '@context'        => 'https://schema.org',
-            '@type'           => 'BreadcrumbList',
-            'itemListElement' => $breadcrumbs,
-        );
-        echo '<script type="application/ld+json">' . wp_json_encode( $ld_breadcrumbs, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
-    endif; ?>
 
     <?php wp_head(); ?>
 </head>
@@ -350,7 +295,7 @@
                         <?php 
                         $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('red') : '';
                         ?>
-                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain" width="200" height="80">
+                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain" width="200" height="80" fetchpriority="high" loading="eager">
                     </a>
 
                     <!-- MOBILE MENU TOGGLE -->
