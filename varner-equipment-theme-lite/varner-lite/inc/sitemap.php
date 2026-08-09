@@ -8,6 +8,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+function varner_generate_xml_sitemap_index() {
+	header( 'Content-Type: application/xml; charset=utf-8' );
+	echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+	echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+	$sitemaps = array(
+		'/wp-sitemap.xml',
+		'/sitemap-inventory.xml',
+	);
+
+	foreach ( $sitemaps as $sitemap ) {
+		echo "  <sitemap>\n";
+		echo "    <loc>" . esc_url( home_url( $sitemap ) ) . "</loc>\n";
+		echo "    <lastmod>" . date( 'Y-m-d' ) . "</lastmod>\n";
+		echo "  </sitemap>\n";
+	}
+
+	echo '</sitemapindex>';
+	exit;
+}
+
 function varner_generate_xml_sitemap() {
 	header( 'Content-Type: application/xml; charset=utf-8' );
 	echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";

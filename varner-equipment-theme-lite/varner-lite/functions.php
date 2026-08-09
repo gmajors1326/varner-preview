@@ -412,6 +412,7 @@ add_filter( 'query_vars', function( $vars ) {
 
 add_action( 'init', function() {
     add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
+    add_rewrite_rule('^sitemap_index\.xml$', 'index.php?varner_sitemap=index', 'top');
     add_rewrite_rule('^([a-f0-9]{32})\.txt$', 'index.php?indexnow_key=$matches[1]', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
@@ -430,6 +431,9 @@ add_action( 'init', function () {
 add_action( 'template_redirect', function() {
     if ( get_query_var('varner_sitemap') === 'inventory' ) {
         varner_generate_xml_sitemap();
+    }
+    if ( get_query_var('varner_sitemap') === 'index' ) {
+        varner_generate_xml_sitemap_index();
     }
 
     $uri  = $_SERVER['REQUEST_URI'] ?? '';
