@@ -31,3 +31,5 @@ diag.b64
 # Archived old theme
 _archive/
 
+# Embedded plugin tool repos
+claude-seo/
