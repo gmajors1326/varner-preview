@@ -12,6 +12,8 @@ export const SidebarLogo = ({ centered = false }) => {
         <img 
           src={logoUrl} 
           alt="Varner Equipment" 
+          width="160"
+          height="36"
           className="h-9 w-auto object-contain brightness-100 hover:brightness-110 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
         />
       </div>
@@ -20,16 +22,16 @@ export const SidebarLogo = ({ centered = false }) => {
 
   return (
     <div className={`flex items-center ${centered ? 'justify-center text-center' : 'gap-3'}`}>
-      <div className="bg-red-600 p-2 rounded-xl"><Box size={22} /></div>
+      <div className="bg-red-600 p-2 rounded-xl text-white"><Box size={22} /></div>
       {!centered ? (
         <div>
           <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
-          <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+          <span className="text-red-500 text-xs font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
         </div>
       ) : (
         <div className="ml-3 text-left">
           <span className="font-black text-xl tracking-tighter block leading-none">VARNER</span>
-          <span className="text-red-500 text-[9px] font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
+          <span className="text-red-500 text-xs font-black uppercase tracking-[0.3em] mt-0.5 block">Equipment</span>
         </div>
       )}
     </div>
@@ -40,14 +42,14 @@ export const NavItem = ({ icon, label, active = false, badge = null, onClick }) 
   <button 
     onClick={onClick}
     aria-current={active ? 'page' : undefined}
-    className={`flex items-center justify-between p-4 rounded-xl w-full text-left transition-all duration-300 ${active ? 'bg-red-600 text-white shadow-xl shadow-red-900/50 border-b-2 border-red-700' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-100'}`}
+    className={`flex items-center justify-between p-4 rounded-xl w-full text-left transition-all duration-300 ${active ? 'bg-red-600 text-white shadow-xl shadow-red-900/50 border-b-2 border-red-700' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}
   >
     <div className="flex items-center gap-4">
       {icon}
-      <span className="font-black text-[13px] uppercase tracking-wider">{label}</span>
+      <span className="font-black text-sm uppercase tracking-wider">{label}</span>
     </div>
     {badge !== null && badge !== undefined && (
-      <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-md ${active ? 'bg-white text-red-600' : 'bg-green-500 text-white'}`}>
+      <span className={`px-2 py-0.5 rounded-lg text-xs font-black uppercase tracking-widest shadow-md ${active ? 'bg-white text-red-600' : 'bg-emerald-700 text-white'}`}>
         {badge}
       </span>
     )}
@@ -56,7 +58,7 @@ export const NavItem = ({ icon, label, active = false, badge = null, onClick }) 
 
 export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav, isMobileApp, onLogout }) => (
   <>
-    <nav className="space-y-2">
+    <nav className="space-y-2" aria-label="Sidebar navigation">
       {!isMobileApp && (
         <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab==='dashboard'} onClick={() => onNav('dashboard')} />
       )}
@@ -103,17 +105,18 @@ export const SidebarContent = ({ activeTab, inventoryList, deletedHistory, onNav
 );
 
 export const FilterTag = ({ label, onRemove }) => (
-  <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
-    <button onClick={onRemove} className="font-black leading-none hover:text-red-200">×</button>
+  <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-md">
+    <button onClick={onRemove} aria-label={`Remove filter ${label}`} className="font-black leading-none hover:text-red-200">×</button>
     {label}
   </span>
 );
 
 export const MappingRow = ({ label, value }) => (
-  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 pb-4 last:border-0 last:pb-0">
-    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
-    <span className="text-[11px] font-black text-slate-950 uppercase tracking-tight flex items-center gap-3">
+  <div className="flex justify-between items-center py-1.5 border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+    <span className="text-xs font-black text-slate-600 uppercase tracking-widest">{label}</span>
+    <span className="text-xs font-black text-slate-950 uppercase tracking-tight flex items-center gap-3">
       <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>{value}
     </span>
   </div>
 );
+

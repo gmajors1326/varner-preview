@@ -112,9 +112,9 @@ with zipfile.ZipFile(r'$themeZip', 'w', zipfile.ZIP_DEFLATED) as z:
         for f in files:
             if f.startswith('.git') or f in exclude_files or f.endswith('.md'): continue
             fp = os.path.join(root, f)
-            arcname = theme_slug + '/' + os.path.relpath(fp, src).replace(os.sep, '/')
+            arcname = os.path.relpath(fp, src).replace(os.sep, '/')
             z.write(fp, arcname)
-print(f'Theme ZIP: files wrapped under {theme_slug}/')
+print(f'Theme ZIP: files at root level')
 "
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 

@@ -54,6 +54,7 @@ if (!empty($seo['filter'])) {
 $count_args = varner_build_inventory_query($base_meta, -1);
 $count_args['posts_per_page'] = -1;
 $count_args['fields'] = 'ids';
+unset( $count_args['paged'] );
 $total = count(get_posts($count_args));
 
 // 3. Active filter count for badge
@@ -118,18 +119,17 @@ $active_filter_count =
                     $inventory_query = new WP_Query($query_args);
                     $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
                     $total_found  = intval( $inventory_query->found_posts );
-                    $reset_url    = strtok( get_permalink(), '?' );
-                    $pagination_args = $_GET;
-                    unset( $pagination_args['paged'] );
-                    $pagination_args = array_map( function( $v ) {
-                        return is_array( $v ) ? array_map( 'sanitize_text_field', $v ) : sanitize_text_field( $v );
-                    }, $pagination_args );
+                    $raw_path     = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
+                    $reset_url    = home_url( preg_replace( '#/page/\d+/?#', '/', $raw_path ) );
+                    if ( $slug && strpos( $reset_url, '/inventory/' ) === false ) {
+                        $reset_url = home_url( '/inventory/' . $slug . '/' );
+                    }
                 ?>
 
                 <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
                     <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
-                        Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
+                        <?php echo esc_html( varner_get_results_count_text( $inventory_query, 12 ) ); ?>
                     </p>
                 </div>
 
@@ -156,24 +156,7 @@ $active_filter_count =
                 </div>
 
                 <!-- Pagination -->
-                <?php 
-                    $pagination = paginate_links( array(
-                        'base'      => add_query_arg( 'paged', '%#%' ),
-                        'format'    => '',
-                        'total'     => max( 1, $inventory_query->max_num_pages ),
-                        'current'   => $current_page,
-                        'type'      => 'list',
-                        'prev_text' => '&lt; Previous',
-                        'next_text' => 'Next &gt;',
-                    ) );
-                ?>
-                <?php if ( $pagination ) : ?>
-                <div class="mt-12 flex justify-center">
-                    <div class="varner-pagination">
-                        <?php echo $pagination; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <?php varner_render_pagination( $inventory_query ); ?>
             </div>
 
         </div>

@@ -40,9 +40,9 @@ export const InventoryTable = ({
       {/* Active filters bar */}
       {hasFilters && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0 mr-1">Active Filters:</span>
+          <span className="text-xs font-black text-slate-700 uppercase tracking-widest shrink-0 mr-1">Active Filters:</span>
           {searchQuery && (
-            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-md">
               <button onClick={() => onSearch('')} className="font-black leading-none hover:text-red-200" aria-label="Clear search">×</button>
               {searchQuery.toUpperCase()}
             </span>
@@ -54,30 +54,30 @@ export const InventoryTable = ({
             ))
           )}
           {(activeFilters.yearMin || activeFilters.yearMax) && (
-            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-md">
               <button onClick={() => { onFilterChange('yearMin', ''); onFilterChange('yearMax', ''); }} className="font-black leading-none hover:text-red-200" aria-label="Clear year filter">×</button>
               YEAR: {activeFilters.yearMin || '?'}–{activeFilters.yearMax || '?'}
             </span>
           )}
           {(activeFilters.priceMin || activeFilters.priceMax) && (
-            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-md">
               <button onClick={() => { onFilterChange('priceMin', ''); onFilterChange('priceMax', ''); }} className="font-black leading-none hover:text-red-200" aria-label="Clear price filter">×</button>
               PRICE: ${activeFilters.priceMin || '0'}–${activeFilters.priceMax || '∞'}
             </span>
           )}
           {activeFilters.stockSearch && (
-            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-md">
               <button onClick={() => onFilterChange('stockSearch', '')} className="font-black leading-none hover:text-red-200" aria-label="Clear stock filter">×</button>
               STOCK #: {activeFilters.stockSearch}
             </span>
           )}
           {activeFilters.vinSearch && (
-            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+            <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-md">
               <button onClick={() => onFilterChange('vinSearch', '')} className="font-black leading-none hover:text-red-200" aria-label="Clear VIN filter">×</button>
               VIN: {activeFilters.vinSearch}
             </span>
           )}
-          <button onClick={onClearFilters} className="ml-auto text-xs font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors shrink-0">Clear All</button>
+          <button onClick={onClearFilters} aria-label="Clear all active filters" className="ml-auto text-xs font-black text-slate-600 hover:text-red-600 uppercase tracking-widest transition-colors shrink-0">Clear All</button>
         </div>
       )}
 
@@ -100,18 +100,19 @@ export const InventoryTable = ({
         )}
 
         {/* Table card */}
-        <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-xl overflow-auto max-h-[80vh]" style={{ minWidth: 0 }}>
+        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-auto max-h-[80vh]" style={{ minWidth: 0 }}>
           <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 w-full">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Master Inventory Ledger</span>
+            <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Master Inventory Ledger</span>
           </div>
           <div className="px-6 py-3 border-b border-slate-100 bg-white flex items-center justify-between w-full gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <button onClick={() => setShowFilterPanel(true)}
+                aria-label="Open filter panel"
                 className="xl:hidden flex items-center gap-2 bg-white border-2 border-slate-200 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:border-red-500 transition-colors shrink-0">
                 <Search size={14} /> Filters
               </button>
             </div>
-            <span className="bg-slate-900 text-white text-[11px] font-black px-4 py-2 rounded-full uppercase tracking-widest shrink-0">
+            <span className="bg-slate-900 text-white text-xs font-black px-4 py-2 rounded-full uppercase tracking-widest shrink-0">
               {filteredInventory.length} Unit{filteredInventory.length !== 1 ? 's' : ''} Found
             </span>
           </div>
@@ -119,18 +120,18 @@ export const InventoryTable = ({
           <div className="p-2">
             {isLoading ? (
               <div className="p-20 text-center flex flex-col items-center gap-4">
-                <Loader2 size={24} className="text-slate-300 animate-spin" />
-                <span className="text-slate-300 font-black uppercase text-xs tracking-widest">Loading Inventory...</span>
+                <Loader2 size={24} className="text-slate-400 animate-spin" />
+                <span className="text-slate-600 font-black uppercase text-xs tracking-widest">Loading Inventory...</span>
               </div>
             ) : filteredInventory.length === 0 ? (
-              <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No units found</div>
+              <div className="p-20 text-center text-slate-600 font-black uppercase text-xs tracking-widest">No units found</div>
             ) : (
               <>
                 {/* ─── Desktop table (md+) ─── */}
                 <div className="hidden md:block">
                   <table className="w-full text-left border-collapse min-w-[1400px]">
                     <thead className="sticky top-0 z-10">
-                      <tr className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 border-b border-slate-50 bg-white">
+                      <tr className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 border-b border-slate-100 bg-white">
                         <th className="px-6 py-5 w-24">STOCK #</th>
                         <th className="px-6 py-5 w-28">PHOTO</th>
                         <th className="px-6 py-5">YEAR / MAKE / MODEL</th>
@@ -147,28 +148,28 @@ export const InventoryTable = ({
                         <th className="px-6 py-5 text-right w-32">ACTIONS</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-100">
                       {filteredInventory.map(item => (
                         <tr key={item.id} className="hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => onEdit(item.wpId)}>
-                          <td className="px-6 py-5 font-mono font-bold text-sm text-slate-500">{item.stock}</td>
+                          <td className="px-6 py-5 font-mono font-bold text-sm text-slate-700">{item.stock}</td>
                           <td className="px-4 py-3">
                             <div className="w-40 h-28 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                               {item.images?.[0]
-                                ? <img src={item.images[0]} alt={`${item.year} ${item.make} ${item.model}`} className="w-full h-full object-cover"
+                                ? <img src={item.images[0]} alt={`${item.year} ${item.make} ${item.model}`} width="160" height="112" loading="lazy" decoding="async" className="w-full h-full object-cover"
                                     onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }} />
-                                : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-300" /></div>
+                                : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-400" /></div>
                               }
                             </div>
                           </td>
                           <td className="px-6 py-5">
                             <p className="font-black text-base leading-tight uppercase tracking-tight">{item.year} {item.make}</p>
-                            <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">{item.model}</p>
+                            <p className="text-xs font-black uppercase tracking-widest mt-1 opacity-75">{item.model}</p>
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{item.category}</span>
+                              <span className="text-xs font-black uppercase tracking-widest text-slate-700">{item.category}</span>
                               {item.subcategory && (Array.isArray(item.subcategory) ? item.subcategory.length > 0 : item.subcategory !== '') && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                                   &raquo; {Array.isArray(item.subcategory) ? item.subcategory.join(', ') : item.subcategory}
                                   {item.sub_subcategory && ` \u203A ${item.sub_subcategory}`}
                                 </span>
@@ -176,37 +177,37 @@ export const InventoryTable = ({
                             </div>
                           </td>
                           <td className="px-6 py-5 text-center">
-                            <span className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">{item.condition}</span>
+                            <span className="text-xs font-black uppercase tracking-widest bg-blue-100 text-blue-800 px-3 py-1 rounded-lg border border-blue-200 shadow-sm">{item.condition}</span>
                           </td>
                           <td className="px-6 py-5 font-black text-base tracking-tighter">
                             {item.callForPrice
-                              ? <span className="text-red-600 text-[11px] uppercase tracking-widest">Call for Price</span>
-                              : <span className="text-slate-900">${parseInt(item.price || 0).toLocaleString()}</span>
+                                ? <span className="text-red-600 text-xs uppercase tracking-widest">Call for Price</span>
+                                : <span className="text-slate-900">${parseInt(item.price || 0).toLocaleString()}</span>
                             }
                           </td>
                           <td className="px-6 py-5">
-                            <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
-                              item.status === 'In Stock' ? 'text-green-500 bg-green-50 border-green-100' :
-                              item.status === 'Pending Sale' ? 'text-amber-500 bg-amber-50 border-amber-100' :
-                              'text-slate-400 bg-slate-50 border-slate-200'
+                            <span className={`inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
+                              item.status === 'In Stock' ? 'text-emerald-800 bg-emerald-100 border-emerald-200' :
+                              item.status === 'Pending Sale' ? 'text-amber-900 bg-amber-100 border-amber-200' :
+                              'text-slate-700 bg-slate-100 border-slate-200'
                             }`}>
                               <div className={`w-1.5 h-1.5 rounded-full ${
-                                item.status === 'In Stock' ? 'bg-green-500 animate-pulse' :
-                                item.status === 'Pending Sale' ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'
+                                item.status === 'In Stock' ? 'bg-emerald-600 animate-pulse' :
+                                item.status === 'Pending Sale' ? 'bg-amber-600 animate-pulse' : 'bg-slate-500'
                               }`} />
                               {item.status}
                             </span>
                           </td>
                           <td className="px-6 py-5 text-center">
-                            <span className="text-xs font-black uppercase tracking-wider text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200/50 shadow-sm">
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 shadow-sm">
                               {getDaysInStock(item)}
                             </span>
                           </td>
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'show_on_website')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}
-                                aria-label={`${item.showOnWebsite ? 'Disable' : 'Enable'} website visibility`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                aria-label={`${item.showOnWebsite ? 'Disable' : 'Enable'} website visibility for ${item.year} ${item.make}`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
@@ -214,8 +215,8 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'featured')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
-                                aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-300'}`}
+                                aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured: ${item.year} ${item.make}`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
@@ -223,19 +224,19 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggle(item, 'facebook_sync')}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}
-                                aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-600' : 'bg-slate-300'}`}
+                                aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync for ${item.year} ${item.make}`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.facebookSync ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
                           </td>
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             {item.marketplace_posted ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-[9px] font-black uppercase tracking-widest">
-                                <Facebook size={11} fill="currentColor" /> On Marketplace
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-100 border border-blue-200 text-blue-800 text-xs font-black uppercase tracking-widest">
+                                <Facebook size={12} fill="currentColor" /> On Marketplace
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest">
                                 Not posted
                               </span>
                             )}
@@ -243,16 +244,16 @@ export const InventoryTable = ({
                           <td className="px-6 py-5 text-center" onClick={e => e.stopPropagation()}>
                             <div className="flex justify-center">
                               <button onClick={() => onToggleDraft(item)}
-                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}
-                                aria-label={`${item.status === 'Draft' ? 'Publish' : 'Set as draft'}`}>
+                                className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-300'}`}
+                                aria-label={`${item.status === 'Draft' ? 'Publish' : 'Set as draft'} ${item.year} ${item.make}`}>
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.status === 'Draft' ? 'left-7' : 'left-1'}`} />
                               </button>
                             </div>
                           </td>
                           <td className="px-6 py-5 text-right">
                             <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                              <button onClick={() => onEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit" aria-label={`Edit ${item.year} ${item.make} ${item.model}`}><Edit2 size={16} /></button>
-                              <button onClick={() => onClone(item.wpId)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone" aria-label={`Clone ${item.year} ${item.make} ${item.model}`}><Copy size={16} /></button>
+                              <button onClick={() => onEdit(item.wpId)} className="p-2 bg-slate-100 text-slate-800 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Edit" aria-label={`Edit ${item.year} ${item.make} ${item.model}`}><Edit2 size={16} /></button>
+                              <button onClick={() => onClone(item.wpId)} className="p-2 bg-slate-100 text-slate-800 rounded-lg hover:bg-slate-200 transition-all active:scale-95" title="Clone" aria-label={`Clone ${item.year} ${item.make} ${item.model}`}><Copy size={16} /></button>
                               <button onClick={() => onDelete(item.wpId, item.stock)} className="p-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-all active:scale-95" title="Delete" aria-label={`Delete ${item.year} ${item.make} ${item.model}`}><X size={16} /></button>
                             </div>
                           </td>
@@ -266,32 +267,32 @@ export const InventoryTable = ({
                 <div className="md:hidden space-y-3">
                   {filteredInventory.map(item => (
                     <div key={item.id} onClick={() => onEdit(item.wpId)}
-                      className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden active:scale-[0.99] transition-all">
+                      className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden active:scale-[0.99] transition-all">
                       {/* Card header — photo + identity */}
                       <div className="flex gap-3 p-4 pb-3">
                         <div className="w-20 h-16 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shrink-0">
                           {item.images?.[0]
-                            ? <img src={item.images[0]} alt="" className="w-full h-full object-cover"
+                            ? <img src={item.images[0]} alt={`${item.year} ${item.make} ${item.model}`} width="80" height="64" loading="lazy" decoding="async" className="w-full h-full object-cover"
                                 onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?auto=format&fit=crop&q=80&w=400'; }} />
-                            : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-300" /></div>
+                            : <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} className="text-slate-400" /></div>
                           }
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-black text-sm uppercase leading-tight truncate">{item.year} {item.make} {item.model}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-[9px] font-mono font-bold text-slate-400">#{item.stock}</span>
-                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${
-                              item.condition === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-600'
+                            <span className="text-xs font-mono font-bold text-slate-600">#{item.stock}</span>
+                            <span className={`text-xs font-black px-1.5 py-0.5 rounded ${
+                              item.condition === 'New' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
                             }`}>{item.condition}</span>
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{item.category}</span>
+                            <span className="text-xs font-black text-slate-600 uppercase tracking-wider">{item.category}</span>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="font-black text-sm text-slate-900">
-                              {item.callForPrice ? <span className="text-red-600 text-[10px] uppercase">Call for Price</span> : `$${parseInt(item.price || 0).toLocaleString()}`}
+                              {item.callForPrice ? <span className="text-red-600 text-xs uppercase">Call for Price</span> : `$${parseInt(item.price || 0).toLocaleString()}`}
                             </span>
-                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${
-                              item.status === 'In Stock' ? 'bg-green-50 text-green-700' :
-                              item.status === 'Pending Sale' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${
+                              item.status === 'In Stock' ? 'bg-emerald-100 text-emerald-800' :
+                              item.status === 'Pending Sale' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'
                             }`}>{item.status}</span>
                           </div>
                         </div>
@@ -300,63 +301,63 @@ export const InventoryTable = ({
                       {/* Toggles — full-width rows, label left / toggle right */}
                       <div className="px-4 py-2 border-t border-slate-100 space-y-2" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Website Visibility</span>
+                          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Website Visibility</span>
                           <button onClick={() => onToggle(item, 'show_on_website')}
-                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-green-500' : 'bg-slate-200'}`}
-                            aria-label={`${item.showOnWebsite ? 'Disable' : 'Enable'} website visibility`}>
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.showOnWebsite ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                            aria-label={`${item.showOnWebsite ? 'Disable' : 'Enable'} website visibility for ${item.year} ${item.make}`}>
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.showOnWebsite ? 'left-7' : 'left-1'}`} />
                           </button>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Featured</span>
+                          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Featured</span>
                           <button onClick={() => onToggle(item, 'featured')}
-                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-200'}`}
-                            aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured`}>
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.featured ? 'bg-amber-500' : 'bg-slate-300'}`}
+                            aria-label={`${item.featured ? 'Unmark' : 'Mark'} as featured: ${item.year} ${item.make}`}>
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.featured ? 'left-7' : 'left-1'}`} />
                           </button>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Meta Sync</span>
+                          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Meta Sync</span>
                           <button onClick={() => onToggle(item, 'facebook_sync')}
-                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-500' : 'bg-slate-200'}`}
-                            aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync`}>
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.facebookSync ? 'bg-blue-600' : 'bg-slate-300'}`}
+                            aria-label={`${item.facebookSync ? 'Disable' : 'Enable'} Facebook sync for ${item.year} ${item.make}`}>
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.facebookSync ? 'left-7' : 'left-1'}`} />
                           </button>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Marketplace</span>
+                          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Marketplace</span>
                           {item.marketplace_posted ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-[9px] font-black uppercase tracking-widest">
-                              <Facebook size={11} fill="currentColor" /> Posted
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-100 border border-blue-200 text-blue-800 text-xs font-black uppercase tracking-widest">
+                              <Facebook size={12} fill="currentColor" /> Posted
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest">
                               Not posted
                             </span>
                           )}
                         </div>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Draft</span>
+                          <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Draft</span>
                           <button onClick={() => onToggleDraft(item)}
-                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}
-                            aria-label={`${item.status === 'Draft' ? 'Publish' : 'Set as draft'}`}>
+                            className={`w-12 h-6 rounded-full relative transition-all duration-300 ${item.status === 'Draft' ? 'bg-amber-500' : 'bg-slate-300'}`}
+                            aria-label={`${item.status === 'Draft' ? 'Publish' : 'Set as draft'} ${item.year} ${item.make}`}>
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 ${item.status === 'Draft' ? 'left-7' : 'left-1'}`} />
                           </button>
                         </div>
                         <div className="flex justify-end pt-1">
-                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-wider">{getDaysInStock(item)}</span>
+                          <span className="text-xs font-black text-slate-600 uppercase tracking-wider">{getDaysInStock(item)}</span>
                         </div>
                       </div>
 
                       {/* Action buttons row */}
                       <div className="px-4 pb-4 flex gap-2" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => onEdit(item.wpId)} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                        <button onClick={() => onEdit(item.wpId)} aria-label={`Edit ${item.year} ${item.make}`} className="flex-1 bg-slate-100 text-slate-800 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-1.5">
                           <Edit2 size={14} /> Edit
                         </button>
-                        <button onClick={() => onClone(item.wpId)} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                        <button onClick={() => onClone(item.wpId)} aria-label={`Clone ${item.year} ${item.make}`} className="flex-1 bg-slate-100 text-slate-800 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-1.5">
                           <Copy size={14} /> Clone
                         </button>
-                        <button onClick={() => onDelete(item.wpId, item.stock)} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-1.5">
+                        <button onClick={() => onDelete(item.wpId, item.stock)} aria-label={`Delete ${item.year} ${item.make}`} className="flex-1 bg-red-50 text-red-700 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-1.5">
                           <X size={14} /> Delete
                         </button>
                       </div>

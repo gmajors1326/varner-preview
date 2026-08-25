@@ -1,7 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
-import AnalyticsDashboard from './components/AnalyticsDashboard.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './index.css'
 
@@ -30,22 +29,26 @@ const mount = () => {
     }
   });
 
-  // Analytics dashboard mount
+  // Analytics dashboard mount (dynamic import only when target DOM node exists)
   const analyticsEl = document.querySelector('#varner-analytics-app #varner-analytics-mount');
   if (analyticsEl && !analyticsEl.dataset.rendered) {
     analyticsEl.dataset.rendered = "true";
-    try {
-      const root = ReactDOM.createRoot(analyticsEl);
-      root.render(
-        <React.StrictMode>
-          <ErrorBoundary name="Analytics">
-            <AnalyticsDashboard />
-          </ErrorBoundary>
-        </React.StrictMode>
-      );
-    } catch (e) {
-      console.error("Analytics: Mounting failed:", e);
-    }
+    import('./components/AnalyticsDashboard.jsx').then(({ default: AnalyticsDashboard }) => {
+      try {
+        const root = ReactDOM.createRoot(analyticsEl);
+        root.render(
+          <React.StrictMode>
+            <ErrorBoundary name="Analytics">
+              <AnalyticsDashboard />
+            </ErrorBoundary>
+          </React.StrictMode>
+        );
+      } catch (e) {
+        console.error("Analytics: Mounting failed:", e);
+      }
+    }).catch(e => {
+      console.error("Analytics loading failed:", e);
+    });
   }
 };
 

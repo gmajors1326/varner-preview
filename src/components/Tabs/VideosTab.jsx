@@ -32,12 +32,16 @@ export const VideosTab = ({ showToast }) => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const catsData = await apiFetch('/video-categories');
-      const vidsData = await apiFetch('/videos');
-      setCategories(catsData);
-      setVideos(vidsData);
+      const [catsData, vidsData] = await Promise.all([
+        apiFetch('/video-categories'),
+        apiFetch('/videos')
+      ]);
+      setCategories(Array.isArray(catsData) ? catsData : []);
+      setVideos(Array.isArray(vidsData) ? vidsData : []);
     } catch (e) {
       showToast('Failed to load videos data: ' + e.message, 'error');
+      setCategories([]);
+      setVideos([]);
     } finally {
       setIsLoading(false);
     }
@@ -177,9 +181,12 @@ export const VideosTab = ({ showToast }) => {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const safeVideos = Array.isArray(videos) ? videos : [];
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
   const filteredVideos = selectedCategoryFilter === 'all' 
-    ? videos 
-    : videos.filter(v => String(v.category_id) === String(selectedCategoryFilter));
+    ? safeVideos 
+    : safeVideos.filter(v => String(v.category_id) === String(selectedCategoryFilter));
 
   if (isLoading) {
     return (
@@ -197,21 +204,21 @@ export const VideosTab = ({ showToast }) => {
       <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 text-white shadow-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between relative overflow-hidden gap-6">
         <div className="relative z-10">
           <h2 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2 uppercase leading-none text-white">Videos Manager</h2>
-          <p className="text-indigo-400 font-bold uppercase tracking-[0.3em] text-[10px]">
+          <p className="text-indigo-400 font-bold uppercase tracking-[0.3em] text-xs">
             Manage all video walkthroughs and showcase sections.
           </p>
         </div>
         <div className="relative z-10 flex gap-3 flex-wrap">
           <button
             onClick={() => setIsCatModalOpen(true)}
-            className="bg-slate-800 border border-slate-700 hover:bg-slate-750 text-white px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all"
+            className="bg-slate-800 border border-slate-700 hover:bg-slate-750 text-white px-5 py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all"
           >
             <List size={16}/>
             Categories
           </button>
           <button
             onClick={() => handleOpenVideoModal()}
-            className="bg-red-600 hover:bg-red-700 text-white px-5 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all shadow-xl shadow-red-950/20"
+            className="bg-red-600 hover:bg-red-700 text-white px-5 py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 active:scale-95 transition-all shadow-xl shadow-red-950/20"
           >
             <Plus size={16}/>
             Add Video
@@ -224,17 +231,17 @@ export const VideosTab = ({ showToast }) => {
       <div className="flex gap-2 border-b border-slate-200 pb-4 overflow-x-auto no-scrollbar">
         <button 
           onClick={() => setSelectedCategoryFilter('all')}
-          className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border leading-none ${selectedCategoryFilter === 'all' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50'}`}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border leading-none ${selectedCategoryFilter === 'all' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50'}`}
         >
-          All Categories ({videos.length})
+          All Categories ({safeVideos.length})
         </button>
-        {categories.map(cat => {
-          const count = videos.filter(v => String(v.category_id) === String(cat.id)).length;
+        {safeCategories.map(cat => {
+          const count = safeVideos.filter(v => String(v.category_id) === String(cat.id)).length;
           return (
             <button 
               key={cat.id}
               onClick={() => setSelectedCategoryFilter(cat.id)}
-              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border leading-none ${String(selectedCategoryFilter) === String(cat.id) ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50'}`}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border leading-none ${String(selectedCategoryFilter) === String(cat.id) ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50'}`}
             >
               {cat.name} ({count})
             </button>
@@ -271,7 +278,7 @@ export const VideosTab = ({ showToast }) => {
                       </div>
                     </>
                   )}
-                  <span className="absolute bottom-3 left-3 bg-slate-900/95 text-white text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest border border-slate-800">
+                  <span className="absolute bottom-3 left-3 bg-slate-900/95 text-white text-xs font-black px-2 py-1 rounded uppercase tracking-widest border border-slate-800">
                     {vid.category_name}
                   </span>
                 </div>
@@ -280,7 +287,7 @@ export const VideosTab = ({ showToast }) => {
                   <div className="flex gap-2 border-t border-slate-50 pt-4 mt-auto">
                     <button
                       onClick={() => handleOpenVideoModal(vid)}
-                      className="flex-1 bg-slate-50 border border-slate-200 text-slate-600 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                      className="flex-1 bg-slate-50 border border-slate-200 text-slate-600 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 active:scale-95"
                     >
                       <Edit2 size={12}/> Edit
                     </button>

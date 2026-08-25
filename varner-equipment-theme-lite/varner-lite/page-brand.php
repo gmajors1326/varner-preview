@@ -189,6 +189,7 @@ $brand_meta = array(
 $count_args = varner_build_inventory_query( array( $brand_meta ), -1 );
 $count_args['posts_per_page'] = -1;
 $count_args['fields'] = 'ids';
+unset( $count_args['paged'] );
 $total_units = count( get_posts( $count_args ) );
 
 $query_args = varner_build_inventory_query( array( $brand_meta ), 12 );
@@ -264,47 +265,17 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-8 gap-4">
                     <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
-                        Showing <?php echo number_format_i18n( $brand_query->post_count ); ?> of <?php echo number_format_i18n( $total_units ); ?> units
+                        <?php echo esc_html( varner_get_results_count_text( $brand_query, 12 ) ); ?>
                     </p>
                 </div>
 
                 <?php if ( $brand_query->have_posts() ) : ?>
                     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <?php while ( $brand_query->have_posts() ) : $brand_query->the_post();
-                            $post_id        = get_the_ID();
-                            $year           = get_field( 'year',         $post_id );
-                            $make           = get_field( 'make',         $post_id );
-                            $model          = get_field( 'model',        $post_id );
-                            $category       = get_field( 'category',     $post_id );
-                            $condition      = get_field( 'condition',    $post_id );
-                            $stock_status   = get_field( 'stock_status', $post_id );
-                            $stock_number   = get_field( 'stock_number', $post_id );
-                            $length         = get_field( 'length',       $post_id );
-                            $price          = get_field( 'price',        $post_id );
-                            $call_for_price = get_field( 'call_for_price', $post_id );
-                            $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
-                            $images   = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
-                            include locate_template( 'partials/equipment-card.php', false, false );
+                            varner_include_equipment_card();
                         endwhile; wp_reset_postdata(); ?>
                     </div>
-                    <?php 
-                        $pagination = paginate_links( array(
-                            'base'      => add_query_arg( 'paged', '%#%' ),
-                            'format'    => '',
-                            'total'     => max( 1, $brand_query->max_num_pages ),
-                            'current'   => $current_page,
-                            'type'      => 'list',
-                            'prev_text' => '&lt; Previous',
-                            'next_text' => 'Next &gt;',
-                        ) );
-                    ?>
-                    <?php if ( $pagination ) : ?>
-                    <div class="mt-12 flex justify-center">
-                        <div class="varner-pagination">
-                            <?php echo $pagination; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
+                    <?php varner_render_pagination( $brand_query ); ?>
                 <?php else : ?>
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 font-bold text-slate-600">No units found for this brand yet.</div>
                 <?php endif; ?>

@@ -5,18 +5,22 @@ get_header();
 $selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
 $filter_data = varner_get_filter_data( array(), $selected_categories );
 
-$query_args = varner_build_inventory_query(
+$base_meta = array(
     array(
-        array(
-            'key'     => 'stock_status',
-            'value'   => array( 'In Stock', 'Pending Sale' ),
-            'compare' => 'IN',
-        ),
-    )
+        'key'     => 'stock_status',
+        'value'   => array( 'In Stock', 'Pending Sale' ),
+        'compare' => 'IN',
+    ),
 );
 
+$count_args = varner_build_inventory_query( $base_meta, -1 );
+$count_args['posts_per_page'] = -1;
+$count_args['fields'] = 'ids';
+unset( $count_args['paged'] );
+$total = count( get_posts( $count_args ) );
+
+$query_args = varner_build_inventory_query( $base_meta, 12 );
 $inventory_query = new WP_Query( $query_args );
-$total           = $inventory_query->found_posts;
 ?>
 
     <section class="pt-32 pb-24 bg-slate-50 min-h-[60vh]">
@@ -50,35 +54,25 @@ $total           = $inventory_query->found_posts;
                 <div class="flex-1 min-w-0">
                     <!-- Results count -->
                     <div class="flex items-center justify-between mb-6">
-                        <p class="text-sm font-black text-slate-500 uppercase tracking-widest">
-                            <span class="text-slate-900"><?php echo $total; ?></span> Unit<?php echo $total !== 1 ? 's' : ''; ?> Found
+                        <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
+                            <?php echo esc_html( varner_get_results_count_text( $inventory_query, 12 ) ); ?>
                         </p>
                     </div>
 
                     <?php if ( $inventory_query->have_posts() ) : ?>
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         <?php while ( $inventory_query->have_posts() ) : $inventory_query->the_post();
-                            $post_id         = get_the_ID();
-                            $year            = get_field( 'year',         $post_id );
-                            $make            = get_field( 'make',         $post_id );
-                            $model           = get_field( 'model',        $post_id );
-                            $price           = get_field( 'price',        $post_id );
-                            $call_for_price  = get_field( 'call_for_price', $post_id );
-                            $category        = get_field( 'category',     $post_id );
-                            $condition       = get_field( 'condition',    $post_id );
-                            $stock_number    = get_field( 'stock_number', $post_id );
-                            $length          = get_field( 'length',       $post_id );
-                            $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
-                            $images          = varner_get_card_images( $post_id );
-                            include get_template_directory() . '/partials/equipment-card.php';
+                            varner_include_equipment_card();
                         endwhile;
                         wp_reset_postdata(); ?>
                     </div>
+                    <!-- Pagination -->
+                    <?php varner_render_pagination( $inventory_query ); ?>
                     <?php else : ?>
                     <div class="bg-white rounded-2xl border border-slate-200 p-16 text-center">
                         <div class="text-slate-500 text-6xl mb-4">⊘</div>
                         <p class="text-slate-500 font-black uppercase tracking-widest text-sm">No units match your current filters.</p>
-                        <a href="<?php echo esc_url( get_permalink() ); ?>" class="inline-block mt-6 bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-colors">
+                        <a href="<?php echo esc_url( home_url( '/inventory/all-units/' ) ); ?>" class="inline-block mt-6 bg-red-600 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-colors">
                             Clear All Filters
                         </a>
                     </div>

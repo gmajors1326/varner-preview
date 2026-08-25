@@ -1,8 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { arrayMove } from '@dnd-kit/sortable';
 import { apiFetch, uploadFile } from '../utils/api';
 import { apiToLocal, apiToListItem } from '../utils/helpers';
 import { DEFAULT_EMPTY_UNIT, getCategoryLabel } from '../constants/inventoryConstants';
+
+const arrayMove = (array, from, to) => {
+  const newArray = array.slice();
+  newArray.splice(to < 0 ? newArray.length + to : to, 0, newArray.splice(from, 1)[0]);
+  return newArray;
+};
+
 
 function normalizeCategoryTree(tree) {
   if (!tree || typeof tree !== 'object' || Array.isArray(tree)) {

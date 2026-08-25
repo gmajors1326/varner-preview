@@ -24,10 +24,12 @@ if ( ! isset( $condition ) )       { $condition = get_field( 'condition', $post_
 if ( ! isset( $stock_number ) )    { $stock_number = get_field( 'stock_number', $post_id ); }
 if ( ! isset( $length ) )          { $length = get_field( 'length', $post_id ); }
 if ( ! isset( $images ) || ! is_array( $images ) || empty( $images ) ) {
-    $images = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
+    $images = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id, 'medium_large' ) : array();
 }
+$lightbox_images = function_exists( 'varner_get_card_full_images' ) ? varner_get_card_full_images( $post_id ) : $images;
 if ( empty( $images ) ) {
     $images = array( get_template_directory_uri() . '/assets/VarnerEquipment_red.png' );
+    $lightbox_images = $images;
 }
 
 $monthly_payment = '';
@@ -64,6 +66,14 @@ $finance_url    = add_query_arg( array(
     <!-- ── IMAGE CAROUSEL ─────────────────────────────────── -->
     <div class="vne-carousel-wrap relative group/carousel" id="<?php echo esc_attr( $uid ); ?>">
         <div class="aspect-[16/11] relative overflow-hidden bg-slate-100">
+            <!-- Circling Spinner Loader -->
+            <div class="vne-img-spinner absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                <svg class="animate-spin h-7 w-7 text-red-600/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+
             <?php 
             $card_cat = isset($category) ? $category : get_field('category', $post_id);
             $card_cond = isset($condition) ? $condition : get_field('condition', $post_id);
@@ -72,24 +82,40 @@ $finance_url    = add_query_arg( array(
                 $base_alt = $title_text;
             }
             $base_alt .= ' for sale at Varner Equipment in Delta, CO';
+            $placeholder_src = esc_url( get_template_directory_uri() . '/assets/VarnerEquipment_red.png' );
             
             foreach ( $images as $i => $img_url ) : 
                 $alt_desc = $base_alt;
                 if ( count( $images ) > 1 ) {
                     $alt_desc .= ' - Photo ' . ( $i + 1 );
                 }
+                $full_img_url = $lightbox_images[$i] ?? $img_url;
+                $is_deferred  = $i >= 2;
             ?>
-            <a href="<?php echo esc_url( $img_url ); ?>" 
+            <a href="<?php echo esc_url( $full_img_url ); ?>" 
                class="vne-slide vne-lightbox-trigger block absolute inset-0 w-full h-full transition-opacity duration-300"
-               data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
-               data-start="<?php echo esc_url( $img_url ); ?>"
+               data-images='<?php echo esc_attr( json_encode( $lightbox_images ) ); ?>'
+               data-start="<?php echo esc_url( $full_img_url ); ?>"
                style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>; z-index:<?php echo $i === 0 ? '5' : '1'; ?>;">
+                <?php if ( $is_deferred ) : ?>
+                <img data-src="<?php echo esc_url( $img_url ); ?>"
+                     alt="<?php echo esc_attr( $alt_desc ); ?>"
+                     width="400"
+                     height="275"
+                     loading="lazy"
+                     decoding="async"
+                     onerror="this.src='<?php echo $placeholder_src; ?>';"
+                     class="w-full h-full object-cover">
+                <?php else : ?>
                 <img src="<?php echo esc_url( $img_url ); ?>"
                      alt="<?php echo esc_attr( $alt_desc ); ?>"
                      width="400"
                      height="275"
                      loading="lazy"
+                     decoding="async"
+                     onerror="this.src='<?php echo $placeholder_src; ?>';"
                      class="w-full h-full object-cover">
+                <?php endif; ?>
             </a>
             <?php endforeach; ?>
 
@@ -114,8 +140,8 @@ $finance_url    = add_query_arg( array(
             <button type="button"
                     class="vne-lightbox-trigger absolute top-3 right-3 z-10 opacity-0 group-hover/carousel:opacity-100 transition-opacity w-10 h-10 flex items-center justify-center bg-black/60 text-white rounded-xl backdrop-blur-sm hover:bg-black/80 shadow-lg"
                     aria-label="View photos"
-                    data-images='<?php echo esc_attr( json_encode( $images ) ); ?>'
-                    data-start="<?php echo esc_url( $images[0] ?? '' ); ?>">
+                    data-images='<?php echo esc_attr( json_encode( $lightbox_images ) ); ?>'
+                    data-start="<?php echo esc_url( $lightbox_images[0] ?? ( $images[0] ?? '' ) ); ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
             </button>
 

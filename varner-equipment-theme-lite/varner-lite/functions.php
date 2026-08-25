@@ -414,17 +414,21 @@ add_action( 'init', function() {
     add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
     add_rewrite_rule('^sitemap_index\.xml$', 'index.php?varner_sitemap=index', 'top');
     add_rewrite_rule('^([a-f0-9]{32})\.txt$', 'index.php?indexnow_key=$matches[1]', 'top');
+    add_rewrite_rule('^inventory/?$', 'index.php?inventory_segment=all-units', 'top');
+    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&paged=$matches[2]', 'top');
+    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]&paged=$matches[3]', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
     add_rewrite_rule('^brands/?$', 'index.php?brands_hub=1', 'top');
+    add_rewrite_rule('^brands/([^/]+)/page/([0-9]+)/?$', 'index.php?brand_name=$matches[1]&paged=$matches[2]', 'top');
     add_rewrite_rule('^brands/([^/]+)/?$', 'index.php?brand_name=$matches[1]', 'top');
 });
 
 add_action( 'init', function () {
     $flag = get_option( 'varner_brands_rewrite_v' );
-    if ( $flag !== '3' ) {
+    if ( $flag !== '5' ) {
         flush_rewrite_rules( false );
-        update_option( 'varner_brands_rewrite_v', '3' );
+        update_option( 'varner_brands_rewrite_v', '5' );
     }
 }, 99 );
 
@@ -445,14 +449,14 @@ add_action( 'template_redirect', function() {
         exit;
     }
 
-    // 2. Legacy inventory sub-pages
-    if ( $path === 'all-inventory' || $path === 'inventory/in-stock-inventory' || $path === 'inventory/showroom-inventory' || $path === 'in-stock-inventory' || $path === 'showroom-inventory' ) {
+    // 2. Legacy inventory sub-pages and bare /inventory/
+    if ( $path === 'inventory' || $path === 'all-inventory' || $path === 'inventory/in-stock-inventory' || $path === 'inventory/showroom-inventory' || $path === 'in-stock-inventory' || $path === 'showroom-inventory' ) {
         wp_redirect( home_url( '/inventory/all-units/' ), 301 );
         exit;
     }
 
-    // 3. Brand landing pages (/brands/slug/ or /brands/slug)
-    if ( preg_match( '#^brands/([^/]+)$#i', $path, $m ) ) {
+    // 3. Brand landing pages (/brands/slug/ or /brands/slug/page/N)
+    if ( preg_match( '#^brands/([^/]+)(?:/page/\d+)?$#i', $path, $m ) ) {
         $brand_slug = sanitize_title( $m[1] );
         if ( ! function_exists( 'varner_get_brand' ) || ! varner_get_brand( $brand_slug ) ) {
             wp_redirect( home_url( '/brands/' ), 301 );
@@ -460,7 +464,17 @@ add_action( 'template_redirect', function() {
         }
     }
 
-    // 4. Missing equipment / inventory items or 404s
+    // 4. If this is a valid custom inventory/brand route, clear any erroneous 404 status
+    if ( get_query_var( 'inventory_segment' ) || get_query_var( 'brand_name' ) || get_query_var( 'brands_hub' ) ) {
+        global $wp_query;
+        if ( $wp_query ) {
+            $wp_query->is_404 = false;
+        }
+        status_header( 200 );
+        return;
+    }
+
+    // 5. Missing equipment / inventory items or 404s
     if ( is_404() ) {
         if ( strpos( $path, 'inventory/' ) === 0 || strpos( $path, 'equipment/' ) === 0 ) {
             wp_redirect( home_url( '/inventory/all-units/' ), 301 );
@@ -667,6 +681,94 @@ function varner_ensure_legal_parent_page() {
     return $parent->ID;
 }
 
+// ─── EQUIPMENT CARD HELPERS ──────────────────────────────────────────────────
+
+/**
+ * Build the images array for the equipment card partial.
+ * Returns an array of optimized image URLs (medium_large/large), falling back to full-size,
+ * post thumbnail, then placeholder.
+ */
+if ( ! function_exists( 'varner_get_card_images' ) ) {
+    function varner_get_card_images( $post_id, $size = 'medium_large' ) {
+        $images  = array();
+        $gallery = get_field( 'gallery', $post_id );
+        if ( ! empty( $gallery ) ) {
+            foreach ( $gallery as $img ) {
+                if ( is_array( $img ) ) {
+                    if ( ! empty( $img['sizes'][ $size ] ) ) {
+                        $images[] = $img['sizes'][ $size ];
+                    } elseif ( ! empty( $img['sizes']['large'] ) ) {
+                        $images[] = $img['sizes']['large'];
+                    } elseif ( ! empty( $img['sizes']['medium'] ) ) {
+                        $images[] = $img['sizes']['medium'];
+                    } elseif ( ! empty( $img['url'] ) ) {
+                        $images[] = $img['url'];
+                    }
+                } elseif ( is_numeric( $img ) ) {
+                    $url = wp_get_attachment_image_url( $img, $size );
+                    if ( ! $url ) {
+                        $url = wp_get_attachment_image_url( $img, 'large' );
+                    }
+                    if ( ! $url ) {
+                        $url = wp_get_attachment_url( $img );
+                    }
+                    if ( $url ) {
+                        $images[] = $url;
+                    }
+                }
+            }
+        }
+        if ( empty( $images ) ) {
+            $thumb = get_the_post_thumbnail_url( $post_id, $size );
+            if ( ! $thumb ) {
+                $thumb = get_the_post_thumbnail_url( $post_id, 'large' );
+            }
+            if ( ! $thumb ) {
+                $thumb = get_the_post_thumbnail_url( $post_id, 'full' );
+            }
+            if ( $thumb ) {
+                $images[] = $thumb;
+            }
+        }
+        if ( empty( $images ) ) {
+            $images[] = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
+        }
+        return $images;
+    }
+}
+
+/**
+ * Build full-resolution images array for lightbox triggers.
+ */
+if ( ! function_exists( 'varner_get_card_full_images' ) ) {
+    function varner_get_card_full_images( $post_id ) {
+        $images  = array();
+        $gallery = get_field( 'gallery', $post_id );
+        if ( ! empty( $gallery ) ) {
+            foreach ( $gallery as $img ) {
+                if ( is_array( $img ) && ! empty( $img['url'] ) ) {
+                    $images[] = $img['url'];
+                } elseif ( is_numeric( $img ) ) {
+                    $url = wp_get_attachment_url( $img );
+                    if ( $url ) {
+                        $images[] = $url;
+                    }
+                }
+            }
+        }
+        if ( empty( $images ) ) {
+            $thumb = get_the_post_thumbnail_url( $post_id, 'full' );
+            if ( $thumb ) {
+                $images[] = $thumb;
+            }
+        }
+        if ( empty( $images ) ) {
+            $images[] = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
+        }
+        return $images;
+    }
+}
+
 /**
  * Card Partial Loader
  */
@@ -680,10 +782,11 @@ function varner_include_equipment_card( $post_id = null ) {
     $call_for_price  = get_field( 'call_for_price', $post_id );
     $category        = get_field( 'category',       $post_id );
     $condition       = get_field( 'condition',      $post_id );
+    $stock_status    = get_field( 'stock_status',   $post_id );
     $stock_number    = get_field( 'stock_number',   $post_id );
     $length          = get_field( 'length',         $post_id );
     $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
-    $images          = varner_get_card_images( $post_id );
+    $images          = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
     include get_template_directory() . '/partials/equipment-card.php';
 }
 
@@ -818,7 +921,7 @@ function varner_remove_filter( $key, $value = null ) {
     global $wp;
     // Sanitize all keys and values from $_GET before building the URL.
     $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
-    unset( $current['paged'] );
+    unset( $current['paged'], $current['page'] );
     if ( $value === null ) {
         unset( $current[ $key ] );
     } else {
@@ -826,7 +929,8 @@ function varner_remove_filter( $key, $value = null ) {
         $arr     = array_values( array_filter( $arr, function ( $v ) use ( $value ) { return $v !== $value; } ) );
         if ( empty( $arr ) ) { unset( $current[ $key ] ); } else { $current[ $key ] = $arr; }
     }
-    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) );
+    $req_path = preg_replace( '#/page/\d+/?#', '/', $wp->request ?? '' );
+    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) );
     return esc_url( $base_url . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
@@ -836,39 +940,13 @@ function varner_remove_filter( $key, $value = null ) {
 function varner_remove_range_filter( $key1, $key2 ) {
     global $wp;
     $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
-    unset( $current[ $key1 ], $current[ $key2 ], $current['paged'] );
-    return esc_url( ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' ) );
+    unset( $current[ $key1 ], $current[ $key2 ], $current['paged'], $current['page'] );
+    $req_path = preg_replace( '#/page/\d+/?#', '/', $wp->request ?? '' );
+    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) );
+    return esc_url( ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
-// ─── EQUIPMENT CARD HELPERS ──────────────────────────────────────────────────
 
-/**
- * Build the images array for the equipment card partial.
- * Returns an array of full-size image URLs, falling back to post thumbnail,
- * then a placeholder.
- */
-function varner_get_card_images( $post_id ) {
-    $images  = array();
-    $gallery = get_field( 'gallery', $post_id );
-    if ( ! empty( $gallery ) ) {
-        foreach ( $gallery as $img ) {
-            if ( is_array( $img ) && ! empty( $img['url'] ) ) {
-                $images[] = $img['url'];
-            } elseif ( is_numeric( $img ) ) {
-                $url = wp_get_attachment_url( $img );
-                if ( $url ) { $images[] = $url; }
-            }
-        }
-    }
-    if ( empty( $images ) ) {
-        $thumb = get_the_post_thumbnail_url( $post_id, 'large' );
-        if ( $thumb ) { $images[] = $thumb; }
-    }
-    if ( empty( $images ) ) {
-        $images[] = 'https://images.unsplash.com/photo-1594913785162-e6785b423cb1?auto=format&fit=crop&q=80&w=800';
-    }
-    return $images;
-}
 
 // Carousel JS — outputs once in the footer on every front-end page.
 add_action( 'wp_footer', function () {
@@ -881,22 +959,48 @@ add_action( 'wp_footer', function () {
             var dots   = wrap.querySelectorAll('.vne-dot');
             var prev   = wrap.querySelector('.vne-prev');
             var next   = wrap.querySelector('.vne-next');
+
+            function loadImg(slide) {
+                if (!slide) return;
+                var img = slide.querySelector('img[data-src]');
+                if (img && img.dataset.src) {
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                }
+            }
+
+            function loadAllImages() {
+                slides.forEach(loadImg);
+            }
+
+            // Lazy-load other slides on hover or touch
+            wrap.addEventListener('mouseenter', loadAllImages, { once: true, passive: true });
+            wrap.addEventListener('touchstart', loadAllImages, { once: true, passive: true });
+
             if (slides.length <= 1) return;
             var cur = 0;
             function go(i) {
                 slides[cur].style.opacity = '0';
                 slides[cur].style.zIndex  = '1';
-                if (dots[cur]) dots[cur].style.opacity = '0.4';
+                if (dots[cur]) {
+                    var curInd = dots[cur].querySelector('.vne-dot-indicator');
+                    if (curInd) curInd.style.opacity = '0.4';
+                }
                 cur = ((i % slides.length) + slides.length) % slides.length;
+                loadImg(slides[cur]);
+                loadImg(slides[(cur + 1) % slides.length]);
                 slides[cur].style.opacity = '1';
                 slides[cur].style.zIndex  = '5';
-                if (dots[cur]) dots[cur].style.opacity = '1';
+                if (dots[cur]) {
+                    var nextInd = dots[cur].querySelector('.vne-dot-indicator');
+                    if (nextInd) nextInd.style.opacity = '1';
+                }
             }
             dots.forEach(function (dot, i) {
                 dot.addEventListener('click', function () { go(i); });
             });
-            if (prev) prev.addEventListener('click', function (e) { e.preventDefault(); go(cur - 1); });
-            if (next) next.addEventListener('click', function (e) { e.preventDefault(); go(cur + 1); });
+            if (prev) prev.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); go(cur - 1); });
+            if (next) next.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); go(cur + 1); });
             // Swipe support for mobile
             var startX = 0;
             wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
@@ -982,12 +1086,21 @@ add_action( 'trashed_post', 'varner_clear_brand_transient' );
 add_action( 'untrashed_post', 'varner_clear_brand_transient' );
 
 /**
- * Exclude hidden equipment from frontend loops.
+ * Exclude hidden equipment from frontend loops and guard custom inventory routes.
  */
 function varner_filter_equipment_visibility( $query ) {
     if ( is_admin() ) {
         return;
     }
+
+    // Custom rewrite routes: prevent WordPress default post query 404 on page 2+
+    if ( $query->is_main_query() && ( $query->get( 'inventory_segment' ) || $query->get( 'brand_name' ) || $query->get( 'brands_hub' ) ) ) {
+        $query->set( 'post_type', 'equipment' );
+        $query->set( 'posts_per_page', 1 );
+        $query->is_404 = false;
+        return;
+    }
+
     // Check if REST API and user has capability to edit posts (so the editor app can see everything)
     if ( defined('REST_REQUEST') && REST_REQUEST && current_user_can('edit_posts') ) {
         return;
@@ -1230,6 +1343,68 @@ add_filter( 'oembed_response_data', function ( $data ) {
     }
     return $data;
 } );
+
+/**
+ * Return formatted pagination count string (e.g. "Showing 1–12 of 306 units").
+ */
+function varner_get_results_count_text( $wp_query, $posts_per_page = 12 ) {
+    if ( ! $wp_query || empty( $wp_query->found_posts ) || $wp_query->post_count === 0 ) {
+        return 'Showing 0 units';
+    }
+    $total        = intval( $wp_query->found_posts );
+    $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
+    $start        = ( $current_page - 1 ) * $posts_per_page + 1;
+    $end          = min( $total, ( $current_page - 1 ) * $posts_per_page + $wp_query->post_count );
+
+    if ( $start >= $end ) {
+        return sprintf( 'Showing %s of %s units', number_format_i18n( $start ), number_format_i18n( $total ) );
+    }
+    return sprintf( 'Showing %s–%s of %s units', number_format_i18n( $start ), number_format_i18n( $end ), number_format_i18n( $total ) );
+}
+
+/**
+ * Render standard Varner Equipment pagination for WP_Query objects.
+ * Preserves all active GET filter parameters (category, make, price, etc.) while building clean pagination URLs.
+ */
+function varner_render_pagination( $wp_query = null ) {
+    if ( ! $wp_query ) {
+        global $wp_query;
+    }
+    if ( ! $wp_query || ! isset( $wp_query->max_num_pages ) || intval( $wp_query->max_num_pages ) <= 1 ) {
+        return;
+    }
+
+    $total_pages  = max( 1, intval( $wp_query->max_num_pages ) );
+    $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
+
+    // Strip existing paged / page parameters and /page/N/ from base URL
+    $clean_url = remove_query_arg( array( 'paged', 'page' ) );
+    $clean_url = preg_replace( '#/page/\d+/?#', '/', $clean_url );
+    $base_url  = add_query_arg( 'paged', '%#%', $clean_url );
+
+    $pagination = paginate_links( array(
+        'base'      => $base_url,
+        'format'    => '',
+        'total'     => $total_pages,
+        'current'   => $current_page,
+        'type'      => 'list',
+        'prev_text' => '&lt; Previous',
+        'next_text' => 'Next &gt;',
+    ) );
+
+    if ( $pagination ) {
+        // Strip ?paged=1 or &paged=1 or &amp;paged=1 from page 1 links
+        $pagination = preg_replace( '/([?&]|&amp;)paged=1(["\'\s>])/i', '$2', $pagination );
+        $pagination = preg_replace( '/\?(["\'])/', '$1', $pagination );
+
+        echo '<div class="mt-12 flex justify-center">';
+        echo '<div class="varner-pagination">';
+        echo $pagination;
+        echo '</div>';
+        echo '</div>';
+    }
+}
+
 
 
 

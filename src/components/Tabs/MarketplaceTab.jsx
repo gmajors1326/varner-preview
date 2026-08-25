@@ -21,8 +21,9 @@ export const MarketplaceTab = () => {
         apiFetch('/meta-sync/logs'),
         apiFetch('/meta-sync/health')
       ]);
-      setLogs(logsData || []);
-      setHealth(healthData || { match_rate: 100, image_optimization: 100, sync_latency: '0.1s' });
+      const safeLogs = Array.isArray(logsData) ? logsData : (Array.isArray(logsData?.logs) ? logsData.logs : []);
+      setLogs(safeLogs);
+      setHealth(healthData && typeof healthData === 'object' && !healthData.error ? healthData : { match_rate: 100, image_optimization: 100, sync_latency: '0.1s' });
       setError(null);
     } catch (err) {
       console.error('Failed to fetch meta sync data: ', err);
@@ -73,13 +74,15 @@ export const MarketplaceTab = () => {
     }
   };
 
+  const safeLogs = Array.isArray(logs) ? logs : [];
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 text-slate-950 font-black">
       {/* Meta Commerce Engine Header */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-12 text-white shadow-2xl flex items-center justify-between relative overflow-hidden">
         <div className="relative z-10">
           <h3 className="text-xl sm:text-3xl font-black tracking-tighter mb-2 uppercase leading-none text-white">Meta Commerce Engine</h3>
-          <p className="text-white font-bold opacity-90 uppercase tracking-[0.3em] text-[10px]">API Health: Connected</p>
+          <p className="text-white font-bold opacity-90 uppercase tracking-[0.3em] text-xs">API Health: Connected</p>
         </div>
         <Facebook size={80} className="absolute -right-4 -bottom-4 sm:-right-8 sm:-bottom-8 opacity-10 rotate-12 sm:w-[120px] sm:h-[120px]"/>
       </div>
@@ -99,24 +102,44 @@ export const MarketplaceTab = () => {
           </div>
           <button
             onClick={handleCopy}
-            className={`px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-3 cursor-pointer shrink-0 ${
-              copied 
-                ? 'bg-green-600 text-white shadow-lg shadow-green-100' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100'
-            }`}
+            className="bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 shadow-lg shadow-slate-950/20"
           >
-            {copied ? (
-              <>
-                <Check size={16} />
-                <span>Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy size={16} />
-                <span>Copy Feed URL</span>
-              </>
-            )}
+            {copied ? <Check size={18} className="text-green-400" /> : <Copy size={18} />}
+            {copied ? 'Copied' : 'Copy Feed URL'}
           </button>
+        </div>
+      </div>
+
+      {/* Analytics & Metrics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 shadow-xl border border-slate-200/60 flex items-center gap-5">
+          <div className="p-4 bg-green-50 text-green-600 rounded-2xl">
+            <CheckCircle2 size={28} />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Catalog Match Rate</p>
+            <p className="text-3xl font-black text-slate-900">{health.match_rate || 100}%</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 shadow-xl border border-slate-200/60 flex items-center gap-5">
+          <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl">
+            <BarChart3 size={28} />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Image Optimization</p>
+            <p className="text-3xl font-black text-slate-900">{health.image_optimization || 100}%</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 shadow-xl border border-slate-200/60 flex items-center gap-5">
+          <div className="p-4 bg-purple-50 text-purple-600 rounded-2xl">
+            <RefreshCw size={28} />
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Sync Latency</p>
+            <p className="text-3xl font-black text-slate-900">{health.sync_latency || '0.1s'}</p>
+          </div>
         </div>
       </div>
 
@@ -138,24 +161,24 @@ export const MarketplaceTab = () => {
             </button>
           </div>
           
-          {loading && logs.length === 0 ? (
+          {loading && safeLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400">
               <Loader2 size={32} className="animate-spin text-blue-600 mb-4" />
               <p className="text-xs uppercase font-black tracking-widest">Loading Sync Activity...</p>
             </div>
-          ) : error && logs.length === 0 ? (
+          ) : error && safeLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-red-500">
               <AlertCircle size={32} className="mb-4" />
               <p className="text-xs uppercase font-black tracking-widest">{error}</p>
             </div>
-          ) : logs.length === 0 ? (
+          ) : safeLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400">
               <CheckCircle2 size={32} className="text-green-600 mb-4" />
               <p className="text-xs uppercase font-black tracking-widest">No sync logs recorded yet</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-              {logs.map((log, i) => (
+              {safeLogs.map((log, i) => (
                 <div key={i} className="flex justify-between items-center p-6 bg-slate-50/50 rounded-2xl border-2 border-white mb-4 hover:bg-white transition-all shadow-sm group">
                   <div className="flex items-center gap-6">
                     <div className={`p-2.5 rounded-xl ${log.type === 'warning' ? 'bg-amber-100 text-amber-600' : log.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
@@ -163,13 +186,12 @@ export const MarketplaceTab = () => {
                     </div>
                     <span className="text-base font-black tracking-tight leading-none text-slate-800">{log.message}</span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0 ml-4">{getRelativeTime(log.created_at)}</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest shrink-0 ml-4">{getRelativeTime(log.created_at)}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
-        
         <div className="space-y-8">
           <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-200/60">
             <div className="flex items-center gap-4 mb-8">

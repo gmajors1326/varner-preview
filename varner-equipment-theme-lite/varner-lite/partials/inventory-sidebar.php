@@ -7,8 +7,10 @@ $facet_search_label    = $facet_search_label    ?? 'Search Inventory';
 $facet_show_condition  = $facet_show_condition  ?? true;
 $uid = uniqid('vfilter_');
 
-$reset_path = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
-$reset_url  = $reset_path ? home_url( $reset_path ) : get_permalink();
+$raw_path    = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
+$clean_path  = preg_replace( '#/page/\d+/?#', '/', $raw_path );
+$form_action = $clean_path ? home_url( $clean_path ) : ( is_singular() ? get_permalink() : home_url( '/inventory/all-units/' ) );
+$reset_url   = $form_action;
 
 $selected_categories    = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
 $selected_subcategories = array_map( 'sanitize_text_field', (array) ( $_GET['subcategory'] ?? array() ) );
@@ -80,7 +82,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
             <!-- Filter Content -->
             <div id="vne-mobile-filter-content" class="hidden lg:block p-6 space-y-8">
-                <form method="get" action="" id="varner-inventory-filter-form" class="space-y-8">
+                <form method="get" action="<?php echo esc_url( $form_action ); ?>" id="varner-inventory-filter-form" class="space-y-8">
                     
                     <div>
                         <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>

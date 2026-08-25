@@ -64,20 +64,12 @@ Notable:
 
 ## Open Items (Awaiting Approval)
 
-### 🟡 Cleanup — Unused Images
-The following directories contain unreferenced files that are safe to delete once approved:
-
-**Root `Images/` folder** (~40 unused mockup images):
-- All `.webp` / `.jpg` inventory mockup photos (car haulers, tractors, implements, etc.)
-- **Keep**: The 12 brand logo PNGs (`BigTex_white.png`, `Mahindra_white.png`, etc.)
-
-**Root `public/` folder** (6 files — all unused):
-- `imp1.jpg`, `imp2.jpg`, `imp3.jpg`, `left.jpg`, `mahindra.jpg`, `rear.jpg`
-- These are not referenced by Vite, React, or any PHP template.
-
-### 🟡 Cleanup — Redundant Code in functions.php
-- `varner_register_video_cpt()` exists in `varner-lite/functions.php`. If Video CPT is fully managed by the plugin, this is a duplicate and should be removed from the theme.
-- `varner_render_breadcrumbs()` may be duplicated between `functions.php` and `partials/breadcrumb.php` — worth auditing before next theme release.
+### 🟢 Completed Cleanup
+- **Root `Images/` folder**: Cleaned up — only the 12 brand logo PNGs remain.
+- **Root `public/` folder**: Cleaned up — unreferenced mockups removed.
+- **`varner_register_video_cpt()`**: Centralized solely in plugin (`varner-backend.php`).
+- **`varner_render_breadcrumbs()`**: Centralized solely in theme `partials/breadcrumb.php`.
+- **Card Partial Consolidation**: All inventory listings unified on `varner_include_equipment_card()`.
 
 ### 🟢 Low Priority — Future Improvements
 - **Split `src/App.jsx`**: At 1,302 lines it handles too much. Extracting the inventory editor, list view, and modal logic into separate components would improve maintainability.

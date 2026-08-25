@@ -39,28 +39,21 @@
                         v.play().catch(function(){});
                     }
 
-                    // Desktop: load immediately
+                    // Desktop only (>= 1024px): load and play video
                     if (window.innerWidth >= 1024) {
                         v.setAttribute('preload','auto');
                         v.setAttribute('autoplay','');
                         loadAndPlay();
-                    } else {
-                        // Mobile: load on first interaction
-                        v.setAttribute('preload','none');
-                        var loaded = false;
-                        ['touchstart','touchend','click','scroll'].forEach(function(evt){
-                            document.addEventListener(evt, function(){
-                                if(!loaded){ loaded=true; loadAndPlay(); }
-                            }, {once:true, passive:true});
-                        });
-                    }
 
-                    // Retry for desktop
-                    var t = 0;
-                    var ri = setInterval(function(){
-                        if(!v.paused || ++t >= 20) clearInterval(ri);
-                        else v.play().catch(function(){});
-                    }, 500);
+                        var t = 0;
+                        var ri = setInterval(function(){
+                            if(!v.paused || ++t >= 20) clearInterval(ri);
+                            else v.play().catch(function(){});
+                        }, 500);
+                    } else {
+                        // Mobile: remove video element to save 8.5MB bandwidth
+                        v.remove();
+                    }
                 })();
                 </script>
                 <!-- 40% DARK BLUE OVERLAY -->
@@ -78,13 +71,13 @@
                     <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-6 items-start">
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[9px] sm:text-sm hover:bg-white/20 transition-all">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
                         Online Parts
                     </a>
                 </div>
@@ -207,8 +200,8 @@
                         $brand_name = str_replace(['_white.png', 'MFG_white.png'], '', $logo);
                         $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
-                        echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
+                        echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform" aria-label="' . esc_attr($brand_name) . ' Authorized Dealer">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '" width="176" height="72" loading="lazy" decoding="async">'
                             . '</a>';
                     }
                     ?>
@@ -223,8 +216,8 @@
                         $brand_name = str_replace(['_white.png', 'MFG_white.png'], '', $logo);
                         $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
-                        echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '">'
+                        echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform" aria-label="' . esc_attr($brand_name) . ' Authorized Dealer">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '" width="176" height="72" loading="lazy" decoding="async">'
                             . '</a>';
                     }
                     ?>
@@ -335,7 +328,7 @@
                 <?php foreach ( $browse_cards as $card ) : ?>
                     <a href="<?php echo esc_url( $card['url'] ); ?>" class="flex flex-col items-center justify-start gap-3 text-slate-900 group">
                         <div class="w-full aspect-square max-w-[200px] mx-auto rounded-2xl bg-white border border-slate-200 shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all flex items-center justify-center overflow-hidden">
-                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[85%] h-[85%] object-contain" loading="lazy" decoding="async" />
+                            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/' . $card['icon'] ); ?>" alt="<?php echo esc_attr( $card['label'] ); ?> icon" class="w-[85%] h-[85%] object-contain" width="170" height="170" loading="lazy" decoding="async" />
                         </div>
                         <div class="text-center flex flex-col items-center">
                             <div class="font-black text-2xl uppercase tracking-tighter leading-tight group-hover:text-red-600 transition-colors"><?php echo esc_html( $card['label'] ); ?></div>
@@ -376,20 +369,7 @@
 
                 if ( $inventory_query->have_posts() ) :
                     while ( $inventory_query->have_posts() ) : $inventory_query->the_post();
-                        $post_id         = get_the_ID();
-                        $year            = get_field( 'year',         $post_id );
-                        $make            = get_field( 'make',         $post_id );
-                        $model           = get_field( 'model',        $post_id );
-                        $price           = get_field( 'price',        $post_id );
-                        $category        = get_field( 'category',     $post_id );
-                        $condition       = get_field( 'condition',    $post_id );
-                        $stock_status    = get_field( 'stock_status', $post_id );
-                        $stock_number    = get_field( 'stock_number', $post_id );
-                        $length          = get_field( 'length',       $post_id );
-                        $call_for_price  = get_field( 'call_for_price', $post_id );
-                        $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
-                        $images          = varner_get_card_images( $post_id );
-                        include get_template_directory() . '/partials/equipment-card.php';
+                        varner_include_equipment_card();
                     endwhile;
                     wp_reset_postdata();
                 else : ?>
@@ -430,7 +410,7 @@
                     <script>
                     document.getElementById('yt-player-container').addEventListener('click', function() {
                         var videoId = this.getAttribute('data-video-id');
-                        this.innerHTML = '<iframe class="w-full h-full" src="https://www.youtube.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Product Video"></iframe>';
+                        this.innerHTML = '<iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(videoId) + '?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="Product Video"></iframe>';
                     });
                     </script>
                 </div>

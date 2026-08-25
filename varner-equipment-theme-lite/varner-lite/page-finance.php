@@ -17,17 +17,18 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
 
 ?>
 
+<main id="main-content">
 <section id="applications">
     <div class="bg-slate-950 text-white pt-20 pb-10">
         <div class="max-w-6xl mx-auto px-4 flex flex-col gap-6">
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
                 <div class="space-y-3">
             <div class="text-xs font-black uppercase tracking-[0.3em] text-red-500">Apply</div>
-                    <h2 class="text-4xl md:text-6xl font-black tracking-tight">FINANCIAL APPLICATIONS</h2>
+                    <h1 class="text-4xl md:text-6xl font-black tracking-tight">FINANCIAL APPLICATIONS</h1>
                     <p class="text-slate-200 font-bold max-w-3xl">Start your application online or let our team guide you. We tailor terms to the machine, usage, and your preferred structure.</p>
                 </div>
                 <div class="flex-shrink-0">
-                    <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.3em] hover:bg-red-700 transition-all">Shop Inventory</a>
+                    <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.3em] hover:bg-red-700 transition-all">Shop Inventory</a>
                 </div>
             </div>
         </div>
@@ -67,7 +68,7 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
                         ?>
                         <div class="p-5 rounded-2xl bg-white shadow-lg border border-slate-200 flex flex-col gap-4 items-center text-center">
                             <?php if ( $logo_url ) : ?>
-                                <img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $card['alt'] ?? $card['name'] ?? '' ); ?>" class="h-48 w-48 object-contain">
+                                <img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( $card['alt'] ?? $card['name'] ?? '' ); ?>" class="h-48 w-48 object-contain" width="192" height="192" loading="lazy" decoding="async">
                             <?php else : ?>
                                 <div class="h-48 w-48 flex items-center justify-center bg-slate-100 rounded-xl text-slate-500 text-xs font-black uppercase tracking-widest">No Logo</div>
                             <?php endif; ?>
@@ -76,12 +77,12 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
                                 <p class="text-xs text-slate-500 font-bold"><?php echo esc_html( $card['description'] ); ?></p>
                             <?php endif; ?>
                             <?php if ( $pdf_url ) : ?>
-                                <a href="<?php echo esc_url( $pdf_url ); ?>" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-[11px] font-black uppercase tracking-[0.25em] hover:bg-red-700 transition-all" target="_blank" rel="noopener noreferrer">Apply Now</a>
+                                <a href="<?php echo esc_url( $pdf_url ); ?>" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-black uppercase tracking-[0.25em] hover:bg-red-700 transition-all" target="_blank" rel="noopener noreferrer">Apply Now</a>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 <?php else : ?>
-                    <div class="col-span-full text-center py-16 text-slate-500 text-[11px] font-black uppercase tracking-widest">No finance partners configured yet.</div>
+                    <div class="col-span-full text-center py-16 text-slate-500 text-xs font-black uppercase tracking-widest">No finance partners configured yet.</div>
                 <?php endif; ?>
             </div>
         </div>
@@ -94,11 +95,11 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
             <div class="space-y-3">
                 <div class="text-xs font-black uppercase tracking-[0.3em] text-red-500">Financing</div>
-                <h1 class="text-4xl md:text-6xl font-black tracking-tighter">FINANCE CALCULATOR</h1>
-                <p class="text-slate-500 max-w-3xl font-bold">Estimate payments with flexible terms, down payment, taxes, fees, and trade-in adjustments—all on one page.</p>
+                <h2 class="text-4xl md:text-6xl font-black tracking-tighter">FINANCE CALCULATOR</h2>
+                <p class="text-slate-400 max-w-3xl font-bold">Estimate payments with flexible terms, down payment, taxes, fees, and trade-in adjustments—all on one page.</p>
             </div>
             <div class="flex-shrink-0">
-                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.3em] hover:bg-red-700 transition-all">Shop Inventory</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.3em] hover:bg-red-700 transition-all">Shop Inventory</a>
             </div>
         </div>
     </div>
@@ -281,5 +282,6 @@ $finance_cards  = isset( $theme_settings['finance_cards'] ) ? $theme_settings['f
     update();
 })();
 </script>
+</main>
 
 <?php get_footer(); ?>

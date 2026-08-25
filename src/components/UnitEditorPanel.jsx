@@ -7,7 +7,7 @@ import {
   COLOR_OPTIONS, STATUS_OPTIONS, CONDITION_OPTIONS,
   METER_TYPE_OPTIONS, CATEGORY_TREE
 } from '../constants/inventoryConstants';
-import { InputField, TextAreaField, SelectField } from './Common/FormFields';
+import { InputField, TextAreaField, SelectField, QUILL_STYLES } from './Common/FormFields';
 import { MediaSection } from './MediaSection';
 import { MarketplaceQuickPost } from './MarketplaceQuickPost';
 import { AttachmentsSection } from './AttachmentsSection';
@@ -72,10 +72,11 @@ export const UnitEditorPanel = ({
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
+      <style dangerouslySetInnerHTML={{ __html: QUILL_STYLES }} />
       <div className="xl:col-span-2 space-y-8">
-        <div className="bg-white rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-xl border border-slate-200/60 relative overflow-hidden text-slate-900">
+        <div className="bg-white rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-xl border border-slate-200 relative overflow-hidden text-slate-900">
           <div className="flex justify-between items-center mb-6 sm:mb-8">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 flex items-center gap-2 leading-none"><Box size={14} className="text-red-600" /> Equipment Identity</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-700 flex items-center gap-2 leading-none"><Box size={16} className="text-red-600" /> Equipment Identity</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -83,22 +84,24 @@ export const UnitEditorPanel = ({
             <div className="md:col-span-2 animate-in fade-in duration-300">
               <div className="space-y-4">
                 <div className="flex items-center justify-between pl-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Equipment Category Hierarchy</label>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest">Equipment Category Hierarchy</label>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Category */}
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Category *</label>
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider pl-1">Category *</label>
                     <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
                       <select value={unitData.category || ''} onChange={e => handleCategorySelectChange(e.target.value)}
+                        aria-label="Select Category"
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                                <option value="">-- Select Category --</option>
+                        <option value="">-- Select Category --</option>
                         {Array.isArray(allCategories) && allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
-                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
+                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-500"><ChevronRight size={18} className="rotate-90" /></div>
                     </div>
                     <button type="button" onClick={() => setShowCategoryManager(true)}
+                      aria-label="Manage categories"
                       className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
                       <Settings size={14} /> Manage Categories
                     </button>
@@ -106,10 +109,10 @@ export const UnitEditorPanel = ({
 
                   {/* Subcategory */}
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Subcategories (Select Multiple)</label>
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider pl-1">Subcategories (Select Multiple)</label>
                     <div className="bg-slate-50 border-2 border-slate-100 rounded-xl p-3 shadow-sm overflow-y-auto" style={{ height: '140px', minHeight: '140px' }}>
                       {allSubcategories.length === 0 ? (
-                        <p className="text-slate-400 text-xs italic p-2">Select a category first</p>
+                        <p className="text-slate-500 text-xs italic p-2">Select a category first</p>
                       ) : (
                         <div className="space-y-1">
                           {allSubcategories.map(sub => {
@@ -130,6 +133,7 @@ export const UnitEditorPanel = ({
                       )}
                     </div>
                     <button type="button" onClick={() => setShowCategoryManager(true)}
+                      aria-label="Manage subcategories"
                       className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
                       <Settings size={14} /> Manage Categories
                     </button>
@@ -137,51 +141,55 @@ export const UnitEditorPanel = ({
 
                   {/* Sub-Subcategory */}
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Sub-Subcategory</label>
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider pl-1">Sub-Subcategory</label>
                     <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
                       <select value={unitData.sub_subcategory || ''} onChange={e => handleInputChange('sub_subcategory', e.target.value)}
+                        aria-label="Select Sub-Subcategory"
                         className="w-full bg-transparent p-4 pr-12 font-bold text-slate-900 outline-none appearance-none cursor-pointer text-sm leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
                         <option value="">-- Select Sub-Subcategory --</option>
                         {Array.isArray(allSubSubcategories) && allSubSubcategories.map(ss => <option key={ss} value={ss}>{ss}</option>)}
                       </select>
-                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400"><ChevronRight size={18} className="rotate-90" /></div>
+                      <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-500"><ChevronRight size={18} className="rotate-90" /></div>
                     </div>
                     <button type="button" onClick={() => setShowCategoryManager(true)}
+                      aria-label="Manage sub-subcategories"
                       className="w-full bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest min-h-[64px] mt-2">
                       <Settings size={14} /> Manage Categories
                     </button>
                   </div>
 
                 </div>
-                {fieldErrors.category && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.category}</p>}
+                {fieldErrors.category && <p className="text-xs font-bold text-red-600 pl-1">{fieldErrors.category}</p>}
               </div>
             </div>
 
             {/* Brand */}
             <div className="md:col-span-2">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Brand / Manufacturer</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest block pl-1">Brand / Manufacturer</label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px] cursor-pointer"
                     onClick={() => brandSelectRef.current?.click()}>
                     <select ref={brandSelectRef} key={`brand-select-${brands.length}`} value={unitData.make}
+                      aria-label="Select Brand"
                       onChange={e => {
                         handleInputChange('make', e.target.value);
                       }}
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                            <option value="">-- Select Brand --</option>
+                      <option value="">-- Select Brand --</option>
                       {Array.isArray(brands) && brands.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
+                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-500"><ChevronDown size={24} /></div>
                   </div>
                   <button type="button" onClick={() => setShowBrandsModal(true)}
+                    aria-label="Manage Brands"
                     className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
                     <Settings size={14} /> Manage Brands
                   </button>
                 </div>
-                {fieldErrors.make && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.make}</p>}
+                {fieldErrors.make && <p className="text-xs font-bold text-red-600 pl-1">{fieldErrors.make}</p>}
               </div>
             </div>
 
@@ -190,29 +198,31 @@ export const UnitEditorPanel = ({
               <div className="flex-1">
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Year</label>
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest block pl-1">Year</label>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1 flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
                       <select value={unitData.year}
+                        aria-label="Select Year"
                         onChange={e => {
                           handleInputChange('year', e.target.value);
                         }}
                         className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                         style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}>
-                                              <option value="">-- Select Year --</option>
+                        <option value="">-- Select Year --</option>
                         {Array.isArray(years) ? [...years].sort((a, b) => b.localeCompare(a)).map(year => (
                           <option key={year} value={year}>{year}</option>
                         )) : null}
                       </select>
-                      <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
+                      <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-500"><ChevronDown size={24} /></div>
                     </div>
                     <button type="button" onClick={() => setShowYearsModal(true)}
+                      aria-label="Manage Years"
                       className="bg-slate-50 hover:bg-red-50 border-2 border-slate-100 hover:border-red-200 text-red-600 rounded-xl px-6 flex items-center justify-center gap-2 shadow-sm transition-all font-black text-xs uppercase tracking-widest whitespace-nowrap min-h-[64px]">
                       <Settings size={14} /> Manage Years
                     </button>
                   </div>
-                  {fieldErrors.year && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.year}</p>}
+                  {fieldErrors.year && <p className="text-xs font-bold text-red-600 pl-1">{fieldErrors.year}</p>}
                 </div>
               </div>
               <div className="flex-1">
@@ -225,15 +235,16 @@ export const UnitEditorPanel = ({
             {/* Title */}
             <div className="md:col-span-2">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest block pl-1">
                   Public Inventory Title <span className="text-red-600">(Mandatory)</span>
                 </label>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide -mt-1 ml-1 leading-relaxed opacity-80">
-                  Main heading for website &amp; marketplace. <span className="text-slate-500">Include Year, Make, and Model for optimal SEO and visibility.</span>
+                <p className="text-xs font-bold text-slate-600 uppercase tracking-wide -mt-1 ml-1 leading-relaxed opacity-90">
+                  Main heading for website &amp; marketplace. <span className="text-slate-700 font-bold">Include Year, Make, and Model for optimal SEO and visibility.</span>
                 </p>
                 <input type="text" value={unitData.title} onChange={e => handleInputChange('title', e.target.value)}
+                  aria-label="Public Inventory Title"
                   className={`w-full bg-slate-50 border-2 rounded-xl p-4 font-black text-slate-900 outline-none transition-all shadow-sm text-xl leading-none min-h-[64px] ${fieldErrors.title ? 'border-red-400 focus:border-red-500 bg-red-50/40' : 'border-slate-100 focus:border-slate-300 focus:bg-white'}`} />
-                {fieldErrors.title && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.title}</p>}
+                {fieldErrors.title && <p className="text-xs font-bold text-red-600 pl-1">{fieldErrors.title}</p>}
               </div>
             </div>
 
@@ -248,10 +259,11 @@ export const UnitEditorPanel = ({
               <div className="flex-1"><SelectField label="Color" placeholder="Choose Color" options={COLOR_OPTIONS} value={unitData.color} onChange={v => handleInputChange('color', v)} error={fieldErrors.color} /></div>
               {unitData.category && unitData.category.toLowerCase().includes('trailer') && (
                 <div className="flex-1 space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Trailer Length</label>
+                  <label className="text-xs font-black text-slate-700 uppercase tracking-widest block pl-1">Trailer Length</label>
                   <div className="relative flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px]">
                     <select
                       value={unitData.length}
+                      aria-label="Select Trailer Length"
                       onChange={e => handleInputChange('length', e.target.value)}
                       className="w-full bg-transparent p-4 pr-12 font-black text-slate-900 outline-none appearance-none cursor-pointer text-xl leading-none"
                       style={{ border: 'none', background: 'transparent', height: '60px', minHeight: '60px', padding: '1rem 3rem 1rem 1rem', outline: 'none', boxShadow: 'none' }}
@@ -261,9 +273,9 @@ export const UnitEditorPanel = ({
                         <option key={ft} value={`${ft} ft`}>{ft} ft</option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-400"><ChevronDown size={24} /></div>
+                    <div className="absolute inset-y-0 right-5 flex items-center pointer-events-none text-slate-500"><ChevronDown size={24} /></div>
                   </div>
-                  {fieldErrors.length && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.length}</p>}
+                  {fieldErrors.length && <p className="text-xs font-bold text-red-600 pl-1">{fieldErrors.length}</p>}
                 </div>
               )}
             </div>
@@ -287,16 +299,18 @@ export const UnitEditorPanel = ({
             )}
 
             {/* VIN + Stock # */}
-            <div className="md:col-span-2 border-y border-slate-50 py-6 my-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div className="md:col-span-2 border-y border-slate-100 py-6 my-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">VIN / SERIAL NUMBER</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest block pl-1">VIN / SERIAL NUMBER</label>
                 <input type="text" value={unitData.vin} onChange={e => handleInputChange('vin', e.target.value)}
+                  aria-label="VIN or Serial Number"
                   className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-xl text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase min-h-[64px]"
                   placeholder="TYPE SERIAL..." />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pl-1">Stock Number</label>
+                <label className="text-xs font-black text-slate-700 uppercase tracking-widest block pl-1">Stock Number</label>
                 <input type="text" value={unitData.stockNumber} onChange={e => handleInputChange('stockNumber', e.target.value)}
+                  aria-label="Stock Number"
                   className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl p-4 font-mono font-black text-xl text-slate-900 outline-none shadow-inner focus:border-red-500 focus:bg-white transition-all tracking-widest uppercase min-h-[64px]"
                   placeholder="STOCK #" />
               </div>
@@ -305,37 +319,38 @@ export const UnitEditorPanel = ({
             {/* Price */}
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 px-1 items-end">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-green-600 uppercase tracking-widest block pl-1">Retail Price (USD)</label>
+                <label className="text-xs font-black text-emerald-800 uppercase tracking-widest block pl-1">Retail Price (USD)</label>
                 <label className="flex items-center gap-3 cursor-pointer group w-fit ml-1">
                   <div className="relative flex items-center">
                     <input type="checkbox" checked={unitData.callForPrice} onChange={e => handleInputChange('callForPrice', e.target.checked)} className="sr-only peer" />
                     <div className="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-red-600 transition-all after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4 shadow-inner" />
                   </div>
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Call For Price</span>
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Call For Price</span>
                 </label>
                 <div className={`flex items-center bg-slate-50 border-2 border-slate-100 rounded-xl focus-within:border-slate-300 focus-within:bg-white transition-all shadow-sm min-h-[64px] ${unitData.callForPrice ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
-                  <div className="pl-5 pr-3 py-5 border-r border-slate-200 bg-slate-100/50 rounded-l-xl"><span className="text-green-600 font-black text-xl select-none">$</span></div>
+                  <div className="pl-5 pr-3 py-5 border-r border-slate-200 bg-slate-100 rounded-l-xl"><span className="text-emerald-700 font-black text-xl select-none">$</span></div>
                   <input type="text" value={unitData.price ? Number(unitData.price).toLocaleString() : ''} disabled={unitData.callForPrice}
+                    aria-label="Retail Price in USD"
                     onChange={e => handleInputChange('price', e.target.value.replace(/[^0-9]/g, ''))}
                     className="flex-1 bg-transparent p-4 font-black text-slate-900 outline-none text-xl leading-none" placeholder="0.00" />
                 </div>
-                {fieldErrors.price && <p className="text-[10px] font-bold text-red-600 pl-1">{fieldErrors.price}</p>}
+                {fieldErrors.price && <p className="text-xs font-bold text-red-600 pl-1">{fieldErrors.price}</p>}
               </div>
             </div>
 
             {/* Featured + Visibility toggles */}
             <div className="md:col-span-2 space-y-4">
               {[
-                { field: 'featured', icon: <Star size={20} fill={unitData.featured ? 'currentColor' : 'none'} />, iconBg: unitData.featured ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300', label: 'Featured Unit', sub: 'Display at the top of the homepage', color: unitData.featured ? 'bg-amber-500' : 'bg-slate-200' },
-                { field: 'showOnWebsite', icon: <Eye size={20} />, iconBg: unitData.showOnWebsite ? 'bg-green-100 text-green-600' : 'bg-white text-slate-300', label: 'Website Visibility', sub: 'Publicly visible on showroom pages', color: unitData.showOnWebsite ? 'bg-green-600' : 'bg-slate-200' },
-                { field: 'facebookSync', icon: <Facebook size={20} fill={unitData.facebookSync ? 'currentColor' : 'none'} />, iconBg: unitData.facebookSync ? 'bg-blue-100 text-blue-600' : 'bg-white text-slate-300', label: 'Sync to Meta/Facebook', sub: 'Enable to include in Facebook/Marketplace feed', color: unitData.facebookSync ? 'bg-blue-600' : 'bg-slate-200' },
+                { field: 'featured', icon: <Star size={20} fill={unitData.featured ? 'currentColor' : 'none'} />, iconBg: unitData.featured ? 'bg-amber-100 text-amber-900' : 'bg-white text-slate-400', label: 'Featured Unit', sub: 'Display at the top of the homepage', color: unitData.featured ? 'bg-amber-500' : 'bg-slate-300' },
+                { field: 'showOnWebsite', icon: <Eye size={20} />, iconBg: unitData.showOnWebsite ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-slate-400', label: 'Website Visibility', sub: 'Publicly visible on showroom pages', color: unitData.showOnWebsite ? 'bg-emerald-600' : 'bg-slate-300' },
+                { field: 'facebookSync', icon: <Facebook size={20} fill={unitData.facebookSync ? 'currentColor' : 'none'} />, iconBg: unitData.facebookSync ? 'bg-blue-100 text-blue-800' : 'bg-white text-slate-400', label: 'Sync to Meta/Facebook', sub: 'Enable to include in Facebook/Marketplace feed', color: unitData.facebookSync ? 'bg-blue-600' : 'bg-slate-300' },
               ].map(({ field, icon, iconBg, label, sub, color }) => (
                 <div key={field} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                   <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-xl shrink-0 transition-all ${iconBg}`}>{icon}</div>
                     <div className="min-w-0">
-                      <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">{label}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">{sub}</p>
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none mb-1">{label}</p>
+                      <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">{sub}</p>
                     </div>
                   </div>
                   <button type="button" onClick={() => handleInputChange(field, !unitData[field])}
@@ -348,16 +363,16 @@ export const UnitEditorPanel = ({
               {/* Draft toggle — separate row since it mirrors the enum, not a boolean */}
               <div className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-red-200 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl shrink-0 transition-all ${unitData.stockStatus === 'Draft' ? 'bg-amber-100 text-amber-600' : 'bg-white text-slate-300'}`}>
+                  <div className={`p-3 rounded-xl shrink-0 transition-all ${unitData.stockStatus === 'Draft' ? 'bg-amber-100 text-amber-900' : 'bg-white text-slate-400'}`}>
                     <Eye size={20} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Draft (Hidden)</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Unit is a draft — hidden from the public site &amp; Facebook feed</p>
+                    <p className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none mb-1">Draft (Hidden)</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">Unit is a draft — hidden from the public site &amp; Facebook feed</p>
                   </div>
                 </div>
                 <button type="button" onClick={() => onToggleDraft({ wpId: unitData.id, status: unitData.stockStatus })}
-                  className={`w-14 h-7 shrink-0 rounded-full relative transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'bg-amber-500' : 'bg-slate-200'}`}
+                  className={`w-14 h-7 shrink-0 rounded-full relative transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'bg-amber-500' : 'bg-slate-300'}`}
                   aria-label={`${unitData.stockStatus === 'Draft' ? 'Publish' : 'Set as draft'} unit`}>
                   <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${unitData.stockStatus === 'Draft' ? 'left-8' : 'left-1'}`} />
                 </button>
@@ -365,7 +380,7 @@ export const UnitEditorPanel = ({
             </div>
 
             {/* Description */}
-            <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-50">
+            <div className="md:col-span-2 space-y-6 pt-6 border-t border-slate-100">
               <TextAreaField label="Public Description / Features" value={unitData.description} onChange={v => handleInputChange('description', v)} />
             </div>
           </div>
@@ -377,11 +392,13 @@ export const UnitEditorPanel = ({
         {/* Bottom action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 pt-6">
           <button onClick={handleClone} disabled={!unitData.id}
-            className={`flex-1 px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 border-2 shadow-xl shadow-slate-200/50 ${!unitData.id ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'}`}>
+            aria-label="Clone this unit"
+            className={`flex-1 px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 border-2 shadow-xl shadow-slate-200/50 ${!unitData.id ? 'bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-100 hover:bg-slate-50'}`}>
             <Copy size={18} /> Clone Unit
           </button>
           <button onClick={handleSave} disabled={isSaving}
-            className="flex-[2] bg-red-600 text-white px-8 py-6 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all active:scale-95 shadow-2xl shadow-red-200 border-b-4 border-red-800 disabled:opacity-50">
+            aria-label="Publish unit to inventory"
+            className="flex-[2] bg-red-600 text-white px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-red-700 transition-all active:scale-95 shadow-2xl shadow-red-200 border-b-4 border-red-800 disabled:opacity-50">
             {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
             {isSaving ? 'PUBLISHING…' : 'PUBLISH TO INVENTORY'}
           </button>

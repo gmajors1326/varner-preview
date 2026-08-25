@@ -35,7 +35,7 @@
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 xl:gap-10 mb-16 items-start">
             <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
-                <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Inventory</h4>
+                <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Inventory</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li><a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="hover:text-red-500 transition-colors">All Inventory</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="hover:text-red-500 transition-colors">New</a></li>
@@ -49,7 +49,7 @@
             </div>
             <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
-                <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6 whitespace-nowrap">Quick Links</h4>
+                <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6 whitespace-nowrap">Quick Links</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li><a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="hover:text-red-500 transition-colors">Home</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/product-videos' ) ); ?>" class="hover:text-red-500 transition-colors">Product Videos</a></li>
@@ -63,7 +63,7 @@
             </div>
             <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
-                <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Hours</h4>
+                <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Hours</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li>Mon-Fri: <?php echo esc_html( varner_get_theme_setting( 'hours_mon_fri', '8am - 5pm' ) ); ?></li>
                     <li>Sat: <?php echo esc_html( varner_get_theme_setting( 'hours_sat', '9am - Noon' ) ); ?></li>
@@ -76,7 +76,7 @@
                     <?php 
                     $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '';
                     ?>
-                    <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto">
+                    <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto" width="280" height="100" loading="lazy" decoding="async">
                 </div>
                 <div class="flex items-center justify-center gap-5 text-white pt-2">
                     <a href="<?php echo esc_url( varner_get_theme_setting( 'social_facebook', 'https://www.facebook.com/varnerequipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Facebook">
@@ -238,6 +238,7 @@
 
     <script>
         (function() {
+            if (window.innerWidth < 1024) return;
             var hero = document.getElementById('hero-parallax');
             var media = document.getElementById('hero-parallax-media');
             if (!hero || !media) return;

@@ -42,7 +42,12 @@ $stock_status    = get_field( 'stock_status', $post_id );
 $has_attachments = get_field( 'has_attachments', $post_id );
 $attachment_details = get_field( 'attachment_details', $post_id );
 $drive           = get_field( 'drive', $post_id );
-$images          = varner_get_card_images( $post_id );
+$images          = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id, 'large' ) : array();
+$lightbox_images = function_exists( 'varner_get_card_full_images' ) ? varner_get_card_full_images( $post_id ) : $images;
+if ( empty( $images ) ) {
+    $images = array( get_template_directory_uri() . '/assets/VarnerEquipment_red.png' );
+    $lightbox_images = $images;
+}
 
 $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
 $location_parts  = explode( ' ', varner_get_theme_setting( 'contact_address_line2', 'Delta, CO' ) );
@@ -71,6 +76,7 @@ $finance_url    = add_query_arg( array(
 ), home_url( '/finance' ) );
 ?>
 
+<main id="main-content">
 <section class="pt-32 pb-24 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
 
@@ -89,8 +95,16 @@ $finance_url    = add_query_arg( array(
             <!-- LEFT: Image Gallery -->
             <div class="w-full lg:w-[520px] shrink-0">
 
-                <!-- Main image carousel -->
-                <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3 cursor-zoom-in" id="vne-detail-carousel">
+                <!-- Main image carousel (16:11 matching inventory cards) -->
+                <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[16/11] border border-slate-200 shadow-lg mb-3 cursor-zoom-in" id="vne-detail-carousel">
+                    <!-- Circling Spinner Loader -->
+                    <div class="vne-img-spinner absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                        <svg class="animate-spin h-8 w-8 text-red-600/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
                     <?php foreach ( $images as $i => $img_url ) : 
                         $alt_desc = $base_alt;
                         if ( count( $images ) > 1 ) {
@@ -100,6 +114,7 @@ $finance_url    = add_query_arg( array(
                     <img src="<?php echo esc_url( $img_url ); ?>"
                          alt="<?php echo esc_attr( $alt_desc ); ?>"
                          loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
+                         decoding="async"
                          <?php if ( $i === 0 ) echo 'fetchpriority="high"'; ?>
                          class="vne-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                          style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>">
@@ -132,11 +147,11 @@ $finance_url    = add_query_arg( array(
                     <?php foreach ( $images as $i => $img_url ) : 
                         $alt_desc = $base_alt . ' - Thumbnail Photo ' . ( $i + 1 );
                     ?>
-                    <button class="vne-thumb shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
+                    <button class="vne-thumb shrink-0 w-20 aspect-[16/11] rounded-xl overflow-hidden border-2 transition-all duration-200"
                             style="border-color:<?php echo $i === 0 ? 'rgb(220,38,38)' : 'rgb(226,232,240)'; ?>"
                             data-index="<?php echo $i; ?>"
                             aria-label="Photo <?php echo $i + 1; ?>">
-                        <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $alt_desc ); ?>" loading="lazy"
+                        <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $alt_desc ); ?>" loading="lazy" decoding="async"
                              class="w-full h-full object-cover">
                     </button>
                     <?php endforeach; ?>
@@ -198,7 +213,7 @@ $finance_url    = add_query_arg( array(
 
                 <!-- E-mail Us -->
                 <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
-                   class="flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[11px] hover:bg-red-600 transition-all shadow-md w-full">
+                   class="flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-md w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     E-mail Us
                 </a>
@@ -207,7 +222,7 @@ $finance_url    = add_query_arg( array(
                 <div class="flex items-start gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 shrink-0 mt-0.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     <div class="text-sm">
-                        <span class="font-black text-slate-900 text-[11px] uppercase tracking-widest">Machine Location: </span>
+                        <span class="font-black text-slate-900 text-xs uppercase tracking-widest">Machine Location: </span>
                         <span class="text-slate-600 font-bold">1375 Highway 50, Delta, Colorado 81416</span>
                         <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener"
                            class="inline-flex ml-1 text-slate-500 hover:text-red-600 transition-colors align-middle p-2 -m-2" aria-label="Get directions">
@@ -222,16 +237,16 @@ $finance_url    = add_query_arg( array(
                     <div class="flex flex-col sm:flex-row gap-4 justify-between">
                         <div>
                             <p class="font-black text-slate-900 text-sm">Varner Equipment</p>
-                            <p class="text-[11px] text-slate-500 font-bold mt-0.5">Delta, Colorado 81416</p>
+                            <p class="text-xs text-slate-500 font-bold mt-0.5">Delta, Colorado 81416</p>
                         </div>
                         <div class="flex flex-col gap-2.5">
                             <a href="tel:9708740612"
-                               class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
+                               class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.72a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                 (970) 874-0612
                             </a>
                             <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>"
-                               class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
+                               class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                                 <?php $__se2 = varner_get_theme_setting('sales_email'); echo esc_html( !empty($__se2) ? $__se2 : 'jacob@varnerequipment.com' ); ?>
                             </a>
@@ -257,6 +272,7 @@ $finance_url    = add_query_arg( array(
             <div class="w-16 h-1.5 bg-red-600 mb-6 rounded-full"></div>
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <table class="w-full">
+                    <caption class="sr-only">Equipment Specifications</caption>
                     <tbody class="divide-y divide-slate-100">
                         <?php
                         $specs = array(
@@ -279,7 +295,7 @@ $finance_url    = add_query_arg( array(
                             if ( ! $value ) continue;
                         ?>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-8 py-4 w-44 text-[11px] font-black uppercase tracking-widest text-slate-500 align-top bg-slate-50/60 border-r border-slate-100"><?php echo esc_html( $label ); ?></td>
+                            <th scope="row" class="px-8 py-4 w-44 text-xs font-black uppercase tracking-widest text-slate-500 align-top bg-slate-50/60 border-r border-slate-100 text-left"><?php echo esc_html( $label ); ?></th>
                             <td class="px-8 py-4 text-sm font-bold text-slate-700">
                                 <?php if ( $type === 'html' ) : ?>
                                 <div class="prose prose-sm prose-tight max-w-none"><?php echo wp_kses_post( make_clickable( $value ) ); ?></div>
@@ -395,7 +411,7 @@ $finance_url    = add_query_arg( array(
         var lightboxNext = document.getElementById('lightbox-next');
         var lightboxThumbs = lightbox.querySelectorAll('.lightbox-thumb');
         
-        var imagesArray = <?php echo json_encode( $images ); ?>;
+        var imagesArray = <?php echo json_encode( $lightbox_images ); ?>;
         var titleText = <?php echo json_encode( $title_text ); ?>;
         
         function openLightbox(index) {
@@ -506,5 +522,6 @@ $finance_url    = add_query_arg( array(
     }
 })();
 </script>
+</main>
 
 <?php get_footer(); ?>

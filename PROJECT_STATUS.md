@@ -121,11 +121,13 @@ Meta Live Sync fixes are deployed and verified. Commerce Manager verification ca
 ### 7.4 SMTP / Email Setup
 ✅ Configured. WP Mail SMTP plugin active with Brevo (Sendinblue) API key, sending from `web@varnerequipment.com`.
 
-### 7.5 Cleanup — Unreferenced Assets
-- Root `Images/` folder contains ~40 unused inventory mockup photos (keep the 12 brand logo PNGs).
-- Root `public/` folder contains 6 unreferenced files: `imp1.jpg`, `imp2.jpg`, `imp3.jpg`, `left.jpg`, `mahindra.jpg`, `rear.jpg`.
-- `varner_register_video_cpt()` in `varner-lite/functions.php` may duplicate Video CPT registration managed by the plugin.
-- `varner_render_breadcrumbs()` may be duplicated between `functions.php` and `partials/breadcrumb.php`.
+### 7.5 Cleanup — Unreferenced Assets & Redundancies
+✅ Resolved.
+- Root `Images/` folder contains only the 12 active brand logo PNGs.
+- Unreferenced legacy mockups in `public/` removed.
+- `varner_register_video_cpt()` centralized in plugin (`varner-backend.php`).
+- Breadcrumbs centralized in `partials/breadcrumb.php`.
+- Equipment card loops unified on `varner_include_equipment_card()`.
 
 ### 7.6 Future Improvements
 - Split `src/App.jsx` (~1,300 lines) into smaller components.

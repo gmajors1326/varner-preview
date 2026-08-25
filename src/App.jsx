@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import {
   Box, LayoutDashboard, List, Facebook, History, Sliders, Camera, Smartphone, Settings,
   X, Menu, Copy, Plus, Save, Zap, TrendingUp, CheckCircle2, Clock,
@@ -12,20 +12,22 @@ import { useFilters } from './hooks/useFilters';
 import { useMobileAuth } from './hooks/useMobileAuth';
 
 import { SidebarLogo, SidebarContent, FilterTag, MappingRow } from './components/Common/Navigation';
-import { ManageListModal } from './components/Common/Modals';
-import { CategoryTreePanel } from './components/CategoryTreePanel';
-import { InputField, TextAreaField, SelectField, QUILL_STYLES } from './components/Common/FormFields';
+import { InputField, TextAreaField, SelectField } from './components/Common/FormFields';
 import { MetricCard, QuickActions, RecentActivity } from './components/Common/DashboardCards';
-import { InventoryTable } from './components/InventoryTable';
-import { UnitEditorPanel } from './components/UnitEditorPanel';
-import { MarketplaceTab } from './components/Tabs/MarketplaceTab';
-import { SettingsTab } from './components/Tabs/SettingsTab';
-import { VideosTab } from './components/Tabs/VideosTab';
-import { MobileAccessTab } from './components/Tabs/MobileAccessTab';
-import { ConfigurationTab } from './components/Tabs/ConfigurationTab';
-import { HistoryTab } from './components/Tabs/HistoryTab';
 import { PwaLoginGate } from './components/PwaLoginGate';
 import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Code-split heavy components and sub-tabs for instant landing page load & 100 Performance
+const InventoryTable = lazy(() => import('./components/InventoryTable').then(m => ({ default: m.InventoryTable })));
+const UnitEditorPanel = lazy(() => import('./components/UnitEditorPanel').then(m => ({ default: m.UnitEditorPanel })));
+const MarketplaceTab = lazy(() => import('./components/Tabs/MarketplaceTab').then(m => ({ default: m.MarketplaceTab })));
+const SettingsTab = lazy(() => import('./components/Tabs/SettingsTab').then(m => ({ default: m.SettingsTab })));
+const VideosTab = lazy(() => import('./components/Tabs/VideosTab').then(m => ({ default: m.VideosTab })));
+const MobileAccessTab = lazy(() => import('./components/Tabs/MobileAccessTab').then(m => ({ default: m.MobileAccessTab })));
+const ConfigurationTab = lazy(() => import('./components/Tabs/ConfigurationTab').then(m => ({ default: m.ConfigurationTab })));
+const HistoryTab = lazy(() => import('./components/Tabs/HistoryTab').then(m => ({ default: m.HistoryTab })));
+const ManageListModal = lazy(() => import('./components/Common/Modals').then(m => ({ default: m.ManageListModal })));
+const CategoryTreePanel = lazy(() => import('./components/CategoryTreePanel').then(m => ({ default: m.CategoryTreePanel })));
 
 const defaultEmptyUnit = DEFAULT_EMPTY_UNIT;
 
@@ -60,7 +62,7 @@ const App = () => {
 
   useEffect(() => {
     const handler = () => { if (!document.hidden) inv.loadInventory(); };
-    document.addEventListener('visibilitychange', handler);
+    document.addEventListener('visibilitychange', handler, { passive: true });
     const pollId = setInterval(() => inv.loadInventory(), 300000);
     return () => {
       document.removeEventListener('visibilitychange', handler);
@@ -99,7 +101,7 @@ const App = () => {
       case 'inventory': return (
           <span className="flex items-center gap-2 min-w-0">
             <span className="truncate">{inv.unitData.title || 'Inventory Editor'}</span>
-            <span className="hidden sm:inline bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded uppercase tracking-tighter font-black shrink-0">SKU: {inv.unitData.stockNumber || 'PENDING'}</span>
+            <span className="hidden sm:inline bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded uppercase tracking-tighter font-black shrink-0">SKU: {inv.unitData.stockNumber || 'PENDING'}</span>
           </span>
       );
       case 'marketplace': return 'Meta Commerce Sync';
@@ -125,43 +127,45 @@ const App = () => {
 
   return (
     <div className={`flex bg-[#f8fafc] font-sans text-slate-900 selection:bg-red-100 ${isMobileApp ? 'h-dvh' : 'min-h-screen'}`}>
-      <style dangerouslySetInnerHTML={{ __html: QUILL_STYLES }} />
       <style>{`body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}`}</style>
 
       {toast && (
-        <div role="alert" aria-live="assertive" className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] px-6 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all animate-in fade-in whitespace-nowrap max-w-[90vw] text-center ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+        <div role="alert" aria-live="assertive" className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] px-6 py-4 rounded-2xl font-black text-sm shadow-2xl transition-all animate-in fade-in whitespace-nowrap max-w-[90vw] text-center ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
           {toast.msg}
         </div>
       )}
 
-      {inv.showBrandsModal && (
-        <ManageListModal title="Manage Brands" items={inv.brands} inputValue={inv.newBrandInput}
-          onInputChange={inv.setNewBrandInput} onAdd={inv.handleAddBrand} onDelete={inv.handleDeleteBrand}
-          onRename={(oldName, newName) => inv.handleRenameCategoryNode('brand', oldName, newName)}
-          onClose={() => inv.setShowBrandsModal(false)} placeholder="New brand name..." />
-      )}
-      {inv.showYearsModal && (
-        <ManageListModal title="Manage Years" items={inv.years} inputValue={inv.newYearInput}
-          onInputChange={inv.setNewYearInput} onAdd={inv.handleAddYear} onDelete={inv.handleDeleteYear}
-          onClose={() => inv.setShowYearsModal(false)} placeholder="New year (e.g. 2028)..." />
-      )}
-      {inv.showCategoryManager && (
-        <CategoryTreePanel
-          categoryTree={inv.categoryTree}
-          onAdd={inv.handleAddCategoryNode}
-          onRename={inv.handleRenameCategoryNode}
-          onDelete={inv.handleDeleteCategoryNode}
-          onClose={() => inv.setShowCategoryManager(false)}
-          initialCategory={inv.unitData.category}
-          initialSubcategory={inv.unitData.subcategory} />
-      )}
+      <Suspense fallback={null}>
+        {inv.showBrandsModal && (
+          <ManageListModal title="Manage Brands" items={inv.brands} inputValue={inv.newBrandInput}
+            onInputChange={inv.setNewBrandInput} onAdd={inv.handleAddBrand} onDelete={inv.handleDeleteBrand}
+            onRename={(oldName, newName) => inv.handleRenameCategoryNode('brand', oldName, newName)}
+            onClose={() => inv.setShowBrandsModal(false)} placeholder="New brand name..." />
+        )}
+        {inv.showYearsModal && (
+          <ManageListModal title="Manage Years" items={inv.years} inputValue={inv.newYearInput}
+            onInputChange={inv.setNewYearInput} onAdd={inv.handleAddYear} onDelete={inv.handleDeleteYear}
+            onClose={() => inv.setShowYearsModal(false)} placeholder="New year (e.g. 2028)..." />
+        )}
+        {inv.showCategoryManager && (
+          <CategoryTreePanel
+            categoryTree={inv.categoryTree}
+            onAdd={inv.handleAddCategoryNode}
+            onRename={inv.handleRenameCategoryNode}
+            onDelete={inv.handleDeleteCategoryNode}
+            onClose={() => inv.setShowCategoryManager(false)}
+            initialCategory={inv.unitData.category}
+            initialSubcategory={inv.unitData.subcategory} />
+        )}
+      </Suspense>
+
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
           <aside className="fixed inset-y-0 left-0 w-72 bg-slate-950 text-white p-6 shadow-2xl flex flex-col">
             <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-6">
               <SidebarLogo />
-              <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white p-2"><X size={24} /></button>
+              <button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close navigation menu" className="text-slate-300 hover:text-white p-2 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"><X size={24} /></button>
             </div>
             <SidebarContent activeTab={activeTab} inventoryList={inv.inventoryList} deletedHistory={inv.deletedHistory}
               onNav={handleNav} isMobileApp={isMobileApp} onLogout={handleLogout} />
@@ -169,7 +173,7 @@ const App = () => {
         </div>
       )}
 
-      <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0">
+      <aside className="hidden lg:flex flex-col w-72 bg-slate-950 text-white p-6 shadow-2xl border-r border-slate-800 shrink-0" aria-label="Desktop sidebar navigation">
         <div className="mb-8 border-b border-slate-800 pb-6 flex justify-center">
           <SidebarLogo centered />
         </div>
@@ -180,27 +184,28 @@ const App = () => {
       <main className="flex-1 min-w-0 flex flex-col text-slate-900 min-h-0">
         <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 sm:py-5 flex items-center justify-between shadow-sm z-10">
           <div className="flex items-center gap-3 min-w-0">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 text-white bg-red-600 hover:bg-red-700 rounded-xl shrink-0"><Menu size={24} /></button>
+            <button onClick={() => setIsMobileMenuOpen(true)} aria-label="Open mobile navigation" className="lg:hidden p-2 text-white bg-red-600 hover:bg-red-700 rounded-xl shrink-0 focus:outline-none focus:ring-2 focus:ring-red-500"><Menu size={24} /></button>
             <div className="flex flex-col min-w-0">
-              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 hidden sm:block">System Modules</h2>
-              <h3 className="text-base sm:text-xl font-black text-slate-950 tracking-tight leading-none uppercase truncate">{getHeaderTitle()}</h3>
+              <p className="text-xs font-black text-slate-600 uppercase tracking-widest leading-none mb-1 hidden sm:block">System Modules</p>
+              <h1 className="text-base sm:text-xl font-black text-slate-950 tracking-tight leading-none uppercase truncate">{getHeaderTitle()}</h1>
             </div>
           </div>
            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {activeTab === 'inventory' && inv.unitData.title && (
-              <button onClick={() => inv.handleClone()} className="bg-slate-100 text-slate-600 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
+              <button onClick={() => inv.handleClone()} aria-label="Clone current equipment unit" className="bg-slate-100 text-slate-700 p-3 sm:px-5 sm:py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-200 transition-all border border-slate-200 shadow-sm active:scale-95">
                 <Copy size={16} /> <span className="hidden sm:inline">Clone Unit</span>
               </button>
             )}
             {activeTab === 'inventory' && (
-              <button onClick={handleAddNewUnit} className="bg-red-600 text-white p-3 sm:px-5 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-all border-b-2 border-red-800 shadow-xl shadow-red-100 active:scale-95">
+              <button onClick={handleAddNewUnit} aria-label="Add new equipment unit" className="bg-red-600 text-white p-3 sm:px-5 sm:py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-all border-b-2 border-red-800 shadow-xl shadow-red-100 active:scale-95">
                 <Plus size={16} /> <span className="hidden sm:inline">New Unit</span>
               </button>
             )}
 
             {(activeTab === 'inventory' || activeTab === 'all-inventory') && (
               <button onClick={activeTab === 'inventory' ? inv.handleSave : handleAddNewUnit}
-                className="bg-red-600 text-white p-3 sm:px-7 sm:py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800">
+                aria-label={activeTab === 'inventory' ? 'Publish to inventory' : 'Create new unit'}
+                className="bg-red-600 text-white p-3 sm:px-7 sm:py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 flex items-center gap-2 hover:bg-red-700 active:scale-95 transition-all border-b-2 border-red-800">
                 {inv.isSaving ? <Zap className="animate-spin" size={16} /> : (activeTab === 'inventory' ? <Save size={16} /> : <Plus size={16} />)}
                 <span className="hidden sm:inline">{inv.isSaving ? 'PUBLISHING\u2026' : (activeTab === 'inventory' ? 'PUBLISH TO INVENTORY' : 'NEW UNIT')}</span>
                 <span className="sm:hidden">{activeTab === 'inventory' ? (inv.isSaving ? 'PUB\u2026' : 'PUBLISH') : 'NEW'}</span>
@@ -227,107 +232,109 @@ const App = () => {
               </div>
             )}
 
-            {activeTab === 'all-inventory' && (
-              <ErrorBoundary name="Inventory Table">
-                <InventoryTable
-                  filteredInventory={filteredInventory}
-                  inventoryList={inv.inventoryList}
-                  isLoading={inv.isLoading}
-                  activeFilters={activeFilters}
-                  searchQuery={searchQuery}
-                  onFilterChange={handleFilterChange}
-                  onSearch={setSearchQuery}
-                  onClearFilters={handleClearFilters}
-                  onEdit={inv.handleFullEdit}
-                  onDelete={inv.handleDeleteUnit}
-                  onClone={(wpId) => inv.handleFullEdit(wpId).then(inv.handleClone)}
-                  onToggle={inv.handleToggleBoolean}
-                  onToggleDraft={inv.handleToggleDraft}
-                  categoryTree={inv.categoryTree}
-                />
-              </ErrorBoundary>
-            )}
+            <Suspense fallback={<div className="flex items-center justify-center p-16 text-red-600"><Loader2 className="animate-spin" size={32} /></div>}>
+              {activeTab === 'all-inventory' && (
+                <ErrorBoundary name="Inventory Table">
+                  <InventoryTable
+                    filteredInventory={filteredInventory}
+                    inventoryList={inv.inventoryList}
+                    isLoading={inv.isLoading}
+                    activeFilters={activeFilters}
+                    searchQuery={searchQuery}
+                    onFilterChange={handleFilterChange}
+                    onSearch={setSearchQuery}
+                    onClearFilters={handleClearFilters}
+                    onEdit={inv.handleFullEdit}
+                    onDelete={inv.handleDeleteUnit}
+                    onClone={(wpId) => inv.handleFullEdit(wpId).then(inv.handleClone)}
+                    onToggle={inv.handleToggleBoolean}
+                    onToggleDraft={inv.handleToggleDraft}
+                    categoryTree={inv.categoryTree}
+                  />
+                </ErrorBoundary>
+              )}
 
-            {activeTab === 'inventory' && (
-              <ErrorBoundary name="Unit Editor">
-                <UnitEditorPanel
-                  unitData={inv.unitData}
-                  handleInputChange={inv.handleInputChange}
-                  onToggleDraft={inv.handleToggleDraft}
-                  handleSave={inv.handleSave}
-                  handleClone={inv.handleClone}
-                  isSaving={inv.isSaving}
-                  isUploadingImages={inv.isUploadingImages}
-                  fieldErrors={inv.fieldErrors}
-                  brands={inv.brands}
-                  years={inv.years}
-                  categories={inv.categories}
-                  subcategories={inv.subcategories}
-                  categoryTree={inv.categoryTree}
-                  handleCategorySelectChange={inv.handleCategorySelectChange}
-                  handleSubcategoryToggle={inv.handleSubcategoryToggle}
-                  handleAddImages={inv.handleAddImages}
-                  handleRemoveImage={inv.handleRemoveImage}
-                  handleReorderImages={inv.handleReorderImages}
-                  handleAddImplement={inv.handleAddImplement}
-                  handleUpdateImplement={inv.handleUpdateImplement}
-                  handleRemoveImplement={inv.handleRemoveImplement}
-                  handleImplementImageUpload={inv.handleImplementImageUpload}
-                  setShowBrandsModal={inv.setShowBrandsModal}
-                  setShowYearsModal={inv.setShowYearsModal}
-                  setShowCategoryManager={inv.setShowCategoryManager}
-                  onUnitUpdated={inv.applyUnitUpdate}
-                />
-              </ErrorBoundary>
-            )}
+              {activeTab === 'inventory' && (
+                <ErrorBoundary name="Unit Editor">
+                  <UnitEditorPanel
+                    unitData={inv.unitData}
+                    handleInputChange={inv.handleInputChange}
+                    onToggleDraft={inv.handleToggleDraft}
+                    handleSave={inv.handleSave}
+                    handleClone={inv.handleClone}
+                    isSaving={inv.isSaving}
+                    isUploadingImages={inv.isUploadingImages}
+                    fieldErrors={inv.fieldErrors}
+                    brands={inv.brands}
+                    years={inv.years}
+                    categories={inv.categories}
+                    subcategories={inv.subcategories}
+                    categoryTree={inv.categoryTree}
+                    handleCategorySelectChange={inv.handleCategorySelectChange}
+                    handleSubcategoryToggle={inv.handleSubcategoryToggle}
+                    handleAddImages={inv.handleAddImages}
+                    handleRemoveImage={inv.handleRemoveImage}
+                    handleReorderImages={inv.handleReorderImages}
+                    handleAddImplement={inv.handleAddImplement}
+                    handleUpdateImplement={inv.handleUpdateImplement}
+                    handleRemoveImplement={inv.handleRemoveImplement}
+                    handleImplementImageUpload={inv.handleImplementImageUpload}
+                    setShowBrandsModal={inv.setShowBrandsModal}
+                    setShowYearsModal={inv.setShowYearsModal}
+                    setShowCategoryManager={inv.setShowCategoryManager}
+                    onUnitUpdated={inv.applyUnitUpdate}
+                  />
+                </ErrorBoundary>
+              )}
 
-            {activeTab === 'marketplace' && (
-              <ErrorBoundary name="Marketplace">
-                <MarketplaceTab />
-              </ErrorBoundary>
-            )}
-            {activeTab === 'settings' && (
-              <ErrorBoundary name="Settings">
-                <SettingsTab showToast={showToast} />
-              </ErrorBoundary>
-            )}
-            {activeTab === 'videos' && (
-              <ErrorBoundary name="Videos">
-                <VideosTab showToast={showToast} />
-              </ErrorBoundary>
-            )}
-            {activeTab === 'mobile' && (
-              <ErrorBoundary name="Mobile Access">
-                <MobileAccessTab />
-              </ErrorBoundary>
-            )}
-            {activeTab === 'config' && (
-              <ErrorBoundary name="Configuration">
-                <ConfigurationTab
-                  showToast={showToast}
-                  currentUser={inv.currentUser}
-                  sessionList={inv.sessionList}
-                  isLoading={inv.isSessionsLoading}
-                  loadSessions={inv.loadSessions}
-                  activityList={inv.activityList}
-                  isActivityLoading={inv.isActivityLoading}
-                  loadActivity={inv.loadActivity}
-                  onNav={handleNav}
-                  handleFullEdit={inv.handleFullEdit}
-                />
-              </ErrorBoundary>
-            )}
-            {activeTab === 'history' && (
-              <ErrorBoundary name="History">
-                <HistoryTab
-                  deletedItems={inv.deletedHistory}
-                  onRestore={item => inv.handleRestoreUnit(item.wpId)}
-                  onPermanentDelete={item => inv.handlePermanentDelete(item.wpId)}
-                  onBulkRestore={inv.handleBulkRestore}
-                  onBulkPermanentDelete={inv.handleBulkPermanentDelete}
-                />
-              </ErrorBoundary>
-            )}
+              {activeTab === 'marketplace' && (
+                <ErrorBoundary name="Marketplace">
+                  <MarketplaceTab />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'settings' && (
+                <ErrorBoundary name="Settings">
+                  <SettingsTab showToast={showToast} />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'videos' && (
+                <ErrorBoundary name="Videos">
+                  <VideosTab showToast={showToast} />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'mobile' && (
+                <ErrorBoundary name="Mobile Access">
+                  <MobileAccessTab />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'config' && (
+                <ErrorBoundary name="Configuration">
+                  <ConfigurationTab
+                    showToast={showToast}
+                    currentUser={inv.currentUser}
+                    sessionList={inv.sessionList}
+                    isLoading={inv.isSessionsLoading}
+                    loadSessions={inv.loadSessions}
+                    activityList={inv.activityList}
+                    isActivityLoading={inv.isActivityLoading}
+                    loadActivity={inv.loadActivity}
+                    onNav={handleNav}
+                    handleFullEdit={inv.handleFullEdit}
+                  />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'history' && (
+                <ErrorBoundary name="History">
+                  <HistoryTab
+                    deletedItems={inv.deletedHistory}
+                    onRestore={item => inv.handleRestoreUnit(item.wpId)}
+                    onPermanentDelete={item => inv.handlePermanentDelete(item.wpId)}
+                    onBulkRestore={inv.handleBulkRestore}
+                    onBulkPermanentDelete={inv.handleBulkPermanentDelete}
+                  />
+                </ErrorBoundary>
+              )}
+            </Suspense>
 
           </div>
         </div>
@@ -338,3 +345,4 @@ const App = () => {
 };
 
 export default App;
+
