@@ -3,9 +3,8 @@
 <head>
     <meta charset="<?php bloginfo( 'charset' ); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#dc2626" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)">
-    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#dc2626">
+    <meta name="color-scheme" content="light">
     <link rel="preload" href="<?php echo esc_url( plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/Inter.woff2' ) ); ?>" as="font" type="font/woff2" crossorigin>
     <script>
     if (HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
