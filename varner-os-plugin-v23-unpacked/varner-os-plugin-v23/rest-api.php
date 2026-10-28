@@ -9,9 +9,7 @@
 defined('ABSPATH') || exit;
 
 /**
- * Check if the current REST request is from an authenticated admin.
- *
- * WPEngine's Varnish/mu-plugin stack can strip cookies from REST API requests,
+ * Check if the current REST request is from an authenticated manager/admin.
  * In WP-REST, nonces are anti-CSRF tokens and do not confer administrative authority.
  * We strictly gate admin data access on the 'edit_others_posts' capability (Editor & Admin).
  */
@@ -392,7 +390,7 @@ function varner_api_delete_staff(WP_REST_Request $req): WP_REST_Response|WP_Erro
         return new WP_Error('not_found', 'User not found.', array('status' => 404));
     }
     require_once ABSPATH . 'wp-admin/includes/user.php';
-    wp_delete_user($user_id);
+    wp_delete_user($user_id, get_current_user_id());
     return rest_ensure_response(array('success' => true, 'message' => $user->display_name . ' has been removed.'));
 }
 
@@ -998,7 +996,6 @@ function varner_api_upload_media(WP_REST_Request $request) {
         'gif'          => 'image/gif',
         'webp'         => 'image/webp',
         'avif'         => 'image/avif',
-        'svg'          => 'image/svg+xml',
         'mp4'          => 'video/mp4',
         'webm'         => 'video/webm',
         'mov'          => 'video/quicktime',
@@ -1354,6 +1351,18 @@ function varner_api_logout() {
         return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
     }
 
+    // Clean up mobile auth token transient if provided via cookie or header
+    $token = '';
+    if (isset($_COOKIE['varner_mobile_token'])) {
+        $token = sanitize_text_field($_COOKIE['varner_mobile_token']);
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(\S+)/i', $_SERVER['HTTP_AUTHORIZATION'], $m)) {
+        $token = sanitize_text_field($m[1]);
+    }
+    if ($token) {
+        delete_transient('varner_mobile_token_' . $token);
+    }
+    varner_clear_mobile_token_cookie();
+
     // wp_logout() fires the wp_logout action, which triggers varner_os_record_logout
     // via add_action('wp_logout', 'varner_os_record_logout') in varner-os-plugin-v23.php.
     // Do NOT call varner_os_record_logout() directly here to avoid double-execution.
@@ -1554,7 +1563,7 @@ function varner_api_generate_mobile_token() {
 function varner_set_mobile_token_cookie(string $token): void {
     if (is_ssl()) {
         setcookie('varner_mobile_token', $token, array(
-            'expires'  => time() + 60, // TEMP: 60s for testing — revert to 1800 after
+            'expires'  => time() + 1800, // 30-minute sliding window
             'path'     => '/',
             'secure'   => true,
             'httponly'  => true,

@@ -1218,7 +1218,14 @@ add_filter( 'document_title_parts', 'varner_seo_title_parts', 100 );
  */
 function varner_seo_robots_visibility( $robots ) {
     if ( is_singular( 'equipment' ) ) {
-        $post_id      = get_the_ID();
+        $post_id         = get_the_ID();
+        $show_on_website = get_post_meta( $post_id, 'show_on_website', true );
+        if ( $show_on_website === '0' ) {
+            return array(
+                'noindex'  => true,
+                'nofollow' => true,
+            );
+        }
         $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post_id ) ) );
         if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
             return array(
@@ -1243,6 +1250,11 @@ function varner_exclude_sold_from_sitemaps( $args, $post_type ) {
             'key'     => 'stock_status',
             'value'   => array( 'sold', 'pending sale', 'sale pending', 'pending' ),
             'compare' => 'NOT IN',
+        );
+        $args['meta_query'][] = array(
+            'relation' => 'OR',
+            array( 'key' => 'show_on_website', 'value' => '1', 'compare' => '=' ),
+            array( 'key' => 'show_on_website', 'compare' => 'NOT EXISTS' ),
         );
     }
     return $args;
@@ -1283,6 +1295,10 @@ add_filter( 'wp_sitemaps_posts_query_args', 'varner_exclude_dead_pages_from_site
  */
 function varner_exclude_sold_from_yoast_sitemap( $url, $type, $post ) {
     if ( 'post' === $type && isset( $post->post_type ) && 'equipment' === $post->post_type ) {
+        $show_on_website = get_post_meta( $post->ID, 'show_on_website', true );
+        if ( $show_on_website === '0' ) {
+            return false;
+        }
         $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post->ID ) ) );
         if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
             return false;
@@ -1293,7 +1309,11 @@ function varner_exclude_sold_from_yoast_sitemap( $url, $type, $post ) {
 add_filter( 'wpseo_sitemap_entry', 'varner_exclude_sold_from_yoast_sitemap', 10, 3 );
 add_filter( 'wpseo_robots', function( $robots ) {
     if ( is_singular( 'equipment' ) ) {
-        $post_id      = get_the_ID();
+        $post_id         = get_the_ID();
+        $show_on_website = get_post_meta( $post_id, 'show_on_website', true );
+        if ( $show_on_website === '0' ) {
+            return 'noindex,nofollow';
+        }
         $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post_id ) ) );
         if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
             return 'noindex,follow';

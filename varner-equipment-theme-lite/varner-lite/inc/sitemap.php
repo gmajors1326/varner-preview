@@ -85,12 +85,25 @@ function varner_generate_xml_sitemap() {
 		}
 	}
 
-	// 3. Single Equipment Custom Posts
+	// 3. Single Equipment Custom Posts (exclude hidden & sold)
 	$equipment_query = new WP_Query( array(
 		'post_type'      => array( 'equipment', 'varner_equipment' ),
 		'post_status'    => 'publish',
 		'posts_per_page' => -1,
 		'fields'         => 'ids',
+		'meta_query'     => array(
+			'relation' => 'AND',
+			array(
+				'relation' => 'OR',
+				array( 'key' => 'show_on_website', 'value' => '1', 'compare' => '=' ),
+				array( 'key' => 'show_on_website', 'compare' => 'NOT EXISTS' ),
+			),
+			array(
+				'key'     => 'stock_status',
+				'value'   => array( 'sold', 'pending sale', 'sale pending', 'pending' ),
+				'compare' => 'NOT IN',
+			),
+		),
 	) );
 
 	if ( $equipment_query->have_posts() ) {

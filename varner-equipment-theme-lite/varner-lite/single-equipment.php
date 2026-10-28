@@ -2,9 +2,18 @@
 /**
  * Single Equipment Unit — Detail Page
  */
-get_header();
+$post_id = get_the_ID();
+$show_on_website = get_post_meta( $post_id, 'show_on_website', true );
+if ( $show_on_website === '0' && ! current_user_can( 'edit_others_posts' ) ) {
+    global $wp_query;
+    $wp_query->set_404();
+    status_header( 404 );
+    nocache_headers();
+    include get_query_template( '404' );
+    exit;
+}
 
-$post_id         = get_the_ID();
+get_header();
 $year            = get_field( 'year',         $post_id );
 $make            = get_field( 'make',         $post_id );
 $model           = get_field( 'model',        $post_id );
@@ -411,8 +420,8 @@ $finance_url    = add_query_arg( array(
         var lightboxNext = document.getElementById('lightbox-next');
         var lightboxThumbs = lightbox.querySelectorAll('.lightbox-thumb');
         
-        var imagesArray = <?php echo json_encode( $lightbox_images ); ?>;
-        var titleText = <?php echo json_encode( $title_text ); ?>;
+        var imagesArray = <?php echo wp_json_encode( $lightbox_images, JSON_HEX_TAG | JSON_HEX_AMP ); ?>;
+        var titleText = <?php echo wp_json_encode( $title_text, JSON_HEX_TAG | JSON_HEX_AMP ); ?>;
         
         function openLightbox(index) {
             document.body.style.overflow = 'hidden'; // Prevent page scroll

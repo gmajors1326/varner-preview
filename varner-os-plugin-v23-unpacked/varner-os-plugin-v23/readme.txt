@@ -3,7 +3,7 @@ Contributors: Varner Team
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Version: 1.23.380
+Version: 1.23.383
 License: Proprietary
 
 == Description ==

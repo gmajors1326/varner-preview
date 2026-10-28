@@ -10,6 +10,7 @@ import { DEFAULT_EMPTY_UNIT } from './constants/inventoryConstants';
 import { useInventory } from './hooks/useInventory';
 import { useFilters } from './hooks/useFilters';
 import { useMobileAuth } from './hooks/useMobileAuth';
+import { apiFetch } from './utils/api';
 
 import { SidebarLogo, SidebarContent, FilterTag, MappingRow } from './components/Common/Navigation';
 import { InputField, TextAreaField, SelectField } from './components/Common/FormFields';
@@ -89,7 +90,12 @@ const App = () => {
 
   const handleAddNewUnit = () => { inv.setUnitData(defaultEmptyUnit); setActiveTab('inventory'); };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiFetch('/logout', { method: 'POST' });
+    } catch (e) {
+      // Continue client cleanup even if network request fails
+    }
     document.cookie = 'varner_mobile_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.dispatchEvent(new CustomEvent('varner:token-expired'));
   };
