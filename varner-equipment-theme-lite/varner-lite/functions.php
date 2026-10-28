@@ -384,7 +384,7 @@ function varner_get_segment_seo($slug) {
             'h1'    => 'Hay & Harvest',
             'sub'   => 'Precision balers, rakes, tedders, and hay tools from Krone and McHale.',
             'blurb' => 'Shop hay equipment - rakes, mowers, and Krone and Macdon hay tools - at Varner Equipment in Delta, CO. Built for small acreage to full operations.',
-            'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))
+            'filter' => array('category' => array('Hay Equipment', 'Hay and Forage Equipment', 'Balers', 'Rakes'))
         ),
         'misc'      => array(
             'title' => 'Miscellaneous Equipment | Varner Equipment, Delta CO',
@@ -850,7 +850,8 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
 
     $stock_number = sanitize_text_field( $_GET['stock_number'] ?? '' );
     if ( $stock_number !== '' ) {
-        $meta[] = array( 'key' => 'stock_number', 'value' => $stock_number, 'compare' => 'LIKE' );
+        $clean_stock = ltrim( trim( $stock_number ), '#' );
+        $meta[] = array( 'key' => 'stock_number', 'value' => ( $clean_stock !== '' ? $clean_stock : $stock_number ), 'compare' => 'LIKE' );
     }
 
     $vin = sanitize_text_field( $_GET['vin'] ?? '' );
@@ -906,7 +907,9 @@ function varner_search_meta_fields( $search, $wp_query ) {
     $search = $search_and = '';
 
     foreach ( (array) $q['search_terms'] as $term ) {
-        $like    = '%' . $wpdb->esc_like( $term ) . '%';
+        $clean_term = ltrim( trim( $term ), '#' );
+        $like       = '%' . $wpdb->esc_like( $term ) . '%';
+        $clean_like = '%' . $wpdb->esc_like( $clean_term ) . '%';
         $query   = "(
             {$wpdb->posts}.post_title LIKE %s
             OR {$wpdb->posts}.post_content LIKE %s
@@ -914,10 +917,10 @@ function varner_search_meta_fields( $search, $wp_query ) {
                 SELECT 1 FROM {$wpdb->postmeta}
                 WHERE post_id = {$wpdb->posts}.ID
                   AND meta_key IN ('make','model','category','stock_number','vin')
-                  AND meta_value LIKE %s
+                  AND (meta_value LIKE %s OR meta_value LIKE %s)
             )
         )";
-        $search .= $wpdb->prepare( "{$search_and}({$query})", $like, $like, $like );
+        $search .= $wpdb->prepare( "{$search_and}({$query})", $like, $like, $like, $clean_like );
         $search_and = ' AND ';
     }
 

@@ -63,6 +63,15 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                 <?php if ( $search_value ) : ?>
                     <a href="<?php echo esc_url( varner_remove_filter( 's' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× "<?php echo esc_html( $search_value ); ?>"</a>
                 <?php endif; ?>
+                <?php if ( $stock_number_value ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_filter( 'stock_number' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× Stock: <?php echo esc_html( $stock_number_value ); ?></a>
+                <?php endif; ?>
+                <?php if ( $vin_value ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_filter( 'vin' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× VIN: <?php echo esc_html( $vin_value ); ?></a>
+                <?php endif; ?>
+                <?php if ( $price_min_value || $price_max_value ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_range_filter( 'price_min', 'price_max' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× Price: $<?php echo esc_html( ($price_min_value ?: '0') . '-$' . ($price_max_value ?: '...') ); ?></a>
+                <?php endif; ?>
                 <?php if ( $year_min_value || $year_max_value ) : ?>
                     <a href="<?php echo esc_url( varner_remove_range_filter( 'year_min', 'year_max' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× Year: <?php echo esc_html( ($year_min_value ?: '...') . '-' . ($year_max_value ?: '...') ); ?></a>
                 <?php endif; ?>
@@ -88,19 +97,19 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
                         <div class="space-y-2">
                             <label for="filter-search-s" class="sr-only">Search Keyword</label>
-                            <input type="text" name="s" id="filter-search-s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" aria-label="Search Keyword" />
-                            <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
+                            <input type="text" name="s" id="filter-search-s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" aria-label="Search Keyword" />
+                            <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors border border-slate-700">Search</button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label for="filter-stock-number" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">Stock #</label>
-                            <input type="text" name="stock_number" id="filter-stock-number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                            <input type="text" name="stock_number" id="filter-stock-number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
                         </div>
                         <div>
                             <label for="filter-vin" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">VIN / Serial</label>
-                            <input type="text" name="vin" id="filter-vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                            <input type="text" name="vin" id="filter-vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
                         </div>
                     </div>
 
@@ -186,10 +195,10 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
                                 <label for="<?php echo $uid; ?>_price_min" class="sr-only">Minimum Price</label>
-                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Minimum Price" />
+                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-2 py-1.5 text-xs focus:border-red-500 outline-none" aria-label="Minimum Price" />
                                 <span class="text-slate-500">-</span>
                                 <label for="<?php echo $uid; ?>_price_max" class="sr-only">Maximum Price</label>
-                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Maximum Price" />
+                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-2 py-1.5 text-xs focus:border-red-500 outline-none" aria-label="Maximum Price" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
                                 <label for="<?php echo $uid; ?>_price_range_min" class="sr-only">Minimum Price Slider</label>
@@ -208,10 +217,10 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
                                 <label for="<?php echo $uid; ?>_year_min" class="sr-only">Minimum Year</label>
-                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Minimum Year" />
+                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-2 py-1.5 text-xs focus:border-red-500 outline-none" aria-label="Minimum Year" />
                                 <span class="text-slate-500">-</span>
                                 <label for="<?php echo $uid; ?>_year_max" class="sr-only">Maximum Year</label>
-                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" aria-label="Maximum Year" />
+                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full bg-slate-900 text-white placeholder-slate-400 border border-slate-700 rounded-xl px-2 py-1.5 text-xs focus:border-red-500 outline-none" aria-label="Maximum Year" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
                                 <label for="<?php echo $uid; ?>_year_range_min" class="sr-only">Minimum Year Slider</label>
@@ -220,6 +229,10 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                                 <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Maximum Year Slider" />
                             </div>
                         </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-colors shadow-md">Apply Filters</button>
                     </div>
 
 
