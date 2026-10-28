@@ -13,7 +13,7 @@ get_header();
                 </div>
             <?php endif; ?>
             <div class="pt-4">
-                <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" class="inline-block bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-700 transition-all">View Our YouTube Channel</a>
+                <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" rel="noopener noreferrer" class="inline-block bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-700 transition-all">View Our YouTube Channel</a>
             </div>
         </div>
     </section>

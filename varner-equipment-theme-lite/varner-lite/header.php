@@ -6,19 +6,19 @@
     <meta name="theme-color" content="#dc2626" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)">
     <meta name="color-scheme" content="light dark">
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <script type="speculationrules">
-    {
-      "prerender": [
-        {
-          "source": "document",
-          "where": {
-            "href_matches": "/equipment/*"
-          },
-          "eagerness": "moderate"
-        }
-      ]
+    <link rel="preload" href="<?php echo esc_url( plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/Inter.woff2' ) ); ?>" as="font" type="font/woff2" crossorigin>
+    <script>
+    if (HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
+      const spec = document.createElement('script');
+      spec.type = 'speculationrules';
+      spec.textContent = JSON.stringify({
+        prerender: [{
+          source: "document",
+          where: { href_matches: "/*" },
+          eagerness: "moderate"
+        }]
+      });
+      document.head.appendChild(spec);
     }
     </script>
 
@@ -300,7 +300,7 @@
                         <?php 
                         $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('red') : '';
                         ?>
-                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain" width="200" height="80" fetchpriority="high" loading="eager">
+                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain" width="254" height="45" fetchpriority="high" loading="eager">
                     </a>
 
                     <!-- MOBILE MENU TOGGLE -->
@@ -312,7 +312,7 @@
 
                 <!-- CENTERED ADDRESS -->
                 <div class="flex justify-center text-center w-full lg:w-auto">
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto" aria-label="Get directions to Varner Equipment">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener noreferrer" class="group flex items-center justify-center gap-1.5 hover:scale-105 transition-transform pointer-events-auto" aria-label="Get directions to Varner Equipment">
                         <svg class="w-6 h-6 lg:w-8 lg:h-8 text-red-600 group-hover:text-slate-900 transition-colors shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                         <div class="flex flex-col text-center">
                             <span class="font-black text-slate-900 uppercase tracking-tighter text-lg lg:text-xl xl:text-2xl leading-none whitespace-nowrap"><?php echo esc_html($addr_1); ?></span>
@@ -389,7 +389,7 @@
                                 $count  = $brand_counts[ $normalized_lookup ] ?? 0;
                                 $slug   = sanitize_title( $brand );
                                 $href   = $external_url ?: home_url( '/brands/' . $slug );
-                                $target = $external_url ? ' target="_blank" rel="noopener"' : '';
+                                $target = $external_url ? ' target="_blank" rel="noopener noreferrer"' : '';
                                 $dim    = $count === 0 ? ' opacity-40' : '';
                                 $badge  = $count > 0
                                     ? '<span class="ml-auto shrink-0 bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">' . $count . '</span>'
@@ -422,9 +422,9 @@
                             </div>
                         </div>
 
-                        <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
+                        <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
                         <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
-                        <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Online Auctions</a>
+                        <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener noreferrer" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Online Auctions</a>
                         
                         <div class="group relative" data-dropdown>
                             <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-dealer-menu">Dealer Info</button>
@@ -482,9 +482,9 @@
                         </div>
                     </div>
 
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
                     <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Product Videos</a>
-                    <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Auctions</a>
+                    <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener noreferrer" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Auctions</a>
                     
                     <div class="border-b border-white/5">
                         <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false" aria-controls="mobile-dealer-submenu">

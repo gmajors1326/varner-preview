@@ -22,7 +22,7 @@
                         <p><?php echo esc_html( varner_get_theme_setting( 'contact_address_line1', '1375 US-50' ) ); ?></p>
                         <p><?php echo esc_html( varner_get_theme_setting( 'contact_address_line2', 'Delta, CO 81416' ) ); ?></p>
                     </div>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="block text-center w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener noreferrer" class="block text-center w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all">
                         Get Directions
                     </a>
                 </div>
@@ -76,13 +76,13 @@
                     <?php 
                     $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '';
                     ?>
-                    <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto" width="280" height="100" loading="lazy" decoding="async">
+                    <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto" width="280" height="50" loading="lazy" decoding="async">
                 </div>
                 <div class="flex items-center justify-center gap-5 text-white pt-2">
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_facebook', 'https://www.facebook.com/varnerequipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Facebook">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_facebook', 'https://www.facebook.com/varnerequipment' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="Facebook">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.1V12h3.4V9.7c0-3.3 2-5.1 5-5.1 1.4 0 2.8.2 2.8.2v3.1h-1.6c-1.6 0-2.1 1-2.1 2V12h3.6l-.6 2.9h-3v7A10 10 0 0 0 22 12z"/></svg>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_youtube', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="YouTube">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_youtube', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="YouTube">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 7.2a2.6 2.6 0 0 0-1.8-1.8C16.2 5 12 5 12 5s-4.2 0-5.8.4a2.6 2.6 0 0 0-1.8 1.8A27.4 27.4 0 0 0 4 12a27.4 27.4 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C7.8 19 12 19 12 19s4.2 0 5.8-.4a2.6 2.6 0 0 0 1.8-1.8A27.4 27.4 0 0 0 20 12a27.4 27.4 0 0 0-.4-4.8zM10 15.5V8.5L16 12l-6 3.5z"/></svg>
                     </a>
                     <?php
@@ -105,7 +105,7 @@
                             $icon_html = $platform_icons[$platform] ?? $platform_icons['custom'];
                             $aria_label = !empty($link['label']) ? $link['label'] : ucfirst($platform);
                             ?>
-                            <a href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="<?php echo esc_attr($aria_label); ?>">
+                            <a href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="<?php echo esc_attr($aria_label); ?>">
                                 <?php echo $icon_html; ?>
                             </a>
                             <?php
@@ -115,7 +115,7 @@
                     <a href="mailto:<?php echo esc_attr( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?>" class="hover:text-red-500 transition-colors" aria-label="Email">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2 8 5 8-5V8l-8 5-8-5v0z"/></svg>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Location">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="Location">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 0 1 7-7zm0 9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
                     </a>
                 </div>

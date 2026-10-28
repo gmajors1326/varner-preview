@@ -405,6 +405,7 @@ add_filter( 'query_vars', function( $vars ) {
     $vars[] = 'inventory_segment'; 
     $vars[] = 'brand_name';
     $vars[] = 'varner_sitemap';
+    $vars[] = 'varner_llms';
     $vars[] = 'brands_hub';
     $vars[] = 'indexnow_key';
     return $vars; 
@@ -413,6 +414,7 @@ add_filter( 'query_vars', function( $vars ) {
 add_action( 'init', function() {
     add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
     add_rewrite_rule('^sitemap_index\.xml$', 'index.php?varner_sitemap=index', 'top');
+    add_rewrite_rule('^llms\.txt$', 'index.php?varner_llms=1', 'top');
     add_rewrite_rule('^([a-f0-9]{32})\.txt$', 'index.php?indexnow_key=$matches[1]', 'top');
     add_rewrite_rule('^inventory/?$', 'index.php?inventory_segment=all-units', 'top');
     add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&paged=$matches[2]', 'top');
@@ -426,13 +428,30 @@ add_action( 'init', function() {
 
 add_action( 'init', function () {
     $flag = get_option( 'varner_brands_rewrite_v' );
-    if ( $flag !== '5' ) {
+    if ( $flag !== '6' ) {
         flush_rewrite_rules( false );
-        update_option( 'varner_brands_rewrite_v', '5' );
+        update_option( 'varner_brands_rewrite_v', '6' );
     }
 }, 99 );
 
 add_action( 'template_redirect', function() {
+    if ( get_query_var('varner_llms') ) {
+        header('Content-Type: text/plain; charset=utf-8');
+        header('X-Robots-Tag: noindex, follow');
+        $llms_path = get_template_directory() . '/../../public/llms.txt';
+        if ( ! file_exists( $llms_path ) ) {
+            $llms_path = ABSPATH . 'llms.txt';
+        }
+        if ( file_exists( $llms_path ) ) {
+            readfile( $llms_path );
+        } else {
+            echo "# Varner Equipment — AI Agent Manifest\n\n";
+            echo "Dealership: Varner Equipment (Delta, CO)\n";
+            echo "All Inventory: " . home_url( '/inventory/all-units/' ) . "\n";
+            echo "Contact: " . home_url( '/contact/' ) . "\n";
+        }
+        exit;
+    }
     if ( get_query_var('varner_sitemap') === 'inventory' ) {
         varner_generate_xml_sitemap();
     }

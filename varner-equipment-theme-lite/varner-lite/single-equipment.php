@@ -224,7 +224,7 @@ $finance_url    = add_query_arg( array(
                     <div class="text-sm">
                         <span class="font-black text-slate-900 text-xs uppercase tracking-widest">Machine Location: </span>
                         <span class="text-slate-600 font-bold">1375 Highway 50, Delta, Colorado 81416</span>
-                        <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener"
+                        <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener noreferrer"
                            class="inline-flex ml-1 text-slate-500 hover:text-red-600 transition-colors align-middle p-2 -m-2" aria-label="Get directions">
                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         </a>

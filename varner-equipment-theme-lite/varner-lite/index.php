@@ -77,7 +77,7 @@
                     <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
                         Online Parts
                     </a>
                 </div>
@@ -89,9 +89,11 @@
             <div class="max-w-7xl mx-auto px-4 py-6 lg:py-0">
                 <form id="hero-quick-search" action="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" method="get" class="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/30 flex flex-col lg:flex-row gap-3 items-center">
                     <div class="flex-1 w-full">
+                        <label for="hero-search-input" class="sr-only">Search inventory</label>
                         <input id="hero-search-input" type="text" name="s" placeholder="Search Model, VIN, or Type..." class="w-full h-12 lg:h-12 px-4 bg-slate-50 rounded-lg font-bold text-xs border border-transparent focus:border-red-500 outline-none transition-all placeholder:text-slate-400" aria-label="Search inventory">
                     </div>
                     <div class="w-full lg:w-48">
+                        <label for="hero-search-category" class="sr-only">Filter by equipment type</label>
                         <select id="hero-search-category" name="category[]" class="w-full h-12 lg:h-12 px-3 bg-slate-50 rounded-lg font-black uppercase text-xs tracking-widest border border-transparent outline-none cursor-pointer" aria-label="Filter by equipment type">
                             <option value="" disabled selected hidden>Select Type</option>
                             <option value="all">All Types</option>
@@ -201,7 +203,7 @@
                         $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
                         echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform" aria-label="' . esc_attr($brand_name) . ' Authorized Dealer">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '" width="176" height="72" loading="lazy" decoding="async">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="max-w-full max-h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '" loading="lazy" decoding="async">'
                             . '</a>';
                     }
                     ?>
@@ -217,7 +219,7 @@
                         $brand_name = preg_replace('/([a-z])([A-Z])/', '$1 $2', $brand_name);
 
                         echo '<a href="' . esc_url( home_url( '/brands/' . $slug ) ) . '" class="flex items-center justify-center shrink-0 w-32 sm:w-36 md:w-40 lg:w-44 h-12 sm:h-14 md:h-16 lg:h-18 mx-4 sm:mx-6 md:mx-8 hover:scale-110 transition-transform" aria-label="' . esc_attr($brand_name) . ' Authorized Dealer">'
-                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="w-full h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '" width="176" height="72" loading="lazy" decoding="async">'
+                            . '<img src="' . esc_url($logo_url) . '?v=' . esc_attr($logo_version) . '" alt="' . esc_attr($brand_name) . ' Authorized Dealer" class="max-w-full max-h-full object-contain drop-shadow-xl opacity-90 hover:opacity-100 transition-all duration-300' . $extraClasses . '" loading="lazy" decoding="async">'
                             . '</a>';
                     }
                     ?>
@@ -244,7 +246,7 @@
                     </div>
                 </a>
 
-                <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
+                <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-6 rounded-[1.5rem] bg-slate-50 hover:bg-red-50 hover:translate-y-[-2px] transition-all group">
                     <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 group-hover:text-red-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
                     </div>
@@ -387,7 +389,7 @@
                     <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em]"><?php echo esc_html( varner_get_theme_setting( 'youtube_tagline', 'Varner Equipment Media' ) ); ?></div>
                     <h2 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1] md:leading-[0.9] tracking-tighter uppercase break-words"><?php echo wp_kses_post( varner_get_theme_setting( 'youtube_title' ) ); ?></h2>
                     <p class="text-base sm:text-lg text-slate-400 font-bold max-w-md mx-auto md:mx-0 leading-relaxed"><?php echo wp_kses_post( varner_get_theme_setting( 'youtube_paragraph' ) ); ?></p>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'youtube_channel_url', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'youtube_channel_url', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener noreferrer" class="inline-block bg-red-600 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl hover:bg-white hover:text-red-600 transition-all mt-4 border border-red-500">
                         Visit Our Channel
                     </a>
                 </div>
@@ -405,7 +407,7 @@
                                 <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                             </div>
                         </div>
-                        <img src="<?php echo esc_url( $yt_thumb_url ); ?>" alt="Video Thumbnail" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500 scale-105 group-hover:scale-100">
+                        <img src="<?php echo esc_url( $yt_thumb_url ); ?>" alt="Video Thumbnail" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-500 scale-105 group-hover:scale-100" width="640" height="360" loading="lazy" decoding="async">
                     </div>
                     <script>
                     document.getElementById('yt-player-container').addEventListener('click', function() {

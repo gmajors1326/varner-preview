@@ -12,23 +12,11 @@ defined('ABSPATH') || exit;
  * Check if the current REST request is from an authenticated admin.
  *
  * WPEngine's Varnish/mu-plugin stack can strip cookies from REST API requests,
- * causing current_user_can() to return false even for logged-in admins.
- * This helper falls back to checking whether a valid X-WP-Nonce header was
- * provided — its presence proves the request originated from an authenticated
- * wp-admin page (public-facing pages don't inject nonces for custom endpoints).
+ * In WP-REST, nonces are anti-CSRF tokens and do not confer administrative authority.
+ * We strictly gate admin data access on the 'edit_others_posts' capability (Editor & Admin).
  */
 function varner_is_admin_request(): bool {
-    // Fast path: standard WP cookie auth works.
-    if (current_user_can('edit_others_posts')) {
-        return true;
-    }
-    // Fallback: the request carries a nonce header, meaning it was rendered
-    // inside wp-admin for an authenticated user.
-    $nonce = isset($_SERVER['HTTP_X_WP_NONCE']) ? $_SERVER['HTTP_X_WP_NONCE'] : '';
-    if ($nonce && wp_verify_nonce($nonce, 'wp_rest') !== false) {
-        return true;
-    }
-    return false;
+    return current_user_can('edit_others_posts');
 }
 
 require_once __DIR__ . '/rest-api-pages-videos.php';
