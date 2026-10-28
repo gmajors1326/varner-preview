@@ -21,17 +21,22 @@ $selected_condition  = array_map( 'sanitize_text_field', (array) ( $_GET['condit
 $search_value        = sanitize_text_field( $_GET['s'] ?? '' );
 $stock_number_value  = sanitize_text_field( $_GET['stock_number'] ?? '' );
 $vin_value           = sanitize_text_field( $_GET['vin'] ?? '' );
-$price_min_value     = sanitize_text_field( $_GET['price_min'] ?? '' );
-$price_max_value     = sanitize_text_field( $_GET['price_max'] ?? '' );
-$year_min_value      = sanitize_text_field( $_GET['year_min'] ?? '' );
-$year_max_value      = sanitize_text_field( $_GET['year_max'] ?? '' );
-
-$has_filters = $search_value || $stock_number_value || $vin_value || $selected_categories || $selected_subcategories || $selected_makes || $selected_condition || $price_min_value || $price_max_value || $year_min_value || $year_max_value;
-
 $year_min_bound  = isset( $filter_data['year_range']->min_year ) ? intval( $filter_data['year_range']->min_year ) : 1980;
 $year_max_bound  = isset( $filter_data['year_range']->max_year ) ? intval( $filter_data['year_range']->max_year ) : intval( date('Y') );
 $price_min_bound = isset( $filter_data['price_range']->min_price ) ? floatval( $filter_data['price_range']->min_price ) : 0;
 $price_max_bound = isset( $filter_data['price_range']->max_price ) ? floatval( $filter_data['price_range']->max_price ) : 250000;
+
+$raw_p_min = sanitize_text_field( $_GET['price_min'] ?? '' );
+$raw_p_max = sanitize_text_field( $_GET['price_max'] ?? '' );
+$price_min_value = ( $raw_p_min !== '' && floatval( $raw_p_min ) > $price_min_bound ) ? $raw_p_min : '';
+$price_max_value = ( $raw_p_max !== '' && floatval( $raw_p_max ) < $price_max_bound ) ? $raw_p_max : '';
+
+$raw_y_min = sanitize_text_field( $_GET['year_min'] ?? '' );
+$raw_y_max = sanitize_text_field( $_GET['year_max'] ?? '' );
+$year_min_value  = ( $raw_y_min !== '' && intval( $raw_y_min ) > $year_min_bound ) ? $raw_y_min : '';
+$year_max_value  = ( $raw_y_max !== '' && intval( $raw_y_max ) < $year_max_bound ) ? $raw_y_max : '';
+
+$has_filters = $search_value || $stock_number_value || $vin_value || $selected_categories || $selected_subcategories || $selected_makes || $selected_condition || $price_min_value || $price_max_value || $year_min_value || $year_max_value;
 
 $fallback_categories = isset( $filter_data['categories'] ) ? $filter_data['categories'] : array();
 $fallback_makes      = isset( $filter_data['makes'] ) ? $filter_data['makes'] : array();
@@ -258,22 +263,24 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
     var display  = document.getElementById(displayId);
     if (!minInput || !maxInput || !rangeMin || !rangeMax) return;
 
-    function update() {
+    function update(userInteracted) {
       var minVal = parseFloat(rangeMin.value);
       var maxVal = parseFloat(rangeMax.value);
       if (minVal > maxVal) { [minVal, maxVal] = [maxVal, minVal]; }
-      minInput.value = minVal;
-      maxInput.value = maxVal;
+      if (userInteracted) {
+        minInput.value = minVal;
+        maxInput.value = maxVal;
+      }
       if (display) {
         display.textContent = isPrice ? '$' + minVal.toLocaleString() + ' - $' + maxVal.toLocaleString() : minVal + ' - ' + maxVal;
       }
     }
 
-    rangeMin.addEventListener('input', update);
-    rangeMax.addEventListener('input', update);
-    minInput.addEventListener('change', function(){ rangeMin.value = this.value; update(); });
-    maxInput.addEventListener('change', function(){ rangeMax.value = this.value; update(); });
-    update();
+    rangeMin.addEventListener('input', function(){ update(true); });
+    rangeMax.addEventListener('input', function(){ update(true); });
+    minInput.addEventListener('change', function(){ rangeMin.value = this.value; update(true); });
+    maxInput.addEventListener('change', function(){ rangeMax.value = this.value; update(true); });
+    update(false);
   }
 
   document.addEventListener('DOMContentLoaded', function(){
@@ -300,6 +307,16 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
       filterForm.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
         cb.addEventListener('change', function() {
           filterForm.submit();
+        });
+      });
+
+      // Clear empty or full-bound range inputs before submit so they don't exclude units with missing meta
+      filterForm.addEventListener('submit', function() {
+        ['price_min', 'price_max', 'year_min', 'year_max'].forEach(function(fieldName) {
+          var input = filterForm.querySelector('input[name="' + fieldName + '"]');
+          if (input && (input.value === '' || input.value === '0')) {
+            input.disabled = true;
+          }
         });
       });
     }

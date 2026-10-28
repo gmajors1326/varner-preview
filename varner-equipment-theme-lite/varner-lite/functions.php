@@ -859,18 +859,31 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
         $meta[] = array( 'key' => 'vin', 'value' => $vin, 'compare' => 'LIKE' );
     }
 
-    $ranges = array(
-        'year'  => array( 'min' => intval( $_GET['year_min'] ?? 0 ),  'max' => intval( $_GET['year_max'] ?? 0 ),  'type' => 'NUMERIC' ),
-        'price' => array( 'min' => intval( $_GET['price_min'] ?? 0 ), 'max' => intval( $_GET['price_max'] ?? 0 ), 'type' => 'DECIMAL' ),
-    );
+    $raw_year_min  = isset( $_GET['year_min'] ) && $_GET['year_min'] !== '' ? intval( $_GET['year_min'] ) : 0;
+    $raw_year_max  = isset( $_GET['year_max'] ) && $_GET['year_max'] !== '' ? intval( $_GET['year_max'] ) : 0;
+    $raw_price_min = isset( $_GET['price_min'] ) && $_GET['price_min'] !== '' ? floatval( $_GET['price_min'] ) : 0;
+    $raw_price_max = isset( $_GET['price_max'] ) && $_GET['price_max'] !== '' ? floatval( $_GET['price_max'] ) : 0;
 
-    foreach ( $ranges as $key => $r ) {
-        if ( $r['min'] && $r['max'] ) {
-            $meta[] = array( 'key' => $key, 'value' => array( $r['min'], $r['max'] ), 'compare' => 'BETWEEN', 'type' => $r['type'] );
-        } elseif ( $r['min'] ) {
-            $meta[] = array( 'key' => $key, 'value' => $r['min'], 'compare' => '>=', 'type' => $r['type'] );
-        } elseif ( $r['max'] ) {
-            $meta[] = array( 'key' => $key, 'value' => $r['max'], 'compare' => '<=', 'type' => $r['type'] );
+    // Only apply range filter if it meaningfully constrains the result, preventing exclusion of posts with unset meta
+    $has_year_filter = ( $raw_year_min > 1980 ) || ( $raw_year_max > 0 && $raw_year_max < intval( date( 'Y' ) ) + 2 );
+    if ( $has_year_filter ) {
+        if ( $raw_year_min && $raw_year_max ) {
+            $meta[] = array( 'key' => 'year', 'value' => array( $raw_year_min, $raw_year_max ), 'compare' => 'BETWEEN', 'type' => 'NUMERIC' );
+        } elseif ( $raw_year_min ) {
+            $meta[] = array( 'key' => 'year', 'value' => $raw_year_min, 'compare' => '>=', 'type' => 'NUMERIC' );
+        } elseif ( $raw_year_max ) {
+            $meta[] = array( 'key' => 'year', 'value' => $raw_year_max, 'compare' => '<=', 'type' => 'NUMERIC' );
+        }
+    }
+
+    $has_price_filter = ( $raw_price_min > 0 ) || ( $raw_price_max > 0 && $raw_price_max < 250000 );
+    if ( $has_price_filter ) {
+        if ( $raw_price_min && $raw_price_max ) {
+            $meta[] = array( 'key' => 'price', 'value' => array( $raw_price_min, $raw_price_max ), 'compare' => 'BETWEEN', 'type' => 'DECIMAL' );
+        } elseif ( $raw_price_min ) {
+            $meta[] = array( 'key' => 'price', 'value' => $raw_price_min, 'compare' => '>=', 'type' => 'DECIMAL' );
+        } elseif ( $raw_price_max ) {
+            $meta[] = array( 'key' => 'price', 'value' => $raw_price_max, 'compare' => '<=', 'type' => 'DECIMAL' );
         }
     }
 
