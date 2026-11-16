@@ -13,14 +13,9 @@ $base_meta = array(
     ),
 );
 
-$count_args = varner_build_inventory_query( $base_meta, -1 );
-$count_args['posts_per_page'] = -1;
-$count_args['fields'] = 'ids';
-unset( $count_args['paged'] );
-$total = count( get_posts( $count_args ) );
-
 $query_args = varner_build_inventory_query( $base_meta, 12 );
 $inventory_query = new WP_Query( $query_args );
+$total = intval( $inventory_query->found_posts );
 ?>
 
     <section class="pt-32 pb-24 bg-slate-50 min-h-[60vh]">

@@ -17,6 +17,7 @@ $selected_subcategories = array_map( 'sanitize_text_field', (array) ( $_GET['sub
 $selected_makes      = isset( $selected_makes_override )
     ? array_map( 'sanitize_text_field', (array) $selected_makes_override )
     : array_map( 'sanitize_text_field', (array) ( $_GET['make'] ?? array() ) );
+$locked_makes        = isset( $locked_makes ) ? array_map( 'sanitize_text_field', (array) $locked_makes ) : array();
 $selected_condition  = array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? array() ) );
 $search_value        = sanitize_text_field( $_GET['s'] ?? '' );
 $stock_number_value  = sanitize_text_field( $_GET['stock_number'] ?? '' );
@@ -60,7 +61,11 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                     <a href="<?php echo esc_url( varner_remove_filter( 'subcategory', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
                 <?php endforeach; ?>
                 <?php foreach ( $selected_makes as $v ) : ?>
-                    <a href="<?php echo esc_url( varner_remove_filter( 'make', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
+                    <?php if ( in_array( $v, $locked_makes, true ) ) : ?>
+                        <span class="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"><?php echo esc_html( $v ); ?></span>
+                    <?php else : ?>
+                        <a href="<?php echo esc_url( varner_remove_filter( 'make', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
+                    <?php endif; ?>
                 <?php endforeach; ?>
                 <?php foreach ( $selected_condition as $v ) : ?>
                     <a href="<?php echo esc_url( varner_remove_filter( 'condition', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
@@ -122,12 +127,9 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Category</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_categories as $cat_key => $cat_obj ) : ?>
-                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                    <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" onchange="this.form.submit()" />
-                                        <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
-                                    </span>
-                                    <span class="text-[9px] font-black text-slate-500">(<?php echo intval($cat_obj->cnt); ?>)</span>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" />
+                                    <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -141,12 +143,9 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Subcategory</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_subcategories as $subcat_key => $subcat_obj ) : ?>
-                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                    <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" onchange="this.form.submit()" />
-                                        <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $subcat_key ); ?></span>
-                                    </span>
-                                    <span class="text-[9px] font-black text-slate-500">(<?php echo intval($subcat_obj->cnt); ?>)</span>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" />
+                                    <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $subcat_key ); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -155,17 +154,34 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
                     <fieldset>
                         <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Manufacturer</legend>
+                        <?php if ( ! empty( $locked_makes ) ) : ?>
+                            <div class="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-100/80">
+                                <?php foreach ( $locked_makes as $locked_make ) : ?>
+                                    <label class="flex items-center justify-between gap-2 text-xs text-slate-900 cursor-not-allowed">
+                                        <span class="flex items-center gap-2">
+                                            <input type="checkbox" checked disabled class="accent-red-600" />
+                                            <span class="font-black uppercase"><?php echo esc_html( $locked_make ); ?></span>
+                                        </span>
+                                        <span class="text-[9px] font-black text-slate-500 uppercase">Locked</span>
+                                    </label>
+                                <?php endforeach; ?>
+                                <?php
+                                $all_makers_url = get_query_var( 'inventory_segment' )
+                                    ? home_url( '/inventory/' . get_query_var( 'inventory_segment' ) . '/' )
+                                    : home_url( '/inventory/all-units/' );
+                                ?>
+                                <a href="<?php echo esc_url( $all_makers_url ); ?>" class="block pt-1 text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700">View All Manufacturers →</a>
+                            </div>
+                        <?php else : ?>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_makes as $make_key => $make_obj ) : ?>
-                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                    <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" onchange="this.form.submit()" />
-                                        <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
-                                    </span>
-                                    <span class="text-[9px] font-black text-slate-500">(<?php echo intval($make_obj->cnt); ?>)</span>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" />
+                                    <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
+                        <?php endif; ?>
                     </fieldset>
 
                     <?php if ( $facet_show_condition ) : ?>
@@ -179,7 +195,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                                 $exists = isset($fallback_conditions[$cond_key]);
                             ?>
                                 <label class="flex-1 text-center cursor-pointer group">
-                                    <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" onchange="this.form.submit()" />
+                                    <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" />
                                     <div class="v-cond-btn py-2 rounded-xl <?php echo $is_checked ? 'bg-slate-900 border-2 border-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
                                         <?php echo esc_html( $cond_key ); ?>
                                     </div>
@@ -266,7 +282,11 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
     function update(userInteracted) {
       var minVal = parseFloat(rangeMin.value);
       var maxVal = parseFloat(rangeMax.value);
-      if (minVal > maxVal) { [minVal, maxVal] = [maxVal, minVal]; }
+      if (minVal > maxVal) {
+        [minVal, maxVal] = [maxVal, minVal];
+        rangeMin.value = minVal;
+        rangeMax.value = maxVal;
+      }
       if (userInteracted) {
         minInput.value = minVal;
         maxInput.value = maxVal;
@@ -278,8 +298,16 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
 
     rangeMin.addEventListener('input', function(){ update(true); });
     rangeMax.addEventListener('input', function(){ update(true); });
-    minInput.addEventListener('change', function(){ rangeMin.value = this.value; update(true); });
-    maxInput.addEventListener('change', function(){ rangeMax.value = this.value; update(true); });
+    minInput.addEventListener('change', function(){
+      if (this.value === '') { rangeMin.value = rangeMin.min; update(false); return; }
+      rangeMin.value = this.value;
+      update(true);
+    });
+    maxInput.addEventListener('change', function(){
+      if (this.value === '') { rangeMax.value = rangeMax.max; update(false); return; }
+      rangeMax.value = this.value;
+      update(true);
+    });
     update(false);
   }
 
@@ -306,7 +334,11 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
     if (filterForm) {
       filterForm.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
         cb.addEventListener('change', function() {
-          filterForm.submit();
+          if (filterForm.requestSubmit) {
+            filterForm.requestSubmit();
+          } else {
+            filterForm.submit();
+          }
         });
       });
 

@@ -11,12 +11,10 @@ if ( ! function_exists('get_field') ) {
 $selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
 $filter_data = varner_get_filter_data( array(), $selected_categories );
 
-// Safer count query
-$count_args = varner_build_inventory_query(array(), -1);
-$count_args['posts_per_page'] = -1;
-$count_args['fields'] = 'ids';
-unset( $count_args['paged'] );
-$total = count(get_posts($count_args));
+// Execute single paginated query (used for both count and grid)
+$query_args = varner_build_inventory_query(array(), 12);
+$inventory_query = new WP_Query( $query_args );
+$total = intval( $inventory_query->found_posts );
 ?>
 
 <section class="pt-36 pb-16 bg-slate-50 min-h-[60vh]">
@@ -38,10 +36,8 @@ $total = count(get_posts($count_args));
             <div class="flex-1">
                 
                 <?php 
-                    $query_args = varner_build_inventory_query(array(), 12);
-                    $inventory_query = new WP_Query( $query_args );
                     $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
-                    $total_found  = intval( $inventory_query->found_posts );
+                    $total_found  = $total;
                     $raw_path     = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
                     $reset_url    = home_url( preg_replace( '#/page/\d+/?#', '/', $raw_path ) );
                     if ( strpos( $reset_url, '/inventory/' ) === false ) {

@@ -85,7 +85,7 @@ function varner_get_brands() {
         'macdon' => array(
             'name' => 'Macdon', 'make' => 'Macdon', 'category' => 'Hay Equipment',
             'tagline' => 'Premium windrowers and headers for the hay professional.',
-            'description' => 'Macdon sets the standard for self-propelled windrowers and mower-conditioners, prized for cut quality and reliability. A go-to for commercial hay operations in Delta County.',
+            'description' => 'Macdon sets the standard for self-propelled windrowers and mower-conditioners, prized for cut quality and reliability. A go-to for hay operations across Delta County and Western Colorado.',
             'keywords' => 'Macdon hay equipment Colorado, Macdon windrower Delta CO, Macdon dealer western Colorado',
             'logo' => 'macdon.png',
         ),
@@ -193,6 +193,20 @@ function varner_get_brands() {
             'description' => 'Brillion is renowned for cultipackers, seeders, and tillage tools that create ideal seedbeds. A proven choice for growers establishing pasture and forage across the Western Slope.',
             'keywords' => 'Brillion seeder Colorado, cultipacker Delta CO, tillage equipment western Colorado',
             'logo' => 'brillion.png',
+        ),
+        'cm-truck-beds' => array(
+            'name' => 'CM Truck Beds', 'make' => 'CM Truck Beds', 'category' => 'Truck Beds',
+            'tagline' => 'America\'s #1 selling truck bed, built for work.',
+            'description' => 'CM Truck Beds builds heavy-duty steel and aluminum flatbed, hauler, and skirted truck beds engineered for ranchers, contractors, and fleet operators across Western Colorado.',
+            'keywords' => 'CM Truck Beds Colorado, flatbed truck bed Delta CO, CM Truck Beds dealer western Colorado',
+            'logo' => 'cm-truck-beds.png',
+        ),
+        'mchale' => array(
+            'name' => 'McHale', 'make' => 'McHale', 'category' => 'Hay Equipment',
+            'tagline' => 'Irish-engineered round balers and bale wrappers.',
+            'description' => 'McHale specializes in heavy-duty round balers, fusion baler-wrappers, and silage wrappers built for high-output forage operations on the Western Slope.',
+            'keywords' => 'McHale baler Colorado, McHale dealer Delta CO, round baler western Colorado',
+            'logo' => 'mchale.png',
         ),
 
     );

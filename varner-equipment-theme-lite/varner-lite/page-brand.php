@@ -186,14 +186,9 @@ $brand_meta = array(
     array( 'key' => 'brand',         'value' => $brand_name, 'compare' => 'LIKE' ),
 );
 
-$count_args = varner_build_inventory_query( array( $brand_meta ), -1 );
-$count_args['posts_per_page'] = -1;
-$count_args['fields'] = 'ids';
-unset( $count_args['paged'] );
-$total_units = count( get_posts( $count_args ) );
-
 $query_args = varner_build_inventory_query( array( $brand_meta ), 12 );
 $brand_query = new WP_Query( $query_args );
+$total_units = intval( $brand_query->found_posts );
 $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
 ?>
 
@@ -248,16 +243,8 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
             <div class="w-full lg:w-72 shrink-0">
                 <?php 
                     $facet_search_label = $brand_name . ' Inventory';
-                    $selected_makes_override = array();
-                    $brand_count = 0;
-                    if ( isset( $filter_data['makes'] ) ) {
-                        foreach ( $filter_data['makes'] as $mk => $obj ) {
-                            if ( strcasecmp( $mk, $brand_name ) === 0 ) { $brand_count = intval( $obj->cnt ?? 0 ); break; }
-                        }
-                    }
-                    if ( $brand_count > 0 ) {
-                        $selected_makes_override = array( $brand_name );
-                    }
+                    $selected_makes_override = array( $brand_name );
+                    $locked_makes = array( $brand_name );
                     include get_template_directory() . '/partials/inventory-sidebar.php'; 
                 ?>
             </div>

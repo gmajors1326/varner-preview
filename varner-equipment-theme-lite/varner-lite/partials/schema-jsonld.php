@@ -393,7 +393,8 @@ add_action( 'wp_head', 'varner_inventory_itemlist_schema', 20 );
  * Emits VideoObject schema for each embedded YouTube video.
  */
 function varner_video_schema() {
-	if ( ! ( is_page_template( 'page-videos.php' )
+	if ( ! ( ( defined( 'VARNER_VIRTUAL_PAGE' ) && VARNER_VIRTUAL_PAGE === 'videos' )
+		|| is_page_template( 'page-videos.php' )
 		|| is_page( array( 'videos', 'product-videos', '200', '892' ) )
 		|| is_page( 200 )
 		|| is_page( 892 )

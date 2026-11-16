@@ -52,7 +52,7 @@
                 <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6 whitespace-nowrap">Quick Links</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li><a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="hover:text-red-500 transition-colors">Home</a></li>
-                    <li><a href="<?php echo esc_url( home_url( '/product-videos' ) ); ?>" class="hover:text-red-500 transition-colors">Product Videos</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="hover:text-red-500 transition-colors">Product Videos</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="hover:text-red-500 transition-colors">Parts Request</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="hover:text-red-500 transition-colors">Service Request</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="hover:text-red-500 transition-colors">About</a></li>
@@ -175,7 +175,7 @@
         <div class="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-900 text-slate-400">
             <h3 class="text-xs font-black uppercase tracking-[0.3em] text-red-500 mb-4 text-center">Western Colorado Equipment Hub</h3>
             <div class="flex flex-wrap justify-center gap-x-6 gap-y-3 text-xs font-bold items-center">
-                <a href="<?php echo esc_url( home_url( '/inventory/tractors/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Mahindra Tractors Delta CO</a>
+                <a href="<?php echo esc_url( home_url( '/inventory/tractors/mahindra/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Mahindra Tractors Delta CO</a>
                 <span class="text-slate-700">•</span>
                 <a href="<?php echo esc_url( home_url( '/brands/big-tex/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Big Tex Trailers Montrose CO</a>
                 <span class="text-slate-700">•</span>
@@ -203,7 +203,7 @@
             <div class="text-xs text-slate-400 font-bold uppercase tracking-widest flex justify-center gap-4 py-2">
                 <a href="<?php echo esc_url( home_url( '/legal/terms-of-service' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Terms of Service</a>
                 <span>|</span>
-                <a href="<?php echo esc_url( home_url( '/legal/privacy-policy' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Privacy Policy</a>
+                <a href="<?php echo esc_url( home_url( '/privacy-policy' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Privacy Policy</a>
             </div>
         </div>
     </footer>

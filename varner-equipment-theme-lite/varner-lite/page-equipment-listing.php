@@ -35,6 +35,8 @@ if ($brand_obj) {
     $seo['sub'] = 'Explore in-stock ' . $brand_obj['name'] . ' ' . strtolower($seo['h1'] ?? '') . ' at Varner Equipment in Delta, CO.';
     $seo['blurb'] = 'Browse live inventory of ' . $brand_obj['name'] . ' units. Inspected, clear pricing, and backed by local service across Western Colorado.';
     $seo['filter']['make'] = array($brand_obj['make']);
+    $selected_makes_override = array($brand_obj['make']);
+    $locked_makes = array($brand_obj['make']);
 }
 
 // 2. Build Query
@@ -43,19 +45,21 @@ $selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['catego
 $filter_data = varner_get_filter_data( $segment_categories, $selected_categories );
 $base_meta = array();
 
-// Apply the hard-coded segment filters (e.g. category => Tractors)
+// Apply the hard-coded segment filters (e.g. category => Tractors, subcategory => Dump Trailers)
 if (!empty($seo['filter'])) {
     foreach ($seo['filter'] as $key => $vals) {
-        $base_meta[] = array('key' => $key, 'value' => $vals, 'compare' => 'IN');
+        if ($key === 'subcategory') {
+            $base_meta[] = varner_build_subcategory_meta_query((array) $vals);
+        } else {
+            $base_meta[] = array('key' => $key, 'value' => $vals, 'compare' => 'IN');
+        }
     }
 }
 
-// Get count using a standard get_posts call
-$count_args = varner_build_inventory_query($base_meta, -1);
-$count_args['posts_per_page'] = -1;
-$count_args['fields'] = 'ids';
-unset( $count_args['paged'] );
-$total = count(get_posts($count_args));
+// Execute single paginated query (used for both hero count and grid)
+$query_args = varner_build_inventory_query($base_meta, 12);
+$inventory_query = new WP_Query($query_args);
+$total = intval( $inventory_query->found_posts );
 
 // 3. Active filter count for badge
 $active_filter_count =
@@ -75,7 +79,7 @@ $active_filter_count =
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div class="max-w-3xl">
-                <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment Segment</div>
+                <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment</div>
                 <h1 class="text-5xl md:text-7xl font-black tracking-tight uppercase mb-4 leading-[1.1]"><?php echo esc_html($seo['h1']); ?></h1>
                 <p class="text-lg text-slate-500 font-bold leading-relaxed"><?php echo esc_html($seo['sub']); ?></p>
             </div>
@@ -115,10 +119,8 @@ $active_filter_count =
             <div class="flex-1">
                 
                 <?php 
-                    $query_args = varner_build_inventory_query($base_meta, 12);
-                    $inventory_query = new WP_Query($query_args);
                     $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
-                    $total_found  = intval( $inventory_query->found_posts );
+                    $total_found  = $total;
                     $raw_path     = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
                     $reset_url    = home_url( preg_replace( '#/page/\d+/?#', '/', $raw_path ) );
                     if ( $slug && strpos( $reset_url, '/inventory/' ) === false ) {

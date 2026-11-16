@@ -1,5 +1,5 @@
 <?php
-$privacy_url = home_url( '/legal/privacy-policy' );
+$privacy_url = home_url( '/privacy-policy' );
 $version     = function_exists( 'varner_cookie_get_effective_version' )
     ? varner_cookie_get_effective_version()
     : 1;

@@ -63,21 +63,24 @@
         </div>
 
         <div class="relative z-40 max-w-7xl mx-auto px-4 w-full pt-24 md:pt-32 lg:pb-48 pb-12">
-            <div class="max-w-3xl space-y-8">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-[0.9] tracking-tighter uppercase drop-shadow-2xl">
-                    <?php echo wp_kses_post( varner_get_theme_setting( 'hero_title' ) ); ?>
+            <div class="max-w-4xl space-y-8">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tighter uppercase drop-shadow-2xl">
+                    Western Colorado's Equipment &amp; <span class="text-red-500">Trailer Dealer</span>
                 </h1>
-                <div class="text-xl text-white font-bold max-w-xl leading-relaxed drop-shadow-md hero-subtitle-container">
-                    <?php echo wp_kses_post( varner_get_theme_setting( 'hero_subtitle' ) ); ?>
+                <div class="text-xl text-white font-bold max-w-2xl leading-relaxed drop-shadow-md hero-subtitle-container">
+                    Shop quality tractors, trailers, agricultural equipment, and attachments from trusted brands like Mahindra, Big Tex, Deutz-Fahr, and more.
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-6 items-start">
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="text-center relative z-50 bg-white text-slate-900 px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-6 items-stretch">
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button1_link', '/inventory/all-units' ) ) ); ?>" class="flex items-center justify-center text-center whitespace-nowrap relative z-50 bg-white text-slate-900 px-3 py-4 sm:px-5 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-wider sm:tracking-widest text-xs sm:text-sm shadow-2xl hover:bg-red-600 hover:text-white transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button1_text', 'Shop Inventory' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
+                    <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="flex items-center justify-center text-center whitespace-nowrap relative z-50 bg-red-600 text-white px-3 py-4 sm:px-5 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-wider sm:tracking-widest text-xs sm:text-sm shadow-2xl hover:bg-white hover:text-slate-900 transition-all">
+                        Shop Trailers
+                    </a>
+                    <a href="<?php echo esc_url( home_url( varner_get_theme_setting( 'hero_button2_link', '/services/service-request' ) ) ); ?>" class="flex items-center justify-center text-center whitespace-nowrap relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-3 py-4 sm:px-5 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-wider sm:tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
                         <?php echo esc_html( varner_get_theme_setting( 'hero_button2_text', 'Book Service' ) ); ?>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-block text-center relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-2 py-4 sm:px-12 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
+                    <a href="https://varnerparts.com" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center text-center whitespace-nowrap relative z-50 bg-white/10 backdrop-blur-md border-2 border-white/20 text-white px-3 py-4 sm:px-5 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-wider sm:tracking-widest text-xs sm:text-sm hover:bg-white/20 transition-all">
                         Online Parts
                     </a>
                 </div>
@@ -106,7 +109,7 @@
                         </select>
                     </div>
                     <button type="submit" class="w-full lg:w-auto h-12 lg:h-12 bg-slate-900 text-white px-8 rounded-lg font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">
-                        Find Machines
+                        Search
                     </button>
                 </form>
                 <p id="hero-search-error" class="mt-2 text-xs font-bold uppercase tracking-widest text-red-600 hidden" role="alert" aria-live="assertive"></p>
@@ -321,7 +324,7 @@
                 array('label' => 'New', 'icon' => 'VE_New_Icon.png', 'meta' => $new_count->found_posts . ' Units', 'url' => home_url('/inventory/new')),
                 array('label' => 'Used', 'icon' => 'VE_Used_Icon.png', 'meta' => $used_count->found_posts . ' Units', 'url' => home_url('/inventory/used')),
                 array('label' => 'Tractors', 'icon' => 'VE_Tractor_Icon.png', 'meta' => $tractor_count . ' Units', 'url' => home_url('/inventory/tractors')),
-                array('label' => 'Trailers', 'icon' => 'VE_Trailer_Icon.png', 'meta' => $trailer_count . ' Units', 'url' => home_url('/inventory/trailers')),
+                array('label' => 'Trailers', 'icon' => 'VE_Trailer_Icon.png', 'meta' => $trailer_count . ' Units', 'url' => home_url('/inventory/trailers/')),
                 array('label' => 'Attachments', 'icon' => 'VE_Attachment_Icon-300x300.png', 'meta' => $attachment_count . ' Units', 'url' => home_url('/inventory/attachments')),
                 array('label' => 'Hay Equipment', 'icon' => 'VE_Hay_Icon.png', 'meta' => $hay_count . ' Units', 'url' => home_url('/inventory/hay-equipment')),
             );

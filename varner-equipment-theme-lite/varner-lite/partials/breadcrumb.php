@@ -65,7 +65,7 @@ elseif ( is_singular( 'equipment' ) ) {
             'Utility Tractors'          => 'tractors',
             'Tractors'                  => 'tractors',
             'Farm Tractors'             => 'tractors',
-            'Commercial Trailers'       => 'trailers',
+            'Trailers'                  => 'trailers',
             'Dump Trailers'             => 'dump-trailers',
             'Flatbed Trailers'          => 'trailers',
             'Flatbed / Tag Trailers'    => 'trailers',

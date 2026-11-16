@@ -161,20 +161,34 @@ add_filter( 'template_include', function( $template ) {
 add_action( 'parse_request', function( $wp ) {
     $path = trim( $wp->request, '/' );
 
+    $redirect_map = array(
+        'financing'            => home_url( '/finance/' ),
+        'product-videos'       => home_url( '/videos/' ),
+        'services'             => home_url( '/services/service-request/' ),
+        'dealer-info'          => home_url( '/dealer-info/about-us/' ),
+        'home'                 => home_url( '/' ),
+        'online-parts-store'   => 'https://varnerparts.com',
+        'legal'                => home_url( '/legal/terms-of-service/' ),
+        'legal/privacy-policy' => home_url( '/privacy-policy/' ),
+    );
+
+    if ( isset( $redirect_map[ $path ] ) ) {
+        wp_redirect( $redirect_map[ $path ], 301 );
+        exit;
+    }
+
     $route_map = array(
-        'services'                 => 'page-service-request.php',
         'services/service-request' => 'page-service-request.php',
         'services/parts-request'   => 'page-parts-request.php',
-        'dealer-info'              => 'page-about-us.php',
         'dealer-info/about-us'     => 'page-about-us.php',
         'dealer-info/our-team'     => 'page-our-team.php',
         'dealer-info/employment'   => 'page-employment.php',
         'videos'                   => 'page-videos.php',
-        'product-videos'           => 'page-videos.php',
         'finance'                  => 'page-finance.php',
-        'financing'                => 'page-finance.php',
         'contact'                  => 'page-contact.php',
         'brands'                   => 'page-brands.php',
+        'privacy-policy'           => 'page-privacy-policy.php',
+        'legal/terms-of-service'   => 'page-terms-of-service.php',
     );
 
     if ( isset( $route_map[ $path ] ) ) {
@@ -330,7 +344,7 @@ function varner_get_segment_seo($slug) {
         'new'       => array(
             'title' => 'New Tractors & Trailers for Sale | Varner Equipment, CO',
             'h1'    => 'New Equipment',
-            'sub'   => 'Explore the latest agricultural machinery and commercial trailers from top brands.',
+            'sub'   => 'Explore the latest agricultural machinery, tractors, and trailers from top brands.',
             'blurb' => 'Shop new Mahindra and TYM tractors, Big Tex and CM trailers, and hay equipment at Varner Equipment in Delta, CO. Financing available.',
             'filter' => array('condition' => array('New'))
         ),
@@ -344,33 +358,39 @@ function varner_get_segment_seo($slug) {
         'tractors'  => array(
             'title' => 'Tractors for Sale | Mahindra & TYM | Delta, CO',
             'h1'    => 'Heavy-Duty Tractors',
-            'sub'   => 'Find the perfect tractor for your acreage, farm, or commercial job site.',
+            'sub'   => 'Find the perfect tractor for your acreage, farm, ranch, or job site.',
             'blurb' => 'Shop new and used tractors from Mahindra, TYM, and Deutz Fahr at Varner Equipment in Delta, CO. Compact, utility, and high-horsepower models.',
             'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))
         ),
         'trailers'  => array(
             'title' => 'Trailers for Sale | Big Tex & CM | Delta, CO',
-            'h1'    => 'Commercial Trailers',
-            'sub'   => 'Commercial dump trailers, flatbeds, utility trailers, and truck beds.',
-            'blurb' => 'Shop utility, dump, and flatbed trailers from Big Tex, CM, and Triton at Varner Equipment in Delta, CO. New and used for work and hauling.',
-            'keywords' => 'trailer dealer western Colorado, commercial trailers Western Slope, Big Tex trailers Delta Colorado, dump trailers Montrose CO, utility trailers for sale Delta CO, trailer dealer near Grand Junction',
-            'filter' => array('category' => array('Commercial Trailers', 'Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))
+            'h1'    => 'Trailers for Sale',
+            'sub'   => 'Dump trailers, flatbeds, utility trailers, and livestock trailers.',
+            'blurb' => 'Shop new and used trailers for sale at Varner Equipment in Delta, Colorado. Explore utility, dump, flatbed, and equipment trailers for farming, ranching, construction, and everyday hauling throughout Western Colorado.',
+            'keywords' => 'trailer dealer western Colorado, trailers Western Slope, Big Tex trailers Delta Colorado, dump trailers Montrose CO, utility trailers for sale Delta CO, trailer dealer near Grand Junction',
+            'filter' => array('category' => array('Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))
         ),
         'utility-trailers' => array(
             'title' => 'Utility Trailers for Sale | Western Colorado | Delta, CO',
             'h1'    => 'Utility Trailers For Sale in Western Colorado',
             'sub'   => 'New & pre-owned single-axle, tandem-axle, and landscape utility trailers in Delta, Montrose & Western CO.',
-            'blurb' => 'Shop utility trailers from Big Tex and CM at Varner Equipment in Delta, CO. Durable, road-ready trailers for hauling across Western Colorado.',
+            'blurb' => 'Shop new and used utility trailers for sale at Varner Equipment in Delta, Colorado. Find durable, reliable trailers for hauling equipment, landscaping, farming, and everyday projects throughout Western Colorado.',
             'keywords' => 'utility trailers for sale western colorado, utility trailers Delta CO, utility trailers Montrose CO, Big Tex utility trailers Colorado, utility trailers Grand Junction, landscape trailers Western Slope, single axle utility trailers for sale Colorado',
-            'filter' => array('category' => array('Utility Trailers', 'Trailers', 'Commercial Trailers'))
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Utility Trailers'),
+            )
         ),
         'dump-trailers' => array(
             'title' => 'Dump Trailers for Sale | Big Tex | Delta & Montrose, CO',
             'h1'    => 'Dump Trailers For Sale in Western Colorado',
             'sub'   => 'Heavy-Duty Hydraulic Dump Trailers in Delta, Montrose, and Grand Junction CO.',
-            'blurb' => 'Shop heavy-duty dump trailers from Big Tex and CM at Varner Equipment in Delta, CO. Built for ranch, farm, and construction hauling.',
+            'blurb' => 'Shop heavy-duty dump trailers from Big Tex at Varner Equipment in Delta, CO. Built for ranch, farm, and construction hauling.',
             'keywords' => 'dump trailers Montrose CO, dump trailers for sale western colorado, Big Tex dump trailers Colorado, heavy duty dump trailers Delta CO',
-            'filter' => array('category' => array('Dump Trailers', 'Trailers', 'Commercial Trailers'))
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Dump Trailers', 'Gooseneck Dump Trailers'),
+            )
         ),
         'attachments' => array(
             'title' => 'Tractor Attachments & Implements | Varner Equipment, CO',
@@ -383,14 +403,14 @@ function varner_get_segment_seo($slug) {
             'title' => 'Hay Equipment for Sale | Rakes & Mowers | Delta, CO',
             'h1'    => 'Hay & Harvest',
             'sub'   => 'Precision balers, rakes, tedders, and hay tools from Krone and McHale.',
-            'blurb' => 'Shop hay equipment - rakes, mowers, and Krone and Macdon hay tools - at Varner Equipment in Delta, CO. Built for small acreage to full operations.',
+            'blurb' => 'Shop new and used hay equipment for sale at Varner Equipment in Delta, Colorado. Explore hay mowers, rakes, and harvesting equipment for small farms, ranches, and large agricultural operations throughout Western Colorado.',
             'filter' => array('category' => array('Hay Equipment', 'Hay and Forage Equipment', 'Balers', 'Rakes'))
         ),
         'misc'      => array(
             'title' => 'Miscellaneous Equipment | Varner Equipment, Delta CO',
             'h1'    => 'Misc. Equipment',
             'sub'   => 'Explore miscellaneous tools, accessories, and farm equipment.',
-            'blurb' => 'Find unique agricultural tools, commercial power equipment, and utility vehicles. Quality equipment and accessories to support your homestead, ranch, or commercial operation.',
+            'blurb' => 'Find unique agricultural tools, power equipment, and utility vehicles. Quality equipment and accessories to support your homestead, ranch, farm, or business.',
             'filter' => array('category' => array('Misc', 'Other'))
         )
     );
@@ -810,6 +830,27 @@ function varner_include_equipment_card( $post_id = null ) {
 }
 
 /**
+ * Build a meta_query OR clause matching exact scalar or serialized-array subcategory values.
+ */
+function varner_build_subcategory_meta_query( array $subcats ): array {
+    global $wpdb;
+    $sub_query = array( 'relation' => 'OR' );
+    foreach ( $subcats as $subcat ) {
+        $sub_query[] = array(
+            'key'     => 'subcategory',
+            'value'   => $subcat,
+            'compare' => '=',
+        );
+        $sub_query[] = array(
+            'key'     => 'subcategory',
+            'value'   => $wpdb->esc_like( '"' . $subcat . '"' ),
+            'compare' => 'LIKE',
+        );
+    }
+    return $sub_query;
+}
+
+/**
  * Build the WP_Query args array for the inventory pages based on $_GET filters.
  * Accepts $base_meta (array) to pre-populate the meta_query (e.g. stock_status restriction).
  */
@@ -828,20 +869,7 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
     foreach ( $filters as $key => $vals ) {
         if ( $vals ) {
             if ( $key === 'subcategory' ) {
-                $sub_query = array( 'relation' => 'OR' );
-                foreach ( $vals as $subcat ) {
-                    $sub_query[] = array(
-                        'key'     => 'subcategory',
-                        'value'   => $subcat,
-                        'compare' => '='
-                    );
-                    $sub_query[] = array(
-                        'key'     => 'subcategory',
-                        'value'   => '"' . $subcat . '"',
-                        'compare' => 'LIKE'
-                    );
-                }
-                $meta[] = $sub_query;
+                $meta[] = varner_build_subcategory_meta_query( $vals );
             } else {
                 $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
             }
@@ -911,7 +939,9 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
 function varner_search_meta_fields( $search, $wp_query ) {
     global $wpdb;
 
-    if ( empty( $search ) || ! $wp_query->is_main_query() && $wp_query->get( 'post_type' ) !== 'equipment' ) {
+    $pt = $wp_query->get( 'post_type' );
+    $is_equipment = ( $pt === 'equipment' ) || ( is_array( $pt ) && in_array( 'equipment', $pt, true ) );
+    if ( empty( $search ) || ( ! $wp_query->is_main_query() && ! $is_equipment ) ) {
         return $search;
     }
 
@@ -929,7 +959,7 @@ function varner_search_meta_fields( $search, $wp_query ) {
             OR EXISTS (
                 SELECT 1 FROM {$wpdb->postmeta}
                 WHERE post_id = {$wpdb->posts}.ID
-                  AND meta_key IN ('make','model','category','stock_number','vin')
+                  AND meta_key IN ('make','model','category','subcategory','description','stock_number','vin')
                   AND (meta_value LIKE %s OR meta_value LIKE %s)
             )
         )";
@@ -954,8 +984,8 @@ function varner_search_meta_fields( $search, $wp_query ) {
  */
 function varner_remove_filter( $key, $value = null ) {
     global $wp;
-    // Sanitize all keys and values from $_GET before building the URL.
-    $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
+    // Recursively sanitize all keys and scalar/array values from $_GET before building the URL.
+    $current = map_deep( wp_unslash( $_GET ), 'sanitize_text_field' );
     unset( $current['paged'], $current['page'] );
     if ( $value === null ) {
         unset( $current[ $key ] );
@@ -974,11 +1004,11 @@ function varner_remove_filter( $key, $value = null ) {
  */
 function varner_remove_range_filter( $key1, $key2 ) {
     global $wp;
-    $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
+    $current = map_deep( wp_unslash( $_GET ), 'sanitize_text_field' );
     unset( $current[ $key1 ], $current[ $key2 ], $current['paged'], $current['page'] );
     $req_path = preg_replace( '#/page/\d+/?#', '/', $wp->request ?? '' );
     $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) );
-    return esc_url( ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' ) );
+    return esc_url( $base_url . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
 

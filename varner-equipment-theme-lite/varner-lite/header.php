@@ -353,6 +353,28 @@
                             </div>
                         </div>
 
+                        <!-- SHOP FOR TRAILERS DROPDOWN -->
+                        <div class="group relative" data-dropdown>
+                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-trailers-menu">
+                                Shop for Trailers
+                                <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="desktop-trailers-menu" class="absolute left-0 top-full mt-2 w-64 max-h-[75vh] overflow-y-auto bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">All Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?s=Bumper+Pull' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Bumper Pull</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Cargo+%2F+Enclosed+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Cargo / Enclosed Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Car+Hauler+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Car Hauler Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Dump Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Flatbed+%2F+Tag+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Flatbed / Tag Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Gooseneck+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Gooseneck Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Livestock+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Livestock Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Pipe+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Pipe Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Snowmobile+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Snowmobile Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Tilt+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tilt Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Utility Trailers</a>
+                            </div>
+                        </div>
+
                         <?php
                         // Brand counts (cached) + helper for link output
                         $brand_counts = get_transient( 'varner_brand_counts' );
@@ -406,7 +428,10 @@
 
                         
                         <div class="group relative" data-dropdown>
-                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-financing-menu">Financing</button>
+                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-financing-menu">
+                                Financing
+                                <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
                             <div id="desktop-financing-menu" class="absolute left-0 top-full mt-2 w-64 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
                                 <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">FINANCIAL APPLICATIONS</a>
                                 <a href="<?php echo esc_url( home_url( '/finance' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">FINANCIAL CALCULATOR</a>
@@ -414,26 +439,31 @@
                         </div>
 
                         <div class="group relative" data-dropdown>
-                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-services-menu">Services</button>
+                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-services-menu">
+                                Services
+                                <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
                             <div id="desktop-services-menu" class="absolute left-0 top-full mt-2 w-56 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
                                 <a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Service Request</a>
                                 <a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Parts Request</a>
                             </div>
                         </div>
 
-                        <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
+                        <a href="https://varnerparts.com" target="_blank" rel="noopener noreferrer" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1">Online Parts Store</a>
                         <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Product Videos</a>
                         <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener noreferrer" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Online Auctions</a>
                         
                         <div class="group relative" data-dropdown>
-                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-dealer-menu">Dealer Info</button>
-                            <div id="desktop-dealer-menu" class="absolute left-0 top-full mt-2 w-48 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
+                            <button type="button" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors flex items-center gap-1 pb-1 cursor-default bg-transparent border-0 p-0" aria-expanded="false" aria-haspopup="true" aria-controls="desktop-contact-menu">
+                                Contact
+                                <svg class="w-3 h-3 text-slate-400 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="desktop-contact-menu" class="absolute right-0 top-full mt-2 w-48 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
+                                <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Contact Us</a>
                                 <a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">About Us</a>
                                 <a href="<?php echo esc_url( home_url( '/dealer-info/employment' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Employment</a>
                             </div>
                         </div>
-
-                        <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="font-black uppercase text-xs xl:text-xs tracking-wider xl:tracking-widest text-slate-700 hover:text-red-600 transition-colors">Contact</a>
                     </nav>
                 </div>
             </div>
@@ -460,6 +490,27 @@
                     </div>
 
                     <div class="border-b border-white/5">
+                        <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false" aria-controls="mobile-trailers-submenu">
+                            Shop for Trailers
+                            <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="mobile-trailers-submenu" class="hidden bg-white/5 py-2">
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">All Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?s=Bumper+Pull' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Bumper Pull</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Cargo+%2F+Enclosed+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Cargo / Enclosed Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Car+Hauler+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Car Hauler Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Dump Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Flatbed+%2F+Tag+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Flatbed / Tag Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Gooseneck+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Gooseneck Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Livestock+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Livestock Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Pipe+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Pipe Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Snowmobile+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Snowmobile Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Tilt+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Tilt Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Utility Trailers</a>
+                        </div>
+                    </div>
+
+                    <div class="border-b border-white/5">
                         <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false" aria-controls="mobile-financing-submenu">
                             Financing
                             <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -481,22 +532,21 @@
                         </div>
                     </div>
 
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'support_hub_parts_link', 'https://www.allpartsstore.com/index.htm?customernumber=CO0612' ) ); ?>" target="_blank" rel="noopener noreferrer" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
+                    <a href="https://varnerparts.com" target="_blank" rel="noopener noreferrer" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Parts Store</a>
                     <a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Product Videos</a>
                     <a href="https://www.auctiontime.com/listings/upcoming-auctions/varner-equipment?EventCategoryID=7&amp;AccountCRMID=16566180" target="_blank" rel="noopener noreferrer" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] border-b border-white/5 hover:text-red-500">Online Auctions</a>
                     
                     <div class="border-b border-white/5">
-                        <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false" aria-controls="mobile-dealer-submenu">
-                            Dealer Info
+                        <button class="w-full text-left px-8 py-4 font-black uppercase text-sm tracking-[0.2em] flex justify-between items-center group mobile-accordion" aria-expanded="false" aria-controls="mobile-contact-submenu">
+                            Contact
                             <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
-                        <div id="mobile-dealer-submenu" class="hidden bg-white/5 py-2">
+                        <div id="mobile-contact-submenu" class="hidden bg-white/5 py-2">
+                            <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Contact Us</a>
                             <a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">About Us</a>
                             <a href="<?php echo esc_url( home_url( '/dealer-info/employment' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Employment</a>
                         </div>
                     </div>
-
-                    <a href="<?php echo esc_url( home_url( '/contact' ) ); ?>" class="px-8 py-4 font-black uppercase text-sm tracking-[0.2em] hover:text-red-500">Contact</a>
                 </nav>
             </div>
         </header>
