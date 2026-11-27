@@ -8,6 +8,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once get_template_directory() . '/inc/form-handlers.php';
+require_once get_template_directory() . '/partials/schema-jsonld.php';
+
+/**
+ * Fix WordPress Admin Bar ARIA Roles (Accessibility Tree Fix)
+ * Only prints when the admin bar is active on the frontend.
+ */
+function varner_admin_bar_accessibility_fix() {
+    if ( is_admin_bar_showing() ) {
+        ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var adminBar = document.getElementById('wpadminbar');
+            if (adminBar) {
+                var topMenus = adminBar.querySelectorAll('.ab-top-menu, .ab-sub-wrapper > ul');
+                topMenus.forEach(function(menu) {
+                    menu.setAttribute('role', 'menu');
+                });
+                var menuItems = adminBar.querySelectorAll('#wpadminbar li');
+                menuItems.forEach(function(item) {
+                    item.setAttribute('role', 'none');
+                });
+                var abLinks = adminBar.querySelectorAll('#wpadminbar .ab-item');
+                abLinks.forEach(function(link) {
+                    link.setAttribute('role', 'menuitem');
+                });
+            }
+        });
+        </script>
+        <?php
+    }
+}
+add_action( 'wp_footer', 'varner_admin_bar_accessibility_fix', 100 );
 
 /**
  * ACF Fallback: Prevents site crashes if ACF plugin is deactivated.
@@ -43,8 +75,9 @@ if( function_exists('acf_add_options_page') ) {
  * Enqueue scripts and styles.
  */
 function varner_theme_scripts() {
-	// Google Fonts - Inter
-	wp_enqueue_style( 'varner-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap', array(), null );
+	// Self-hosted Inter (no Google CDN dependency)
+	$inter_css = plugins_url( 'varner-os-plugin-v23/assets/fonts/inter/inter.css' );
+	wp_enqueue_style( 'varner-fonts', $inter_css, array(), '1.0' );
 
 	// Compiled Tailwind CSS (replaces CDN)
 	wp_enqueue_style( 'varner-tailwind', get_template_directory_uri() . '/assets/css/tailwind.css', array(), filemtime( get_template_directory() . '/assets/css/tailwind.css' ) );
@@ -58,7 +91,7 @@ add_action( 'wp_enqueue_scripts', 'varner_theme_scripts' );
  * Theme Setup
  */
 function varner_theme_setup() {
-	add_theme_support( 'title-tag' );
+	remove_theme_support( 'title-tag' );
 	add_theme_support( 'post-thumbnails' );
 	
 	// Register navigation menus if needed later
@@ -128,20 +161,34 @@ add_filter( 'template_include', function( $template ) {
 add_action( 'parse_request', function( $wp ) {
     $path = trim( $wp->request, '/' );
 
+    $redirect_map = array(
+        'financing'            => home_url( '/finance/' ),
+        'product-videos'       => home_url( '/videos/' ),
+        'services'             => home_url( '/services/service-request/' ),
+        'dealer-info'          => home_url( '/dealer-info/about-us/' ),
+        'home'                 => home_url( '/' ),
+        'online-parts-store'   => 'https://varnerparts.com',
+        'legal'                => home_url( '/legal/terms-of-service/' ),
+        'legal/privacy-policy' => home_url( '/privacy-policy/' ),
+    );
+
+    if ( isset( $redirect_map[ $path ] ) ) {
+        wp_redirect( $redirect_map[ $path ], 301 );
+        exit;
+    }
+
     $route_map = array(
-        'services'                 => 'page-service-request.php',
         'services/service-request' => 'page-service-request.php',
         'services/parts-request'   => 'page-parts-request.php',
-        'dealer-info'              => 'page-about-us.php',
         'dealer-info/about-us'     => 'page-about-us.php',
         'dealer-info/our-team'     => 'page-our-team.php',
         'dealer-info/employment'   => 'page-employment.php',
         'videos'                   => 'page-videos.php',
-        'product-videos'           => 'page-videos.php',
         'finance'                  => 'page-finance.php',
-        'financing'                => 'page-finance.php',
         'contact'                  => 'page-contact.php',
         'brands'                   => 'page-brands.php',
+        'privacy-policy'           => 'page-privacy-policy.php',
+        'legal/terms-of-service'   => 'page-terms-of-service.php',
     );
 
     if ( isset( $route_map[ $path ] ) ) {
@@ -177,32 +224,37 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
         )";
     }
 
+    $hidden_sql = '';
+    if (function_exists('varner_get_hidden_post_ids')) {
+        $hidden_ids = varner_get_hidden_post_ids();
+        if (!empty($hidden_ids)) {
+            $hidden_sql = 'AND p.ID NOT IN (' . implode(',', $hidden_ids) . ')';
+        }
+    }
+
     $base = "FROM {$wpdb->postmeta} pm
              JOIN {$wpdb->posts} p ON p.ID = pm.post_id
              WHERE p.post_type = 'equipment'
                AND p.post_status = 'publish'
                AND pm.meta_value != ''
                $segment_clause
-               AND p.ID NOT IN (
-                   SELECT post_id FROM {$wpdb->postmeta}
-                   WHERE meta_key = 'show_on_website' AND meta_value = '0'
-               )";
+               $hidden_sql";
 
     $makes = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'make'
-         GROUP BY pm.meta_value ORDER BY cnt DESC",
+         GROUP BY pm.meta_value ORDER BY pm.meta_value ASC",
         OBJECT_K
     );
 
     $categories = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'category'
-         GROUP BY pm.meta_value ORDER BY cnt DESC",
+         GROUP BY pm.meta_value ORDER BY pm.meta_value ASC",
         OBJECT_K
     );
 
     $conditions = $wpdb->get_results(
         "SELECT pm.meta_value AS val, COUNT(*) AS cnt $base AND pm.meta_key = 'condition'
-         GROUP BY pm.meta_value ORDER BY cnt DESC",
+         GROUP BY pm.meta_value ORDER BY pm.meta_value ASC",
         OBJECT_K
     );
 
@@ -239,18 +291,39 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
                    AND pm.meta_value != ''
                    $segment_clause
                    $sub_cat_clause
-                   AND p.ID NOT IN (
-                       SELECT post_id FROM {$wpdb->postmeta}
-                       WHERE meta_key = 'show_on_website' AND meta_value = '0'
-                   )";
+                   $hidden_sql";
 
     $subcategories = array();
     if ( ! empty( $sub_cat_filter ) ) {
-        $subcategories = $wpdb->get_results(
-            "SELECT pm.meta_value AS val, COUNT(*) AS cnt $sub_base AND pm.meta_key = 'subcategory'
-             GROUP BY pm.meta_value ORDER BY cnt DESC",
-            OBJECT_K
+        $raw_results = $wpdb->get_results(
+            "SELECT pm.meta_value AS val $sub_base AND pm.meta_key = 'subcategory'",
+            OBJECT
         );
+        $counts = array();
+        foreach ( $raw_results as $row ) {
+            $val = $row->val;
+            if ( is_string( $val ) ) {
+                $val = maybe_unserialize( $val );
+            }
+            if ( is_array( $val ) ) {
+                foreach ( $val as $sub ) {
+                    $sub = trim( $sub );
+                    if ( $sub !== '' ) {
+                        $counts[$sub] = ( $counts[$sub] ?? 0 ) + 1;
+                    }
+                }
+            } elseif ( is_string( $val ) && trim( $val ) !== '' ) {
+                $sub = trim( $val );
+                $counts[$sub] = ( $counts[$sub] ?? 0 ) + 1;
+            }
+        }
+        uksort( $counts, 'strnatcasecmp' );
+        foreach ( $counts as $sub => $cnt ) {
+            $subcategories[$sub] = (object) array(
+                'val' => $sub,
+                'cnt' => $cnt
+            );
+        }
     }
 
     return compact( 'makes', 'categories', 'subcategories', 'conditions', 'year_range', 'price_range' );
@@ -261,37 +334,356 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
  */
 function varner_get_segment_seo($slug) {
     $segments = array(
-        'all-units' => array('title' => 'All Inventory', 'h1' => 'Complete Collection', 'sub' => 'Western Colorado\'s selection.', 'filter' => array()),
-        'new'       => array('title' => 'New Inventory', 'h1' => 'New Equipment', 'sub' => 'Latest machines.', 'filter' => array('condition' => array('New'))),
-        'used'      => array('title' => 'Used Inventory', 'h1' => 'Proven Performance', 'sub' => 'Certified units.', 'filter' => array('condition' => array('Used'))),
-        'tractors'  => array('title' => 'Tractors', 'h1' => 'Heavy-Duty Tractors', 'sub' => 'Backbone of any operation.', 'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))),
-        'trailers'  => array('title' => 'Trailers', 'h1' => 'Commercial Trailers', 'sub' => 'Haul with confidence.', 'filter' => array('category' => array('Commercial Trailers', 'Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))),
-        'attachments' => array('title' => 'Attachments', 'h1' => 'Attachments & Implements', 'sub' => 'Maximize versatility.', 'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))),
-        'hay-equipment' => array('title' => 'Hay Equipment', 'h1' => 'Hay & Harvest', 'sub' => 'Precision baling.', 'filter' => array('category' => array('Hay Equipment', 'Balers', 'Rakes'))),
-        'misc'      => array('title' => 'Miscellaneous', 'h1' => 'Misc. Equipment', 'sub' => 'Tools & accessories.', 'filter' => array('category' => array('Misc', 'Other')))
+        'all-units' => array(
+            'label' => 'Equipment & Trailers',
+            'title' => 'Equipment & Trailers for Sale in Western Colorado | Varner Equipment Delta, CO',
+            'h1'    => 'Equipment & Trailers For Sale in Western Colorado',
+            'sub'   => 'Browse our full inventory of new and used tractors, trailers, hay equipment, and attachments in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Browse Varner Equipment\'s full inventory of new and used tractors, trailers, hay tools, and attachments for sale in Delta, CO, serving all of Western Colorado.',
+            'filter' => array()
+        ),
+        'new'       => array(
+            'label' => 'New Tractors & Trailers',
+            'title' => 'New Tractors & Trailers for Sale in Western Colorado | Varner Equipment, CO',
+            'h1'    => 'New Tractors & Trailers For Sale in Western Colorado',
+            'sub'   => 'Explore new agricultural machinery, tractors, and trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop new Mahindra, TYM, and Deutz-Fahr tractors, Big Tex and Triton trailers, and hay equipment at Varner Equipment in Delta, CO. Financing available across Western Colorado.',
+            'filter' => array('condition' => array('New'))
+        ),
+        'used'      => array(
+            'label' => 'Used Tractors & Trailers',
+            'title' => 'Used Tractors & Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Used Tractors & Trailers For Sale in Western Colorado',
+            'sub'   => 'Inspected pre-owned tractors, trailers, and farm machinery in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Browse quality used and pre-owned tractors, trailers, and farm equipment, inspected and ready to work across Western Colorado, at Varner Equipment in Delta, CO.',
+            'filter' => array('condition' => array('Used'))
+        ),
+        'tractors'  => array(
+            'label' => 'Tractors',
+            'title' => 'Tractors for Sale in Western Colorado | Mahindra & TYM | Delta, CO',
+            'h1'    => 'Tractors For Sale in Western Colorado',
+            'sub'   => 'New & used compact, utility, and ag tractors in Delta, Montrose, and Grand Junction, CO.',
+            'blurb' => 'Shop new and used tractors from Mahindra, TYM, and Deutz-Fahr at Varner Equipment in Delta, CO. Compact, utility, and high-horsepower models serving all of Western Colorado.',
+            'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))
+        ),
+        'trailers'  => array(
+            'label' => 'Trailers',
+            'title' => 'Trailers for Sale in Western Colorado | Big Tex & Triton | Delta, CO',
+            'h1'    => 'Trailers For Sale in Western Colorado',
+            'sub'   => 'Dump, utility, gooseneck, flatbed, cargo, tilt, and livestock trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop new and used trailers for sale at Varner Equipment in Delta, Colorado. Explore utility, dump, flatbed, gooseneck, and equipment trailers for farming, ranching, construction, and everyday hauling throughout Western Colorado.',
+            'keywords' => 'trailers for sale in western colorado, trailer dealer western Colorado, trailers Western Slope, Big Tex trailers Delta Colorado, dump trailers Montrose CO, utility trailers for sale Delta CO, trailer dealer near Grand Junction',
+            'filter' => array('category' => array('Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))
+        ),
+        'utility-trailers' => array(
+            'label' => 'Utility Trailers',
+            'title' => 'Utility Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Utility Trailers For Sale in Western Colorado',
+            'sub'   => 'New & pre-owned single-axle, tandem-axle, and landscape utility trailers in Delta, Montrose & Western CO.',
+            'blurb' => 'Shop new and used utility trailers for sale at Varner Equipment in Delta, Colorado. Find durable, reliable trailers for hauling equipment, landscaping, farming, and everyday projects throughout Western Colorado.',
+            'keywords' => 'utility trailers for sale western colorado, utility trailers Delta CO, utility trailers Montrose CO, Big Tex utility trailers Colorado, utility trailers Grand Junction, landscape trailers Western Slope, single axle utility trailers for sale Colorado',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Utility Trailers'),
+            )
+        ),
+        'dump-trailers' => array(
+            'label' => 'Dump Trailers',
+            'title' => 'Dump Trailers for Sale in Western Colorado | Big Tex | Delta, CO',
+            'h1'    => 'Dump Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-Duty Hydraulic & Gooseneck Dump Trailers in Delta, Montrose, and Grand Junction, CO.',
+            'blurb' => 'Shop heavy-duty dump trailers for sale in Western Colorado from Big Tex at Varner Equipment in Delta, CO. Built for ranch, farm, and construction hauling across Delta, Montrose, and Grand Junction.',
+            'keywords' => 'dump trailers for sale western colorado, dump trailers Montrose CO, Big Tex dump trailers Colorado, heavy duty dump trailers Delta CO, dump trailers Grand Junction CO',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Dump Trailers', 'Gooseneck Dump Trailers'),
+            )
+        ),
+        'bumper-pull-trailers' => array(
+            'label' => 'Bumper Pull Trailers',
+            'title' => 'Bumper Pull Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Bumper Pull Trailers For Sale in Western Colorado',
+            'sub'   => 'New & used bumper pull utility, dump, flatbed, and cargo trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop bumper pull trailers for sale at Varner Equipment in Delta, Colorado. Ready-to-tow utility, dump, car hauler, and enclosed bumper pull trailers serving Western Colorado.',
+            'keywords' => 'bumper pull trailers western colorado, bumper pull trailers Delta CO, bumper pull dump trailer Montrose CO',
+            'filter' => array(
+                'category' => array('Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'),
+                's'        => 'Bumper Pull',
+            )
+        ),
+        'cargo-enclosed-trailers' => array(
+            'label' => 'Cargo & Enclosed Trailers',
+            'title' => 'Cargo & Enclosed Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Cargo & Enclosed Trailers For Sale in Western Colorado',
+            'sub'   => 'Weatherproof enclosed cargo trailers in Delta, Montrose, and Grand Junction, CO.',
+            'blurb' => 'Shop enclosed cargo trailers for sale at Varner Equipment in Delta, Colorado. Secure, weather-protected hauling for contractors, tools, ATVs, and gear across Western Colorado.',
+            'keywords' => 'enclosed cargo trailers western colorado, cargo trailers for sale Delta CO, enclosed trailers Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Cargo / Enclosed Trailers'),
+            )
+        ),
+        'car-hauler-trailers' => array(
+            'label' => 'Car Hauler Trailers',
+            'title' => 'Car Hauler Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Car Hauler Trailers For Sale in Western Colorado',
+            'sub'   => 'Steel and aluminum car haulers & equipment trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop car hauler trailers for sale at Varner Equipment in Delta, Colorado. Built for hauling cars, trucks, UTVs, and compact equipment across Western Colorado.',
+            'keywords' => 'car hauler trailers western colorado, car trailer for sale Delta CO, car hauler Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Car Hauler Trailers'),
+            )
+        ),
+        'flatbed-trailers' => array(
+            'label' => 'Flatbed & Tag Trailers',
+            'title' => 'Flatbed & Tag Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Flatbed & Tag Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-duty flatbed, deckover, and tag equipment trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop flatbed, deckover, and tag trailers for sale at Varner Equipment in Delta, Colorado. Built for hauling tractors, hay, pallets, and heavy equipment throughout Western Colorado.',
+            'keywords' => 'flatbed trailers for sale western colorado, deckover trailer Delta CO, tag trailers Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Flatbed / Tag Trailers', 'Flatbed Trailers'),
+            )
+        ),
+        'gooseneck-trailers' => array(
+            'label' => 'Gooseneck Trailers',
+            'title' => 'Gooseneck Trailers for Sale in Western Colorado | Big Tex | Delta, CO',
+            'h1'    => 'Gooseneck Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-duty gooseneck flatbed, equipment, and dump trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop heavy-duty gooseneck trailers for sale at Varner Equipment in Delta, Colorado. High-capacity Big Tex gooseneck flatbeds and dump trailers built for Western Colorado ranches and contractors.',
+            'keywords' => 'gooseneck trailers for sale western colorado, Big Tex gooseneck Delta CO, gooseneck flatbed Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Gooseneck Trailers', 'Gooseneck Dump Trailers'),
+            )
+        ),
+        'livestock-trailers' => array(
+            'label' => 'Livestock Trailers',
+            'title' => 'Livestock Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Livestock Trailers For Sale in Western Colorado',
+            'sub'   => 'Bumper pull and gooseneck stock & livestock trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop livestock and stock trailers for sale at Varner Equipment in Delta, Colorado. Durable cattle, horse, and ranch trailers serving Western Colorado.',
+            'keywords' => 'livestock trailers for sale western colorado, stock trailers Delta CO, cattle trailer Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Livestock Trailers', 'Horse Trailers'),
+            )
+        ),
+        'pipe-trailers' => array(
+            'label' => 'Pipe Trailers',
+            'title' => 'Pipe Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Pipe Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-duty pipe-top utility and ranch trailers in Delta, Montrose & Western Colorado.',
+            'blurb' => 'Shop pipe-top utility and pipe trailers for sale at Varner Equipment in Delta, Colorado. Reinforced pipe rails built for ranch, farm, and jobsite hauling across Western Colorado.',
+            'keywords' => 'pipe trailers for sale western colorado, pipe top utility trailer Delta CO, Big Tex pipe trailer Colorado',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Pipe Trailers'),
+            )
+        ),
+        'snowmobile-trailers' => array(
+            'label' => 'Snowmobile Trailers',
+            'title' => 'Snowmobile Trailers for Sale in Western Colorado | Triton | Delta, CO',
+            'h1'    => 'Snowmobile Trailers For Sale in Western Colorado',
+            'sub'   => 'Aluminum open & enclosed snowmobile trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop Triton aluminum and steel snowmobile trailers for sale at Varner Equipment in Delta, Colorado. Built for Grand Mesa and Western Slope winter hauling.',
+            'keywords' => 'snowmobile trailers for sale western colorado, Triton snowmobile trailer Delta CO, sled trailers Grand Junction Montrose',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Snowmobile Trailers'),
+            )
+        ),
+        'tilt-trailers' => array(
+            'label' => 'Tilt Trailers',
+            'title' => 'Tilt Trailers for Sale in Western Colorado | Big Tex | Delta, CO',
+            'h1'    => 'Tilt Trailers For Sale in Western Colorado',
+            'sub'   => 'Gravity-tilt and hydraulic tilt-bed equipment trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop tilt-bed equipment and car hauler trailers for sale at Varner Equipment in Delta, Colorado. Easy ramp-free loading for skid steers, compact tractors, and machinery across Western Colorado.',
+            'keywords' => 'tilt trailers for sale western colorado, Big Tex tilt trailer Delta CO, tilt bed equipment trailer Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Tilt Trailers'),
+            )
+        ),
+        'attachments' => array(
+            'label' => 'Tractor Attachments & Implements',
+            'title' => 'Tractor Attachments & Implements for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Tractor Attachments & Implements For Sale in Western Colorado',
+            'sub'   => 'Loaders, mowers, rotary cutters, blades, augers, and implements in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Find loaders, mowers, blades, augers, and work-ready tractor attachments for sale in Western Colorado at Varner Equipment in Delta, CO. New and used implements in stock.',
+            'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))
+        ),
+        'hay-equipment' => array(
+            'label' => 'Hay Equipment',
+            'title' => 'Hay Equipment for Sale in Western Colorado | Rakes, Mowers & Balers | Delta, CO',
+            'h1'    => 'Hay Equipment For Sale in Western Colorado',
+            'sub'   => 'Balers, disc mowers, hay rakes, tedders, and forage tools in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop new and used hay equipment for sale at Varner Equipment in Delta, Colorado. Explore hay mowers, rakes, tedders, balers, and harvesting equipment for farms and ranches throughout Western Colorado.',
+            'filter' => array('category' => array('Hay Equipment', 'Hay and Forage Equipment', 'Balers', 'Rakes'))
+        ),
+        'misc'      => array(
+            'label' => 'Farm & Ranch Equipment',
+            'title' => 'Farm & Ranch Equipment for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Farm & Ranch Equipment For Sale in Western Colorado',
+            'sub'   => 'Explore specialty farm equipment, utility vehicles, and ranch gear in Western Colorado.',
+            'blurb' => 'Find specialty agricultural tools, power equipment, and utility vehicles at Varner Equipment in Delta, CO, serving homesteads, ranches, and businesses across Western Colorado.',
+            'filter' => array('category' => array('Misc', 'Other'))
+        )
     );
     return $segments[$slug] ?? null;
 }
 
+require_once get_template_directory() . '/inc/sitemap.php';
+require_once get_template_directory() . '/inc/llms.php';
+require_once get_template_directory() . '/inc/brands-data.php';
+require_once get_template_directory() . '/inc/indexing-api.php';
+
 add_filter( 'query_vars', function( $vars ) { 
     $vars[] = 'inventory_segment'; 
     $vars[] = 'brand_name';
+    $vars[] = 'varner_sitemap';
+    $vars[] = 'varner_llms';
+    $vars[] = 'brands_hub';
+    $vars[] = 'indexnow_key';
     return $vars; 
 });
 
 add_action( 'init', function() {
-    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
+    add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
+    add_rewrite_rule('^sitemap_index\.xml$', 'index.php?varner_sitemap=index', 'top');
+    add_rewrite_rule('^llms\.txt$', 'index.php?varner_llms=summary', 'top');
+    add_rewrite_rule('^llms-full\.txt$', 'index.php?varner_llms=full', 'top');
+    add_rewrite_rule('^([a-f0-9]{32})\.txt$', 'index.php?indexnow_key=$matches[1]', 'top');
+    $seg_regex = 'all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|bumper-pull-trailers|cargo-enclosed-trailers|car-hauler-trailers|flatbed-trailers|gooseneck-trailers|livestock-trailers|pipe-trailers|snowmobile-trailers|tilt-trailers|attachments|hay-equipment|misc';
+    add_rewrite_rule('^inventory/?$', 'index.php?inventory_segment=all-units', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&paged=$matches[2]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/([^/]+)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]&paged=$matches[3]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/?$', 'index.php?inventory_segment=$matches[1]', 'top');
+    add_rewrite_rule('^brands/?$', 'index.php?brands_hub=1', 'top');
+    add_rewrite_rule('^brands/([^/]+)/page/([0-9]+)/?$', 'index.php?brand_name=$matches[1]&paged=$matches[2]', 'top');
     add_rewrite_rule('^brands/([^/]+)/?$', 'index.php?brand_name=$matches[1]', 'top');
 });
 
+add_action( 'init', function () {
+    $flag = get_option( 'varner_brands_rewrite_v' );
+    if ( $flag !== '8' ) {
+        flush_rewrite_rules( false );
+        update_option( 'varner_brands_rewrite_v', '8' );
+    }
+}, 99 );
+
+add_action( 'template_redirect', function() {
+    $llms_var = get_query_var( 'varner_llms' );
+    $req_path = trim( (string) parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
+    if ( $llms_var || $req_path === 'llms.txt' || $req_path === 'llms-full.txt' ) {
+        $variant = ( $llms_var === 'full' || $req_path === 'llms-full.txt' ) ? 'full' : 'summary';
+        varner_serve_llms_txt( $variant );
+    }
+    if ( get_query_var('varner_sitemap') === 'inventory' ) {
+        varner_generate_xml_sitemap();
+    }
+    if ( get_query_var('varner_sitemap') === 'index' ) {
+        varner_generate_xml_sitemap_index();
+    }
+
+    $uri  = $_SERVER['REQUEST_URI'] ?? '';
+    $path = strtolower( trim( (string) parse_url( $uri, PHP_URL_PATH ), '/' ) );
+
+    // 1. Sandhills / TractorHouse legacy query strings
+    if ( strpos( $uri, '?/listing/' ) !== false || strpos( $uri, '?/listings/' ) !== false ) {
+        wp_redirect( home_url( '/inventory/all-units/' ), 301 );
+        exit;
+    }
+
+    // 2. Legacy inventory sub-pages and bare /inventory/
+    if ( $path === 'inventory' || $path === 'all-inventory' || $path === 'inventory/in-stock-inventory' || $path === 'inventory/showroom-inventory' || $path === 'in-stock-inventory' || $path === 'showroom-inventory' ) {
+        wp_redirect( home_url( '/inventory/all-units/' ), 301 );
+        exit;
+    }
+
+    // 3. Brand landing pages (/brands/slug/ or /brands/slug/page/N)
+    if ( preg_match( '#^brands/([^/]+)(?:/page/\d+)?$#i', $path, $m ) ) {
+        $brand_slug = sanitize_title( $m[1] );
+        if ( ! function_exists( 'varner_get_brand' ) || ! varner_get_brand( $brand_slug ) ) {
+            wp_redirect( home_url( '/brands/' ), 301 );
+            exit;
+        }
+    }
+
+    // 4. If this is a valid custom inventory/brand route, clear any erroneous 404 status
+    if ( get_query_var( 'inventory_segment' ) || get_query_var( 'brand_name' ) || get_query_var( 'brands_hub' ) ) {
+        global $wp_query;
+        if ( $wp_query ) {
+            $wp_query->is_404 = false;
+        }
+        status_header( 200 );
+        return;
+    }
+
+    // 5. Missing equipment / inventory items or 404s
+    if ( is_404() ) {
+        if ( strpos( $path, 'inventory/' ) === 0 || strpos( $path, 'equipment/' ) === 0 ) {
+            wp_redirect( home_url( '/inventory/all-units/' ), 301 );
+            exit;
+        }
+        if ( get_query_var( 'paged' ) > 1 || get_query_var( 'page' ) > 1 ) {
+            $clean_url = strtok( home_url( add_query_arg( array(), array() ) ), '?' );
+            $clean_url = preg_replace( '#/page/\d+/?#', '/', $clean_url );
+            wp_redirect( $clean_url, 301 );
+            exit;
+        }
+    }
+}, 1 );
+
 add_filter( 'template_include', function( $template ) {
-    if ( get_query_var('inventory_segment') ) {
-        $listing_template = locate_template('page-equipment-listing.php');
+    if ( get_query_var( 'brands_hub' ) ) {
+        $t = locate_template( 'page-brands.php' );
+        if ( $t ) return $t;
+    }
+    $brand_slug = get_query_var( 'brand_name' );
+    $segment    = get_query_var( 'inventory_segment' );
+
+    // Two-tier brand + category facet route: /inventory/<segment>/<brand>/
+    if ( $segment && $brand_slug ) {
+        $brand = function_exists( 'varner_get_brand' ) ? varner_get_brand( sanitize_title( $brand_slug ) ) : null;
+        if ( ! $brand ) {
+            wp_redirect( home_url( '/inventory/' . sanitize_title( $segment ) . '/' ), 301 );
+            exit;
+        }
+        // Guard: check if this brand + segment combo has at least 1 unit in stock
+        $meta_query = array(
+            array( 'key' => 'make', 'value' => $brand['make'], 'compare' => '=' ),
+        );
+        $combo_query = new WP_Query( array(
+            'post_type'      => 'equipment',
+            'post_status'    => 'publish',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_query'     => $meta_query,
+        ) );
+        if ( ! $combo_query->have_posts() ) {
+            wp_redirect( home_url( '/inventory/' . sanitize_title( $segment ) . '/' ), 301 );
+            exit;
+        }
+        $listing_template = locate_template( 'page-equipment-listing.php' );
         if ( $listing_template ) return $listing_template;
     }
-    if ( get_query_var('brand_name') ) {
-        $brand_template = locate_template('page-brand.php');
-        if ( $brand_template ) return $brand_template;
+
+    if ( $brand_slug && ! $segment ) {
+        if ( varner_get_brand( sanitize_title( $brand_slug ) ) ) {
+            $t = locate_template( 'single-brand.php' );
+            if ( $t ) return $t;
+        } else {
+            wp_redirect( home_url( '/brands/' ), 301 );
+            exit;
+        }
+    }
+    if ( $segment ) {
+        $listing_template = locate_template( 'page-equipment-listing.php' );
+        if ( $listing_template ) return $listing_template;
     }
     if ( is_page() ) {
         $about_template = locate_template( 'page-about-us.php' );
@@ -306,6 +698,19 @@ add_filter( 'template_include', function( $template ) {
     }
     return $template;
 }, 30);
+
+// Exclude legacy & unlisted pages from WordPress core wp-sitemap.xml
+add_filter( 'wp_sitemaps_posts_query_args', function( $args, $post_type ) {
+    if ( $post_type === 'page' ) {
+        $args['post_name__not_in'] = array(
+            'in-stock-inventory', 'showroom-inventory',
+            'bale-king', 'baumalight', 'beaver-valley', 'cm-truck-beds',
+            'custom-made', 'degelman', 'donahue', 'hackett', 'maschio',
+            'massey-ferguson', 'maxon', 'mchale', 'speeco', 'tidenberg'
+        );
+    }
+    return $args;
+}, 10, 2 );
 
 // Ensure About page uses the About template if present
 function varner_ensure_about_page_template() {
@@ -348,6 +753,171 @@ function varner_ensure_finance_page() {
 add_action( 'after_switch_theme', 'varner_ensure_finance_page' );
 add_action( 'init', 'varner_ensure_finance_page' );
 
+// Ensure Terms of Service page exists and uses the TOS template
+function varner_ensure_terms_of_service_page() {
+    $candidates = array( 'legal/terms-of-service', 'terms-of-service', 'legal/terms', 'terms' );
+    $found = null;
+    foreach ( $candidates as $candidate ) {
+        $page = get_page_by_path( $candidate );
+        if ( $page && ! is_wp_error( $page ) ) {
+            $found = $page;
+            break;
+        }
+    }
+    if ( ! $found ) {
+        $page_id = wp_insert_post( array(
+            'post_title'   => 'Terms of Service',
+            'post_name'    => 'terms-of-service',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+            'post_parent'  => varner_ensure_legal_parent_page(),
+        ) );
+        if ( is_wp_error( $page_id ) ) { return; }
+        $found = get_post( $page_id );
+    }
+    if ( $found && ! is_wp_error( $found ) ) {
+        update_post_meta( $found->ID, '_wp_page_template', 'page-terms-of-service.php' );
+    }
+}
+add_action( 'after_switch_theme', 'varner_ensure_terms_of_service_page' );
+add_action( 'init', 'varner_ensure_terms_of_service_page' );
+
+// Ensure Privacy Policy page exists and uses the Privacy Policy template
+function varner_ensure_privacy_policy_page() {
+    $candidates = array( 'legal/privacy-policy', 'privacy-policy', 'legal/privacy', 'privacy' );
+    $found = null;
+    foreach ( $candidates as $candidate ) {
+        $page = get_page_by_path( $candidate );
+        if ( $page && ! is_wp_error( $page ) ) {
+            $found = $page;
+            break;
+        }
+    }
+    if ( ! $found ) {
+        $page_id = wp_insert_post( array(
+            'post_title'   => 'Privacy Policy',
+            'post_name'    => 'privacy-policy',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+            'post_parent'  => varner_ensure_legal_parent_page(),
+        ) );
+        if ( is_wp_error( $page_id ) ) { return; }
+        $found = get_post( $page_id );
+    }
+    if ( $found && ! is_wp_error( $found ) ) {
+        update_post_meta( $found->ID, '_wp_page_template', 'page-privacy-policy.php' );
+    }
+}
+add_action( 'after_switch_theme', 'varner_ensure_privacy_policy_page' );
+add_action( 'init', 'varner_ensure_privacy_policy_page' );
+
+// Ensure /legal parent page exists for legal pages
+function varner_ensure_legal_parent_page() {
+    $parent = get_page_by_path( 'legal' );
+    if ( ! $parent ) {
+        $parent_id = wp_insert_post( array(
+            'post_title'   => 'Legal',
+            'post_name'    => 'legal',
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_content' => '',
+        ) );
+        if ( is_wp_error( $parent_id ) ) { return 0; }
+        return $parent_id;
+    }
+    return $parent->ID;
+}
+
+// ─── EQUIPMENT CARD HELPERS ──────────────────────────────────────────────────
+
+/**
+ * Build the images array for the equipment card partial.
+ * Returns an array of optimized image URLs (medium_large/large), falling back to full-size,
+ * post thumbnail, then placeholder.
+ */
+if ( ! function_exists( 'varner_get_card_images' ) ) {
+    function varner_get_card_images( $post_id, $size = 'medium_large' ) {
+        $images  = array();
+        $gallery = get_field( 'gallery', $post_id );
+        if ( ! empty( $gallery ) ) {
+            foreach ( $gallery as $img ) {
+                if ( is_array( $img ) ) {
+                    if ( ! empty( $img['sizes'][ $size ] ) ) {
+                        $images[] = $img['sizes'][ $size ];
+                    } elseif ( ! empty( $img['sizes']['large'] ) ) {
+                        $images[] = $img['sizes']['large'];
+                    } elseif ( ! empty( $img['sizes']['medium'] ) ) {
+                        $images[] = $img['sizes']['medium'];
+                    } elseif ( ! empty( $img['url'] ) ) {
+                        $images[] = $img['url'];
+                    }
+                } elseif ( is_numeric( $img ) ) {
+                    $url = wp_get_attachment_image_url( $img, $size );
+                    if ( ! $url ) {
+                        $url = wp_get_attachment_image_url( $img, 'large' );
+                    }
+                    if ( ! $url ) {
+                        $url = wp_get_attachment_url( $img );
+                    }
+                    if ( $url ) {
+                        $images[] = $url;
+                    }
+                }
+            }
+        }
+        if ( empty( $images ) ) {
+            $thumb = get_the_post_thumbnail_url( $post_id, $size );
+            if ( ! $thumb ) {
+                $thumb = get_the_post_thumbnail_url( $post_id, 'large' );
+            }
+            if ( ! $thumb ) {
+                $thumb = get_the_post_thumbnail_url( $post_id, 'full' );
+            }
+            if ( $thumb ) {
+                $images[] = $thumb;
+            }
+        }
+        if ( empty( $images ) ) {
+            $images[] = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
+        }
+        return $images;
+    }
+}
+
+/**
+ * Build full-resolution images array for lightbox triggers.
+ */
+if ( ! function_exists( 'varner_get_card_full_images' ) ) {
+    function varner_get_card_full_images( $post_id ) {
+        $images  = array();
+        $gallery = get_field( 'gallery', $post_id );
+        if ( ! empty( $gallery ) ) {
+            foreach ( $gallery as $img ) {
+                if ( is_array( $img ) && ! empty( $img['url'] ) ) {
+                    $images[] = $img['url'];
+                } elseif ( is_numeric( $img ) ) {
+                    $url = wp_get_attachment_url( $img );
+                    if ( $url ) {
+                        $images[] = $url;
+                    }
+                }
+            }
+        }
+        if ( empty( $images ) ) {
+            $thumb = get_the_post_thumbnail_url( $post_id, 'full' );
+            if ( $thumb ) {
+                $images[] = $thumb;
+            }
+        }
+        if ( empty( $images ) ) {
+            $images[] = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
+        }
+        return $images;
+    }
+}
+
 /**
  * Card Partial Loader
  */
@@ -361,21 +931,43 @@ function varner_include_equipment_card( $post_id = null ) {
     $call_for_price  = get_field( 'call_for_price', $post_id );
     $category        = get_field( 'category',       $post_id );
     $condition       = get_field( 'condition',      $post_id );
+    $stock_status    = get_field( 'stock_status',   $post_id );
     $stock_number    = get_field( 'stock_number',   $post_id );
     $length          = get_field( 'length',         $post_id );
     $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
-    $images          = varner_get_card_images( $post_id );
+    $images          = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
     include get_template_directory() . '/partials/equipment-card.php';
+}
+
+/**
+ * Build a meta_query OR clause matching exact scalar or serialized-array subcategory values.
+ */
+function varner_build_subcategory_meta_query( array $subcats ): array {
+    global $wpdb;
+    $sub_query = array( 'relation' => 'OR' );
+    foreach ( $subcats as $subcat ) {
+        $sub_query[] = array(
+            'key'     => 'subcategory',
+            'value'   => $subcat,
+            'compare' => '=',
+        );
+        $sub_query[] = array(
+            'key'     => 'subcategory',
+            'value'   => $wpdb->esc_like( '"' . $subcat . '"' ),
+            'compare' => 'LIKE',
+        );
+    }
+    return $sub_query;
 }
 
 /**
  * Build the WP_Query args array for the inventory pages based on $_GET filters.
  * Accepts $base_meta (array) to pre-populate the meta_query (e.g. stock_status restriction).
  */
-function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1 ) {
+function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1, $default_keyword = '' ) {
     $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
 
-    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
+    $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
 
     $filters = array(
         'category'    => array_map( 'sanitize_text_field', (array) ( $_GET['category']    ?? [] ) ),
@@ -386,13 +978,18 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
 
     foreach ( $filters as $key => $vals ) {
         if ( $vals ) {
-            $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+            if ( $key === 'subcategory' ) {
+                $meta[] = varner_build_subcategory_meta_query( $vals );
+            } else {
+                $meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+            }
         }
     }
 
     $stock_number = sanitize_text_field( $_GET['stock_number'] ?? '' );
     if ( $stock_number !== '' ) {
-        $meta[] = array( 'key' => 'stock_number', 'value' => $stock_number, 'compare' => 'LIKE' );
+        $clean_stock = ltrim( trim( $stock_number ), '#' );
+        $meta[] = array( 'key' => 'stock_number', 'value' => ( $clean_stock !== '' ? $clean_stock : $stock_number ), 'compare' => 'LIKE' );
     }
 
     $vin = sanitize_text_field( $_GET['vin'] ?? '' );
@@ -400,18 +997,31 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
         $meta[] = array( 'key' => 'vin', 'value' => $vin, 'compare' => 'LIKE' );
     }
 
-    $ranges = array(
-        'year'  => array( 'min' => intval( $_GET['year_min'] ?? 0 ),  'max' => intval( $_GET['year_max'] ?? 0 ),  'type' => 'NUMERIC' ),
-        'price' => array( 'min' => intval( $_GET['price_min'] ?? 0 ), 'max' => intval( $_GET['price_max'] ?? 0 ), 'type' => 'DECIMAL' ),
-    );
+    $raw_year_min  = isset( $_GET['year_min'] ) && $_GET['year_min'] !== '' ? intval( $_GET['year_min'] ) : 0;
+    $raw_year_max  = isset( $_GET['year_max'] ) && $_GET['year_max'] !== '' ? intval( $_GET['year_max'] ) : 0;
+    $raw_price_min = isset( $_GET['price_min'] ) && $_GET['price_min'] !== '' ? floatval( $_GET['price_min'] ) : 0;
+    $raw_price_max = isset( $_GET['price_max'] ) && $_GET['price_max'] !== '' ? floatval( $_GET['price_max'] ) : 0;
 
-    foreach ( $ranges as $key => $r ) {
-        if ( $r['min'] && $r['max'] ) {
-            $meta[] = array( 'key' => $key, 'value' => array( $r['min'], $r['max'] ), 'compare' => 'BETWEEN', 'type' => $r['type'] );
-        } elseif ( $r['min'] ) {
-            $meta[] = array( 'key' => $key, 'value' => $r['min'], 'compare' => '>=', 'type' => $r['type'] );
-        } elseif ( $r['max'] ) {
-            $meta[] = array( 'key' => $key, 'value' => $r['max'], 'compare' => '<=', 'type' => $r['type'] );
+    // Only apply range filter if it meaningfully constrains the result, preventing exclusion of posts with unset meta
+    $has_year_filter = ( $raw_year_min > 1980 ) || ( $raw_year_max > 0 && $raw_year_max < intval( date( 'Y' ) ) + 2 );
+    if ( $has_year_filter ) {
+        if ( $raw_year_min && $raw_year_max ) {
+            $meta[] = array( 'key' => 'year', 'value' => array( $raw_year_min, $raw_year_max ), 'compare' => 'BETWEEN', 'type' => 'NUMERIC' );
+        } elseif ( $raw_year_min ) {
+            $meta[] = array( 'key' => 'year', 'value' => $raw_year_min, 'compare' => '>=', 'type' => 'NUMERIC' );
+        } elseif ( $raw_year_max ) {
+            $meta[] = array( 'key' => 'year', 'value' => $raw_year_max, 'compare' => '<=', 'type' => 'NUMERIC' );
+        }
+    }
+
+    $has_price_filter = ( $raw_price_min > 0 ) || ( $raw_price_max > 0 && $raw_price_max < 250000 );
+    if ( $has_price_filter ) {
+        if ( $raw_price_min && $raw_price_max ) {
+            $meta[] = array( 'key' => 'price', 'value' => array( $raw_price_min, $raw_price_max ), 'compare' => 'BETWEEN', 'type' => 'DECIMAL' );
+        } elseif ( $raw_price_min ) {
+            $meta[] = array( 'key' => 'price', 'value' => $raw_price_min, 'compare' => '>=', 'type' => 'DECIMAL' );
+        } elseif ( $raw_price_max ) {
+            $meta[] = array( 'key' => 'price', 'value' => $raw_price_max, 'compare' => '<=', 'type' => 'DECIMAL' );
         }
     }
 
@@ -424,6 +1034,9 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
     );
 
     $keyword = sanitize_text_field( $_GET['s'] ?? '' );
+    if ( $keyword === '' && $default_keyword !== '' ) {
+        $keyword = sanitize_text_field( $default_keyword );
+    }
     if ( $keyword ) { 
         $args['s'] = $keyword; 
         // Allow searching in meta fields via a hook
@@ -439,7 +1052,9 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
 function varner_search_meta_fields( $search, $wp_query ) {
     global $wpdb;
 
-    if ( empty( $search ) || ! $wp_query->is_main_query() && $wp_query->get( 'post_type' ) !== 'equipment' ) {
+    $pt = $wp_query->get( 'post_type' );
+    $is_equipment = ( $pt === 'equipment' ) || ( is_array( $pt ) && in_array( 'equipment', $pt, true ) );
+    if ( empty( $search ) || ( ! $wp_query->is_main_query() && ! $is_equipment ) ) {
         return $search;
     }
 
@@ -448,9 +1063,20 @@ function varner_search_meta_fields( $search, $wp_query ) {
     $search = $search_and = '';
 
     foreach ( (array) $q['search_terms'] as $term ) {
-        $term = esc_sql( $wpdb->esc_like( $term ) );
-        $search .= "{$search_and}(($wpdb->posts.post_title LIKE '{$n}{$term}{$n}') OR ($wpdb->posts.post_content LIKE '{$n}{$term}{$n}') OR (EXISTS (SELECT 1 FROM {$wpdb->postmeta} WHERE post_id = {$wpdb->posts}.ID AND meta_key IN ('make','model','category','stock_number','vin') AND meta_value LIKE '{$n}{$term}{$n}')))";
-
+        $clean_term = ltrim( trim( $term ), '#' );
+        $like       = '%' . $wpdb->esc_like( $term ) . '%';
+        $clean_like = '%' . $wpdb->esc_like( $clean_term ) . '%';
+        $query   = "(
+            {$wpdb->posts}.post_title LIKE %s
+            OR {$wpdb->posts}.post_content LIKE %s
+            OR EXISTS (
+                SELECT 1 FROM {$wpdb->postmeta}
+                WHERE post_id = {$wpdb->posts}.ID
+                  AND meta_key IN ('make','model','category','subcategory','description','stock_number','vin')
+                  AND (meta_value LIKE %s OR meta_value LIKE %s)
+            )
+        )";
+        $search .= $wpdb->prepare( "{$search_and}({$query})", $like, $like, $like, $clean_like );
         $search_and = ' AND ';
     }
 
@@ -471,9 +1097,9 @@ function varner_search_meta_fields( $search, $wp_query ) {
  */
 function varner_remove_filter( $key, $value = null ) {
     global $wp;
-    // Sanitize all keys and values from $_GET before building the URL.
-    $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
-    unset( $current['paged'] );
+    // Recursively sanitize all keys and scalar/array values from $_GET before building the URL.
+    $current = map_deep( wp_unslash( $_GET ), 'sanitize_text_field' );
+    unset( $current['paged'], $current['page'] );
     if ( $value === null ) {
         unset( $current[ $key ] );
     } else {
@@ -481,7 +1107,8 @@ function varner_remove_filter( $key, $value = null ) {
         $arr     = array_values( array_filter( $arr, function ( $v ) use ( $value ) { return $v !== $value; } ) );
         if ( empty( $arr ) ) { unset( $current[ $key ] ); } else { $current[ $key ] = $arr; }
     }
-    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) );
+    $req_path = preg_replace( '#/page/\d+/?#', '/', $wp->request ?? '' );
+    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) );
     return esc_url( $base_url . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
@@ -490,40 +1117,14 @@ function varner_remove_filter( $key, $value = null ) {
  */
 function varner_remove_range_filter( $key1, $key2 ) {
     global $wp;
-    $current = array_map( 'sanitize_text_field', wp_unslash( $_GET ) );
-    unset( $current[ $key1 ], $current[ $key2 ], $current['paged'] );
-    return esc_url( ( is_singular() ? get_permalink() : home_url( add_query_arg( array(), $wp->request ) ) ) . ( $current ? '?' . http_build_query( $current ) : '' ) );
+    $current = map_deep( wp_unslash( $_GET ), 'sanitize_text_field' );
+    unset( $current[ $key1 ], $current[ $key2 ], $current['paged'], $current['page'] );
+    $req_path = preg_replace( '#/page/\d+/?#', '/', $wp->request ?? '' );
+    $base_url = is_singular() ? get_permalink() : home_url( add_query_arg( array(), trim( $req_path, '/' ) ) );
+    return esc_url( $base_url . ( $current ? '?' . http_build_query( $current ) : '' ) );
 }
 
-// ─── EQUIPMENT CARD HELPERS ──────────────────────────────────────────────────
 
-/**
- * Build the images array for the equipment card partial.
- * Returns an array of full-size image URLs, falling back to post thumbnail,
- * then a placeholder.
- */
-function varner_get_card_images( $post_id ) {
-    $images  = array();
-    $gallery = get_field( 'gallery', $post_id );
-    if ( ! empty( $gallery ) ) {
-        foreach ( $gallery as $img ) {
-            if ( is_array( $img ) && ! empty( $img['url'] ) ) {
-                $images[] = $img['url'];
-            } elseif ( is_numeric( $img ) ) {
-                $url = wp_get_attachment_url( $img );
-                if ( $url ) { $images[] = $url; }
-            }
-        }
-    }
-    if ( empty( $images ) ) {
-        $thumb = get_the_post_thumbnail_url( $post_id, 'large' );
-        if ( $thumb ) { $images[] = $thumb; }
-    }
-    if ( empty( $images ) ) {
-        $images[] = 'https://images.unsplash.com/photo-1594913785162-e6785b423cb1?auto=format&fit=crop&q=80&w=800';
-    }
-    return $images;
-}
 
 // Carousel JS — outputs once in the footer on every front-end page.
 add_action( 'wp_footer', function () {
@@ -536,22 +1137,48 @@ add_action( 'wp_footer', function () {
             var dots   = wrap.querySelectorAll('.vne-dot');
             var prev   = wrap.querySelector('.vne-prev');
             var next   = wrap.querySelector('.vne-next');
+
+            function loadImg(slide) {
+                if (!slide) return;
+                var img = slide.querySelector('img[data-src]');
+                if (img && img.dataset.src) {
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                }
+            }
+
+            function loadAllImages() {
+                slides.forEach(loadImg);
+            }
+
+            // Lazy-load other slides on hover or touch
+            wrap.addEventListener('mouseenter', loadAllImages, { once: true, passive: true });
+            wrap.addEventListener('touchstart', loadAllImages, { once: true, passive: true });
+
             if (slides.length <= 1) return;
             var cur = 0;
             function go(i) {
                 slides[cur].style.opacity = '0';
                 slides[cur].style.zIndex  = '1';
-                if (dots[cur]) dots[cur].style.opacity = '0.4';
+                if (dots[cur]) {
+                    var curInd = dots[cur].querySelector('.vne-dot-indicator');
+                    if (curInd) curInd.style.opacity = '0.4';
+                }
                 cur = ((i % slides.length) + slides.length) % slides.length;
+                loadImg(slides[cur]);
+                loadImg(slides[(cur + 1) % slides.length]);
                 slides[cur].style.opacity = '1';
                 slides[cur].style.zIndex  = '5';
-                if (dots[cur]) dots[cur].style.opacity = '1';
+                if (dots[cur]) {
+                    var nextInd = dots[cur].querySelector('.vne-dot-indicator');
+                    if (nextInd) nextInd.style.opacity = '1';
+                }
             }
             dots.forEach(function (dot, i) {
                 dot.addEventListener('click', function () { go(i); });
             });
-            if (prev) prev.addEventListener('click', function (e) { e.preventDefault(); go(cur - 1); });
-            if (next) next.addEventListener('click', function (e) { e.preventDefault(); go(cur + 1); });
+            if (prev) prev.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); go(cur - 1); });
+            if (next) next.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); go(cur + 1); });
             // Swipe support for mobile
             var startX = 0;
             wrap.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
@@ -572,6 +1199,11 @@ add_action( 'wp_footer', function () {
 } );
 
 
+
+// Cookie consent banner — outputs in footer on every front-end page.
+add_action( 'wp_footer', function () {
+    get_template_part( 'partials/cookie-consent' );
+} );
 
 /**
  * Theme Setup
@@ -632,12 +1264,21 @@ add_action( 'trashed_post', 'varner_clear_brand_transient' );
 add_action( 'untrashed_post', 'varner_clear_brand_transient' );
 
 /**
- * Exclude hidden equipment from frontend loops.
+ * Exclude hidden equipment from frontend loops and guard custom inventory routes.
  */
 function varner_filter_equipment_visibility( $query ) {
     if ( is_admin() ) {
         return;
     }
+
+    // Custom rewrite routes: prevent WordPress default post query 404 on page 2+
+    if ( $query->is_main_query() && ( $query->get( 'inventory_segment' ) || $query->get( 'brand_name' ) || $query->get( 'brands_hub' ) ) ) {
+        $query->set( 'post_type', 'equipment' );
+        $query->set( 'posts_per_page', 1 );
+        $query->is_404 = false;
+        return;
+    }
+
     // Check if REST API and user has capability to edit posts (so the editor app can see everything)
     if ( defined('REST_REQUEST') && REST_REQUEST && current_user_can('edit_posts') ) {
         return;
@@ -678,4 +1319,313 @@ add_filter( 'xmlrpc_enabled', '__return_false' );
 if ( ! defined( 'DISALLOW_FILE_EDIT' ) ) {
     define( 'DISALLOW_FILE_EDIT', true );
 }
+
+/**
+ * ─── WIN 1 & 5: SEO CUSTOM TITLE TAGS, ROBOTS & SITEMAPS OVERRIDES ───
+ */
+
+/**
+ * Win 1: Custom Title Tags
+ * Hook into document_title_parts to target specific search intent.
+ */
+function varner_seo_title_parts( $title_parts ) {
+    if ( is_singular( 'equipment' ) ) {
+        $post_id  = get_the_ID();
+        $year     = get_field( 'year',     $post_id );
+        $make     = get_field( 'make',     $post_id );
+        $model    = get_field( 'model',    $post_id );
+        $category = get_field( 'category', $post_id );
+        
+        $name = trim( implode( ' ', array_filter( array( $year, $make, $model ) ) ) );
+        if ( empty( $name ) ) {
+            $name = get_the_title( $post_id );
+        }
+        
+        $cat_label = $category ? " " . $category : " Equipment";
+        $title_parts['title']   = $name . $cat_label . " For Sale";
+        $title_parts['site']    = "Delta, CO | Varner Equipment";
+        unset( $title_parts['tagline'] );
+    } elseif ( get_query_var( 'inventory_segment' ) ) {
+        $slug = get_query_var( 'inventory_segment' );
+        $seo  = varner_get_segment_seo( $slug );
+        if ( $seo ) {
+            $title_parts['title']   = $seo['h1'];
+            $title_parts['site']    = "Varner Equipment";
+            unset( $title_parts['tagline'] );
+        }
+    } elseif ( get_query_var( 'brand_name' ) ) {
+        $brand_slug  = get_query_var( 'brand_name' );
+        $brands      = get_option( 'varner_brands', array() );
+        $brand_label = rawurldecode( $brand_slug );
+        foreach ( $brands as $b ) {
+            if ( sanitize_title( $b ) === $brand_slug ) {
+                $brand_label = $b;
+                break;
+            }
+        }
+        $title_parts['title']   = $brand_label . " Equipment For Sale";
+        $title_parts['site']    = "Delta, CO | Varner Equipment";
+        unset( $title_parts['tagline'] );
+    }
+    return $title_parts;
+}
+add_filter( 'document_title_parts', 'varner_seo_title_parts', 100 );
+
+/**
+ * Win 5: Programmatic Robots Meta for Sold / Pending Equipment
+ * Sets to noindex, follow to preserve backlink equity while keeping sold inventory out of search indexes.
+ */
+function varner_seo_robots_visibility( $robots ) {
+    if ( is_singular( 'equipment' ) ) {
+        $post_id         = get_the_ID();
+        $show_on_website = get_post_meta( $post_id, 'show_on_website', true );
+        if ( $show_on_website === '0' ) {
+            return array(
+                'noindex'  => true,
+                'nofollow' => true,
+            );
+        }
+        $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post_id ) ) );
+        if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
+            return array(
+                'noindex'  => true,
+                'nofollow' => false,
+            );
+        }
+    }
+    return $robots;
+}
+add_filter( 'wp_robots', 'varner_seo_robots_visibility', 100 );
+
+/**
+ * Exclude Sold / Pending / Draft from WordPress native sitemaps
+ */
+function varner_exclude_sold_from_sitemaps( $args, $post_type ) {
+    if ( 'equipment' === $post_type ) {
+        if ( ! isset( $args['meta_query'] ) ) {
+            $args['meta_query'] = array();
+        }
+        $args['meta_query'][] = array(
+            'key'     => 'stock_status',
+            'value'   => array( 'sold', 'pending sale', 'sale pending', 'pending' ),
+            'compare' => 'NOT IN',
+        );
+        $args['meta_query'][] = array(
+            'relation' => 'OR',
+            array( 'key' => 'show_on_website', 'value' => '1', 'compare' => '=' ),
+            array( 'key' => 'show_on_website', 'compare' => 'NOT EXISTS' ),
+        );
+    }
+    return $args;
+}
+add_filter( 'wp_sitemaps_posts_query_args', 'varner_exclude_sold_from_sitemaps', 100, 2 );
+
+/**
+ * Exclude dead pages (legacy inventory + unknown-brand landing pages) from the
+ * native core sitemap so Google stops crawling URLs that now 301-redirect.
+ */
+function varner_exclude_dead_pages_from_sitemap( $args, $post_type ) {
+    if ( 'page' !== $post_type ) {
+        return $args;
+    }
+    $dead_page_ids = array();
+    $dead_slugs    = array(
+        'inventory/in-stock-inventory',
+        'inventory/showroom-inventory',
+        'bale-king', 'baumalight', 'beaver-valley', 'cm-truck-beds', 'custom-made',
+        'degelman', 'donahue', 'hackett', 'maschio', 'massey-ferguson',
+        'maxon', 'mchale', 'speeco', 'tidenberg',
+    );
+    foreach ( $dead_slugs as $path ) {
+        $page = get_page_by_path( $path );
+        if ( $page && ! is_wp_error( $page ) ) {
+            $dead_page_ids[] = $page->ID;
+        }
+    }
+    if ( ! empty( $dead_page_ids ) ) {
+        $args['post__not_in'] = array_merge( isset( $args['post__not_in'] ) ? (array) $args['post__not_in'] : array(), $dead_page_ids );
+    }
+    return $args;
+}
+add_filter( 'wp_sitemaps_posts_query_args', 'varner_exclude_dead_pages_from_sitemap', 20, 2 );
+
+/**
+ * Exclude Sold / Pending / Draft from Yoast SEO XML sitemaps
+ */
+function varner_exclude_sold_from_yoast_sitemap( $url, $type, $post ) {
+    if ( 'post' === $type && isset( $post->post_type ) && 'equipment' === $post->post_type ) {
+        $show_on_website = get_post_meta( $post->ID, 'show_on_website', true );
+        if ( $show_on_website === '0' ) {
+            return false;
+        }
+        $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post->ID ) ) );
+        if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
+            return false;
+        }
+    }
+    return $url;
+}
+add_filter( 'wpseo_sitemap_entry', 'varner_exclude_sold_from_yoast_sitemap', 10, 3 );
+add_filter( 'wpseo_robots', function( $robots ) {
+    if ( is_singular( 'equipment' ) ) {
+        $post_id         = get_the_ID();
+        $show_on_website = get_post_meta( $post_id, 'show_on_website', true );
+        if ( $show_on_website === '0' ) {
+            return 'noindex,nofollow';
+        }
+        $stock_status = strtolower( trim( (string) get_field( 'stock_status', $post_id ) ) );
+        if ( in_array( $stock_status, array( 'sold', 'pending sale', 'sale pending', 'pending' ), true ) ) {
+            return 'noindex,follow';
+        }
+    }
+    return $robots;
+}, 100 );
+
+/**
+ * Generate 100% Valid robots.txt for Google, Bing & AI Search Discoverability
+ * Priority 10000 ensures this supersedes legacy AI-blocking filters in plugins.
+ */
+add_filter( 'robots_txt', function ( $output, $public ) {
+    $site_url = home_url();
+    $robots  = "User-agent: *\n";
+    $robots .= "Disallow: /wp-admin/\n";
+    $robots .= "Allow: /wp-admin/admin-ajax.php\n\n";
+    $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap_index.xml' ) . "\n";
+    $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap-inventory.xml' ) . "\n\n";
+
+    // Explicitly allow major AI search & assistant crawlers
+    $allowed_ai_bots = array(
+        'OAI-SearchBot',
+        'ChatGPT-User',
+        'GPTBot',
+        'PerplexityBot',
+        'Claude-SearchBot',
+        'Claude-User',
+        'ClaudeBot',
+        'Anthropic-AI',
+        'Google-Extended',
+        'Applebot-Extended',
+    );
+    foreach ( $allowed_ai_bots as $bot ) {
+        $robots .= "User-agent: " . $bot . "\n";
+        $robots .= "Allow: /\n";
+        $robots .= "Disallow: /wp-admin/\n\n";
+    }
+
+    // Block non-search bulk scraper bots
+    $blocked_bots = array(
+        'Bytespider',
+        'CCBot',
+        'Omgilibot',
+        'Diffbot',
+        'ImagesiftBot',
+    );
+    foreach ( $blocked_bots as $bot ) {
+        $robots .= "User-agent: " . $bot . "\n";
+        $robots .= "Disallow: /\n\n";
+    }
+    return trim( $robots ) . "\n";
+}, 10000, 2 );
+
+/**
+ * 🔒 SECURITY HARDENING: Block Public User Enumeration & REST User Endpoints
+ */
+add_filter( 'rest_authentication_errors', function ( $result ) {
+    if ( ! empty( $result ) ) {
+        return $result;
+    }
+    $req_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( ! is_user_logged_in() && ( strpos( $req_uri, '/wp/v2/users' ) !== false || strpos( $req_uri, 'wp/v2/users' ) !== false ) ) {
+        return new WP_Error( 'rest_user_cannot_view', 'User enumeration is disabled.', array( 'status' => 401 ) );
+    }
+    return $result;
+} );
+
+add_filter( 'rest_endpoints', function ( $endpoints ) {
+    if ( ! is_user_logged_in() ) {
+        unset( $endpoints['/wp/v2/users'] );
+        unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
+    }
+    return $endpoints;
+} );
+
+add_action( 'template_redirect', function () {
+    if ( is_author() || ( isset( $_GET['author'] ) && ! is_admin() ) ) {
+        wp_die( 'User enumeration is disabled.', 'Access Denied', array( 'response' => 403 ) );
+    }
+} );
+
+add_filter( 'oembed_response_data', function ( $data ) {
+    if ( isset( $data['author_name'] ) ) {
+        unset( $data['author_name'] );
+    }
+    if ( isset( $data['author_url'] ) ) {
+        unset( $data['author_url'] );
+    }
+    return $data;
+} );
+
+/**
+ * Return formatted pagination count string (e.g. "Showing 1–12 of 306 units").
+ */
+function varner_get_results_count_text( $wp_query, $posts_per_page = 12 ) {
+    if ( ! $wp_query || empty( $wp_query->found_posts ) || $wp_query->post_count === 0 ) {
+        return 'Showing 0 units';
+    }
+    $total        = intval( $wp_query->found_posts );
+    $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
+    $start        = ( $current_page - 1 ) * $posts_per_page + 1;
+    $end          = min( $total, ( $current_page - 1 ) * $posts_per_page + $wp_query->post_count );
+
+    if ( $start >= $end ) {
+        return sprintf( 'Showing %s of %s units', number_format_i18n( $start ), number_format_i18n( $total ) );
+    }
+    return sprintf( 'Showing %s–%s of %s units', number_format_i18n( $start ), number_format_i18n( $end ), number_format_i18n( $total ) );
+}
+
+/**
+ * Render standard Varner Equipment pagination for WP_Query objects.
+ * Preserves all active GET filter parameters (category, make, price, etc.) while building clean pagination URLs.
+ */
+function varner_render_pagination( $wp_query = null ) {
+    if ( ! $wp_query ) {
+        global $wp_query;
+    }
+    if ( ! $wp_query || ! isset( $wp_query->max_num_pages ) || intval( $wp_query->max_num_pages ) <= 1 ) {
+        return;
+    }
+
+    $total_pages  = max( 1, intval( $wp_query->max_num_pages ) );
+    $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
+
+    // Strip existing paged / page parameters and /page/N/ from base URL
+    $clean_url = remove_query_arg( array( 'paged', 'page' ) );
+    $clean_url = preg_replace( '#/page/\d+/?#', '/', $clean_url );
+    $base_url  = add_query_arg( 'paged', '%#%', $clean_url );
+
+    $pagination = paginate_links( array(
+        'base'      => $base_url,
+        'format'    => '',
+        'total'     => $total_pages,
+        'current'   => $current_page,
+        'type'      => 'list',
+        'prev_text' => '&lt; Previous',
+        'next_text' => 'Next &gt;',
+    ) );
+
+    if ( $pagination ) {
+        // Strip ?paged=1 or &paged=1 or &amp;paged=1 from page 1 links
+        $pagination = preg_replace( '/([?&]|&amp;)paged=1(["\'\s>])/i', '$2', $pagination );
+        $pagination = preg_replace( '/\?(["\'])/', '$1', $pagination );
+
+        echo '<div class="mt-12 flex justify-center">';
+        echo '<div class="varner-pagination">';
+        echo $pagination;
+        echo '</div>';
+        echo '</div>';
+    }
+}
+
+
+
 

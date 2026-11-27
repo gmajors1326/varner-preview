@@ -109,7 +109,7 @@ add_filter('acf/settings/load_json', function (array $paths): array {
 function varner_default_brands(): array {
     return array(
         'Bale King', 'Baumalight', 'Beaver Valley', 'Big Tex', 'Bison', 'Branson', 'Brush Chief',
-        'CM Truck Beds', 'Custom Made', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
+        'CM Truck Beds', 'Other', 'Danuser', 'Degelman', 'Deutz Fahr', 'Donahue',
         'Enorossi', 'Hackett', 'Interstate', 'Krone', 'Legend', 'Macdon', 'Mahindra',
         'Maschio', 'Massey Ferguson', 'Maxon', 'McHale', 'MK Martin', 'RC Trailers',
         'Speeco', 'Tar River', 'Tidenberg', 'Titan Trailers', 'Triton', 'TYM', 'Worksaver', 'Zetor',
@@ -173,8 +173,8 @@ acf_add_local_field_group(array(
             'instructions' => 'If set to No, this unit will be hidden from all public-facing pages.',
         ),
         array('key' => 'field_varner_facebook_sync', 'label' => 'Sync to Facebook', 'name' => 'facebook_sync', 'type' => 'true_false',
-            'ui' => 1, 'ui_on_text' => 'Yes', 'ui_off_text' => 'No', 'default_value' => 1,
-            'instructions' => 'If set to No, this unit will be excluded from the Facebook Catalog CSV feed.',
+            'ui' => 1, 'ui_on_text' => 'Yes', 'ui_off_text' => 'No', 'default_value' => 0,
+            'instructions' => 'Enable to include this unit in the Facebook catalog feed for Marketplace listings.',
         ),
         array('key' => 'field_varner_desc',            'label' => 'Public Description', 'name' => 'description',   'type' => 'wysiwyg'),
         array('key' => 'field_varner_vin_image',       'label' => 'VIN Plate Image',   'name' => 'vin_image',      'type' => 'image',
@@ -250,7 +250,7 @@ function varner_get_equipment_fields_config(): array {
         'price'             => array('type' => 'number', 'public' => true),
         'call_for_price'    => array('type' => 'bool', 'public' => true),
         'condition'         => array('type' => 'text', 'default' => 'New', 'public' => true),
-        'stock_status'      => array('type' => 'text', 'default' => 'Draft', 'public' => true),
+        'stock_status'      => array('type' => 'text', 'default' => 'In Stock', 'public' => true),
         'category'          => array('type' => 'text', 'public' => true),
         'subcategory'       => array('type' => 'text', 'public' => true),
         'sub_subcategory'   => array('type' => 'text', 'public' => true),
@@ -263,7 +263,9 @@ function varner_get_equipment_fields_config(): array {
         'seller_info'       => array('type' => 'wysiwyg'),
         'featured'          => array('type' => 'bool', 'public' => true),
         'show_on_website'   => array('type' => 'bool', 'default' => true, 'public' => true),
-        'facebook_sync'     => array('type' => 'bool', 'default' => true, 'public' => true),
+        'facebook_sync'        => array('type' => 'bool', 'default' => false, 'public' => true),
+        'marketplace_posted'      => array('type' => 'bool', 'public' => true),
+        'marketplace_posted_date' => array('type' => 'text', 'virtual' => true),
         // Tracking fields explicitly defined so they follow the schema default-deny rule
         'deleted_at'          => array('type' => 'text', 'virtual' => true),
         'last_action'         => array('type' => 'text', 'virtual' => true),
@@ -300,6 +302,10 @@ function varner_format_unit(int $post_id, string $context = 'edit'): ?array {
             $val = function_exists('get_field') ? get_field($key, $post_id) : null;
         } else {
             $val = array_key_exists($key, $bulk) ? $bulk[$key][0] : null;
+            // Subcategory may be stored as a serialized array after migration
+            if ($key === 'subcategory' && is_string($val)) {
+                $val = maybe_unserialize($val);
+            }
         }
 
         if ($meta['type'] === 'bool') {
@@ -317,6 +323,22 @@ function varner_format_unit(int $post_id, string $context = 'edit'): ?array {
 
     if ($context === 'public' && !empty($data['call_for_price'])) {
         $data['price'] = '';
+    }
+
+    // ── Multi-subcategory read coercion ──────────────────────────────
+    // subcategory is transitioning from a single string to an array of
+    // strings. Coerce at the read layer so every consumer always gets
+    // an array, regardless of what is stored in postmeta.
+    if (isset($data['subcategory'])) {
+        $raw_sub = $data['subcategory'];
+        if (is_array($raw_sub)) {
+            // Already an array (post-migration or serialized) — filter empties
+            $data['subcategory'] = array_values(array_filter($raw_sub, 'strlen'));
+        } elseif (is_string($raw_sub) && $raw_sub !== '') {
+            $data['subcategory'] = array($raw_sub);
+        } else {
+            $data['subcategory'] = array();
+        }
     }
 
     $gallery = function_exists('get_field') ? get_field('gallery', $post_id) : array();
@@ -393,6 +415,17 @@ function varner_save_unit_fields(int $post_id, array $data): void {
                 $clean = nl2br($clean);
             }
             update_field($key, $clean, $post_id);
+        } elseif ($key === 'subcategory') {
+            // ── Multi-subcategory write coercion ────────────────────────
+            // Accept string or array; always store as a serialized array.
+            if (is_array($val)) {
+                $arr = array_values(array_filter(array_map('sanitize_text_field', $val), 'strlen'));
+            } elseif (is_string($val) && $val !== '') {
+                $arr = array(sanitize_text_field($val));
+            } else {
+                $arr = array();
+            }
+            update_post_meta($post_id, 'subcategory', $arr);
         } else {
             update_field($key, sanitize_text_field($val), $post_id);
         }
@@ -566,6 +599,9 @@ function varner_backend_get_settings_defaults(): array {
             "Top-Tier Equipment Brands",
         ),
         'contact_email'              => "ashley@varnerequipment.com",
+        'sales_email'                => "jacob@varnerequipment.com",
+        'parts_email'                => "parts@varnerequipment.com",
+        'service_email'              => "shop@varnerequipment.com",
         'contact_phone'              => "(970) 874-0612",
         'contact_phone_raw'          => "9708740612",
         'contact_address_line1'      => "1375 US-50",
@@ -635,3 +671,139 @@ function varner_backend_get_settings_defaults(): array {
 // Note: varner_get_theme_settings_defaults() is defined in the theme's functions.php.
 // The plugin accesses settings defaults directly via varner_backend_get_settings_defaults().
 // A second definition here was removed to prevent a PHP fatal 'Cannot redeclare function' error.
+
+/**
+ * Block common AI crawler bots via robots.txt and sanitize output for Lighthouse SEO compliance
+ */
+add_filter('robots_txt', function (string $output, bool $public): string {
+    // Strip Crawl-delay directives that cause Lighthouse validation warnings
+    $output = preg_replace('/Crawl-delay:\s*\d+/i', '', $output);
+    
+    $crawlers = array(
+        'User-agent: GPTBot',
+        'Disallow: /',
+        'User-agent: ChatGPT-User',
+        'Disallow: /',
+        'User-agent: Google-Extended',
+        'Disallow: /',
+        'User-agent: Anthropic-AI',
+        'Disallow: /',
+        'User-agent: Claude-Web',
+        'Disallow: /',
+        'User-agent: ClaudeBot',
+        'Disallow: /',
+        'User-agent: CCBot',
+        'Disallow: /',
+        'User-agent: Omgilibot',
+        'Disallow: /',
+        'User-agent: FacebookBot',
+        'Disallow: /',
+        'User-agent: Diffbot',
+        'Disallow: /',
+        'User-agent: Bytespider',
+        'Disallow: /',
+        'User-agent: ImagesiftBot',
+        'Disallow: /',
+        'User-agent: PerplexityBot',
+        'Disallow: /',
+        'User-agent: Cohesive-Bot',
+        'Disallow: /',
+    );
+    return trim($output) . "\n\n" . implode("\n", $crawlers) . "\n";
+}, 999, 2);
+
+// ─── One-Time Migration: subcategory string → array ─────────────────────────
+// Converts every equipment post's subcategory meta from a plain string to a
+// serialized one-element array. Idempotent: skips values already stored as
+// arrays. Gated by option flag so it runs exactly once.
+
+add_action('admin_init', 'varner_migrate_subcategory_to_array');
+function varner_migrate_subcategory_to_array(): void {
+    if (get_option('varner_subcategory_migrated_to_array')) {
+        return; // Already ran
+    }
+
+    global $wpdb;
+
+    $post_ids = $wpdb->get_col(
+        "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'equipment' AND post_status IN ('publish', 'draft', 'trash')"
+    );
+
+    if (empty($post_ids)) {
+        update_option('varner_subcategory_migrated_to_array', time());
+        return;
+    }
+
+    $migrated = 0;
+    $skipped  = 0;
+
+    foreach ($post_ids as $pid) {
+        $raw = get_post_meta($pid, 'subcategory', true);
+
+        // Already a serialized array — skip
+        if (is_array($raw)) {
+            $skipped++;
+            continue;
+        }
+
+        // String → one-element array (or empty array)
+        $arr = ($raw !== '' && $raw !== null && $raw !== false)
+            ? array((string) $raw)
+            : array();
+
+        update_post_meta($pid, 'subcategory', $arr);
+        $migrated++;
+    }
+
+    update_option('varner_subcategory_migrated_to_array', time());
+
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log("[Varner OS] Subcategory migration complete: {$migrated} converted, {$skipped} already arrays, out of " . count($post_ids) . " total.");
+    }
+}
+
+/**
+ * 🔒 SECURITY HARDENING: Block Public User Enumeration & REST User Endpoints
+ */
+add_filter( 'rest_authentication_errors', function ( $result ) {
+    if ( ! empty( $result ) ) {
+        return $result;
+    }
+    $req_uri = $_SERVER['REQUEST_URI'] ?? '';
+    if ( ! is_user_logged_in() && ( strpos( $req_uri, '/wp/v2/users' ) !== false || strpos( $req_uri, 'wp/v2/users' ) !== false ) ) {
+        return new WP_Error( 'rest_user_cannot_view', 'User enumeration is disabled.', array( 'status' => 401 ) );
+    }
+    return $result;
+} );
+
+add_filter( 'rest_endpoints', function ( $endpoints ) {
+    if ( ! is_user_logged_in() ) {
+        if ( isset( $endpoints['/wp/v2/users'] ) ) {
+            unset( $endpoints['/wp/v2/users'] );
+        }
+        if ( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) {
+            unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
+        }
+    }
+    return $endpoints;
+} );
+
+// 2. Block author parameter query enumeration (e.g. ?author=1 or /author/username/)
+add_action( 'template_redirect', function () {
+    if ( is_author() || ( isset( $_GET['author'] ) && ! is_admin() ) ) {
+        wp_safe_redirect( home_url( '/' ), 301 );
+        exit;
+    }
+} );
+
+// 3. Prevent oEmbed user discovery (/wp-json/oembed/1.0/embed?url=...)
+add_filter( 'oembed_response_data', function ( $data ) {
+    if ( isset( $data['author_name'] ) ) {
+        unset( $data['author_name'] );
+    }
+    if ( isset( $data['author_url'] ) ) {
+        unset( $data['author_url'] );
+    }
+    return $data;
+} );
+

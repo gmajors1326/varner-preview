@@ -5,6 +5,7 @@
 
 get_header(); ?>
 
+<main id="main-content">
 <section class="pt-32 pb-24 bg-slate-50 min-h-screen">
     <div class="max-w-5xl mx-auto px-4">
         <!-- HEADER -->
@@ -17,6 +18,18 @@ get_header(); ?>
             </p>
         </div>
 
+        <?php if ( isset($_GET['request']) && $_GET['request'] === 'sent' ) : ?>
+            <div class="mb-12 bg-green-50 border-2 border-green-500/30 text-green-800 p-6 rounded-3xl flex items-center gap-4">
+                <div class="bg-green-500 text-white p-2.5 rounded-2xl shadow-lg shadow-green-900/10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div>
+                    <h4 class="font-black uppercase tracking-tight text-lg">Parts Request Sent Successfully</h4>
+                    <p class="text-sm text-green-700/80 font-bold mt-0.5">Thank you! We have received your parts request and our parts department will contact you shortly.</p>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- FORM CARD -->
         <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
             <div class="bg-slate-950 p-8 text-white flex items-center justify-between">
@@ -26,7 +39,7 @@ get_header(); ?>
                     </div>
                     <div>
                         <h2 class="text-xl font-black uppercase tracking-tight">Parts Department</h2>
-                        <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Inventory Specialist • Delta, CO</p>
+                        <p class="text-xs text-slate-500 font-black uppercase tracking-[0.2em]">Inventory Specialist • Delta, CO</p>
                     </div>
                 </div>
                 <div class="hidden sm:block text-right">
@@ -35,7 +48,7 @@ get_header(); ?>
                 </div>
             </div>
 
-            <form action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" method="POST" class="p-8 md:p-12 space-y-12">
+            <form action="<?php echo esc_url( get_permalink() ); ?>" method="POST" class="p-8 md:p-12 space-y-12">
                 <input type="hidden" name="action" value="varner_parts_request_submit">
                 <?php wp_nonce_field( 'varner_parts_request_submit', 'varner_parts_nonce' ); ?>
 
@@ -43,37 +56,37 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">01</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Customer Contact Information</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Customer Contact Information</h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">First Name <span class="text-red-600">(*)</span></label>
-                            <input type="text" name="first_name" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-first-name" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">First Name <span class="text-red-600">(*)</span></label>
+                            <input type="text" name="first_name" id="parts-first-name" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Last Name <span class="text-red-600">(*)</span></label>
-                            <input type="text" name="last_name" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-last-name" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Last Name <span class="text-red-600">(*)</span></label>
+                            <input type="text" name="last_name" id="parts-last-name" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Address <span class="text-red-600">(*)</span></label>
-                            <input type="email" name="email" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-email" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Email Address <span class="text-red-600">(*)</span></label>
+                            <input type="email" name="email" id="parts-email" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
-                            <input type="tel" name="phone" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-phone" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
+                            <input type="tel" name="phone" id="parts-phone" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="md:col-span-2 space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Physical Address</label>
-                            <input type="text" name="address" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-address" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Physical Address</label>
+                            <input type="text" name="address" id="parts-address" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:col-span-2">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">City</label>
-                                <input type="text" name="city" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                                <label for="parts-city" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">City</label>
+                                <input type="text" name="city" id="parts-city" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">State</label>
-                                <select name="state" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm appearance-none cursor-pointer">
+                                <label for="parts-state" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">State</label>
+                                <select name="state" id="parts-state" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm appearance-none cursor-pointer">
                                     <option value="CO">Colorado</option>
                                     <option value="UT">Utah</option>
                                     <option value="WY">Wyoming</option>
@@ -92,8 +105,8 @@ get_header(); ?>
                                 </select>
                             </div>
                             <div class="space-y-2 col-span-2 md:col-span-1">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Zip Code</label>
-                                <input type="text" name="zip" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                                <label for="parts-zip" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Zip Code</label>
+                                <input type="text" name="zip" id="parts-zip" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                             </div>
                         </div>
                     </div>
@@ -103,28 +116,28 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">02</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Equipment Reference</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Equipment Reference</h3>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Make <span class="text-red-600">(*)</span></label>
-                            <input type="text" name="make" required placeholder="e.g. Mahindra" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-make" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Make <span class="text-red-600">(*)</span></label>
+                            <input type="text" name="make" id="parts-make" required placeholder="e.g. Mahindra" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Model <span class="text-red-600">(*)</span></label>
-                            <input type="text" name="model" required placeholder="e.g. 2638 HST" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-model" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Model <span class="text-red-600">(*)</span></label>
+                            <input type="text" name="model" id="parts-model" required placeholder="e.g. 2638 HST" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Year <span class="text-red-600">(*)</span></label>
-                            <input type="text" name="year" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-year" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Year <span class="text-red-600">(*)</span></label>
+                            <input type="text" name="year" id="parts-year" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Serial Number #</label>
-                            <input type="text" name="serial" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm uppercase">
+                            <label for="parts-serial" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Serial Number #</label>
+                            <input type="text" name="serial" id="parts-serial" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm uppercase">
                         </div>
                         <div class="space-y-2 sm:col-span-2 lg:col-span-1">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Hours / Meter</label>
-                            <input type="text" name="hours" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
+                            <label for="parts-hours" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Hours / Meter</label>
+                            <input type="text" name="hours" id="parts-hours" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm">
                         </div>
                     </div>
                 </div>
@@ -133,17 +146,17 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">03</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Parts Details</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Parts Details</h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div class="md:col-span-2 space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Parts Needed <span class="text-red-600">(*)</span></label>
-                            <textarea name="parts_needed" required rows="6" placeholder="Please list part numbers or describe the components you need..." class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm"></textarea>
+                            <label for="parts-needed" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Parts Needed <span class="text-red-600">(*)</span></label>
+                            <textarea name="parts_needed" id="parts-needed" required rows="6" placeholder="Please list part numbers or describe the components you need..." class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm"></textarea>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Preferred Pickup/Ship Date <span class="text-red-600">(*)</span></label>
-                            <input type="date" name="appointment_date" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm cursor-pointer">
-                            <p class="text-[9px] font-bold text-slate-400 mt-2 italic">* We will notify you when parts are ready.</p>
+                            <label for="parts-pickup-date" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Preferred Pickup/Ship Date <span class="text-red-600">(*)</span></label>
+                            <input type="date" name="appointment_date" id="parts-pickup-date" required class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 focus:bg-white outline-none transition-all shadow-sm cursor-pointer">
+                            <p class="text-[9px] font-bold text-slate-500 mt-2 italic">* We will notify you when parts are ready.</p>
                         </div>
                     </div>
                 </div>
@@ -152,7 +165,7 @@ get_header(); ?>
                 <div class="space-y-8">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
                         <span class="text-red-600 font-black text-xl">04</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Customer History</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Customer History</h3>
                     </div>
                     <div class="bg-slate-50 rounded-3xl p-8 border-2 border-slate-100 space-y-8">
                         <div class="flex flex-col md:flex-row md:items-center gap-6">
@@ -170,12 +183,12 @@ get_header(); ?>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/50">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Approximate Date of Last Service</label>
-                                <input type="text" name="last_service_date" placeholder="Month / Year" class="w-full bg-white border-2 border-slate-200 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 outline-none transition-all shadow-sm">
+                                <label for="parts-last-service-date" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Approximate Date of Last Service</label>
+                                <input type="text" name="last_service_date" id="parts-last-service-date" placeholder="Month / Year" class="w-full bg-white border-2 border-slate-200 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 outline-none transition-all shadow-sm">
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Work Previously Done</label>
-                                <input type="text" name="last_service_work" class="w-full bg-white border-2 border-slate-200 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 outline-none transition-all shadow-sm">
+                                <label for="parts-last-service-work" class="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Work Previously Done</label>
+                                <input type="text" name="last_service_work" id="parts-last-service-work" class="w-full bg-white border-2 border-slate-200 rounded-xl px-5 py-4 font-bold text-slate-900 focus:border-red-500 outline-none transition-all shadow-sm">
                             </div>
                         </div>
                     </div>
@@ -185,7 +198,7 @@ get_header(); ?>
                 <div class="space-y-6 pt-4 border-t border-slate-100">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="text-red-600 font-black text-xl">05</span>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Security Verification</h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Security Verification</h3>
                     </div>
                     <div class="bg-slate-900 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-8 border-b-4 border-red-600 shadow-xl">
                         <div class="flex items-center gap-4">
@@ -199,8 +212,8 @@ get_header(); ?>
                             </div>
                         </div>
                         <div class="flex-1 w-full">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">What is the sum? <span class="text-red-500">(*)</span></label>
-                            <input type="number" name="captcha_answer" required placeholder="Type answer here..." class="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-6 py-4 font-black text-white focus:border-red-500 focus:bg-slate-950 outline-none transition-all shadow-inner">
+                            <label for="parts-captcha" class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2 block ml-1">What is the sum? <span class="text-red-500">(*)</span></label>
+                            <input type="number" name="captcha_answer" id="parts-captcha" required placeholder="Type answer here..." class="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-6 py-4 font-black text-white focus:border-red-500 focus:bg-slate-950 outline-none transition-all shadow-inner">
                         </div>
                         <div class="hidden md:block">
                             <svg class="w-12 h-12 text-slate-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.47 4.34-3.1 8.16-7 9.3V12h-7V6.39l7-3.11v8.71z"/></svg>
@@ -214,11 +227,12 @@ get_header(); ?>
                         Submit Parts Request
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6">Secure Submission • Varner Equipment Parts Division</p>
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-widest mt-6">Secure Submission • Varner Equipment Parts Division</p>
                 </div>
             </form>
         </div>
     </div>
 </section>
+</main>
 
 <?php get_footer(); ?>

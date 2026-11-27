@@ -10,7 +10,7 @@
 ### 2026-06-17 (v1.23.177)
 - **Pages Management API Hardening & UI**: Added secure REST endpoints (`/pages`, `/page-templates`) and a management sub-panel in Settings. Consolidated duplicate route registrations. Gated endpoints on granular meta capabilities (`edit_page`, `delete_page`, and `publish_pages`). Added server-side validation whitelists for theme templates, and blocked trashing or draft-status toggling of critical system pages (home page, blog page, privacy page, or showroom).
 - **UX & Safety Enhancements**: Built sticky quick-jump section navigation at the top of the Settings Page Editor. Integrated client-side confirmation prompts to safeguard destructive actions.
-- **Form Responsive Grid Optimizations**: Redesigned the equipment references grid on both [page-service-request.php](file:///c:/Users/Greg/Desktop/Varner%20Equipent/varner-equipment-theme-lite/varner-lite/page-service-request.php) and [page-parts-request.php](file:///c:/Users/Greg/Desktop/Varner%20Equipent/varner-equipment-theme-lite/varner-lite/page-parts-request.php) to use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`. This prevents input squishing on tablet/laptop viewports by folding cleanly into a balanced grid, with the "Hours/Meter" field spanning full-width on medium sizes and resolving to a single row on desktop/large laptop screens.
+- **Form Responsive Grid Optimizations**: Redesigned the equipment references grid on both `page-service-request.php` and `page-parts-request.php` to use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`. This prevents input squishing on tablet/laptop viewports by folding cleanly into a balanced grid, with the "Hours/Meter" field spanning full-width on medium sizes and resolving to a single row on desktop/large laptop screens.
 - **Trailer Length Selection Options**: Conditionally displays trailer length selection only when category includes "trailer", and transitioned length input from a free-text string to a dropdown select covering 8–53 ft.
 - **Brand Sync & Tailwind/Build Fixes**: Synced brand options (added Zetor, renamed Titan MFG to Titan Trailers) across theme menus, REST configurations, and ACF structures. Added safelist configuration for arbitrary utility classes in `tailwind.config.js` and hardened `build.ps1` and `zip_helper.py` against Windows reserved `nul` files.
 
@@ -78,73 +78,44 @@ Do NOT use `tar -a -c -f` for ZIP creation — PowerShell's `tar` creates POSIX 
 > Only the shared WordPress site folder `/sites/varnerequipdev` (and its subdirectories) is persistent.
 > Because SCP/SFTP subsystems are disabled on the gateway, files must be streamed in binary mode over SSH to the persistent volume.
 
-### 1. Stream the Plugin ZIP to Remote Persistent Storage
-Run this Python command from the local workspace root:
+### 1. Stream & Install the Plugin ZIP
 ```powershell
-python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/varner-os-plugin-v23.zip'], stdin=open('varner-os-plugin-v23.zip', 'rb'))"
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/varner-os-plugin-v23.zip" < varner-os-plugin-v23.zip
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp plugin install /sites/varnerequipdev/varner-os-plugin-v23.zip --force --path=/sites/varnerequipdev && rm /sites/varnerequipdev/varner-os-plugin-v23.zip"
 ```
 
-### 2. Install/Update via Remote WP-CLI
-Connect to the server and trigger the installation pointing to the persistent ZIP path:
-```powershell
-ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp plugin install /sites/varnerequipdev/varner-os-plugin-v23.zip --force --path=/sites/varnerequipdev"
-```
-
-### 3. Clean up the Remote ZIP
-```powershell
-ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "rm /sites/varnerequipdev/varner-os-plugin-v23.zip"
-```
-
-### 4. Activate & Run dbDelta
+### 2. Activate & Run dbDelta
 If the plugin is not active, run `wp plugin activate varner-os-plugin-v23 --path=/sites/varnerequipdev`. Deactivate and reactivate once to run `dbDelta` and schedule the daily session cleanup cron.
 
 ## Theme Install or Update
 
-1. Stream the theme ZIP in the same manner as the plugin ZIP (using `/sites/varnerequipdev/varner-equipment-theme-v23-lite.zip`).
-   * **Note**: WordPress CLI expects the ZIP filename to match the theme slug folder name inside it (`varner-lite/`). Therefore, you must rename the uploaded zip to `varner-lite.zip` before running the install command.
-2. Rename and run:
-   ```powershell
-   ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "mv /sites/varnerequipdev/varner-equipment-theme-v23-lite.zip /sites/varnerequipdev/varner-lite.zip && wp theme install /sites/varnerequipdev/varner-lite.zip --force --path=/sites/varnerequipdev"
-   ```
-3. Confirm `style.css` is at the theme root.
-4. Clean up the theme ZIP on the remote server:
-   ```powershell
-   ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "rm -f /sites/varnerequipdev/varner-lite.zip"
-   ```
+The active theme slug is `varner-equipment-theme-v23-lite-4` (verify with `wp theme list`). Stream the ZIP using the active slug as the remote filename — `wp theme install` resolves it automatically.
+
+> The `-4` suffix is the WP Engine-installed slug, not part of the local ZIP filename (`varner-equipment-theme-v23-lite.zip`). The remote filename must match the slug for `wp theme install --force` to replace the correct theme.
+
+### 1. Stream the Theme ZIP
+```powershell
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip" < varner-equipment-theme-v23-lite.zip
+```
+
+### 2. Install/Update
+```powershell
+ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp theme install /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip --force --path=/sites/varnerequipdev && rm /sites/varnerequipdev/varner-equipment-theme-v23-lite-4.zip"
+```
 
 ## Post-Install Checks
 
-1. Clear app/server/CDN caches.
+1. Flush caches:
+   ```powershell
+   ssh -i ~/.ssh/id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "wp page-cache flush --path=/sites/varnerequipdev"
+   ```
 2. Verify header logo renders.
    - Preferred source: media attachment titled `VarnerEquipment_red`.
    - Fallback source: bundled theme logo assets.
 
-## Plugin REST Endpoints (v23)
+## REST Endpoints
 
-| Method | Endpoint | Auth | Notes |
-|--------|----------|------|-------|
-| `GET` | `/varner/v1/inventory` | public | All active listings |
-| `POST` | `/varner/v1/inventory` | editor | Create new unit |
-| `GET` | `/varner/v1/inventory/deleted` | editor | Soft-deleted units |
-| `PATCH` | `/varner/v1/inventory/{id}` | editor | Update unit fields |
-| `DELETE` | `/varner/v1/inventory/{id}` | editor | Soft delete |
-| `POST` | `/varner/v1/inventory/{id}/restore` | editor | Restore soft-deleted unit |
-| `DELETE` | `/varner/v1/inventory/{id}/permanent` | editor | Permanent delete |
-| `GET` | `/varner/v1/inventory/{id}/ledger` | editor | Paginated ledger entries |
-| `POST` | `/varner/v1/media` | editor | Upload media attachment |
-| `GET` | `/varner/v1/brands` | editor | Get brand list |
-| `POST` | `/varner/v1/brands` | editor | Save brand list |
-| `GET` | `/varner/v1/categories` | editor | Get category list |
-| `POST` | `/varner/v1/categories` | editor | Save category list |
-| `GET` | `/varner/v1/sessions` | admin | Supports `active` and `user` filters; paginated |
-| `GET` | `/varner/v1/me` | logged-in | Current user info |
-| `POST` | `/varner/v1/logout` | logged-in | Destroy session |
-| `POST` | `/varner/v1/mobile/token` | editor | Generate secure alphanumeric mobile token |
-| `GET` | `/varner/v1/pages` | edit_pages | List all WordPress pages |
-| `POST` | `/varner/v1/pages` | publish_pages | Create new WordPress page |
-| `PATCH` | `/varner/v1/pages/{id}` | edit_page | Update page attributes (per-object check) |
-| `DELETE` | `/varner/v1/pages/{id}` | delete_page | Trash a WordPress page (per-object check) |
-| `GET` | `/varner/v1/page-templates` | edit_pages | List available active theme templates |
+See the plugin `readme.txt` or [`SKILL.md`](./SKILL.md) §9 for the complete REST API reference.
 
 ## Quick Verification in wp-admin
 

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-09T16:55:50.000Z",
+  "entries": [
+    "api-endpoint-builder",
+    "ax-extract-workflow",
+    "brooks-lint",
+    "bug-hunter",
+    "codebase-audit-pre-push",
+    "diagnosing-bugs",
+    "docs",
+    "effective-agent-skills",
+    "improve-codebase-architecture",
+    "jq",
+    "logic-lens",
+    "performance-optimizer",
+    "prototype",
+    "skill-check",
+    "squirrel",
+    "tdd",
+    "technical-change-tracker",
+    "tight-reasoning",
+    "tree-ring-memory",
+    "triage"
+  ]
+}

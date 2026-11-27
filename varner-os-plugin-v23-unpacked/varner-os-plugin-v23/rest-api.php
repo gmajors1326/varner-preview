@@ -8,12 +8,30 @@
 
 defined('ABSPATH') || exit;
 
+/**
+ * Check if the current REST request is from an authenticated manager/admin.
+ * In WP-REST, nonces are anti-CSRF tokens and do not confer administrative authority.
+ * We strictly gate admin data access on the 'edit_others_posts' capability (Editor & Admin).
+ */
+function varner_is_admin_request(): bool {
+    return current_user_can('edit_others_posts');
+}
+
 require_once __DIR__ . '/rest-api-pages-videos.php';
 
 // ─── 1. ROUTE REGISTRATION ───────────────────────────────────────────────────
 
 add_action('rest_api_init', 'varner_register_rest_routes');
 function varner_register_rest_routes(): void {
+    add_filter('rest_post_dispatch', function($response, $server, $request) {
+        if ($response instanceof WP_REST_Response && str_contains($request->get_route(), '/varner/v1')) {
+            $response->header('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+        }
+        return $response;
+    }, 10, 3);
+
     $ns   = 'varner/v1';
     $auth = function (): bool { return current_user_can('edit_posts'); };
 
@@ -64,10 +82,15 @@ function varner_register_rest_routes(): void {
         'callback'            => 'varner_api_restore_unit',
         'permission_callback' => $auth,
     ));
+    register_rest_route($ns, '/inventory/(?P<id>\d+)/marketplace-posted', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_set_marketplace_posted',
+        'permission_callback' => $auth,
+    ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)/permanent', array(
         'methods'             => 'DELETE',
         'callback'            => 'varner_api_permanent_delete',
-        'permission_callback' => $auth,
+        'permission_callback' => function (): bool { return current_user_can('edit_others_posts'); },
     ));
     register_rest_route($ns, '/inventory/(?P<id>\d+)/ledger', array(
         'methods'             => 'GET',
@@ -85,17 +108,29 @@ function varner_register_rest_routes(): void {
         array('methods' => 'GET',  'callback' => 'varner_api_get_brands',  'permission_callback' => $auth),
         array('methods' => 'POST', 'callback' => 'varner_api_save_brands', 'permission_callback' => $auth),
     ));
+    register_rest_route($ns, '/years', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_years',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_years', 'permission_callback' => $auth),
+    ));
     register_rest_route($ns, '/categories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_categories',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_categories', 'permission_callback' => $auth),
     ));
     register_rest_route($ns, '/subcategories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_subcategories',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_subcategories', 'permission_callback' => $auth),
     ));
     register_rest_route($ns, '/sub-subcategories', array(
         array('methods' => 'GET',  'callback' => 'varner_api_get_sub_subcategories',  'permission_callback' => $auth),
-        array('methods' => 'POST', 'callback' => 'varner_api_save_sub_subcategories', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/category-tree', array(
+        array('methods' => 'GET',  'callback' => 'varner_api_get_category_tree',  'permission_callback' => $auth),
+        array('methods' => 'POST', 'callback' => 'varner_api_save_category_tree', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/category-tree/rename', array(
+        array('methods' => 'POST', 'callback' => 'varner_api_rename_category_node', 'permission_callback' => $auth),
+    ));
+    register_rest_route($ns, '/category-tree/node', array(
+        array('methods' => 'POST',   'callback' => 'varner_api_category_tree_add',    'permission_callback' => $auth),
+        array('methods' => 'DELETE', 'callback' => 'varner_api_category_tree_delete', 'permission_callback' => $auth),
     ));
 
     register_rest_route($ns, '/videos', array(
@@ -142,6 +177,22 @@ function varner_register_rest_routes(): void {
         'callback'            => 'varner_api_me',
         'permission_callback' => 'is_user_logged_in',
     ));
+    // Nonce refresh — returns a fresh wp_rest nonce for the current session.
+    // permission_callback is __return_true because the endpoint must work even
+    // when the caller's nonce has expired (chicken-and-egg). Auth is validated
+    // inside the handler via wp_validate_auth_cookie().
+    register_rest_route($ns, '/session', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_session_nonce',
+        'permission_callback' => '__return_true',
+    ));
+    // Single-request bootstrap — returns all data the app needs on initial load.
+    // Eliminates 7 parallel REST calls that trigger Cloudflare 429 rate limits.
+    register_rest_route($ns, '/bootstrap', array(
+        'methods'             => 'GET',
+        'callback'            => 'varner_api_bootstrap',
+        'permission_callback' => $auth,
+    ));
     register_rest_route($ns, '/logout', array(
         'methods'             => 'POST',
         'callback'            => 'varner_api_logout',
@@ -151,6 +202,11 @@ function varner_register_rest_routes(): void {
         'methods'             => 'POST',
         'callback'            => 'varner_api_generate_mobile_token',
         'permission_callback' => $auth,
+    ));
+    register_rest_route($ns, '/login', array(
+        'methods'             => 'POST',
+        'callback'            => 'varner_api_mobile_login',
+        'permission_callback' => '__return_true', // Public: caller is unauthenticated by definition.
     ));
 
     register_rest_route($ns, '/settings', array(
@@ -334,14 +390,18 @@ function varner_api_delete_staff(WP_REST_Request $req): WP_REST_Response|WP_Erro
         return new WP_Error('not_found', 'User not found.', array('status' => 404));
     }
     require_once ABSPATH . 'wp-admin/includes/user.php';
-    wp_delete_user($user_id);
+    wp_delete_user($user_id, get_current_user_id());
     return rest_ensure_response(array('success' => true, 'message' => $user->display_name . ' has been removed.'));
 }
 
 // ─── 2. TAXONOMY HANDLERS ────────────────────────────────────────────────────
 
 function varner_api_get_brands(): WP_REST_Response {
-    return rest_ensure_response(get_option('varner_brands', varner_default_brands()));
+    $brands = get_option('varner_brands');
+    if (!is_array($brands) || empty($brands)) {
+        $brands = varner_default_brands();
+    }
+    return rest_ensure_response($brands);
 }
 
 function varner_api_save_list(string $param, string $option, WP_REST_Request $request): WP_REST_Response {
@@ -366,6 +426,10 @@ function varner_api_save_list(string $param, string $option, WP_REST_Request $re
         }
     }
 
+    if (null === $raw_items) {
+        return new WP_Error('missing_key', "Payload must contain a '{$param}' key.", array('status' => 400));
+    }
+
     if (is_string($raw_items)) {
         $existing = get_option($option, array());
         if (!is_array($existing)) {
@@ -385,29 +449,162 @@ function varner_api_save_brands(WP_REST_Request $r): WP_REST_Response {
     return varner_api_save_list('brands', 'varner_brands', $r);
 }
 
-function varner_api_get_categories(): WP_REST_Response {
-    $default = array('Compact Tractors', 'Commercial Trailers', 'Utility Vehicles', 'Implements');
-    return rest_ensure_response(get_option('varner_categories', $default));
+function varner_default_years(): array {
+    $years = array();
+    $current = intval(date('Y')) + 1;
+    for ($i = $current; $i >= 1950; $i--) {
+        $years[] = (string) $i;
+    }
+    return $years;
 }
 
-function varner_api_save_categories(WP_REST_Request $r): WP_REST_Response {
-    return varner_api_save_list('categories', 'varner_categories', $r);
+function varner_api_get_years(): WP_REST_Response {
+    $years = get_option('varner_years');
+    if (!is_array($years) || empty($years)) {
+        $years = varner_default_years();
+    }
+    return rest_ensure_response($years);
+}
+
+function varner_api_save_years(WP_REST_Request $r): WP_REST_Response {
+    return varner_api_save_list('years', 'varner_years', $r);
+}
+
+function varner_default_categories(): array {
+    return array(
+        'Utility Vehicles', 'Tractors', 'Planting Equipment', 'Tillage Equipment',
+        'Hay and Forage Equipment', 'Chemical Applicators', 'Manure Handling',
+        'Manure Spreaders', 'Grain Handling / Storage Equipment', 'Ag Trailers',
+        'Snow Equipment', 'Other Equipment', 'Turf Equipment', 'Trucks',
+        'Semi-Trailers', 'Trailers',
+    );
+}
+
+function varner_api_get_categories(): WP_REST_Response {
+    $categories = get_option('varner_categories');
+    if (!is_array($categories) || empty($categories)) {
+        $categories = varner_default_categories();
+    }
+    return rest_ensure_response($categories);
 }
 
 function varner_api_get_subcategories(): WP_REST_Response {
-    return rest_ensure_response(get_option('varner_subcategories', array()));
-}
-
-function varner_api_save_subcategories(WP_REST_Request $r): WP_REST_Response {
-    return varner_api_save_list('subcategories', 'varner_subcategories', $r);
+    $items = get_option('varner_subcategories');
+    return rest_ensure_response(is_array($items) ? $items : array());
 }
 
 function varner_api_get_sub_subcategories(): WP_REST_Response {
-    return rest_ensure_response(get_option('varner_sub_subcategories', array()));
+    $items = get_option('varner_sub_subcategories');
+    return rest_ensure_response(is_array($items) ? $items : array());
 }
 
-function varner_api_save_sub_subcategories(WP_REST_Request $r): WP_REST_Response {
-    return varner_api_save_list('sub-subcategories', 'varner_sub_subcategories', $r);
+function varner_api_get_category_tree(): WP_REST_Response {
+    $tree = get_option('varner_category_tree', array());
+    return rest_ensure_response(is_array($tree) ? $tree : array());
+}
+
+function varner_api_save_category_tree(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $body = $r->get_json_params();
+    $tree = is_array($body) && isset($body['category_tree']) ? $body['category_tree'] : null;
+    if (!is_array($tree)) {
+        return new WP_Error('invalid_payload', 'Invalid category tree payload', array('status' => 400));
+    }
+    update_option('varner_category_tree', $tree);
+    if (function_exists('varner_derive_flat_options_from_tree')) {
+        varner_derive_flat_options_from_tree();
+    }
+    return rest_ensure_response($tree);
+}
+
+function varner_api_rename_category_node(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $type       = sanitize_text_field($r->get_param('type') ?? '');
+    $old        = sanitize_text_field($r->get_param('old_name') ?? '');
+    $new        = sanitize_text_field($r->get_param('new_name') ?? '');
+    $parent_cat = sanitize_text_field($r->get_param('parent_category') ?? '');
+    $parent_sub = sanitize_text_field($r->get_param('parent_subcategory') ?? '');
+
+    if (!$type || !$old || !$new) {
+        return new WP_Error('invalid_args', 'Missing required arguments: type, old_name, new_name', array('status' => 400));
+    }
+
+    // Make/brand renames are handled inline (they live in varner_brands, not the tree)
+    if ($type === 'make' || $type === 'brand') {
+        $brands = get_option('varner_brands', array());
+        if (!is_array($brands)) {
+            return new WP_Error('no_brands', 'Brands list not found', array('status' => 500));
+        }
+        $idx = array_search($old, $brands, true);
+        if ($idx === false) {
+            return new WP_Error('node_not_found', "Brand '{$old}' not found.", array('status' => 404));
+        }
+        $brands[$idx] = $new;
+        update_option('varner_brands', $brands);
+        $affected = varner_migrate_equipment_meta_scoped(array('make' => $old), 'make', $new);
+        return rest_ensure_response(array(
+            'success'        => true,
+            'category_tree'  => get_option('varner_category_tree', array()),
+            'brands'         => get_option('varner_brands', array()),
+            'affected_posts' => $affected,
+        ));
+    }
+
+    // Route category/subcategory/sub_subcategory through the single-source-of-truth mutate
+    $result = varner_category_tree_mutate('rename', array(
+        'type'              => $type,
+        'name'              => $old,
+        'new_name'          => $new,
+        'parent_category'   => $parent_cat,
+        'parent_subcategory' => $parent_sub,
+    ));
+
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    return rest_ensure_response(array(
+        'success'        => true,
+        'category_tree'  => $result['tree'],
+        'brands'         => get_option('varner_brands', array()),
+        'affected_posts' => $result['affected_posts'],
+    ));
+}
+
+function varner_api_category_tree_add(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $result = varner_category_tree_mutate('add', array(
+        'type'               => sanitize_text_field($r->get_param('type') ?? ''),
+        'name'               => sanitize_text_field($r->get_param('name') ?? ''),
+        'parent_category'    => sanitize_text_field($r->get_param('parent_category') ?? ''),
+        'parent_subcategory' => sanitize_text_field($r->get_param('parent_subcategory') ?? ''),
+    ));
+
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    return rest_ensure_response(array(
+        'success'       => true,
+        'category_tree' => $result['tree'],
+    ));
+}
+
+function varner_api_category_tree_delete(WP_REST_Request $r): WP_REST_Response|WP_Error {
+    $result = varner_category_tree_mutate('delete', array(
+        'type'               => sanitize_text_field($r->get_param('type') ?? ''),
+        'name'               => sanitize_text_field($r->get_param('name') ?? ''),
+        'parent_category'    => sanitize_text_field($r->get_param('parent_category') ?? ''),
+        'parent_subcategory' => sanitize_text_field($r->get_param('parent_subcategory') ?? ''),
+        'reassign_to'        => sanitize_text_field($r->get_param('reassign_to') ?? ''),
+    ));
+
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    return rest_ensure_response(array(
+        'success'        => true,
+        'category_tree'  => $result['tree'],
+        'affected_posts' => $result['affected_posts'],
+    ));
 }
 
 // ─── 3. INVENTORY CRUD ───────────────────────────────────────────────────────
@@ -427,6 +624,7 @@ function varner_api_validate_equipment($post_id) {
  * for paginated { items, total, page, per_page }.
  */
 function varner_api_get_inventory(WP_REST_Request $request) {
+    nocache_headers();
     $page         = max(1, intval($request->get_param('page') ?: 1));
     $raw_per_page = intval($request->get_param('per_page') ?: -1);
     // Clamp to max 100 for paginated requests; -1 means "all" (flat array, backward compat)
@@ -435,12 +633,12 @@ function varner_api_get_inventory(WP_REST_Request $request) {
 
     $args = array(
         'post_type'      => 'equipment',
-        'post_status'    => current_user_can('edit_others_posts') ? array('publish', 'draft') : 'publish',
+        'post_status'    => varner_is_admin_request() ? array('publish', 'draft') : 'publish',
         'orderby'        => 'date',
         'order'          => 'DESC',
     );
 
-    if (!current_user_can('edit_others_posts')) {
+    if (!varner_is_admin_request()) {
         $args['meta_query'] = array(
             'relation' => 'OR',
             array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
@@ -452,7 +650,7 @@ function varner_api_get_inventory(WP_REST_Request $request) {
         $args['posts_per_page'] = $per_page;
         $args['paged']          = $page;
     } else {
-        $args['posts_per_page'] = -1;
+        $args['posts_per_page'] = 500; // Safety cap — prevents memory exhaustion on large inventories.
     }
 
     $query = new WP_Query($args);
@@ -543,11 +741,73 @@ function varner_api_get_deleted(WP_REST_Request $request): WP_REST_Response {
     return rest_ensure_response($items);
 }
 
+function varner_check_duplicate_vin_or_stock(array $data, int $exclude_post_id = 0) {
+    global $wpdb;
+    
+    // 1. Check Stock Number
+    $stock_number = sanitize_text_field($data['stockNumber'] ?? $data['stock_number'] ?? '');
+    if (!empty($stock_number)) {
+        $dup_stock_id = $wpdb->get_var($wpdb->prepare("
+            SELECT p.ID 
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} m ON p.ID = m.post_id
+            WHERE p.post_type = 'equipment'
+              AND p.post_status IN ('publish', 'draft')
+              AND m.meta_key = 'stock_number'
+              AND m.meta_value = %s
+              AND p.ID != %d
+            LIMIT 1
+        ", $stock_number, $exclude_post_id));
+        
+        if ($dup_stock_id) {
+            $dup_title = get_the_title($dup_stock_id);
+            return new WP_Error(
+                'duplicate_stock_number', 
+                "Stock Number '{$stock_number}' is already assigned to another unit: '{$dup_title}' (ID: {$dup_stock_id}).", 
+                array('status' => 409)
+            );
+        }
+    }
+    
+    // 2. Check VIN
+    $vin = sanitize_text_field($data['vin'] ?? '');
+    if (!empty($vin)) {
+        $dup_vin_id = $wpdb->get_var($wpdb->prepare("
+            SELECT p.ID 
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} m ON p.ID = m.post_id
+            WHERE p.post_type = 'equipment'
+              AND p.post_status IN ('publish', 'draft')
+              AND m.meta_key = 'vin'
+              AND m.meta_value = %s
+              AND p.ID != %d
+            LIMIT 1
+        ", $vin, $exclude_post_id));
+        
+        if ($dup_vin_id) {
+            $dup_title = get_the_title($dup_vin_id);
+            return new WP_Error(
+                'duplicate_vin', 
+                "VIN / Serial Number '{$vin}' is already assigned to another unit: '{$dup_title}' (ID: {$dup_vin_id}).", 
+                array('status' => 409)
+            );
+        }
+    }
+    
+    return null;
+}
+
 function varner_api_create_unit(WP_REST_Request $request) {
     $data    = $request->get_json_params();
     if (!is_array($data)) {
         return new WP_Error('invalid_body', 'Invalid JSON body', array('status' => 400));
     }
+    
+    $dup_error = varner_check_duplicate_vin_or_stock($data, 0);
+    if (is_wp_error($dup_error)) {
+        return $dup_error;
+    }
+
     $status  = (isset($data['stock_status']) && $data['stock_status'] === 'Draft') ? 'draft' : 'publish';
     $post_id = wp_insert_post(array(
         'post_title'  => sanitize_text_field($data['title'] ?? 'Untitled Unit'),
@@ -575,6 +835,12 @@ function varner_api_update_unit(WP_REST_Request $request) {
     if (!is_array($data)) {
         return new WP_Error('invalid_body', 'Invalid JSON body', array('status' => 400));
     }
+    
+    $dup_error = varner_check_duplicate_vin_or_stock($data, $post_id);
+    if (is_wp_error($dup_error)) {
+        return $dup_error;
+    }
+
     $post    = varner_api_validate_equipment($post_id);
     if (is_wp_error($post)) {
         return $post;
@@ -646,6 +912,45 @@ function varner_api_restore_unit(WP_REST_Request $request) {
     return rest_ensure_response(varner_format_unit($post_id));
 }
 
+function varner_api_set_marketplace_posted(WP_REST_Request $request) {
+    $post_id = intval($request->get_param('id'));
+    if (!current_user_can('edit_post', $post_id)) {
+        return new WP_Error('forbidden', 'You are not allowed to edit this unit.', array('status' => 403));
+    }
+    $post = varner_api_validate_equipment($post_id);
+    if (is_wp_error($post)) {
+        return $post;
+    }
+
+    $data   = $request->get_json_params();
+    $posted = is_array($data) && array_key_exists('posted', $data)
+        ? (bool) $data['posted']
+        : true;
+
+    if ($posted) {
+        update_post_meta($post_id, 'marketplace_posted', '1');
+        update_post_meta($post_id, '_varner_marketplace_posted_date', current_time('c'));
+    } else {
+        update_post_meta($post_id, 'marketplace_posted', '0');
+        delete_post_meta($post_id, '_varner_marketplace_posted_date');
+    }
+
+    $rid = varner_os_request_id($request);
+    varner_os_log_ledger(
+        $post_id,
+        'marketplace_posted',
+        $posted ? 'marked as posted to Marketplace' : 'unmarked Marketplace posted',
+        array('posted' => $posted),
+        $rid
+    );
+
+    if (function_exists('varner_os_purge_cache')) {
+        varner_os_purge_cache($post_id);
+    }
+
+    return rest_ensure_response(varner_format_unit($post_id));
+}
+
 function varner_api_permanent_delete(WP_REST_Request $request) {
     $post_id = intval($request->get_param('id'));
     if (!current_user_can('delete_post', $post_id)) {
@@ -676,13 +981,47 @@ function varner_api_upload_media(WP_REST_Request $request) {
     if (empty($_FILES['file'])) {
         return new WP_Error('no_file', 'No file uploaded.', array('status' => 400));
     }
+
+    $file = $_FILES['file'];
+    $max_size = wp_max_upload_size();
+    if ($file['size'] > $max_size) {
+        $max_mb = size_format($max_size);
+        return new WP_Error('file_too_large', "File exceeds the maximum upload size of {$max_mb}. Try a smaller file or compress the video.", array('status' => 413));
+    }
+
+    // ── MIME-type whitelist — block executable / dangerous uploads ──
+    $allowed_mimes = array(
+        'jpg|jpeg|jpe' => 'image/jpeg',
+        'png'          => 'image/png',
+        'gif'          => 'image/gif',
+        'webp'         => 'image/webp',
+        'avif'         => 'image/avif',
+        'mp4'          => 'video/mp4',
+        'webm'         => 'video/webm',
+        'mov'          => 'video/quicktime',
+        'pdf'          => 'application/pdf',
+    );
+    $wp_check = wp_check_filetype(basename($file['name']), $allowed_mimes);
+    if (empty($wp_check['ext']) || empty($wp_check['type'])) {
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        return new WP_Error(
+            'invalid_file_type',
+            sprintf('File type ".%s" is not allowed. Allowed: %s', esc_html($ext), implode(', ', array_unique($allowed_mimes))),
+            array('status' => 415)
+        );
+    }
+
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-admin/includes/image.php';
     require_once ABSPATH . 'wp-admin/includes/media.php';
 
     $attachment_id = media_handle_upload('file', 0);
     if (is_wp_error($attachment_id)) {
-        return new WP_Error('upload_failed', $attachment_id->get_error_message(), array('status' => 500));
+        $msg = $attachment_id->get_error_message();
+        if (empty($msg)) {
+            $msg = 'The server could not process this file. The file may be too large, an unsupported format, or blocked by server security rules.';
+        }
+        return new WP_Error('upload_failed', $msg, array('status' => 500));
     }
     return rest_ensure_response(array(
         'id'  => $attachment_id,
@@ -912,10 +1251,117 @@ function varner_api_me() {
     ));
 }
 
+/**
+ * GET /varner/v1/bootstrap
+ *
+ * Returns everything the app needs in a single request to avoid
+ * Cloudflare 429 rate limiting from parallel API calls on load.
+ * Replaces: /inventory + /inventory/deleted + /me + /brands +
+ *           /categories + /subcategories + /sub-subcategories
+ */
+function varner_api_bootstrap(): WP_REST_Response {
+    $user = wp_get_current_user();
+
+    // ── Inventory (same logic as varner_api_get_inventory, unpaginated) ──
+    $args = array(
+        'post_type'      => 'equipment',
+        'post_status'    => varner_is_admin_request() ? array('publish', 'draft') : 'publish',
+        'posts_per_page' => 500, // Safety cap — same as /inventory.
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+    );
+    if (!varner_is_admin_request()) {
+        $args['meta_query'] = array(
+            'relation' => 'OR',
+            array('key' => 'show_on_website', 'value' => '1', 'compare' => '='),
+            array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
+        );
+    }
+    $query = new WP_Query($args);
+
+    // Prime attachment caches in bulk (same optimization as the inventory endpoint)
+    $attachment_ids = array();
+    foreach ($query->posts as $p) {
+        $thumb_id = get_post_thumbnail_id($p->ID);
+        if ($thumb_id) $attachment_ids[] = intval($thumb_id);
+        $bulk = get_post_meta($p->ID);
+        if (!empty($bulk['gallery'][0])) {
+            $gallery = maybe_unserialize($bulk['gallery'][0]);
+            if (is_array($gallery)) {
+                foreach ($gallery as $g_id) {
+                    if (is_numeric($g_id)) $attachment_ids[] = intval($g_id);
+                }
+            }
+        }
+    }
+    if (!empty($attachment_ids)) {
+        _prime_post_caches(array_unique(array_filter($attachment_ids)), false, true);
+    }
+
+    $context = varner_is_admin_request() ? 'edit' : 'public';
+    $inventory = array_map(function (WP_Post $p) use ($context): array {
+        return varner_format_unit($p->ID, $context);
+    }, $query->posts);
+
+    // ── Deleted inventory ──
+    $deleted = array();
+    if (varner_is_admin_request()) {
+        $del_query = new WP_Query(array(
+            'post_type'      => 'equipment',
+            'post_status'    => 'trash',
+            'posts_per_page' => 200,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ));
+        $deleted = array_map(function (WP_Post $p): array {
+            return varner_format_unit($p->ID);
+        }, $del_query->posts);
+    }
+
+    // ── Taxonomy lists ──
+    $raw_brands       = get_option('varner_brands');
+    $brands           = (is_array($raw_brands) && !empty($raw_brands)) ? $raw_brands : (function_exists('varner_default_brands') ? varner_default_brands() : array());
+    $raw_categories   = get_option('varner_categories');
+    $categories       = (is_array($raw_categories) && !empty($raw_categories)) ? $raw_categories : varner_default_categories();
+    $subcategories    = get_option('varner_subcategories', array());
+    $sub_subcategories = get_option('varner_sub_subcategories', array());
+    $category_tree     = get_option('varner_category_tree', array());
+
+    return rest_ensure_response(array(
+        'inventory'         => $inventory,
+        'deleted'           => $deleted,
+        'me'                => array(
+            'id'           => $user->ID,
+            'display_name' => $user->display_name,
+            'first_name'   => $user->first_name,
+            'last_name'    => $user->last_name,
+            'initials'     => varner_os_user_initials($user),
+            'roles'        => array_values($user->roles),
+        ),
+        'brands'            => $brands,
+        'categories'        => $categories,
+        'subcategories'     => $subcategories,
+        'sub_subcategories' => $sub_subcategories,
+        'category_tree'     => $category_tree,
+    ));
+}
+
 function varner_api_logout() {
     if (!is_user_logged_in()) {
         return new WP_Error('unauthorized', 'Not logged in', array('status' => 401));
     }
+
+    // Clean up mobile auth token transient if provided via cookie or header
+    $token = '';
+    if (isset($_COOKIE['varner_mobile_token'])) {
+        $token = sanitize_text_field($_COOKIE['varner_mobile_token']);
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(\S+)/i', $_SERVER['HTTP_AUTHORIZATION'], $m)) {
+        $token = sanitize_text_field($m[1]);
+    }
+    if ($token) {
+        delete_transient('varner_mobile_token_' . $token);
+    }
+    varner_clear_mobile_token_cookie();
 
     // wp_logout() fires the wp_logout action, which triggers varner_os_record_logout
     // via add_action('wp_logout', 'varner_os_record_logout') in varner-os-plugin-v23.php.
@@ -971,8 +1417,8 @@ function _varner_sanitize_settings_data(array $params, array $defaults): array {
                     if (!is_array($card)) continue;
                     $cards[] = array(
                         'name'            => sanitize_text_field($card['name'] ?? ''),
-                        'logo'            => esc_url_raw($card['logo'] ?? ''),
-                        'application_pdf' => esc_url_raw($card['application_pdf'] ?? ''),
+                        'logo'            => sanitize_text_field($card['logo'] ?? ''),
+                        'application_pdf' => sanitize_text_field($card['application_pdf'] ?? ''),
                         'description'     => sanitize_text_field($card['description'] ?? ''),
                         'alt'             => sanitize_text_field($card['alt'] ?? ''),
                     );
@@ -1030,6 +1476,37 @@ function varner_api_save_preview_settings(WP_REST_Request $request) {
     return rest_ensure_response(array('success' => true, 'settings' => $sanitized));
 }
 
+// ─── 8b. SESSION NONCE REFRESH ───────────────────────────────────────────────
+// Returns a fresh wp_rest nonce without requiring a valid nonce on the request
+// itself (permission_callback = __return_true). Auth is validated inside via
+// wp_validate_auth_cookie(), which reads the WP login cookie directly — this
+// bypasses the REST nonce gate so the endpoint works even when the caller's
+// nonce has expired (which is the whole reason they're calling this).
+
+function varner_api_session_nonce() {
+    // Priority 1: mobile-token jars (installed PWA / QR handoff) — the
+    // determine_current_user filter (priority 15) has already run for this
+    // REST request and set the user if a token was sent.
+    $uid = get_current_user_id();
+
+    // Priority 2: browser/same-jar — read the WP login cookie DIRECTLY.
+    // wp_validate_auth_cookie bypasses the REST nonce gate, so it works even
+    // when the stale nonce is what got us here.
+    if (!$uid) {
+        $uid = (int) wp_validate_auth_cookie('', 'logged_in');
+    }
+
+    if (!$uid || !user_can($uid, 'edit_posts')) {
+        return new WP_Error('rest_forbidden', 'No active session.', array('status' => 401));
+    }
+
+    wp_set_current_user($uid); // wp_create_nonce is user-scoped — set the user first
+    return rest_ensure_response(array(
+        'nonce'   => wp_create_nonce('wp_rest'),
+        'user_id' => $uid,
+    ));
+}
+
 // ─── 9. MOBILE TOKEN ─────────────────────────────────────────────────────────
 
 function varner_api_generate_mobile_token() {
@@ -1067,6 +1544,8 @@ function varner_api_generate_mobile_token() {
     set_transient($active_key, $active_tokens, 1800);
     set_transient($cooldown_key, 1, 60);
 
+    varner_set_mobile_token_cookie($token);
+
     // Fix 2: Use home_url() — never $_SERVER['HTTP_HOST'] (host header injection risk).
     // Fix 3B: Put handoff nonce in URL, NOT the raw token.
     $url = esc_url_raw(home_url('/mobile-app/?handoff=' . $nonce));
@@ -1076,6 +1555,111 @@ function varner_api_generate_mobile_token() {
         'expires_in' => 1800,
         'url'        => $url,
     ));
+}
+
+// ─── 9b. MOBILE PASSWORD LOGIN (in-PWA, iOS-safe) ────────────────────────────
+
+// ─── httpOnly Cookie Helpers ─────────────────────────────────────────────────
+function varner_set_mobile_token_cookie(string $token): void {
+    if (is_ssl()) {
+        setcookie('varner_mobile_token', $token, array(
+            'expires'  => time() + 1800, // 30-minute sliding window
+            'path'     => '/',
+            'secure'   => true,
+            'httponly'  => true,
+            'samesite' => 'Lax',
+        ));
+    }
+}
+
+function varner_clear_mobile_token_cookie(): void {
+    setcookie('varner_mobile_token', '', array(
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'secure'   => is_ssl(),
+        'httponly'  => true,
+        'samesite' => 'Lax',
+    ));
+}
+//
+// Lets the PWA authenticate with username/password WITHOUT leaving the
+// /mobile-app/ manifest scope, so on iOS the auth cookie lands in the standalone
+// app's own storage sandbox (Safari and the home-screen PWA have separate jars).
+// Sets a persistent "remember me" cookie (~14 days) so future opens silently
+// re-mint a token via the cookie->auto-token path in varner-facebook-pwa.php,
+// and returns a short-lived mobile token for the React app's REST calls now.
+function varner_api_mobile_login(WP_REST_Request $request) {
+    // Rate limit: 5 attempts / 15 min per client IP (brute-force guard). [tunable]
+    $ip       = varner_login_client_ip();
+    $rl_key   = 'varner_login_rl_' . substr(md5($ip), 0, 20);
+    $attempts = (int) get_transient($rl_key);
+    if ($attempts >= 5) {
+        return new WP_Error('rate_limited', 'Too many login attempts. Please wait 15 minutes and try again.', array('status' => 429));
+    }
+
+    $username = sanitize_text_field((string) $request->get_param('username'));
+    $password = (string) $request->get_param('password'); // Never sanitize or log a password.
+    if ($username === '' || $password === '') {
+        return new WP_Error('missing_credentials', 'Enter your username and password.', array('status' => 400));
+    }
+
+    // remember=true => persistent ~14-day auth cookie, set in the PWA's context.
+    // wp_signon accepts a username OR an email address as user_login.
+    $user = wp_signon(array(
+        'user_login'    => $username,
+        'user_password' => $password,
+        'remember'      => true,
+    ), is_ssl());
+
+    if (is_wp_error($user)) {
+        // Count the failure; return a generic message (no user/field enumeration).
+        set_transient($rl_key, $attempts + 1, 15 * MINUTE_IN_SECONDS);
+        return new WP_Error('invalid_login', 'Invalid username or password.', array('status' => 401));
+    }
+
+    // Capability gate: only inventory-managing staff may use the mobile app. [tunable]
+    if (!user_can($user, 'edit_posts')) {
+        wp_logout(); // Drop the cookie we just set.
+        return new WP_Error('forbidden', 'This account is not authorized for the mobile app.', array('status' => 403));
+    }
+
+    delete_transient($rl_key); // Clear the rate counter on success.
+    wp_set_current_user($user->ID);
+
+    return rest_ensure_response(array(
+        'token' => varner_mint_mobile_token($user->ID),
+        'nonce' => wp_create_nonce('wp_rest'),
+        'user'  => array('display_name' => $user->display_name),
+    ));
+}
+
+// Mint a 32-char mobile auth token (30-min sliding transient) for $user_id,
+// enforcing the max-3-active-tokens-per-user cap. Mirrors the minting block in
+// varner_api_generate_mobile_token (which also issues a handoff nonce/URL).
+function varner_mint_mobile_token(int $user_id): string {
+    $active_key    = 'varner_active_tokens_' . $user_id;
+    $active_tokens = get_transient($active_key) ?: array();
+    $active_tokens = is_array($active_tokens) ? array_values(array_filter($active_tokens, function ($t) {
+        return (bool) get_transient('varner_mobile_token_' . $t);
+    })) : array();
+    if (count($active_tokens) >= 3) {
+        $oldest = array_shift($active_tokens);
+        delete_transient('varner_mobile_token_' . $oldest);
+    }
+
+    $token = strtoupper(bin2hex(random_bytes(16)));
+    set_transient('varner_mobile_token_' . $token, array('user_id' => $user_id, 'created_at' => time()), 1800);
+    $active_tokens[] = $token;
+    set_transient($active_key, $active_tokens, 1800);
+
+    return $token;
+}
+
+// Client IP for login rate limiting. REMOTE_ADDR only — the one value a client
+// cannot forge. Kept local to the plugin to avoid coupling to the theme resolver.
+function varner_login_client_ip(): string {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
 }
 
 // NOTE: Mobile auth filters (determine_current_user, rest_authentication_errors)

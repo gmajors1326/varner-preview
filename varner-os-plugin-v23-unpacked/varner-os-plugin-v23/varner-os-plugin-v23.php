@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Varner OS Plugin v23
- * Description: Version 1.23.186 - React-powered inventory management for Varner Equipment.
- * Version: 1.23.186
+ * Description: Version 1.23.385 - React-powered inventory management for Varner Equipment.
+ * Version: 1.23.385
  * Author: hwy559.com
  */
 
@@ -12,6 +12,9 @@ require_once plugin_dir_path(__FILE__) . 'varner-backend.php';
 require_once plugin_dir_path(__FILE__) . 'rest-api.php';
 require_once plugin_dir_path(__FILE__) . 'varner-facebook-pwa.php';
 require_once plugin_dir_path(__FILE__) . 'varner-meta-sync.php';
+require_once plugin_dir_path(__FILE__) . 'varner-cookie-manager.php';
+require_once plugin_dir_path(__FILE__) . 'varner-analytics.php';
+require_once plugin_dir_path(__FILE__) . 'varner-category-tree.php';
 
 // ─── Security Helper ─────────────────────────────────────────────────────────
 
@@ -27,7 +30,7 @@ function varner_os_hash_session_token( string $token ): string {
 
 // ─── Database Version & Auto-Upgrade ─────────────────────────────────────────
 
-define('VARNER_OS_DB_VERSION', '1.23.7');
+define('VARNER_OS_DB_VERSION', '1.23.8');
 
 add_action('plugins_loaded', 'varner_os_db_check');
 function varner_os_db_check(): void {
@@ -84,8 +87,33 @@ function varner_os_activate(): void {
         wp_schedule_event(time() + DAY_IN_SECONDS, 'daily', 'varner_os_cleanup_sessions');
     }
 
+    // Create analytics table
+    if (function_exists('varner_analytics_create_table')) {
+        varner_analytics_create_table();
+    }
+
+    // Schedule analytics cron jobs
+    if (function_exists('varner_analytics_create_table') && !wp_next_scheduled('varner_analytics_daily_rotate')) {
+        wp_schedule_event(strtotime('tomorrow midnight'), 'daily', 'varner_analytics_daily_rotate');
+    }
+    if (function_exists('varner_analytics_create_table') && !wp_next_scheduled('varner_analytics_daily_prune')) {
+        wp_schedule_event(strtotime('tomorrow midnight') + 300, 'daily', 'varner_analytics_daily_prune');
+    }
+
     // Generate/refresh the static facebook-catalog.csv file
     varner_os_write_facebook_catalog_file();
+
+    // Add composite index on wp_postmeta for inventory filter performance
+    $index_name = 'varner_meta_key_value';
+    $index_exists = $wpdb->get_results("SHOW INDEX FROM {$wpdb->postmeta} WHERE Key_name = '{$index_name}'");
+    if (empty($index_exists)) {
+        $wpdb->query("ALTER TABLE {$wpdb->postmeta} ADD INDEX {$index_name} (meta_key, meta_value(100))");
+    }
+
+    // Seed category tree from CATEGORY_TREE + inferred unit usage
+    if (function_exists('varner_seed_category_tree')) {
+        varner_seed_category_tree();
+    }
 }
 
 register_deactivation_hook(__FILE__, function (): void {
@@ -93,7 +121,34 @@ register_deactivation_hook(__FILE__, function (): void {
     if ($timestamp) {
         wp_unschedule_event($timestamp, 'varner_os_cleanup_sessions');
     }
+    $t = wp_next_scheduled('varner_analytics_daily_rotate');
+    if ($t) { wp_unschedule_event($t, 'varner_analytics_daily_rotate'); }
+    $t = wp_next_scheduled('varner_analytics_daily_prune');
+    if ($t) { wp_unschedule_event($t, 'varner_analytics_daily_prune'); }
 });
+
+// ─── Cached Helper: Hidden Post IDs ─────────────────────────────────────
+
+function varner_get_hidden_post_ids(): array {
+    global $wpdb;
+    $cache_key = 'varner_hidden_post_ids';
+    $ids = get_transient($cache_key);
+    if (false === $ids) {
+        $ids = $wpdb->get_col(
+            "SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = 'show_on_website' AND meta_value = '0'"
+        );
+        $ids = array_map('intval', $ids);
+        set_transient($cache_key, $ids, HOUR_IN_SECONDS);
+    }
+    return $ids;
+}
+
+add_action('updated_post_meta', 'varner_clear_hidden_post_ids_cache', 10, 3);
+function varner_clear_hidden_post_ids_cache($meta_id, $post_id, $meta_key): void {
+    if ($meta_key === 'show_on_website') {
+        delete_transient('varner_hidden_post_ids');
+    }
+}
 
 // ─── Session Logging Hooks ──────────────────────────────────────────────────
 
@@ -216,10 +271,8 @@ function varner_authenticate_mobile_token(int $user_id): int {
     }
 
     $token = '';
-    if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-    } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token = sanitize_text_field($matches[1]);
+    if (isset($_COOKIE['varner_mobile_token'])) {
+        $token = sanitize_text_field($_COOKIE['varner_mobile_token']);
     }
     // Note: $_GET['mobile_token'] intentionally removed — GET params leak into logs.
 
@@ -249,6 +302,16 @@ function varner_authenticate_mobile_token(int $user_id): int {
 
 add_action('init', 'varner_update_session_activity');
 function varner_update_session_activity(): void {
+    // Skip session tracking on read-only REST requests — they fire in bursts
+    // (7+ calls on app load) and don't represent meaningful user actions.
+    // Only track activity on mutations (POST/PATCH/DELETE) and page views.
+    if (defined('REST_REQUEST') && REST_REQUEST) {
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($method === 'GET') {
+            return;
+        }
+    }
+
     if (!current_user_can('edit_posts')) {
         return;
     }
@@ -267,15 +330,12 @@ function varner_update_session_activity(): void {
     global $wpdb;
     $table = $wpdb->prefix . 'varner_user_sessions';
 
-    $token     = '';
-    $is_mobile = false;
+    $token = '';
 
     if (isset($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN'])) {
-        $token     = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
-        $is_mobile = true;
+        $token = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_VARNER_MOBILE_TOKEN']));
     } elseif (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Bearer\s+(.+)/i', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-        $token     = sanitize_text_field($matches[1]);
-        $is_mobile = true;
+        $token = sanitize_text_field($matches[1]);
     }
     // Note: $_GET['mobile_token'] intentionally removed — GET params leak into logs.
 
@@ -316,27 +376,6 @@ function varner_update_session_activity(): void {
             );
         }
     } else {
-        if ($is_mobile) {
-            $active_mobile = $wpdb->get_results($wpdb->prepare(
-                "SELECT id, session_token FROM {$table} WHERE user_id = %d AND logout_at IS NULL AND session_token != %s",
-                $user_id,
-                $token
-            ));
-
-            foreach ($active_mobile as $old_sess) {
-                if (strlen($old_sess->session_token) === 32 && ctype_xdigit($old_sess->session_token)) {
-                    $wpdb->update(
-                        $table,
-                        array('logout_at' => current_time('mysql'), 'ended_reason' => 'superseded'),
-                        array('id' => $old_sess->id),
-                        array('%s', '%s'),
-                        array('%d')
-                    );
-                    delete_transient('varner_mobile_token_' . $old_sess->session_token);
-                }
-            }
-        }
-
         $wpdb->insert(
             $table,
             array(
@@ -366,12 +405,21 @@ add_action('admin_menu', function (): void {
     );
     add_submenu_page(
         'varner-os',
-        'Configuration',
-        'Configuration',
+        'Cookie Manager',
+        'Cookie Manager',
         'manage_options',
-        'varner-os-config',
-        'varner_render_configuration_page',
-        1
+        'varner-os-cookies',
+        'varner_render_cookie_manager_page',
+        2
+    );
+    add_submenu_page(
+        'varner-os',
+        'Analytics',
+        'Analytics',
+        'manage_options',
+        'varner-os-analytics',
+        'varner_render_analytics_page',
+        3
     );
     remove_menu_page('edit.php?post_type=equipment');
 }, 999);
@@ -591,19 +639,11 @@ add_action('admin_init', function (): void {
 // ─── Admin Page Renderers ────────────────────────────────────────────────────
 
 function varner_render_dashboard_page(): void {
-    echo '<div class="wrap" style="margin:0;padding:0;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
+    echo '<div class="wrap" style="margin:0;padding:0;background:#0a0a0b;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
 }
 
 function varner_render_configuration_page(): void {
     echo '<div class="wrap" style="margin:0;padding:0;"><div id="varner-inventory-app" class="varner-inventory-app-mount" style="min-height:90vh;"></div></div>';
-
-    $wpaip_link = admin_url('admin.php?page=pmxi-admin-import');
-    echo '<div class="wrap" style="padding:16px 24px;margin-top:-8px;">';
-    echo '  <div class="notice notice-info" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">';
-    echo '    <div><strong>Import Inventory:</strong> Use WP All Import Pro to run or schedule inventory imports.</div>';
-    echo '    <a class="button button-primary" href="' . esc_url($wpaip_link) . '">Open WP All Import</a>';
-    echo '  </div>';
-    echo '</div>';
 
     global $wpdb;
     $table    = $wpdb->prefix . 'varner_user_sessions';
@@ -724,13 +764,23 @@ add_action('wp_enqueue_scripts', function (): void {
     }
 });
 
+// ─── Analytics Tracking Beacon ────────────────────────────────────────────────
+
+add_action('wp_head', function (): void {
+    if (is_admin() || is_user_logged_in()) return;
+    ?>
+<script>
+(function(){function sendTrack(){var r=<?php echo json_encode(esc_url_raw(rest_url('varner/v1/track/pageview'))); ?>,p=window.location.pathname,u=navigator.userAgent;if(navigator.webdriver||/bot|crawler|spider/i.test(u))return;var d=JSON.stringify({path:p,referrer:document.referrer,ua:u}),b=new Blob([d],{type:'application/json'});navigator.sendBeacon?navigator.sendBeacon(r,b):fetch(r,{method:'POST',body:d,keepalive:!0,headers:{'Content-Type':'application/json'}});}if(document.prerendering){document.addEventListener('prerenderingchange',sendTrack,{once:true});}else{sendTrack();}})();
+</script>
+<?php }, 0);
+
 // ─── Admin Asset & CSS Enqueue ───────────────────────────────────────────────
 
 add_action('admin_enqueue_scripts', function (string $hook): void {
     global $post;
 
     $is_equipment    = isset($post->post_type) && $post->post_type === 'equipment';
-    $is_varner_page  = isset($_GET['page']) && in_array($_GET['page'], array('varner-os', 'varner-os-config'), true);
+    $is_varner_page  = isset($_GET['page']) && in_array($_GET['page'], array('varner-os', 'varner-os-config', 'varner-os-analytics'), true);
     $is_block_editor = get_current_screen() && get_current_screen()->is_block_editor();
 
     if (!$is_equipment && !$is_varner_page && !$is_block_editor) return;

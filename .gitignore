@@ -11,13 +11,25 @@ Raw HTML/
 
 # Plugin zips and extracted (source lives in -unpacked folders)
 Plugins/
+Plugins/*.txt
 
 # Claude internal session files
 .claude/
 
+# Build artifacts
+*tailwind.unminified.css
+
 # Local testing / helper files
+nul
 add_imp.php
 snapshot.php
 modify.cjs
 snapshot_*.json
+diag.php
+diag.b64
 
+# Archived old theme
+_archive/
+
+# Embedded plugin tool repos
+claude-seo/

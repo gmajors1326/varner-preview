@@ -12,8 +12,11 @@ if ( ! function_exists('get_field') ) {
     return;
 }
 
-// 1. Identify the segment (slug) from the query or page title
+// 1. Identify the segment (slug) and brand from the query or page title
 $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
+$brand_slug = get_query_var('brand_name');
+$brand_obj = $brand_slug && function_exists('varner_get_brand') ? varner_get_brand(sanitize_title($brand_slug)) : null;
+
 $seo = varner_get_segment_seo($slug);
 
 // Fallback to "All Inventory" style if no specific SEO data found
@@ -27,24 +30,45 @@ if (!$seo) {
     );
 }
 
+if ($brand_obj) {
+    $seg_label = $seo['label'] ?? ucfirst(str_replace('-', ' ', $slug));
+    $seo['h1'] = $brand_obj['name'] . ' ' . $seg_label . ' For Sale in Western Colorado';
+    $seo['sub'] = 'Explore in-stock ' . $brand_obj['name'] . ' ' . strtolower($seg_label) . ' in Delta, Montrose, and Grand Junction, CO.';
+    $seo['blurb'] = 'Browse live inventory of ' . $brand_obj['name'] . ' ' . strtolower($seg_label) . ' at Varner Equipment in Delta, CO. Inspected, clear pricing, and backed by local service across Western Colorado.';
+    $seo['filter']['make'] = array($brand_obj['make']);
+    $selected_makes_override = array($brand_obj['make']);
+    $locked_makes = array($brand_obj['make']);
+} elseif (!empty($_GET['subcategory'])) {
+    $active_subs = array_values(array_filter(array_map('sanitize_text_field', (array) $_GET['subcategory'])));
+    if (count($active_subs) === 1) {
+        $seo['h1'] = $active_subs[0] . ' For Sale in Western Colorado';
+    }
+}
+
 // 2. Build Query
 $segment_categories = $seo['filter']['category'] ?? array();
 $selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
 $filter_data = varner_get_filter_data( $segment_categories, $selected_categories );
 $base_meta = array();
+$segment_keyword = '';
 
-// Apply the hard-coded segment filters (e.g. category => Tractors)
+// Apply the hard-coded segment filters (e.g. category => Tractors, subcategory => Dump Trailers)
 if (!empty($seo['filter'])) {
     foreach ($seo['filter'] as $key => $vals) {
-        $base_meta[] = array('key' => $key, 'value' => $vals, 'compare' => 'IN');
+        if ($key === 'subcategory') {
+            $base_meta[] = varner_build_subcategory_meta_query((array) $vals);
+        } elseif ($key === 's') {
+            $segment_keyword = is_array($vals) ? implode(' ', $vals) : (string) $vals;
+        } else {
+            $base_meta[] = array('key' => $key, 'value' => $vals, 'compare' => 'IN');
+        }
     }
 }
 
-// Get count using a standard get_posts call
-$count_args = varner_build_inventory_query($base_meta, -1);
-$count_args['posts_per_page'] = -1;
-$count_args['fields'] = 'ids';
-$total = count(get_posts($count_args));
+// Execute single paginated query (used for both hero count and grid)
+$query_args = varner_build_inventory_query($base_meta, 12, $segment_keyword);
+$inventory_query = new WP_Query($query_args);
+$total = intval( $inventory_query->found_posts );
 
 // 3. Active filter count for badge
 $active_filter_count =
@@ -64,16 +88,16 @@ $active_filter_count =
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div class="max-w-3xl">
-                <div class="text-red-500 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Varner Equipment Segment</div>
+                <div class="text-red-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment</div>
                 <h1 class="text-5xl md:text-7xl font-black tracking-tight uppercase mb-4 leading-[1.1]"><?php echo esc_html($seo['h1']); ?></h1>
-                <p class="text-lg text-slate-400 font-bold leading-relaxed"><?php echo esc_html($seo['sub']); ?></p>
+                <p class="text-lg text-slate-500 font-bold leading-relaxed"><?php echo esc_html($seo['sub']); ?></p>
             </div>
             <div class="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl shrink-0 min-w-[200px]">
-                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Available Units</div>
+                <div class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Available Units</div>
                 <div class="text-4xl font-black text-white"><?php echo $total; ?></div>
                 <div class="mt-4 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-300">Live Inventory</span>
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-500">Live Inventory</span>
                 </div>
             </div>
         </div>
@@ -104,22 +128,19 @@ $active_filter_count =
             <div class="flex-1">
                 
                 <?php 
-                    $query_args = varner_build_inventory_query($base_meta, 12);
-                    $inventory_query = new WP_Query($query_args);
                     $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
-                    $total_found  = intval( $inventory_query->found_posts );
-                    $reset_url    = strtok( get_permalink(), '?' );
-                    $pagination_args = $_GET;
-                    unset( $pagination_args['paged'] );
-                    $pagination_args = array_map( function( $v ) {
-                        return is_array( $v ) ? array_map( 'sanitize_text_field', $v ) : sanitize_text_field( $v );
-                    }, $pagination_args );
+                    $total_found  = $total;
+                    $raw_path     = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
+                    $reset_url    = home_url( preg_replace( '#/page/\d+/?#', '/', $raw_path ) );
+                    if ( $slug && strpos( $reset_url, '/inventory/' ) === false ) {
+                        $reset_url = home_url( '/inventory/' . $slug . '/' );
+                    }
                 ?>
 
                 <!-- Results Meta -->
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                        Showing <?php echo number_format_i18n( $inventory_query->post_count ); ?> of <?php echo number_format_i18n( $total_found ); ?> units
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
+                        <?php echo esc_html( varner_get_results_count_text( $inventory_query, 12 ) ); ?>
                     </p>
                 </div>
 
@@ -134,11 +155,11 @@ $active_filter_count =
                     else : ?>
                         <div class="col-span-full bg-white rounded-3xl border-2 border-dashed border-slate-200 p-20 text-center shadow-inner">
                             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             </div>
                             <p class="text-slate-900 font-black uppercase tracking-widest text-sm mb-2">No Match Found</p>
-                            <p class="text-slate-400 font-bold text-xs mb-8">We couldn't find any units matching your specific filters.</p>
-                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">
+                            <p class="text-slate-500 font-bold text-xs mb-8">We couldn't find any units matching your specific filters.</p>
+                            <a href="<?php echo esc_url( $reset_url ); ?>" class="inline-block bg-slate-900 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-lg active:scale-95">
                                 Reset All Filters
                             </a>
                         </div>
@@ -146,24 +167,7 @@ $active_filter_count =
                 </div>
 
                 <!-- Pagination -->
-                <?php 
-                    $pagination = paginate_links( array(
-                        'base'      => add_query_arg( 'paged', '%#%' ),
-                        'format'    => '',
-                        'total'     => max( 1, $inventory_query->max_num_pages ),
-                        'current'   => $current_page,
-                        'type'      => 'list',
-                        'prev_text' => '&lt; Previous',
-                        'next_text' => 'Next &gt;',
-                    ) );
-                ?>
-                <?php if ( $pagination ) : ?>
-                <div class="mt-12 flex justify-center">
-                    <div class="varner-pagination">
-                        <?php echo $pagination; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <?php varner_render_pagination( $inventory_query ); ?>
             </div>
 
         </div>

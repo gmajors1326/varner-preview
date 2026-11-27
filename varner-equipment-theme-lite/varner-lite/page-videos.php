@@ -5,15 +5,15 @@ get_header();
 
     <section class="pt-32 pb-16 bg-slate-950 text-white">
         <div class="max-w-7xl mx-auto px-4 space-y-6">
-            <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em]">Varner Equipment</div>
+            <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em]">Varner Equipment</div>
             <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase"><?php echo esc_html( get_the_title() ?: 'Product Videos' ); ?></h1>
             <?php if (get_the_content()): ?>
-                <div class="text-slate-300 max-w-2xl font-bold">
+                <div class="text-slate-500 max-w-2xl font-bold">
                     <?php the_content(); ?>
                 </div>
             <?php endif; ?>
             <div class="pt-4">
-                <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" class="inline-block bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-red-700 transition-all">View Our YouTube Channel</a>
+                <a href="https://www.youtube.com/@VarnerEquipment" target="_blank" rel="noopener noreferrer" class="inline-block bg-red-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-700 transition-all">View Our YouTube Channel</a>
             </div>
         </div>
     </section>
@@ -61,9 +61,28 @@ get_header();
                                         <div class="aspect-video w-full bg-slate-100 relative">
                                             <?php 
                                             if ($youtube_link) {
-                                                echo $youtube_link;
+                                                // Gate YouTube embeds behind marketing consent
+                                                $youtube_gated = str_replace(
+                                                    ' src="',
+                                                    ' data-cookie-src="',
+                                                    $youtube_link
+                                                );
+                                                echo wp_kses($youtube_gated, array(
+                                                    'iframe' => array(
+                                                        'data-cookie-src' => array(),
+                                                        'src'             => array(),
+                                                        'width'           => array(),
+                                                        'height'          => array(),
+                                                        'frameborder'     => array(),
+                                                        'allowfullscreen' => array(),
+                                                        'allow'           => array(),
+                                                        'title'           => array(),
+                                                        'loading'         => array(),
+                                                        'referrerpolicy'  => array(),
+                                                    ),
+                                                ));
                                             } else {
-                                                echo '<div class="absolute inset-0 flex items-center justify-center text-slate-400 font-bold uppercase text-xs tracking-widest">Video Unavailable</div>';
+                                                echo '<div class="absolute inset-0 flex items-center justify-center text-slate-500 font-bold uppercase text-xs tracking-widest">Video Unavailable</div>';
                                             }
                                             ?>
                                         </div>
@@ -74,7 +93,7 @@ get_header();
                                 <?php endwhile; wp_reset_postdata(); ?>
                             </div>
                         <?php else: ?>
-                            <p class="text-slate-400 font-bold uppercase text-xs tracking-widest">No videos in this category yet.</p>
+                            <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">No videos in this category yet.</p>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -82,7 +101,7 @@ get_header();
             <?php else: ?>
                 <div class="bg-white p-12 rounded-[2rem] shadow-xl border-4 border-slate-100 text-center">
                     <p class="text-slate-500 font-bold mb-4">No video categories found.</p>
-                    <p class="text-slate-400 text-sm">Please add categories and videos in the WordPress dashboard.</p>
+                    <p class="text-slate-500 text-sm">Please add categories and videos in the WordPress dashboard.</p>
                 </div>
             <?php endif; ?>
 

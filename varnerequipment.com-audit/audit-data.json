@@ -1,0 +1,97 @@
+{
+  "summary": {
+    "health_score": 86,
+    "business_type": "Local Service / Equipment Dealership",
+    "top_findings": [
+      "Speculation rules implemented but can be expanded to top user paths.",
+      "LCP hero image lacks fetchpriority='high' hint.",
+      "Mobile viewport has horizontal overflow (horizontal scroll active).",
+      "Accessibility: 3 inputs missing label/aria attributes."
+    ],
+    "quick_wins": [
+      "Add fetchpriority='high' to the LCP hero image.",
+      "Fix mobile horizontal overflow styling.",
+      "Add labels to the 3 form inputs."
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 92,
+      "what_works": [
+        "Robots noindex, follow on filters prevents duplicate content.",
+        "Canonical tags correctly configured on all pages.",
+        "XML Sitemaps correctly index posts and custom inventory units."
+      ],
+      "findings": [
+        {
+          "title": "Unoptimized LCP Preload",
+          "severity": "Medium",
+          "description": "The LCP hero image is not prioritized for preload.",
+          "recommendation": "Mark the LCP hero image with fetchpriority='high'."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 95,
+      "what_works": [
+        "LocalBusiness schema correctly injected in header.",
+        "Product schema correctly generated on single equipment pages.",
+        "ItemList schema correctly generated on listing pages."
+      ],
+      "findings": []
+    },
+    {
+      "name": "Performance",
+      "score": 85,
+      "what_works": [
+        "Speculation rules prerender /equipment/* pages.",
+        "Critical fonts preloaded.",
+        "DNS prefetch for third-party resources."
+      ],
+      "findings": [
+        {
+          "title": "Add Speculation Rules for navigation",
+          "severity": "Low",
+          "description": "Speculation rules can be expanded to cover top user-paths.",
+          "recommendation": "Add speculationrules script for common user navigation paths."
+        }
+      ]
+    },
+    {
+      "name": "Mobile & UX",
+      "score": 78,
+      "what_works": [
+        "Touch targets are appropriately sized.",
+        "Viewport meta tag configured."
+      ],
+      "findings": [
+        {
+          "title": "Horizontal scroll on mobile",
+          "severity": "High",
+          "description": "Mobile page has horizontal scrolling which degrades UX.",
+          "recommendation": "Ensure no elements exceed the mobile viewport width; check for missing overflow-x-hidden."
+        },
+        {
+          "title": "Form inputs missing labels",
+          "severity": "Medium",
+          "description": "3 input elements do not have associated labels or ARIA tags.",
+          "recommendation": "Add label elements with 'for' attributes or 'aria-label' to all input fields."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {"name": "Phase 1: Critical & High Fixes", "timeframe": "Week 1", "items": ["Fix mobile horizontal scroll/overflow styling."]},
+      {"name": "Phase 2: High-Impact Improvements", "timeframe": "Weeks 2-3", "items": ["Add label/aria attributes to inputs.", "Add fetchpriority='high' to hero image."]},
+      {"name": "Phase 3: Content & Authority", "timeframe": "Month 2", "items": ["Expand speculation rules to other top user paths."]},
+      {"name": "Phase 4: Monitoring & Iteration", "timeframe": "Ongoing", "items": ["Monitor search console for coverage and crawl logs."]}
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

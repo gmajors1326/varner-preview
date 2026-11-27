@@ -84,7 +84,7 @@ $themePath = "varner-equipment-theme-lite\varner-lite"
 # Compile Tailwind CSS inside varner-lite (the master theme)
 Write-Host "Compiling Tailwind CSS..." -ForegroundColor Cyan
 Push-Location $themePath
-npx tailwindcss -i ./src/input.css -o ./assets/css/tailwind.css --minify
+npx tailwindcss -c ./tailwind.config.cjs -i ./src/input.css -o ./assets/css/tailwind.css --minify
 Pop-Location
 
 # Package Plugin ZIP
@@ -94,27 +94,27 @@ if (Test-Path $pluginZip) { Remove-Item $pluginZip -Force }
 python tools/zip_helper.py $pluginZip "varner-os-plugin-v23-unpacked/varner-os-plugin-v23"
 Write-Host "Plugin packaged -> $pluginZip" -ForegroundColor Green
 
-# Package Theme ZIP (varner-lite/ prefix — matches active theme slug for wp theme install --force)
-$themeZipName = "varner-equipment-theme-v23-lite.zip"
+# Package Theme ZIP (files at root — required for WP admin upload compatibility)
+$themeZipName = "varner-equipment-theme-v23-lite-4.zip"
 $themeZip = Join-Path $root $themeZipName
 if (Test-Path $themeZip) { Remove-Item $themeZip -Force }
 python -c "
 import zipfile, os
 src = os.path.abspath('varner-equipment-theme-lite/varner-lite')
+exclude_dirs = {'src', '.git', '__pycache__'}
+exclude_files = {'.DS_Store', 'tailwind.config.js', 'nul', 'package.json'}
+zip_basename = os.path.basename(r'$themeZip')
+theme_slug = os.path.splitext(zip_basename)[0]
 with zipfile.ZipFile(r'$themeZip', 'w', zipfile.ZIP_DEFLATED) as z:
     for root, dirs, files in os.walk(src):
-        dirs[:] = [d for d in dirs if d not in ('src', '.git')]
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
         dirs.sort(); files.sort()
-        for d in dirs:
-            p = os.path.join(root, d)
-            a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/') + '/'
-            z.write(p, a)
         for f in files:
-            if f.startswith('.git') or f in ('.DS_Store', 'tailwind.config.js', 'nul') or f.endswith('.md'): continue
-            p = os.path.join(root, f)
-            a = 'varner-lite/' + os.path.relpath(p, src).replace(os.sep, '/')
-            z.write(p, a)
-print('Theme ZIP: varner-lite/ prefix')
+            if f.startswith('.git') or f in exclude_files or f.endswith('.md'): continue
+            fp = os.path.join(root, f)
+            arcname = os.path.relpath(fp, src).replace(os.sep, '/')
+            z.write(fp, arcname)
+print(f'Theme ZIP: files at root level')
 "
 Write-Host "Theme packaged -> $themeZip" -ForegroundColor Green
 

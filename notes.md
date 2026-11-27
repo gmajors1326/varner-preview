@@ -1,5 +1,5 @@
 # Varner Equipment — Workspace Notes & Intelligence
-*Last updated: June 17, 2026*
+*Last updated: July 2, 2026*
 
 ---
 
@@ -10,14 +10,20 @@
 > - **Do not delete** anything without approval.
 > - **Make suggestions** for improvements — don't act on them unilaterally.
 > - **Use `build.ps1` or Python's `zipfile` module (via `tools/zip_helper.py`)** to zip files. Never use PowerShell's `tar -a -c -f` (which creates POSIX TAR archives) or `Compress-Archive` because WordPress rejects them.
+> - **Keep `readme.txt` version in sync** with the plugin header and `style.css` after every version bump. The root `readme.txt` is a separate file from the one inside the plugin ZIP — both must reflect the current version.
 
 ### SSH / Deployment Rules
 
 > [!IMPORTANT]
-> **For binary files (ZIPs):** Stream via Python subprocess stdin — this is the only reliable method for WP Engine.
-> ```powershell
-> python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/file.zip'], stdin=open('file.zip', 'rb'))"
-> ```
+> **For binary files (ZIPs):** Two reliable methods:
+> 1. Native PowerShell `<` piping (used in `DEPLOY.md`):
+>    ```powershell
+>    ssh -i ~/.ssh/id_ed25519_wpe user@host "cat > /sites/path/file.zip" < file.zip
+>    ```
+> 2. Python subprocess stdin:
+>    ```powershell
+>    python -c "import subprocess; subprocess.run(['ssh', '-o', 'StrictHostKeyChecking=no', '-i', r'C:\Users\Greg\.ssh\id_ed25519_wpe', 'varnerequipdev@varnerequipdev.ssh.wpengine.net', 'cat > /sites/varnerequipdev/file.zip'], stdin=open('file.zip', 'rb'))"
+>    ```
 > **For text files (PHP, etc.):** Use the PowerShell pipeline method:
 > ```powershell
 > Get-Content "local\path\file.php" -Raw -Encoding UTF8 | ssh -o StrictHostKeyChecking=no -i C:\Users\Greg\.ssh\id_ed25519_wpe varnerequipdev@varnerequipdev.ssh.wpengine.net "cat > /sites/varnerequipdev/wp-content/themes/varner-lite/file.php"
@@ -26,62 +32,15 @@
 
 ---
 
-## Project Structure (Current — June 2026)
+## Architecture
 
-```
-Varner Equipment/
-├── src/                          ← React app source (Varner OS)
-├── dist/                         ← Compiled React build output
-├── varner-os-plugin-v23-unpacked/ ← Plugin source (PHP + dist goes here)
-├── varner-equipment-theme-lite/  ← ✅ ACTIVE MASTER THEME
-│   └── varner-lite/
-│       ├── src/input.css         ← Tailwind CSS source
-│       ├── tailwind.config.js    ← Tailwind config
-│       ├── assets/css/tailwind.css ← Compiled Tailwind output
-│       ├── partials/             ← breadcrumb.php, equipment-card.php, inventory-sidebar.php
-│       └── *.php                 ← All theme templates
-├── _archive/                     ← Archived (not active)
-│   ├── varner-equipment-theme-v23/  ← Retired June 2026
-│   └── varner-equipment-theme-v23.zip
-├── build.ps1                     ← Unified build script (React + Tailwind + ZIPs)
-├── DEPLOY.md                     ← Deployment runbook (canonical)
-├── SKILL.md                      ← Technical architecture reference
-├── └── notes.md                      ← This file
-```
+See [`SKILL.md`](./SKILL.md) for the complete architecture reference (component roles, data model, API auth, SQL cheat sheet). See [`DEPLOY.md`](./DEPLOY.md) for the canonical build & deploy runbook.
 
-### Deployment Artifacts (produced by build.ps1)
-| Artifact | Purpose |
-|---|---|
-| `varner-os-plugin-v23.zip` | Plugin — upload to WP Engine |
-| `varner-equipment-theme-v23-lite.zip` | Theme — upload to WP Engine |
-
----
-
-## Architecture Intelligence
-
-### Theme: varner-lite is the sole master
-- `varner-equipment-theme-v23` was **retired June 9, 2026** and moved to `_archive/`.
-- **All future theme edits go into `varner-equipment-theme-lite/varner-lite/` only.**
-- `build.ps1` compiles Tailwind directly inside varner-lite and produces one theme ZIP.
-- The `varner-lite` slug is the active WordPress theme on WP Engine.
-- 
-### Plugin: varner-os-plugin-v23
-- The plugin is the **bridge** between the React app and WordPress.
-- It handles: Equipment CPT registration, REST API (`/varner/v1`), ACF field sync, asset loading, session tracking, and mobile PWA routing.
-- **Every `build.ps1` run auto-increments the patch version** (e.g. `1.23.4 → 1.23.5`). This forces WP to prompt for an overwrite on install and busts CDN cache.
-- The plugin must be uploaded as a ZIP and installed via `wp plugin install --force`. Do not use the WP admin uploader — it has size limits.
-- **REST-loop/CLI migrations tail**: Since locks debounce rapid writes, always trigger `varner_os_schedule_catalog_regeneration(true);` (or WP-CLI: `wp eval "varner_os_schedule_catalog_regeneration(true);"`) as the last step of any non-WP-All-Import bulk import.
-
-### React App (Varner OS)
-- Built with **Vite + React + Tailwind**. Entry: `src/main.jsx`, root component: `src/App.jsx`.
-- Mounts on `#varner-inventory-app` / `.varner-inventory-app-mount` — present in WP admin pages and the `[varner_showroom]` shortcode.
-- API calls go through `src/utils/api.js` → `apiFetch()`. The base URL is `window.varnerData.rest_url + '/varner/v1'`. The nonce is injected via `wp_localize_script`.
-- `src/App.jsx` is large (1,302 lines). It's functional but could be split into smaller component files over time.
-
-### REST API Authentication
-- **Admin sessions**: Standard WP nonce (`X-WP-Nonce` header). Nonces expire after 12–24 hours — a stale nonce is the most common cause of `Failed to load inventory` errors.
-- **Mobile sessions**: 32-char hex token passed as `X-Varner-Mobile-Token` header. Tokens expire after 30 minutes of inactivity. Max 3 active tokens per user.
-- **Public**: `GET /inventory` is public (filtered by `show_on_website` for non-editors). All write operations require `edit_posts` capability.
+Notable:
+- `varner-lite` is the sole master theme; `varner-equipment-theme-v23` is archived in `_archive/`.
+- `build.ps1` auto-increments the plugin patch version (e.g. `1.23.4 → 1.23.5`).
+- After any bulk import, run: `varner_os_schedule_catalog_regeneration(true);`
+- `src/App.jsx` (1,302 lines) is functional but could be split into smaller components.
 
 ---
 
@@ -105,25 +64,17 @@ Varner Equipment/
 
 ## Open Items (Awaiting Approval)
 
-### 🟡 Cleanup — Unused Images
-The following directories contain unreferenced files that are safe to delete once approved:
-
-**Root `Images/` folder** (~40 unused mockup images):
-- All `.webp` / `.jpg` inventory mockup photos (car haulers, tractors, implements, etc.)
-- **Keep**: The 12 brand logo PNGs (`BigTex_white.png`, `Mahindra_white.png`, etc.)
-
-**Root `public/` folder** (6 files — all unused):
-- `imp1.jpg`, `imp2.jpg`, `imp3.jpg`, `left.jpg`, `mahindra.jpg`, `rear.jpg`
-- These are not referenced by Vite, React, or any PHP template.
-
-### 🟡 Cleanup — Redundant Code in functions.php
-- `varner_register_video_cpt()` exists in `varner-lite/functions.php`. If Video CPT is fully managed by the plugin, this is a duplicate and should be removed from the theme.
-- `varner_render_breadcrumbs()` may be duplicated between `functions.php` and `partials/breadcrumb.php` — worth auditing before next theme release.
+### 🟢 Completed Cleanup
+- **Root `Images/` folder**: Cleaned up — only the 12 brand logo PNGs remain.
+- **Root `public/` folder**: Cleaned up — unreferenced mockups removed.
+- **`varner_register_video_cpt()`**: Centralized solely in plugin (`varner-backend.php`).
+- **`varner_render_breadcrumbs()`**: Centralized solely in theme `partials/breadcrumb.php`.
+- **Card Partial Consolidation**: All inventory listings unified on `varner_include_equipment_card()`.
 
 ### 🟢 Low Priority — Future Improvements
 - **Split `src/App.jsx`**: At 1,302 lines it handles too much. Extracting the inventory editor, list view, and modal logic into separate components would improve maintainability.
 - **Inventory pagination**: The React app loads all equipment at once. For large catalogs (200+ units) this could get slow. The REST API already supports pagination — the frontend just needs to opt in.
-- **Facebook Marketplace live sync**: The Marketplace tab UI is complete but the actual Meta API integration is not wired. Currently informational only.
+- **Facebook Marketplace live sync**: The Marketplace tab is informational only (feed URL, health metrics, logs). **Catalog** (CSV feed) updates are fully automated. **Marketplace free listings** remain human-in-the-loop via the Quick Post tool — Meta does not allow automated free listings for equipment dealers.
 - **Public showroom filter UX**: The `[varner_showroom]` shortcode renders the React app publicly, but there's no polished public-facing filter UI yet — it shows the full admin inventory list.
 
 ---
@@ -162,6 +113,22 @@ SELECT option_name FROM wp_options WHERE option_name LIKE '_transient_varner_mob
 -- View recent inventory ledger entries
 SELECT post_id, action, display_name, summary, created_at FROM wp_varner_inventory_ledger ORDER BY created_at DESC LIMIT 20;
 ```
+
+## DB Changes (Jul 2)
+
+- Added `varner_meta_key_value` composite index `(meta_key, meta_value(100))` on `wp_postmeta` for inventory filter queries. Created automatically via `varner_os_activate()` on DB version bump to `1.23.8`.
+- Added `varner_get_hidden_post_ids()` in plugin — caches `show_on_website = '0'` post IDs in a 1-hour transient. Cleared on `updated_post_meta` for `show_on_website`.
+- Replaced `NOT IN (SELECT ...)` subquery with cached `$hidden_sql` in 4 locations: `functions.php` (×2), `header.php`, `page-brands.php`.
+- Sessions endpoint already gated with `manage_options` — no change needed.
+- Build (vite): `dist/` generated with index + assets. Chunk size warning on JS (767 kB) — consider code-splitting.
+
+### Hero Search Bar — Z-Index stacking trap
+The hero section has three stacking layers:
+- Content div (title/buttons): `z-40`
+- Search bar div: historically `z-30` (CLICKS DON'T WORK — content div intercepts)
+- Background media: `z-0`
+
+If the hero search bar ever becomes visible but unclickable, check that its z-index is ABOVE `z-40`. Current fix: `z-50`. This breaks whenever someone rearranges the hero section or adds a new layer without checking the search bar's z-index.
 
 ### WP Engine SSH
 ```

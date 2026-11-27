@@ -9,19 +9,20 @@
                 allowfullscreen="" 
                 loading="lazy" 
                 referrerpolicy="no-referrer-when-downgrade"
+                title="Google Maps - Varner Equipment location at 1375 US-50, Delta, CO 81416"
                 class="absolute inset-0 transition-all duration-700"
             ></iframe>
 
             <!-- OVERLAY INFO CARD -->
             <div class="absolute bottom-4 left-4 right-4 sm:right-auto sm:bottom-10 sm:left-10 z-10">
                 <div class="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-slate-100 max-w-sm w-full mx-auto text-slate-900">
-                    <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-3 sm:mb-4">Our Dealership</div>
+                    <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em] mb-3 sm:mb-4">Our Dealership</div>
                     <h3 class="text-2xl sm:text-3xl font-black text-slate-900 leading-tight mb-3 sm:mb-4 uppercase tracking-tight">Varner Equipment</h3>
                     <div class="space-y-1 sm:space-y-2 text-slate-600 font-bold text-xs sm:text-sm mb-5 sm:mb-6">
                         <p><?php echo esc_html( varner_get_theme_setting( 'contact_address_line1', '1375 US-50' ) ); ?></p>
                         <p><?php echo esc_html( varner_get_theme_setting( 'contact_address_line2', 'Delta, CO 81416' ) ); ?></p>
                     </div>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="block text-center w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-red-600 transition-all">
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener noreferrer" class="block text-center w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg hover:bg-red-600 transition-all">
                         Get Directions
                     </a>
                 </div>
@@ -30,16 +31,17 @@
     </section>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-950 pt-24 pb-12 border-t border-slate-900">
+    <footer class="bg-slate-950 pt-24 pb-12 border-t border-slate-900" role="contentinfo" aria-label="Site Footer">
         <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 xl:gap-10 mb-16 items-start">
             <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
-                <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Inventory</h4>
+                <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Inventory</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li><a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="hover:text-red-500 transition-colors">All Inventory</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="hover:text-red-500 transition-colors">New</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="hover:text-red-500 transition-colors">Used</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="hover:text-red-500 transition-colors">Tractors</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="hover:text-red-500 transition-colors">Trailers</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/attachments' ) ); ?>" class="hover:text-red-500 transition-colors">Attachments</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="hover:text-red-500 transition-colors">Hay Equipment</a></li>
                 </ul>
@@ -47,10 +49,10 @@
             </div>
             <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
-                <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6 whitespace-nowrap">Quick Links</h4>
+                <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6 whitespace-nowrap">Quick Links</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li><a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="hover:text-red-500 transition-colors">Home</a></li>
-                    <li><a href="<?php echo esc_url( home_url( '/product-videos' ) ); ?>" class="hover:text-red-500 transition-colors">Product Videos</a></li>
+                    <li><a href="<?php echo esc_url( home_url( '/videos' ) ); ?>" class="hover:text-red-500 transition-colors">Product Videos</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/services/parts-request' ) ); ?>" class="hover:text-red-500 transition-colors">Parts Request</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/services/service-request' ) ); ?>" class="hover:text-red-500 transition-colors">Service Request</a></li>
                     <li><a href="<?php echo esc_url( home_url( '/dealer-info/about-us' ) ); ?>" class="hover:text-red-500 transition-colors">About</a></li>
@@ -61,7 +63,7 @@
             </div>
             <div class="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <div class="w-fit text-left">
-                <h4 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Hours</h4>
+                <h3 class="text-red-500 font-black uppercase text-sm tracking-[0.25em] mb-6">Hours</h3>
                 <ul class="space-y-4 text-white text-sm font-bold text-left w-fit">
                     <li>Mon-Fri: <?php echo esc_html( varner_get_theme_setting( 'hours_mon_fri', '8am - 5pm' ) ); ?></li>
                     <li>Sat: <?php echo esc_html( varner_get_theme_setting( 'hours_sat', '9am - Noon' ) ); ?></li>
@@ -74,27 +76,27 @@
                     <?php 
                     $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('white') : '';
                     ?>
-                    <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto">
+                    <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="w-full h-auto object-contain mx-auto" width="280" height="50" loading="lazy" decoding="async">
                 </div>
                 <div class="flex items-center justify-center gap-5 text-white pt-2">
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_facebook', 'https://www.facebook.com/varnerequipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Facebook">
-                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.1V12h3.4V9.7c0-3.3 2-5.1 5-5.1 1.4 0 2.8.2 2.8.2v3.1h-1.6c-1.6 0-2.1 1-2.1 2V12h3.6l-.6 2.9h-3v7A10 10 0 0 0 22 12z"/></svg>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_facebook', 'https://www.facebook.com/varnerequipment' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="Facebook">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.1V12h3.4V9.7c0-3.3 2-5.1 5-5.1 1.4 0 2.8.2 2.8.2v3.1h-1.6c-1.6 0-2.1 1-2.1 2V12h3.6l-.6 2.9h-3v7A10 10 0 0 0 22 12z"/></svg>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_youtube', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="YouTube">
-                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 7.2a2.6 2.6 0 0 0-1.8-1.8C16.2 5 12 5 12 5s-4.2 0-5.8.4a2.6 2.6 0 0 0-1.8 1.8A27.4 27.4 0 0 0 4 12a27.4 27.4 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C7.8 19 12 19 12 19s4.2 0 5.8-.4a2.6 2.6 0 0 0 1.8-1.8A27.4 27.4 0 0 0 20 12a27.4 27.4 0 0 0-.4-4.8zM10 15.5V8.5L16 12l-6 3.5z"/></svg>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'social_youtube', 'https://www.youtube.com/@VarnerEquipment' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="YouTube">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 7.2a2.6 2.6 0 0 0-1.8-1.8C16.2 5 12 5 12 5s-4.2 0-5.8.4a2.6 2.6 0 0 0-1.8 1.8A27.4 27.4 0 0 0 4 12a27.4 27.4 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C7.8 19 12 19 12 19s4.2 0 5.8-.4a2.6 2.6 0 0 0 1.8-1.8A27.4 27.4 0 0 0 20 12a27.4 27.4 0 0 0-.4-4.8zM10 15.5V8.5L16 12l-6 3.5z"/></svg>
                     </a>
                     <?php
                     $custom_links = varner_get_theme_setting( 'social_custom_links', array() );
                     if ( is_array( $custom_links ) ) {
                         $platform_icons = array(
-                            'facebook'  => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.1V12h3.4V9.7c0-3.3 2-5.1 5-5.1 1.4 0 2.8.2 2.8.2v3.1h-1.6c-1.6 0-2.1 1-2.1 2V12h3.6l-.6 2.9h-3v7A10 10 0 0 0 22 12z"/></svg>',
-                            'youtube'   => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 7.2a2.6 2.6 0 0 0-1.8-1.8C16.2 5 12 5 12 5s-4.2 0-5.8.4a2.6 2.6 0 0 0-1.8 1.8A27.4 27.4 0 0 0 4 12a27.4 27.4 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C7.8 19 12 19 12 19s4.2 0 5.8-.4a2.6 2.6 0 0 0 1.8-1.8A27.4 27.4 0 0 0 20 12a27.4 27.4 0 0 0-.4-4.8zM10 15.5V8.5L16 12l-6 3.5z"/></svg>',
-                            'instagram' => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>',
-                            'twitter'   => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-                            'tiktok'    => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.95-1.72-.1.08-.2.17-.3.25a7.9 7.9 0 0 1-1.39.99c-.1.05-.2.1-.3.15-.36.17-.74.31-1.12.42-.08.02-.17.04-.25.06a7.7 7.7 0 0 1-1.25.17c-.08.01-.17.01-.25.02v5.7c-.02 1.34-.33 2.69-1.04 3.82a6.3 6.3 0 0 1-3.07 2.82 6.8 6.8 0 0 1-3.99.19 6.3 6.3 0 0 1-3.32-2.12c-1.19-1.3-1.7-3.08-1.5-4.81.2-1.72 1.12-3.32 2.6-4.22a6.4 6.4 0 0 1 4.79-.69v4.05c-1.01-.29-2.15-.05-2.94.66-.79.71-1.11 1.87-.89 2.9.22 1.03.99 1.88 2 2.14 1 .26 2.09-.07 2.76-.85.67-.78.89-1.89.87-2.91V0z"/></svg>',
-                            'linkedin'  => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
-                            'pinterest' => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.162 0 7.397 2.967 7.397 6.93 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/></svg>',
-                            'custom'    => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+                            'facebook'  => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.1V12h3.4V9.7c0-3.3 2-5.1 5-5.1 1.4 0 2.8.2 2.8.2v3.1h-1.6c-1.6 0-2.1 1-2.1 2V12h3.6l-.6 2.9h-3v7A10 10 0 0 0 22 12z"/></svg>',
+                            'youtube'   => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 7.2a2.6 2.6 0 0 0-1.8-1.8C16.2 5 12 5 12 5s-4.2 0-5.8.4a2.6 2.6 0 0 0-1.8 1.8A27.4 27.4 0 0 0 4 12a27.4 27.4 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8C7.8 19 12 19 12 19s4.2 0 5.8-.4a2.6 2.6 0 0 0 1.8-1.8A27.4 27.4 0 0 0 20 12a27.4 27.4 0 0 0-.4-4.8zM10 15.5V8.5L16 12l-6 3.5z"/></svg>',
+                            'instagram' => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>',
+                            'twitter'   => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+                            'tiktok'    => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.95-1.72-.1.08-.2.17-.3.25a7.9 7.9 0 0 1-1.39.99c-.1.05-.2.1-.3.15-.36.17-.74.31-1.12.42-.08.02-.17.04-.25.06a7.7 7.7 0 0 1-1.25.17c-.08.01-.17.01-.25.02v5.7c-.02 1.34-.33 2.69-1.04 3.82a6.3 6.3 0 0 1-3.07 2.82 6.8 6.8 0 0 1-3.99.19 6.3 6.3 0 0 1-3.32-2.12c-1.19-1.3-1.7-3.08-1.5-4.81.2-1.72 1.12-3.32 2.6-4.22a6.4 6.4 0 0 1 4.79-.69v4.05c-1.01-.29-2.15-.05-2.94.66-.79.71-1.11 1.87-.89 2.9.22 1.03.99 1.88 2 2.14 1 .26 2.09-.07 2.76-.85.67-.78.89-1.89.87-2.91V0z"/></svg>',
+                            'linkedin'  => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
+                            'pinterest' => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.162 0 7.397 2.967 7.397 6.93 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/></svg>',
+                            'custom'    => '<svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
                         );
                         foreach ( $custom_links as $link ) {
                             $platform = strtolower($link['platform'] ?? 'custom');
@@ -103,7 +105,7 @@
                             $icon_html = $platform_icons[$platform] ?? $platform_icons['custom'];
                             $aria_label = !empty($link['label']) ? $link['label'] : ucfirst($platform);
                             ?>
-                            <a href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="<?php echo esc_attr($aria_label); ?>">
+                            <a href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="<?php echo esc_attr($aria_label); ?>">
                                 <?php echo $icon_html; ?>
                             </a>
                             <?php
@@ -111,10 +113,10 @@
                     }
                     ?>
                     <a href="mailto:<?php echo esc_attr( varner_get_theme_setting( 'contact_email', 'ashley@varnerequipment.com' ) ); ?>" class="hover:text-red-500 transition-colors" aria-label="Email">
-                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2 8 5 8-5V8l-8 5-8-5v0z"/></svg>
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2 8 5 8-5V8l-8 5-8-5v0z"/></svg>
                     </a>
-                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener" class="hover:text-red-500 transition-colors" aria-label="Location">
-                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 1 7 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 0 1 7-7zm0 9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
+                    <a href="<?php echo esc_url( varner_get_theme_setting( 'contact_map_link', 'https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9' ) ); ?>" target="_blank" rel="noopener noreferrer" class="hover:text-red-500 transition-colors" aria-label="Location">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 5.3-7 13-7 13S5 14.3 5 9a7 7 0 0 1 7-7zm0 9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>
                     </a>
                 </div>
             </div>
@@ -128,12 +130,12 @@
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">Choose a Department</p>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button data-department="Trailer Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Trailer Sales</button>
-                            <button data-department="Equipment Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Equipment Sales</button>
-                            <button data-department="Service" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Service</button>
-                            <button data-department="Parts" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Parts</button>
-                            <button data-department="General" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">General</button>
-                            <button data-department="Tech" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all">Tech</button>
+                            <button data-department="Trailer Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Trailer Sales</button>
+                            <button data-department="Equip Sales" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Equip Sales</button>
+                            <button data-department="Service" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Service</button>
+                            <button data-department="Parts" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Parts</button>
+                            <button data-department="General" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">General</button>
+                            <button data-department="Tech" class="varner-chat-dept bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-4 font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all">Tech</button>
                         </div>
                     </div>
 
@@ -143,21 +145,24 @@
                             <p class="text-slate-400 text-xs font-bold">Department: <span id="varner-chat-dept-label" class="text-white">—</span></p>
                         </div>
 
-                        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="space-y-4">
+                        <form method="post" action="<?php echo esc_url( home_url( '/' ) ); ?>" class="space-y-4">
                             <?php wp_nonce_field( 'varner_chatbox_submit', 'varner_chatbox_nonce' ); ?>
                             <input type="hidden" name="action" value="varner_chatbox_submit">
                             <input type="hidden" name="department" id="varner-chat-dept-input" value="">
 
-                            <input type="text" name="name" placeholder="Name" required class="w-full bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-3 font-bold text-sm focus:border-red-600 outline-none">
-                            <input type="tel" name="mobile" placeholder="Mobile" required class="w-full bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-3 font-bold text-sm focus:border-red-600 outline-none">
-                            <textarea name="message" rows="4" placeholder="Message" required class="w-full bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-3 font-bold text-sm focus:border-red-600 outline-none"></textarea>
+                            <label for="chatbox-name" class="sr-only">Name</label>
+                            <input type="text" name="name" id="chatbox-name" placeholder="Name" required class="w-full bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-3 font-bold text-sm focus:border-red-600 outline-none">
+                            <label for="chatbox-mobile" class="sr-only">Mobile Number</label>
+                            <input type="tel" name="mobile" id="chatbox-mobile" placeholder="Mobile" required class="w-full bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-3 font-bold text-sm focus:border-red-600 outline-none">
+                            <label for="chatbox-message" class="sr-only">Message</label>
+                            <textarea name="message" id="chatbox-message" rows="4" placeholder="Message" required class="w-full bg-slate-950 text-white border border-slate-800 rounded-2xl px-4 py-3 font-bold text-sm focus:border-red-600 outline-none"></textarea>
 
                             <div class="flex flex-col sm:flex-row gap-4">
-                                <button type="button" id="varner-chat-back" class="w-full sm:w-auto bg-slate-900 text-white border border-slate-800 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">Back</button>
-                                <button type="submit" class="w-full sm:flex-1 bg-red-600 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-all">Send</button>
+                                <button type="button" id="varner-chat-back" class="w-full sm:w-auto bg-slate-900 text-white border border-slate-800 px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-800 transition-all">Back</button>
+                                <button type="submit" class="w-full sm:flex-1 bg-red-600 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-red-700 transition-all">Send</button>
                             </div>
 
-                            <p class="text-[10px] text-slate-500 leading-relaxed">
+                            <p class="text-xs text-slate-500 leading-relaxed">
                                 By hitting "Send" you authorize Varner Equipment, Inc. to send text messages and marketing content to the mobile number provided, sometimes using automated technology. Consent is not a condition of purchase. Message & data rates apply. Message frequency may vary. Text HELP for support or more information. Text STOP to opt out at any time.
                             </p>
                         </form>
@@ -166,13 +171,39 @@
             </div>
         </div>
         
+        <!-- WESTERN COLORADO REGIONAL SEO LINK HUB -->
+        <div class="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-900 text-slate-400">
+            <h3 class="text-xs font-black uppercase tracking-[0.3em] text-red-500 mb-4 text-center">Western Colorado Equipment Hub</h3>
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-3 text-xs font-bold items-center">
+                <a href="<?php echo esc_url( home_url( '/inventory/tractors/mahindra/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Mahindra Tractors Delta CO</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/big-tex/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Big Tex Trailers Montrose CO</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Utility Trailers Western Colorado</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Dump Trailers Montrose & Grand Junction</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/tym/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">TYM Tractors Colorado</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/deutz-fahr/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Deutz Fahr Tractors Western Slope</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/krone/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Krone Hay Tools Delta</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/inventory/attachments/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Tractor Attachments Delta CO</a>
+                <span class="text-slate-700">•</span>
+                <a href="<?php echo esc_url( home_url( '/brands/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Shop by Brand</a>
+            </div>
+        </div>
+
         <!-- COPYRIGHT BAR -->
-        <div class="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-white/10 text-center">
-            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</p>
-            <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex justify-center gap-2">
-                <a href="#" class="hover:text-red-500 transition-colors">Terms of Service</a>
+        <div class="max-w-7xl mx-auto px-4 mt-8 pt-8 border-t border-white/10 text-center">
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-2">&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</p>
+            <div class="text-xs text-slate-400 font-bold uppercase tracking-widest flex flex-wrap justify-center gap-4 py-2">
+                <a href="<?php echo esc_url( home_url( '/legal/terms-of-service' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Terms of Service</a>
                 <span>|</span>
-                <a href="#" class="hover:text-red-500 transition-colors">Privacy Policy</a>
+                <a href="<?php echo esc_url( home_url( '/privacy-policy' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Privacy Policy</a>
+                <span>|</span>
+                <a href="<?php echo esc_url( home_url( '/sitemap-inventory.xml' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">XML Sitemap</a>
             </div>
         </div>
     </footer>
@@ -207,6 +238,7 @@
 
     <script>
         (function() {
+            if (window.innerWidth < 1024) return;
             var hero = document.getElementById('hero-parallax');
             var media = document.getElementById('hero-parallax-media');
             if (!hero || !media) return;
@@ -214,9 +246,24 @@
             var ticking = false;
             var speed = 0.25;
 
-            function updateParallax() {
+            // Cache dimensions to avoid forced reflows on scroll
+            var heroOffsetTop = 0;
+            var heroHeight = 0;
+            var winHeight = window.innerHeight;
+
+            function updateDimensions() {
+                // Get offset from top of document
                 var rect = hero.getBoundingClientRect();
-                var scrollProgress = Math.min(Math.max((window.innerHeight - rect.top) / (window.innerHeight + rect.height), 0), 1);
+                var scrollTop = window.scrollY || window.pageYOffset;
+                heroOffsetTop = rect.top + scrollTop;
+                heroHeight = rect.height;
+                winHeight = window.innerHeight;
+            }
+
+            function updateParallax() {
+                var scrollTop = window.scrollY || window.pageYOffset;
+                var rectTop = heroOffsetTop - scrollTop;
+                var scrollProgress = Math.min(Math.max((winHeight - rectTop) / (winHeight + heroHeight), 0), 1);
                 var translateY = (scrollProgress * 60 * speed);
                 media.style.transform = 'translate3d(0,' + translateY + 'px,0)';
                 ticking = false;
@@ -229,14 +276,22 @@
                 }
             }
 
+            function onResize() {
+                updateDimensions();
+                onScroll();
+            }
+
+            // Initialize cached values
+            updateDimensions();
             updateParallax();
+
             window.addEventListener('scroll', onScroll, { passive: true });
-            window.addEventListener('resize', onScroll);
+            window.addEventListener('resize', onResize);
         })();
     </script>
 
     <!-- LIGHTBOX MODAL -->
-    <div id="vne-lightbox" class="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div id="vne-lightbox" class="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" role="dialog" aria-modal="true" aria-label="Image Lightbox">
         <button id="vne-lightbox-close" class="absolute top-6 right-6 text-white hover:text-red-500 transition-colors z-[100]" aria-label="Close Lightbox">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -338,6 +393,17 @@
                 if (e.key === 'Escape') closeLightbox();
                 if (e.key === 'ArrowRight') nextImage();
                 if (e.key === 'ArrowLeft') prevImage();
+                // ADA: Trap focus within lightbox
+                if (e.key === 'Tab') {
+                    var focusable = lightbox.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                    var first = focusable[0];
+                    var last = focusable[focusable.length - 1];
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    } else {
+                        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                    }
+                }
             });
 
         })();
@@ -348,7 +414,7 @@
          * Reveal on Scroll: Cinematic Entry Animations
          */
         (function() {
-            const reveals = document.querySelectorAll('.reveal-on-scroll');
+            const reveals = document.querySelectorAll('.reveal-on-scroll, .reveal-on-scroll-below');
             
             const observerOptions = {
                 threshold: 0.15,
@@ -381,6 +447,34 @@
                 }
             });
         }
+    </script>
+
+    <!-- ANALYTICS BEACON -->
+    <script>
+    (function() {
+        var restUrl = '<?php echo esc_url_raw(rest_url('varner/v1/track/pageview')); ?>';
+        var ref = document.referrer || '';
+        var ua = navigator.userAgent || '';
+
+        function fire() {
+            var payload = JSON.stringify({
+                path: window.location.pathname,
+                referrer: ref,
+                ua: ua
+            });
+            navigator.sendBeacon(restUrl, new Blob([payload], {type: 'application/json'}));
+        }
+
+        if (window.VarnerCookies && typeof window.VarnerCookies.waitForConsent === 'function') {
+            window.VarnerCookies.waitForConsent(30000).then(function(consent) {
+                if (consent && consent.analytics) {
+                    fire();
+                }
+            });
+        } else {
+            fire();
+        }
+    })();
     </script>
 
     <?php wp_footer(); ?>

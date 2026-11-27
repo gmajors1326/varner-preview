@@ -56,7 +56,7 @@ export const InputField = ({ label, value, onChange, error }) => (
       onChange={e => onChange(e.target.value)} 
       className={`w-full bg-slate-50 border-2 rounded-xl p-4 font-black text-slate-900 outline-none transition-all shadow-sm text-xl leading-none min-h-[64px] ${error ? 'border-red-400 focus:border-red-500 bg-red-50/40' : 'border-slate-100 focus:border-slate-300 focus:bg-white'}`}
     />
-    {error && <p className="text-[10px] font-bold text-red-600 pl-1">{error}</p>}
+    {error && <p className="text-[10px] font-bold text-red-600 pl-1" role="alert">{error}</p>}
   </div>
 );
 
@@ -95,7 +95,7 @@ export const TextAreaField = ({ label, value, onChange }) => (
         onChange={onChange}
         modules={{ clipboard: { matchVisual: false }, toolbar: [
           [{ header: [1, 2, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
+          ['bold', 'italic', 'underline', 'strike', 'link'],
           [{ color: COLOR_PALETTE }, { background: COLOR_PALETTE }],
           [{ list: 'ordered'}, { list: 'bullet' }],
           ['clean']
@@ -123,6 +123,6 @@ export const SelectField = ({ label, options, value, onChange, placeholder, erro
         <ChevronRight size={24} className="rotate-90"/>
       </div>
     </div>
-    {error && <p className="text-[10px] font-bold text-red-600 pl-1">{error}</p>}
+    {error && <p className="text-[10px] font-bold text-red-600 pl-1" role="alert">{error}</p>}
   </div>
 );

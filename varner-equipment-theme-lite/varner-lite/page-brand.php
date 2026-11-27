@@ -8,22 +8,33 @@ get_header();
 
 $brand_slug = get_query_var('brand_name');
 if ( $brand_slug ) {
-    $brand_name = str_replace('-', ' ', $brand_slug);
-    $brand_name = ucwords($brand_name);
-    // Special naming overrides
-    $overrides = array(
-        'big tex' => 'Big Tex',
-        'tym'     => 'TYM',
-        'zetor'   => 'Zetor',
-        'krone'   => 'Krone',
-        'macdon'  => 'MacDon',
-        'mchale'  => 'McHale',
-        'roxr'    => 'ROXR',
-        'titan trailers' => 'Titan Trailers',
-        'titan mfg' => 'Titan Trailers'
-    );
-    if ( isset( $overrides[ strtolower($brand_name) ] ) ) {
-        $brand_name = $overrides[ strtolower($brand_name) ];
+    $brand_name = '';
+    $brands     = get_option( 'varner_brands', array() );
+    foreach ( $brands as $b ) {
+        if ( sanitize_title( $b ) === $brand_slug ) {
+            $brand_name = $b;
+            break;
+        }
+    }
+    
+    if ( ! $brand_name ) {
+        $brand_name = str_replace('-', ' ', $brand_slug);
+        $brand_name = ucwords($brand_name);
+        // Special naming overrides
+        $overrides = array(
+            'big tex' => 'Big Tex',
+            'tym'     => 'TYM',
+            'zetor'   => 'Zetor',
+            'krone'   => 'Krone',
+            'macdon'  => 'Macdon',
+            'mchale'  => 'McHale',
+            'roxr'    => 'ROXR',
+            'titan trailers' => 'Titan Trailers',
+            'titan mfg' => 'Titan Trailers'
+        );
+        if ( isset( $overrides[ strtolower($brand_name) ] ) ) {
+            $brand_name = $overrides[ strtolower($brand_name) ];
+        }
     }
 } else {
     $brand_name = get_the_title();
@@ -124,7 +135,7 @@ if ( ! function_exists( 'varner_find_brand_logo_url' ) ) {
             'brush-chief'          => 'BrushChief_white.png',
             'danuser'              => 'Danuser_white.png',
             'degelman'             => 'Degelman_white.png',
-            'enorossi'             => 'Enorossi_white.png',
+            'enorossi'             => 'enorossi_white.png',
             'mk-martin'            => 'MKMartin_white.png',
             'maschio'              => 'Maschio_white.png',
             'maxon'                => 'Maxon_white.png',
@@ -175,13 +186,9 @@ $brand_meta = array(
     array( 'key' => 'brand',         'value' => $brand_name, 'compare' => 'LIKE' ),
 );
 
-$count_args = varner_build_inventory_query( array( $brand_meta ), -1 );
-$count_args['posts_per_page'] = -1;
-$count_args['fields'] = 'ids';
-$total_units = count( get_posts( $count_args ) );
-
 $query_args = varner_build_inventory_query( array( $brand_meta ), 12 );
 $brand_query = new WP_Query( $query_args );
+$total_units = intval( $brand_query->found_posts );
 $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( $_GET['paged'] ?? ( $_GET['page'] ?? 1 ) ) ) ) );
 ?>
 
@@ -208,20 +215,19 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
             
             <div class="flex-1 text-center md:text-left space-y-6">
                 <div>
-                    <h2 class="text-red-500 font-black uppercase tracking-[0.3em] text-sm mb-2">Authorized Dealer</h2>
+                    <h2 class="text-red-500 font-black uppercase tracking-[0.3em] text-sm mb-2">Authorized <?php echo esc_html( $brand_name ); ?> Dealer in Colorado</h2>
                 </div>
                 
-                <p class="text-slate-300 text-xl font-medium max-w-2xl leading-relaxed">
-                    Explore our current selection of <span class="text-white font-bold"><?php echo esc_html( $brand_name ); ?></span> equipment. 
-                    From new arrivals to certified pre-owned units, find the perfect machine for your operation.
+                <p class="text-slate-400 text-lg font-bold max-w-2xl leading-relaxed">
+                    Varner Equipment Delta CO is your authorized <span class="text-white font-bold"><?php echo esc_html( $brand_name ); ?></span> dealer serving Delta, Montrose, Olathe, Grand Junction, and Colorado's Western Slope. Explore our current inventory of new and certified pre-owned <?php echo esc_html( $brand_name ); ?> machinery.
                 </p>
 
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-4">
                     <div class="flex items-center gap-3 bg-white/5 px-6 py-3 rounded-2xl border border-white/10">
                         <span class="text-3xl font-black text-white"><?php echo number_format_i18n( $total_units ); ?></span>
-                        <span class="text-slate-400 font-black uppercase tracking-widest text-[10px] leading-tight">Units<br/>Available</span>
+                        <span class="text-slate-500 font-black uppercase tracking-widest text-xs leading-tight">Units<br/>Available</span>
                     </div>
-                    <div class="flex items-center gap-2 text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">
+                    <div class="flex items-center gap-2 text-slate-500 font-black uppercase tracking-[0.2em] text-xs">
                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         Live Inventory Tracking
                     </div>
@@ -237,64 +243,26 @@ $current_page = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'pa
             <div class="w-full lg:w-72 shrink-0">
                 <?php 
                     $facet_search_label = $brand_name . ' Inventory';
-                    $selected_makes_override = array();
-                    $brand_count = 0;
-                    if ( isset( $filter_data['makes'] ) ) {
-                        foreach ( $filter_data['makes'] as $mk => $obj ) {
-                            if ( strcasecmp( $mk, $brand_name ) === 0 ) { $brand_count = intval( $obj->cnt ?? 0 ); break; }
-                        }
-                    }
-                    if ( $brand_count > 0 ) {
-                        $selected_makes_override = array( $brand_name );
-                    }
+                    $selected_makes_override = array( $brand_name );
+                    $locked_makes = array( $brand_name );
                     include get_template_directory() . '/partials/inventory-sidebar.php'; 
                 ?>
             </div>
 
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-8 gap-4">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                        Showing <?php echo number_format_i18n( $brand_query->post_count ); ?> of <?php echo number_format_i18n( $total_units ); ?> units
+                    <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
+                        <?php echo esc_html( varner_get_results_count_text( $brand_query, 12 ) ); ?>
                     </p>
                 </div>
 
                 <?php if ( $brand_query->have_posts() ) : ?>
                     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <?php while ( $brand_query->have_posts() ) : $brand_query->the_post();
-                            $post_id        = get_the_ID();
-                            $year           = get_field( 'year',         $post_id );
-                            $make           = get_field( 'make',         $post_id );
-                            $model          = get_field( 'model',        $post_id );
-                            $category       = get_field( 'category',     $post_id );
-                            $condition      = get_field( 'condition',    $post_id );
-                            $stock_status   = get_field( 'stock_status', $post_id );
-                            $stock_number   = get_field( 'stock_number', $post_id );
-                            $length         = get_field( 'length',       $post_id );
-                            $price          = get_field( 'price',        $post_id );
-                            $call_for_price = get_field( 'call_for_price', $post_id );
-                            $formatted_price = $call_for_price ? 'Call For Price' : ( is_numeric( $price ) ? number_format( $price ) : (string) $price );
-                            $images   = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id ) : array();
-                            include locate_template( 'partials/equipment-card.php', false, false );
+                            varner_include_equipment_card();
                         endwhile; wp_reset_postdata(); ?>
                     </div>
-                    <?php 
-                        $pagination = paginate_links( array(
-                            'base'      => add_query_arg( 'paged', '%#%' ),
-                            'format'    => '',
-                            'total'     => max( 1, $brand_query->max_num_pages ),
-                            'current'   => $current_page,
-                            'type'      => 'list',
-                            'prev_text' => '&lt; Previous',
-                            'next_text' => 'Next &gt;',
-                        ) );
-                    ?>
-                    <?php if ( $pagination ) : ?>
-                    <div class="mt-12 flex justify-center">
-                        <div class="varner-pagination">
-                            <?php echo $pagination; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
+                    <?php varner_render_pagination( $brand_query ); ?>
                 <?php else : ?>
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 font-bold text-slate-600">No units found for this brand yet.</div>
                 <?php endif; ?>

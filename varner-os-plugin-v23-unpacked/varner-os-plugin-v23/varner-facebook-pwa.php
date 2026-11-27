@@ -13,12 +13,16 @@ defined('ABSPATH') || exit;
 
 function varner_os_get_facebook_catalog_csv(): string {
     $posts = get_posts(array(
-        'post_type'      => 'equipment',
-        'post_status'    => 'publish',
-        'posts_per_page' => -1,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
-        'meta_query'     => array(
+        'post_type'              => 'equipment',
+        'post_status'            => 'publish',
+        'posts_per_page'         => -1,
+        'orderby'                => 'date',
+        'order'                  => 'DESC',
+        'cache_results'          => false,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
+        'suppress_filters'       => false,
+        'meta_query'             => array(
             'relation' => 'AND',
             array(
                 'relation' => 'OR',
@@ -26,9 +30,7 @@ function varner_os_get_facebook_catalog_csv(): string {
                 array('key' => 'show_on_website', 'compare' => 'NOT EXISTS'),
             ),
             array(
-                'relation' => 'OR',
-                array('key' => 'facebook_sync', 'value' => '1', 'compare' => '='),
-                array('key' => 'facebook_sync', 'compare' => 'NOT EXISTS'),
+                'key' => 'facebook_sync', 'value' => '1', 'compare' => '=',
             ),
         ),
     ));
@@ -174,6 +176,12 @@ function varner_os_schedule_catalog_regeneration(bool $force = false): void {
 // Sweep dirty catalog on next request once lock expires
 add_action('init', 'varner_os_maybe_cleanup_dirty_catalog');
 function varner_os_maybe_cleanup_dirty_catalog(): void {
+    // Skip catalog sweep on REST requests — it adds 2 DB reads per call and
+    // the catalog only needs to be fresh for Meta crawlers (handled via template_redirect).
+    if (defined('REST_REQUEST') && REST_REQUEST) {
+        return;
+    }
+
     $is_dirty    = (int)get_option('varner_catalog_dirty', 0) === 1;
     $lock_expiry = (int)get_option('varner_catalog_regen_lock_expiry', 0);
     $is_locked   = (time() < $lock_expiry);
@@ -208,7 +216,10 @@ function varner_os_write_facebook_catalog_file(): bool {
     $csv_data = varner_os_get_facebook_catalog_csv();
     $upload_dir = wp_upload_dir();
     $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
-    $written = @file_put_contents($file_path, $csv_data);
+    $written = file_put_contents($file_path, $csv_data);
+    if ($written === false) {
+        varner_os_log_meta_sync("ERROR: Failed to write catalog CSV to {$file_path}", 'warning');
+    }
     
     // Clear the meta sync health cache transient so it recalculates next time
     delete_transient('varner_meta_sync_health');
@@ -221,22 +232,31 @@ function varner_os_generate_facebook_catalog(): void {
     if (!defined('DONOTCACHEPAGE')) {
         define('DONOTCACHEPAGE', true);
     }
-    $csv_data = varner_os_get_facebook_catalog_csv();
-    
-    // Attempt to write/refresh the static file for Nginx direct serving
+
     $upload_dir = wp_upload_dir();
     $file_path = trailingslashit($upload_dir['basedir']) . 'facebook-catalog.csv';
-    @file_put_contents($file_path, $csv_data);
+
+    // Serve the cached static file if it's less than 60 seconds old to prevent
+    // regeneration abuse on this unauthenticated public endpoint.
+    $use_cache = file_exists($file_path) && (time() - filemtime($file_path)) < 60;
+    if ($use_cache) {
+        $csv_data = file_get_contents($file_path);
+    } else {
+        $csv_data = varner_os_get_facebook_catalog_csv();
+        $written = file_put_contents($file_path, $csv_data);
+        if ($written === false) {
+            varner_os_log_meta_sync("ERROR: Failed to write catalog CSV to {$file_path}", 'warning');
+        }
+    }
 
     // Log Meta sync crawl event
     $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
     $is_facebook = (strpos(strtolower($ua), 'facebook') !== false || strpos(strtolower($ua), 'facebot') !== false);
-    $trigger = $is_facebook ? 'Meta Crawler' : 'Manual Request';
-    
+
     // Count the number of lines (approximate by newlines, minus header)
     $lines = substr_count($csv_data, "\n");
     $count = $lines > 0 ? $lines - 1 : 0;
-    
+
     if ($is_facebook) {
         varner_os_log_meta_sync("API Handshake: Success (Meta crawler synced {$count} items)");
     } else {
@@ -403,7 +423,7 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('[Varner SW] Pre-caching ' + PRE_CACHE.length + ' assets (v' + CACHE_VERSION + ')');
-                return cache.addAll(PRE_CACHE);
+                return Promise.allSettled(PRE_CACHE.map(u => cache.add(u)));
             })
             .then(() => self.skipWaiting())
     );
@@ -485,16 +505,23 @@ self.addEventListener('fetch', (event) => {
             if (strlen($handoff_nonce) === 32 && ctype_xdigit($handoff_nonce)) {
                 $has_auth_param = (bool) get_transient('varner_handoff_' . $handoff_nonce);
             }
-        } elseif (!empty($_GET['token'])) {
-            $token = sanitize_text_field(wp_unslash($_GET['token']));
-            if (strlen($token) === 32 && ctype_xdigit($token)) {
-                $has_auth_param = (bool) get_transient('varner_mobile_token_' . $token);
-            }
         }
 
-        if (!$has_auth_param && !is_user_logged_in()) {
-            wp_redirect(wp_login_url(home_url('/mobile-app/')));
-            exit;
+        if (!$has_auth_param) {
+            if (!is_user_logged_in()) {
+                wp_redirect(wp_login_url(home_url('/mobile-app/')));
+                exit;
+            }
+            if (!current_user_can('edit_posts')) {
+                status_header(403);
+                nocache_headers();
+                echo '<!DOCTYPE html><meta charset="utf-8"><title>Not authorized</title>'
+                   . '<div style="font-family:-apple-system,sans-serif;max-width:30rem;margin:20vh auto;padding:0 1.5rem;text-align:center;color:#0f172a">'
+                   . '<h1 style="font-size:1.25rem">Not authorized</h1>'
+                   . '<p>This account can\'t use the Varner OS app. Ask an admin to set your role to <strong>Editor</strong>.</p>'
+                   . '<p><a href="' . esc_url(wp_logout_url(home_url('/mobile-app/'))) . '">Sign out</a></p></div>';
+                exit;
+            }
         }
 
         nocache_headers();
@@ -527,9 +554,13 @@ self.addEventListener('fetch', (event) => {
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('<?php echo esc_url_raw(home_url('/sw.js')); ?>')
-                .then(reg => console.log('Service Worker registered!', reg.scope))
-                .catch(err => console.log('Service Worker failed:', err));
+            navigator.serviceWorker.register('<?php echo esc_url_raw(home_url('/sw.js')); ?>', { scope: '/mobile-app/' })
+                .then(reg => {
+                    console.log('SW registered', reg.scope);
+                    return navigator.serviceWorker.getRegistrations();
+                })
+                .then(regs => regs && regs.forEach(r => { if (!r.scope.endsWith('/mobile-app/')) r.unregister(); }))
+                .catch(err => console.log('SW failed', err));
         });
     }
     </script>
@@ -576,42 +607,10 @@ if (!empty($_GET['handoff'])) {
     }
 }
 
-// Priority 2: User is already logged into WordPress — skip the token gate entirely.
-// Reuse an existing active valid token if possible, otherwise generate and embed one.
-if (!$mobile_token_for_page && is_user_logged_in() && current_user_can('edit_posts')) {
-    $wp_user_id = get_current_user_id();
-    $active_key = 'varner_active_tokens_' . $wp_user_id;
-    $active_tokens = get_transient($active_key) ?: array();
-    
-    $valid_token = '';
-    if (is_array($active_tokens)) {
-        // Search newest first for reuse
-        foreach (array_reverse($active_tokens) as $t) {
-            $data = get_transient('varner_mobile_token_' . $t);
-            if ($data) {
-                $valid_token = $t;
-                break;
-            }
-        }
-    }
-
-    if ($valid_token) {
-        $mobile_token_for_page = $valid_token;
-    } else {
-        $auto_token = strtoupper(bin2hex(random_bytes(16)));
-        $token_data = array('user_id' => $wp_user_id, 'created_at' => time());
-        set_transient('varner_mobile_token_' . $auto_token, $token_data, 1800);
-        
-        $active_tokens = is_array($active_tokens) ? $active_tokens : array();
-        $active_tokens[] = $auto_token;
-        if (count($active_tokens) > 3) {
-            $oldest = array_shift($active_tokens);
-            delete_transient('varner_mobile_token_' . $oldest);
-        }
-        set_transient($active_key, $active_tokens, 1800);
-        
-        $mobile_token_for_page = $auto_token;
-    }
+// If a handoff token was resolved, set the cookie so the determine_current_user
+// cookie path can pick it up on the first API call (before WP session kicks in).
+if ($mobile_token_for_page) {
+    varner_set_mobile_token_cookie($mobile_token_for_page);
 }
 ?>
 window.varnerData = {
@@ -620,7 +619,6 @@ window.varnerData = {
     rest_url: '<?php echo esc_url_raw(rest_url()); ?>',
     site_url: '<?php echo esc_url_raw(home_url('/')); ?>',
     is_mobile_app: true,
-    mobile_token: '<?php echo esc_js($mobile_token_for_page); ?>',
     logo_url: '<?php echo function_exists('varner_get_brand_logo_url') ? esc_url(varner_get_brand_logo_url('white')) : ''; ?>'
 };
 </script>

@@ -6,7 +6,7 @@ get_header();
     <section class="pt-32 pb-24 bg-slate-50 min-h-[60vh]">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
-                <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">The People Behind The Machines</div>
+                <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em] mb-4">The People Behind The Machines</div>
                 <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php echo esc_html( get_the_title() ?: 'Our Team' ); ?></h1>
                 <div class="w-24 h-2 bg-red-600 mx-auto"></div>
             </div>
@@ -19,7 +19,7 @@ get_header();
                     </div>
                     <div class="p-6 text-center">
                         <h3 class="text-xl font-black text-slate-900 uppercase tracking-tighter mb-1">Devin Varner</h3>
-                        <div class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-4">Owner / Founder</div>
+                        <div class="text-xs font-black text-red-600 uppercase tracking-widest mb-4">Owner / Founder</div>
                         <a href="mailto:contact@varnerequipment.com" class="text-xs font-bold text-slate-500 hover:text-slate-900">Contact</a>
                     </div>
                 </div>
@@ -31,7 +31,7 @@ get_header();
                     </div>
                     <div class="p-6 text-center">
                         <h3 class="text-xl font-black text-slate-900 uppercase tracking-tighter mb-1">Ashley Varner</h3>
-                        <div class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-4">General Manager</div>
+                        <div class="text-xs font-black text-red-600 uppercase tracking-widest mb-4">General Manager</div>
                         <a href="mailto:ashley@varnerequipment.com" class="text-xs font-bold text-slate-500 hover:text-slate-900">Contact</a>
                     </div>
                 </div>
@@ -43,7 +43,7 @@ get_header();
                     </div>
                     <div class="p-6 text-center">
                         <h3 class="text-xl font-black text-slate-900 uppercase tracking-tighter mb-1">Mike Davis</h3>
-                        <div class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-4">Service Manager</div>
+                        <div class="text-xs font-black text-red-600 uppercase tracking-widest mb-4">Service Manager</div>
                         <a href="mailto:service@varnerequipment.com" class="text-xs font-bold text-slate-500 hover:text-slate-900">Contact</a>
                     </div>
                 </div>
@@ -55,7 +55,7 @@ get_header();
                     </div>
                     <div class="p-6 text-center">
                         <h3 class="text-xl font-black text-slate-900 uppercase tracking-tighter mb-1">Sarah Jones</h3>
-                        <div class="text-[10px] font-black text-red-600 uppercase tracking-widest mb-4">Parts Department</div>
+                        <div class="text-xs font-black text-red-600 uppercase tracking-widest mb-4">Parts Department</div>
                         <a href="mailto:parts@varnerequipment.com" class="text-xs font-bold text-slate-500 hover:text-slate-900">Contact</a>
                     </div>
                 </div>

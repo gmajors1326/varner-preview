@@ -1,6 +1,6 @@
 # Varner OS — Project Notes
 
-**Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog automation
+**Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog feed (automated) / Marketplace listings (manual)
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
 **Last updated:** July 30, 2026
 **Maintainer:** Greg
@@ -25,8 +25,7 @@ Varner OS is a custom WordPress build that replaces a third-party inventory plat
 
 | Environment | Host | Notes |
 | :--- | :--- | :--- |
-| Development | WP Engine — `varnerequipdev` | All work to date. Accessed via WP-CLI over SSH. |
-| Production | _[TBD]_ | Not yet provisioned / cut over. See §7 Open Items. |
+| Development / Production | WP Engine — `varnerequipdev` | Single WP Engine install serves both roles. Point the real domain (e.g. `varnerequipment.com`) at this install for go-live. |
 
 Deployment to dev is performed with WP-CLI over SSH (stream ZIP → `wp plugin/theme install --force` → verify version → flush caches). See §6.
 
@@ -48,6 +47,7 @@ Deployment to dev is performed with WP-CLI over SSH (stream ZIP → `wp plugin/t
 | `main` | `1.23.164` | Build bump after SRI + Tailwind swap. ZIPs rebuilt. |
 | `main` | `1.23.178` | Cumulative updates, Pages API hardening, responsive grid improvements, and documentation audit sweep: Pages REST API (with server-side protected page guards, meta-caps, and validation), safety confirm dialogs, trailer length dropdown, Zetor/Titan brand sync, Tailwind config safelists, ZIP packaging script robustness, responsive grid layout optimization for service/parts requests on tablet/laptop viewports. |
 | `main` | `1.23.181` | iPad Landscape Responsiveness Fix: resolved overlap between hero buttons and quick search bar by adjusting hero section height, container padding-bottom, and responsive title font sizes. |
+| `main` | `1.23.221` | Current head. PWA redesign (Midnight V2.4 theme, VIN plate scanner, outline clone cards), PWA login flow improvements, trailer length dropdown, page editor upgrades with safety confirm dialogs, responsive form grid fixes. |
 | `feature/magic-link` | `1.23.151` | Passwordless email magic-link authentication. Fully built, reviewed, and parked on `feature/magic-link` branch. **Not live.** |
 
 **Magic-link work is parked, not deleted.** The `feature/magic-link` branch holds the fully assembled source files **and** the built `1.23.151` ZIP. Before relying on it as a restore point, confirm it rebuilds cleanly to a working `1.23.151` (see §7).
@@ -96,65 +96,44 @@ A senior-level security review was run across the theme and plugin. Findings and
 
 ---
 
-## 6. Deployment Runbook (Dev)
+## 6. Deployment
 
-> Sequence-strict. Each phase gates the next. All commands run from the local machine against WP Engine dev.
+See [`DEPLOY.md`](./DEPLOY.md) for the canonical deployment runbook (build, stream, install, cache flush, failure tiers).
 
-**Phase 0 — Pre-flight & commit (local)**
-1. Confirm rollback backups exist on the server and are **test-restorable** (not just present).
-2. Commit the working tree locally (do not push yet) so the deployed artifact maps to a real commit.
-
-**Phase 1 — Build & version gate (local)**
-1. Run `.\build.ps1`.
-2. **Gate (must pass):** version bumped in **both** the plugin header and theme `style.css`.
-   * **React Assets Note**: `dist/assets/` contains new content-hashed filenames only if React files were modified. For PHP-only changes, the hashes remain unchanged; do not stop the deployment in this case, as the plugin version bump handles the necessary cache-busting. Otherwise, if React changed and hashes did not, **STOP**.
-
-**Phase 2 — Sequential deploy & cache flush (remote)**
-1. Stream ZIP to server.
-2. Integrity check: `ls -l <zip> && unzip -t <zip> >/dev/null && echo OK`.
-3. Install with `--force`.
-4. Confirm exact slug + version via `wp plugin list --name=... --fields=name,version`.
-5. Repeat for theme (only after plugin succeeds; theme overwrite is active-theme, so backups must be confirmed first).
-6. Flush **all three layers**: object cache (`wp cache flush`), page/CDN cache (`wp page-cache flush` or WP Engine portal "Clear all caches").
-
-**Phase 3 — Validation** (see §8 for the matrix). Run security/scope checks against **origin** (post-flush), confirm performance, admin UI, and PWA.
-
-**Phase 4 — Resolution**
-- Pass → `git push`.
-- Fail → restore from backup ZIPs, **re-flush all caches** (so you debug origin code, not cached new-code responses), `git reset --soft HEAD~1` to keep changes for debugging.
-
-**Failure tiers (what triggers a rollback):**
-- **Rollback-grade:** security leak, admin won't mount, front-end white-screen, performance regression.
-- **Fix-forward:** cosmetic UI, stale icon.
-
-**Packaging note:** `build.ps1` uses Python's `zipfile` module (and `tools/zip_helper.py` for the plugin) to create archives with proper forward-slash Unix paths. Do NOT use PowerShell's `tar -a -c -f` (which makes POSIX TAR archives) or `Compress-Archive` because WordPress rejects them. Confirm extracted trees have real nested directories.
+Key references:
+- Build: `.\build.ps1` (produces `varner-os-plugin-v23.zip` + `varner-equipment-theme-v23-lite.zip`)
+- Version gate: confirm bump in both plugin header and theme `style.css`
+- The verification matrix in §8 below applies post-deploy
 
 ---
 
-## 7. Open Operational Items
+## 7. Open Items
 
-These are **not** code-review items; they gate production go-live.
+### 7.1 Production Go-Live
+Production is the same WP Engine install — no separate provision needed. At go-live, point the real domain at the WP Engine install and update the site URL in WordPress settings.
 
-1. **SMTP / email deliverability — BLOCKING.**
-   `wp_mail` has no working delivery path by default on WP Engine. Customer **forms** (contact/service/parts/employment) and any **email login** depend on it. Without it, customer leads silently vanish.
-   - **Dev/testing:** FluentSMTP → a real service (Gmail app-password, or a transactional free tier such as Brevo/Mailgun) so `wp_mail` delivers and flows can be tested.
-   - **Production:** send from the dealership domain (`@varnerequipment.com`) with **SPF + DKIM** configured. Confirm whether that domain is on Google Workspace or another provider — it determines the setup.
-   - **Test before relying on it:** send a test email and verify arrival; don't assume "gmail-to-gmail worked in dev" proves production deliverability.
+### 7.2 Magic-Link ZIP Verification
+Before relying on the `feature/magic-link` branch as a restore point, confirm it rebuilds cleanly to a working `1.23.151` ZIP. The branch holds the assembled source and a previously built ZIP, but a clean rebuild has not been verified since the Tailwind/SRI build pipeline changes.
 
-2. **Magic-link / Magic Login Pro.**
-   Decision is to use the Magic Login Pro plugin rather than the custom build. Before it's usable: SMTP must be live; configure post-login redirect to `/mobile-app/`; restrict to staff roles; verify mobile behavior and email-scanner pre-fetch handling. Keep a non-email break-glass login path so a mail outage is never a total lockout.
+### 7.3 Meta Live Sync — Final Verification
+Meta Live Sync fixes are deployed and verified. Commerce Manager verification can proceed once the real domain is pointed at the install.
 
-3. **Sandhills / TractorHouse migration.**
-   The dealer is handling the export. **Do not cancel Sandhills until data is pulled.** Critical: export the actual **photo files**, not links — equipment photos often live on Sandhills' servers and go dark on cancellation. Confirm export format (spreadsheet vs. login-only) and whether photos download as files. Re-host all images in the WordPress media library.
+### 7.4 SMTP / Email Setup
+✅ Configured. WP Mail SMTP plugin active with Brevo (Sendinblue) API key, sending from `web@varnerequipment.com`.
 
-4. **Form email routing.**
-   Decide recipient(s) for each form type (contact / service / parts / employment) — single inbox or split by department. Currently routes to one address; confirm with the owner.
+### 7.5 Cleanup — Unreferenced Assets & Redundancies
+✅ Resolved.
+- Root `Images/` folder contains only the 12 active brand logo PNGs.
+- Unreferenced legacy mockups in `public/` removed.
+- `varner_register_video_cpt()` centralized in plugin (`varner-backend.php`).
+- Breadcrumbs centralized in `partials/breadcrumb.php`.
+- Equipment card loops unified on `varner_include_equipment_card()`.
 
-5. **Team page content.**
-   Awaiting staff headshots and short bios (Ashley, Devin, and team) for the "Our Team" page.
-
-6. **Production deployment.**
-   All work to date is on dev. Go-live is its own checklist: provisioning, real staff accounts, domain email, SPF/DKIM, migrated inventory, and DNS cutover.
+### 7.6 Future Improvements
+- Split `src/App.jsx` (~1,300 lines) into smaller components.
+- Implement frontend pagination in the React app for catalogs of 200+ units.
+- Marketplace tab is informational only (shows feed URL, health metrics, sync logs). Catalog updates are fully automated; Marketplace free listings remain human-in-the-loop via the Quick Post tool and are not automatable through Meta's API for equipment dealers.
+- Build a polished public-facing filter UI for the `[varner_showroom]` shortcode.
 
 7. **Post-incident (Jul 30): production is a second install — finish the split resolution.**
    Production is **not** `varnerequipdev`. It is a second WP Engine install, `varnerequipme1`, on which `varnerequipment.com` is a primary domain. `DEPLOY.md`, `AGENTS-DEPLOY-CHECKLIST.md`, and §2/§6 of this file still target `varnerequipdev` (this file lists Production as TBD) — that doc error is the root cause of the Jul 30 incident: deploys and some editing flows were pointed at the wrong install for months. Execute in order:
@@ -210,16 +189,11 @@ These are **not** code-review items; they gate production go-live.
 | N+1 / performance | ✅ Resolved |
 | Write-path capability hardening | ✅ Resolved |
 | Author read-scope hardening | ✅ Resolved (`1.23.149`) |
-| Meta Live Sync | ✅ Resolved (Commerce Manager verification pending live URL setup) |
+| Meta Live Sync | ✅ Resolved |
 | Magic-link feature | ⏸ Parked (`feature/magic-link`, `1.23.151`); superseded by Magic Login Pro plan |
-| Pages Management REST API & panel | ✅ Resolved (`1.23.178`) |
+| SMTP / Email sending | ✅ Resolved |
 | Destructive Action confirmation dialogs | ✅ Resolved (`1.23.178`) |
 | Mobile token input & neutral prompt | ✅ Resolved (`1.23.178`) |
-| SMTP / email deliverability | ⛔ Not set up — blocks go-live |
-| Sandhills migration | ⏳ Pending (dealer-led; do not cancel until data pulled) |
-| Form email routing | ⏳ Pending owner decision |
-| Team page content | ⏳ Awaiting photos + bios |
-| Production cutover | ⏳ Not started |
 
 ---
 

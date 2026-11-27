@@ -1,0 +1,5 @@
+https://varnerequipment.com/wp-sitemap-posts-page-1.xml
+https://varnerequipment.com/wp-sitemap-posts-equipment-1.xml
+https://varnerequipment.com/wp-sitemap-posts-video-1.xml
+https://varnerequipment.com/wp-sitemap-taxonomies-video_category-1.xml
+https://varnerequipment.com/wp-sitemap-users-1.xml

@@ -1,0 +1,39 @@
+# Varner Equipment — Dealership Information & AI Agent Manifest
+
+> Varner Equipment is a premier family-owned agricultural, commercial tractor, and trailer dealership located in Delta, Colorado (1375 US-50, Delta, CO 81416). Serving Western Colorado including Delta, Montrose, Grand Junction, Mesa County, and Gunnison.
+
+## Inventory & Catalog Endpoints
+- All Inventory: https://varnerequipment.com/inventory/all-units/
+- New Equipment: https://varnerequipment.com/inventory/new/
+- Used Equipment: https://varnerequipment.com/inventory/used/
+- Tractors: https://varnerequipment.com/inventory/tractors/
+- Trailers: https://varnerequipment.com/inventory/trailers/
+- Utility Trailers: https://varnerequipment.com/inventory/utility-trailers/
+- Dump Trailers: https://varnerequipment.com/inventory/dump-trailers/
+- Attachments & Implements: https://varnerequipment.com/inventory/attachments/
+- Hay Equipment: https://varnerequipment.com/inventory/hay-equipment/
+
+## Authorized Brand Hubs
+- Big Tex Trailers: https://varnerequipment.com/brands/big-tex/
+- Mahindra Tractors: https://varnerequipment.com/brands/mahindra/
+- TYM Tractors: https://varnerequipment.com/brands/tym/
+- Deutz-Fahr Tractors: https://varnerequipment.com/brands/deutz-fahr/
+- Krone Hay Equipment: https://varnerequipment.com/brands/krone/
+- McHale Hay Tools: https://varnerequipment.com/brands/mchale/
+- CM Truck Beds & Trailers: https://varnerequipment.com/brands/cm-truck-beds/
+- Worksaver Attachments: https://varnerequipment.com/brands/worksaver/
+- Danuser Implements: https://varnerequipment.com/brands/danuser/
+
+## Dealership Services & Customer Actions
+- Equipment Financing: https://varnerequipment.com/financing/
+- Service Request: https://varnerequipment.com/services/service-request/
+- Parts Request: https://varnerequipment.com/services/parts-request/
+- Contact & Location: https://varnerequipment.com/contact/
+- Phone: (970) 874-0612
+- Physical Address: 1375 US-50, Delta, CO 81416
+- Operating Hours: Mon-Fri 8:00 AM - 5:00 PM, Sat 9:00 AM - 12:00 PM, Sun Closed
+
+## Machine-Readable Sitemaps
+- Sitemap Index: https://varnerequipment.com/sitemap_index.xml
+- Inventory XML Sitemap: https://varnerequipment.com/sitemap-inventory.xml
+- Robots.txt: https://varnerequipment.com/robots.txt

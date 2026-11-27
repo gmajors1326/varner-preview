@@ -7,29 +7,37 @@ $facet_search_label    = $facet_search_label    ?? 'Search Inventory';
 $facet_show_condition  = $facet_show_condition  ?? true;
 $uid = uniqid('vfilter_');
 
-$reset_path = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
-$reset_url  = $reset_path ? home_url( $reset_path ) : get_permalink();
+$raw_path    = wp_unslash( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) );
+$clean_path  = preg_replace( '#/page/\d+/?#', '/', $raw_path );
+$form_action = $clean_path ? home_url( $clean_path ) : ( is_singular() ? get_permalink() : home_url( '/inventory/all-units/' ) );
+$reset_url   = $form_action;
 
 $selected_categories    = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
 $selected_subcategories = array_map( 'sanitize_text_field', (array) ( $_GET['subcategory'] ?? array() ) );
 $selected_makes      = isset( $selected_makes_override )
     ? array_map( 'sanitize_text_field', (array) $selected_makes_override )
     : array_map( 'sanitize_text_field', (array) ( $_GET['make'] ?? array() ) );
+$locked_makes        = isset( $locked_makes ) ? array_map( 'sanitize_text_field', (array) $locked_makes ) : array();
 $selected_condition  = array_map( 'sanitize_text_field', (array) ( $_GET['condition'] ?? array() ) );
 $search_value        = sanitize_text_field( $_GET['s'] ?? '' );
 $stock_number_value  = sanitize_text_field( $_GET['stock_number'] ?? '' );
 $vin_value           = sanitize_text_field( $_GET['vin'] ?? '' );
-$price_min_value     = sanitize_text_field( $_GET['price_min'] ?? '' );
-$price_max_value     = sanitize_text_field( $_GET['price_max'] ?? '' );
-$year_min_value      = sanitize_text_field( $_GET['year_min'] ?? '' );
-$year_max_value      = sanitize_text_field( $_GET['year_max'] ?? '' );
-
-$has_filters = $search_value || $stock_number_value || $vin_value || $selected_categories || $selected_subcategories || $selected_makes || $selected_condition || $price_min_value || $price_max_value || $year_min_value || $year_max_value;
-
 $year_min_bound  = isset( $filter_data['year_range']->min_year ) ? intval( $filter_data['year_range']->min_year ) : 1980;
 $year_max_bound  = isset( $filter_data['year_range']->max_year ) ? intval( $filter_data['year_range']->max_year ) : intval( date('Y') );
 $price_min_bound = isset( $filter_data['price_range']->min_price ) ? floatval( $filter_data['price_range']->min_price ) : 0;
 $price_max_bound = isset( $filter_data['price_range']->max_price ) ? floatval( $filter_data['price_range']->max_price ) : 250000;
+
+$raw_p_min = sanitize_text_field( $_GET['price_min'] ?? '' );
+$raw_p_max = sanitize_text_field( $_GET['price_max'] ?? '' );
+$price_min_value = ( $raw_p_min !== '' && floatval( $raw_p_min ) > $price_min_bound ) ? $raw_p_min : '';
+$price_max_value = ( $raw_p_max !== '' && floatval( $raw_p_max ) < $price_max_bound ) ? $raw_p_max : '';
+
+$raw_y_min = sanitize_text_field( $_GET['year_min'] ?? '' );
+$raw_y_max = sanitize_text_field( $_GET['year_max'] ?? '' );
+$year_min_value  = ( $raw_y_min !== '' && intval( $raw_y_min ) > $year_min_bound ) ? $raw_y_min : '';
+$year_max_value  = ( $raw_y_max !== '' && intval( $raw_y_max ) < $year_max_bound ) ? $raw_y_max : '';
+
+$has_filters = $search_value || $stock_number_value || $vin_value || $selected_categories || $selected_subcategories || $selected_makes || $selected_condition || $price_min_value || $price_max_value || $year_min_value || $year_max_value;
 
 $fallback_categories = isset( $filter_data['categories'] ) ? $filter_data['categories'] : array();
 $fallback_makes      = isset( $filter_data['makes'] ) ? $filter_data['makes'] : array();
@@ -42,7 +50,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
         <?php if ( $has_filters ) : ?>
         <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
             <div class="flex justify-between items-center mb-4">
-                <span class="font-black text-[10px] uppercase tracking-widest text-slate-900">Applied Filters</span>
+                <span class="font-black text-xs uppercase tracking-widest text-slate-900">Applied Filters</span>
                 <a href="<?php echo esc_url( $reset_url ); ?>" class="text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700">Clear All</a>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -53,13 +61,26 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                     <a href="<?php echo esc_url( varner_remove_filter( 'subcategory', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
                 <?php endforeach; ?>
                 <?php foreach ( $selected_makes as $v ) : ?>
-                    <a href="<?php echo esc_url( varner_remove_filter( 'make', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
+                    <?php if ( in_array( $v, $locked_makes, true ) ) : ?>
+                        <span class="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"><?php echo esc_html( $v ); ?></span>
+                    <?php else : ?>
+                        <a href="<?php echo esc_url( varner_remove_filter( 'make', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
+                    <?php endif; ?>
                 <?php endforeach; ?>
                 <?php foreach ( $selected_condition as $v ) : ?>
                     <a href="<?php echo esc_url( varner_remove_filter( 'condition', $v ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× <?php echo esc_html( $v ); ?></a>
                 <?php endforeach; ?>
                 <?php if ( $search_value ) : ?>
                     <a href="<?php echo esc_url( varner_remove_filter( 's' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× "<?php echo esc_html( $search_value ); ?>"</a>
+                <?php endif; ?>
+                <?php if ( $stock_number_value ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_filter( 'stock_number' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× Stock: <?php echo esc_html( $stock_number_value ); ?></a>
+                <?php endif; ?>
+                <?php if ( $vin_value ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_filter( 'vin' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× VIN: <?php echo esc_html( $vin_value ); ?></a>
+                <?php endif; ?>
+                <?php if ( $price_min_value || $price_max_value ) : ?>
+                    <a href="<?php echo esc_url( varner_remove_range_filter( 'price_min', 'price_max' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× Price: $<?php echo esc_html( ($price_min_value ?: '0') . '-$' . ($price_max_value ?: '...') ); ?></a>
                 <?php endif; ?>
                 <?php if ( $year_min_value || $year_max_value ) : ?>
                     <a href="<?php echo esc_url( varner_remove_range_filter( 'year_min', 'year_max' ) ); ?>" class="bg-red-600 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">× Year: <?php echo esc_html( ($year_min_value ?: '...') . '-' . ($year_max_value ?: '...') ); ?></a>
@@ -70,7 +91,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
         <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <!-- Mobile Toggle -->
-            <button type="button" id="vne-mobile-filter-toggle" class="w-full lg:hidden flex justify-between items-center p-5 bg-slate-50 border-b border-slate-200 text-slate-900 font-black uppercase tracking-widest text-[10px]">
+            <button type="button" id="vne-mobile-filter-toggle" class="w-full lg:hidden flex justify-between items-center p-5 bg-slate-50 border-b border-slate-200 text-slate-900 font-black uppercase tracking-widest text-xs" aria-expanded="false" aria-controls="vne-mobile-filter-content">
                 <span class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                     Search & Filter Inventory
@@ -80,80 +101,92 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
 
             <!-- Filter Content -->
             <div id="vne-mobile-filter-content" class="hidden lg:block p-6 space-y-8">
-                <form method="get" action="" id="varner-inventory-filter-form" class="space-y-8">
+                <form method="get" action="<?php echo esc_url( $form_action ); ?>" id="varner-inventory-filter-form" class="space-y-8">
                     
                     <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
+                        <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4"><?php echo esc_html( $facet_search_label ); ?></h3>
                         <div class="space-y-2">
-                            <input type="text" name="s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-red-500 outline-none" />
+                            <label for="filter-search-s" class="sr-only">Search Keyword</label>
+                            <input type="text" name="s" id="filter-search-s" value="<?php echo esc_attr( $search_value ); ?>" placeholder="Keyword..." class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:border-red-500 outline-none transition-all" aria-label="Search Keyword" />
                             <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Search</button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Stock #</h3>
-                            <input type="text" name="stock_number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                            <label for="filter-stock-number" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">Stock #</label>
+                            <input type="text" name="stock_number" id="filter-stock-number" value="<?php echo esc_attr( $stock_number_value ); ?>" placeholder="1234" class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:border-red-500 outline-none transition-all" />
                         </div>
                         <div>
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">VIN / Serial</h3>
-                            <input type="text" name="vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+                            <label for="filter-vin" class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2 block">VIN / Serial</label>
+                            <input type="text" name="vin" id="filter-vin" value="<?php echo esc_attr( $vin_value ); ?>" placeholder="VIN" class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:border-red-500 outline-none transition-all" />
                         </div>
                     </div>
 
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Category</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Category</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_categories as $cat_key => $cat_obj ) : ?>
-                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                    <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" />
-                                        <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
-                                    </span>
-                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($cat_obj->cnt); ?>)</span>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <input type="checkbox" name="category[]" value="<?php echo esc_attr( $cat_key ); ?>" <?php checked( in_array( $cat_key, $selected_categories, true ) ); ?> class="accent-red-600" />
+                                    <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $cat_key ); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                    </fieldset>
 
                     <?php 
                     $fallback_subcategories = isset( $filter_data['subcategories'] ) ? $filter_data['subcategories'] : array();
                     if ( ! empty( $fallback_subcategories ) ) : 
                     ?>
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Subcategory</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Subcategory</legend>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_subcategories as $subcat_key => $subcat_obj ) : ?>
-                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                    <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" />
-                                        <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $subcat_key ); ?></span>
-                                    </span>
-                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($subcat_obj->cnt); ?>)</span>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <input type="checkbox" name="subcategory[]" value="<?php echo esc_attr( $subcat_key ); ?>" <?php checked( in_array( $subcat_key, $selected_subcategories, true ) ); ?> class="accent-red-600" />
+                                    <span class="group-hover:text-red-600 transition-colors font-bold"><?php echo esc_html( $subcat_key ); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                    </fieldset>
                     <?php endif; ?>
 
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Manufacturer</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Manufacturer</legend>
+                        <?php if ( ! empty( $locked_makes ) ) : ?>
+                            <div class="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-100/80">
+                                <?php foreach ( $locked_makes as $locked_make ) : ?>
+                                    <label class="flex items-center justify-between gap-2 text-xs text-slate-900 cursor-not-allowed">
+                                        <span class="flex items-center gap-2">
+                                            <input type="checkbox" checked disabled class="accent-red-600" />
+                                            <span class="font-black uppercase"><?php echo esc_html( $locked_make ); ?></span>
+                                        </span>
+                                        <span class="text-[9px] font-black text-slate-500 uppercase">Locked</span>
+                                    </label>
+                                <?php endforeach; ?>
+                                <?php
+                                $all_makers_url = get_query_var( 'inventory_segment' )
+                                    ? home_url( '/inventory/' . get_query_var( 'inventory_segment' ) . '/' )
+                                    : home_url( '/inventory/all-units/' );
+                                ?>
+                                <a href="<?php echo esc_url( $all_makers_url ); ?>" class="block pt-1 text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700">View All Manufacturers →</a>
+                            </div>
+                        <?php else : ?>
                         <div class="space-y-2 max-h-48 overflow-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50">
                             <?php foreach ( $fallback_makes as $make_key => $make_obj ) : ?>
-                                <label class="flex items-center justify-between gap-2 text-xs text-slate-700 cursor-pointer group">
-                                    <span class="flex items-center gap-2">
-                                        <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" />
-                                        <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
-                                    </span>
-                                    <span class="text-[9px] font-black text-slate-400">(<?php echo intval($make_obj->cnt); ?>)</span>
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer group">
+                                    <input type="checkbox" name="make[]" value="<?php echo esc_attr( $make_key ); ?>" <?php checked( in_array( $make_key, $selected_makes, true ) ); ?> class="accent-red-600" />
+                                    <span class="group-hover:text-red-600 transition-colors font-bold uppercase"><?php echo esc_html( $make_key ); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
+                        <?php endif; ?>
+                    </fieldset>
 
                     <?php if ( $facet_show_condition ) : ?>
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Condition</h3>
+                    <fieldset>
+                        <legend class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Condition</legend>
                         <div class="flex gap-2">
                             <?php 
                             $conditions_to_show = array('New', 'Used');
@@ -163,7 +196,7 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                             ?>
                                 <label class="flex-1 text-center cursor-pointer group">
                                     <input type="checkbox" name="condition[]" value="<?php echo esc_attr( $cond_key ); ?>" <?php checked( $is_checked ); ?> class="hidden v-cond-input" />
-                                    <div class="v-cond-btn py-2 rounded-xl border <?php echo $is_checked ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
+                                    <div class="v-cond-btn py-2 rounded-xl <?php echo $is_checked ? 'bg-slate-900 border-2 border-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500'; ?> text-[9px] font-black uppercase tracking-widest transition-all <?php echo !$exists ? 'opacity-50 grayscale' : ''; ?>">
                                         <?php echo esc_html( $cond_key ); ?>
                                     </div>
                                 </label>
@@ -172,48 +205,58 @@ $fallback_conditions = isset( $filter_data['conditions'] ) ? $filter_data['condi
                         <?php if ( empty($fallback_conditions) ) : ?>
                             <p class="mt-2 text-[9px] font-bold text-red-600">No condition data found in inventory.</p>
                         <?php endif; ?>
-                    </div>
+                    </fieldset>
                     <?php endif; ?>
 
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Price Range</h3>
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Price Range</h3>
                             <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_price_display"></span>
                         </div>
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
-                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                                <span class="text-slate-300">-</span>
-                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <label for="<?php echo $uid; ?>_price_min" class="sr-only">Minimum Price</label>
+                                <input id="<?php echo $uid; ?>_price_min" type="number" name="price_min" placeholder="Min" value="<?php echo esc_attr( $price_min_value ); ?>" class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:bg-white focus:border-red-500 outline-none transition-all" aria-label="Minimum Price" />
+                                <span class="text-slate-500">-</span>
+                                <label for="<?php echo $uid; ?>_price_max" class="sr-only">Maximum Price</label>
+                                <input id="<?php echo $uid; ?>_price_max" type="number" name="price_max" placeholder="Max" value="<?php echo esc_attr( $price_max_value ); ?>" class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:bg-white focus:border-red-500 outline-none transition-all" aria-label="Maximum Price" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
-                                <input id="<?php echo $uid; ?>_price_range_min" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_min_value !== '' ? $price_min_value : $price_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                                <input id="<?php echo $uid; ?>_price_range_max" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_max_value !== '' ? $price_max_value : $price_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                                <label for="<?php echo $uid; ?>_price_range_min" class="sr-only">Minimum Price Slider</label>
+                                <input id="<?php echo $uid; ?>_price_range_min" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_min_value !== '' ? $price_min_value : $price_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Minimum Price Slider" />
+                                <label for="<?php echo $uid; ?>_price_range_max" class="sr-only">Maximum Price Slider</label>
+                                <input id="<?php echo $uid; ?>_price_range_max" type="range" min="<?php echo esc_attr( $price_min_bound ); ?>" max="<?php echo esc_attr( $price_max_bound ); ?>" step="500" value="<?php echo esc_attr( $price_max_value !== '' ? $price_max_value : $price_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Maximum Price Slider" />
                             </div>
                         </div>
                     </div>
 
                     <div>
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Year</h3>
+                            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Year</h3>
                             <span class="text-[9px] font-black text-red-600" id="<?php echo $uid; ?>_year_display"></span>
                         </div>
                         <div class="space-y-4">
                             <div class="flex gap-2 items-center">
-                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
-                                <span class="text-slate-300">-</span>
-                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+                                <label for="<?php echo $uid; ?>_year_min" class="sr-only">Minimum Year</label>
+                                <input id="<?php echo $uid; ?>_year_min" type="number" name="year_min" placeholder="Min" value="<?php echo esc_attr( $year_min_value ); ?>" class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:bg-white focus:border-red-500 outline-none transition-all" aria-label="Minimum Year" />
+                                <span class="text-slate-500">-</span>
+                                <label for="<?php echo $uid; ?>_year_max" class="sr-only">Maximum Year</label>
+                                <input id="<?php echo $uid; ?>_year_max" type="number" name="year_max" placeholder="Max" value="<?php echo esc_attr( $year_max_value ); ?>" class="w-full bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 rounded-xl px-2 py-1.5 text-xs focus:bg-white focus:border-red-500 outline-none transition-all" aria-label="Maximum Year" />
                             </div>
                             <div class="relative h-1 bg-slate-100 rounded-full">
-                                <input id="<?php echo $uid; ?>_year_range_min" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_min_value !== '' ? $year_min_value : $year_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
-                                <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" />
+                                <label for="<?php echo $uid; ?>_year_range_min" class="sr-only">Minimum Year Slider</label>
+                                <input id="<?php echo $uid; ?>_year_range_min" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_min_value !== '' ? $year_min_value : $year_min_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Minimum Year Slider" />
+                                <label for="<?php echo $uid; ?>_year_range_max" class="sr-only">Maximum Year Slider</label>
+                                <input id="<?php echo $uid; ?>_year_range_max" type="range" min="<?php echo esc_attr( $year_min_bound ); ?>" max="<?php echo esc_attr( $year_max_bound ); ?>" step="1" value="<?php echo esc_attr( $year_max_value !== '' ? $year_max_value : $year_max_bound ); ?>" class="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-red-600" aria-label="Maximum Year Slider" />
                             </div>
                         </div>
                     </div>
 
-                    <div class="pt-4 border-t border-slate-100">
-                        <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-lg active:scale-95">Apply Filters</button>
+                    <div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-colors shadow-md">Apply Filters</button>
                     </div>
+
+
 
                 </form>
             </div>
@@ -236,22 +279,36 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
     var display  = document.getElementById(displayId);
     if (!minInput || !maxInput || !rangeMin || !rangeMax) return;
 
-    function update() {
+    function update(userInteracted) {
       var minVal = parseFloat(rangeMin.value);
       var maxVal = parseFloat(rangeMax.value);
-      if (minVal > maxVal) { [minVal, maxVal] = [maxVal, minVal]; }
-      minInput.value = minVal;
-      maxInput.value = maxVal;
+      if (minVal > maxVal) {
+        [minVal, maxVal] = [maxVal, minVal];
+        rangeMin.value = minVal;
+        rangeMax.value = maxVal;
+      }
+      if (userInteracted) {
+        minInput.value = minVal;
+        maxInput.value = maxVal;
+      }
       if (display) {
         display.textContent = isPrice ? '$' + minVal.toLocaleString() + ' - $' + maxVal.toLocaleString() : minVal + ' - ' + maxVal;
       }
     }
 
-    rangeMin.addEventListener('input', update);
-    rangeMax.addEventListener('input', update);
-    minInput.addEventListener('change', function(){ rangeMin.value = this.value; update(); });
-    maxInput.addEventListener('change', function(){ rangeMax.value = this.value; update(); });
-    update();
+    rangeMin.addEventListener('input', function(){ update(true); });
+    rangeMax.addEventListener('input', function(){ update(true); });
+    minInput.addEventListener('change', function(){
+      if (this.value === '') { rangeMin.value = rangeMin.min; update(false); return; }
+      rangeMin.value = this.value;
+      update(true);
+    });
+    maxInput.addEventListener('change', function(){
+      if (this.value === '') { rangeMax.value = rangeMax.max; update(false); return; }
+      rangeMax.value = this.value;
+      update(true);
+    });
+    update(false);
   }
 
   document.addEventListener('DOMContentLoaded', function(){
@@ -272,18 +329,40 @@ input[type='range']::-moz-range-thumb { pointer-events: auto; }
       });
     });
 
+    // Auto-submit form when any checkbox is toggled (category, subcategory, make, condition)
+    var filterForm = document.getElementById('varner-inventory-filter-form');
+    if (filterForm) {
+      filterForm.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          if (filterForm.requestSubmit) {
+            filterForm.requestSubmit();
+          } else {
+            filterForm.submit();
+          }
+        });
+      });
+
+      // Clear empty or full-bound range inputs before submit so they don't exclude units with missing meta
+      filterForm.addEventListener('submit', function() {
+        ['price_min', 'price_max', 'year_min', 'year_max'].forEach(function(fieldName) {
+          var input = filterForm.querySelector('input[name="' + fieldName + '"]');
+          if (input && (input.value === '' || input.value === '0')) {
+            input.disabled = true;
+          }
+        });
+      });
+    }
+
     // Mobile filter accordion toggle
     var filterToggle = document.getElementById('vne-mobile-filter-toggle');
     var filterContent = document.getElementById('vne-mobile-filter-content');
     var filterIcon = document.getElementById('vne-mobile-filter-icon');
     if (filterToggle && filterContent && filterIcon) {
       filterToggle.addEventListener('click', function() {
+        var isHidden = filterContent.classList.contains('hidden');
         filterContent.classList.toggle('hidden');
-        if (filterContent.classList.contains('hidden')) {
-          filterIcon.style.transform = 'rotate(0deg)';
-        } else {
-          filterIcon.style.transform = 'rotate(180deg)';
-        }
+        filterIcon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        filterToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
       });
     }
   });

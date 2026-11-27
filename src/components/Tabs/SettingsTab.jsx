@@ -38,6 +38,9 @@ export const SettingsTab = ({ showToast }) => {
     about_why_choose_us_title: '',
     about_why_choose_us_bullets: [],
     contact_email: '',
+    sales_email: '',
+    parts_email: '',
+    service_email: '',
     contact_phone: '',
     contact_phone_raw: '',
     contact_address_line1: '',
@@ -264,7 +267,7 @@ export const SettingsTab = ({ showToast }) => {
       {/* LEFT COLUMN: Controls Panel */}
       <div 
         id="settings-editor-container" 
-        className="w-full lg:w-[420px] xl:w-[480px] shrink-0 space-y-6 sm:space-y-8 lg:max-h-[calc(100vh-12rem)] lg:overflow-y-auto pr-2 no-scrollbar pb-24"
+        className="w-full lg:w-[420px] xl:w-[480px] shrink-0 space-y-6 sm:space-y-8 lg:max-h-[calc(100vh-12rem)] lg:overflow-y-auto pr-2 pb-24"
       >
         
         {/* SECTION QUICK-JUMP NAV */}
@@ -498,16 +501,35 @@ export const SettingsTab = ({ showToast }) => {
             onToggle={() => toggleSection('contact')}
           >
             <div className="space-y-4">
-              <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputField
-                  label="Primary Notification Email Address"
+                  label="General Inquiries Email"
                   value={settings.contact_email}
                   onChange={v => handleFieldChange('contact_email', v)}
+                  placeholder="ashley@varnerequipment.com"
                 />
-                <p className="text-[10px] font-bold text-slate-400 pl-1 mt-1.5 uppercase tracking-wide">
-                  * Critical: This email receives all submissions from the frontend Chatbox, Contact Form, Parts Request, and Service Request forms.
-                </p>
+                <InputField
+                  label="Sales / Units Email"
+                  value={settings.sales_email}
+                  onChange={v => handleFieldChange('sales_email', v)}
+                  placeholder="jacob@varnerequipment.com"
+                />
+                <InputField
+                  label="Parts Requests Email"
+                  value={settings.parts_email}
+                  onChange={v => handleFieldChange('parts_email', v)}
+                  placeholder="parts@varnerequipment.com"
+                />
+                <InputField
+                  label="Service Requests Email"
+                  value={settings.service_email}
+                  onChange={v => handleFieldChange('service_email', v)}
+                  placeholder="shop@varnerequipment.com"
+                />
               </div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">
+                Contact form &amp; chatbox route to <strong>General</strong>. Parts form routes to <strong>Parts</strong>. Service form routes to <strong>Service</strong>. Item-page emails route to <strong>Sales</strong>. Each falls back to General if its specific field is blank.
+              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputField
@@ -648,6 +670,7 @@ export const SettingsTab = ({ showToast }) => {
                         onClick={() => handleRemoveSocialLink(idx)}
                         className="bg-red-50 text-red-600 border border-red-100 p-3 rounded-xl hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center shrink-0 w-full sm:w-auto h-[46px]"
                         title="Remove Link"
+                        aria-label="Remove social link"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -722,6 +745,7 @@ export const SettingsTab = ({ showToast }) => {
                           handleFieldChange('about_why_choose_us_bullets', updated);
                         }}
                         className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
+                        aria-label="Remove bullet point"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -791,6 +815,7 @@ export const SettingsTab = ({ showToast }) => {
                           disabled={idx === 0}
                           className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
                           title="Move Up"
+                          aria-label="Move job up"
                         >
                           <ChevronUp size={14} />
                         </button>
@@ -807,6 +832,7 @@ export const SettingsTab = ({ showToast }) => {
                           disabled={idx === settings.employment_jobs.length - 1}
                           className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
                           title="Move Down"
+                          aria-label="Move job down"
                         >
                           <ChevronDown size={14} />
                         </button>
@@ -819,6 +845,7 @@ export const SettingsTab = ({ showToast }) => {
                           }}
                           className="bg-white border border-slate-200 text-red-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-100"
                           title="Delete Job Opening"
+                          aria-label="Delete job opening"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -982,6 +1009,7 @@ export const SettingsTab = ({ showToast }) => {
                         disabled={idx === 0}
                         className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
                         title="Move Up"
+                        aria-label="Move finance card up"
                       >
                         <ChevronUp size={14} />
                       </button>
@@ -998,6 +1026,7 @@ export const SettingsTab = ({ showToast }) => {
                         disabled={idx === settings.finance_cards.length - 1}
                         className="bg-white border border-slate-200 text-slate-400 p-2 rounded-xl hover:text-slate-900 disabled:opacity-30"
                         title="Move Down"
+                        aria-label="Move finance card down"
                       >
                         <ChevronDown size={14} />
                       </button>
@@ -1010,6 +1039,7 @@ export const SettingsTab = ({ showToast }) => {
                         }}
                         className="bg-white border border-slate-200 text-red-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-100"
                         title="Delete Card"
+                        aria-label="Delete finance card"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -1079,6 +1109,7 @@ export const SettingsTab = ({ showToast }) => {
                               }}
                               className="bg-red-50 text-red-600 border border-red-100 px-4 py-4 rounded-xl hover:bg-red-100 transition-all flex items-center gap-2"
                               title="Remove Logo"
+                              aria-label="Remove logo"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -1167,6 +1198,7 @@ export const SettingsTab = ({ showToast }) => {
                                 }}
                                 className="bg-red-50 text-red-600 border border-red-100 px-4 py-4 rounded-xl hover:bg-red-100 transition-all flex items-center gap-2"
                                 title="Remove PDF"
+                                aria-label="Remove PDF"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -1265,6 +1297,7 @@ export const SettingsTab = ({ showToast }) => {
                             rel="noopener noreferrer"
                             className="bg-white border border-slate-200 text-slate-400 p-2 rounded-lg hover:text-slate-900 transition-colors"
                             title="View Page"
+                            aria-label="View page"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                           </a>
@@ -1282,6 +1315,7 @@ export const SettingsTab = ({ showToast }) => {
                             }}
                             className="bg-white border border-slate-200 text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"
                             title="Trash Page"
+                            aria-label="Trash page"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -1306,12 +1340,12 @@ export const SettingsTab = ({ showToast }) => {
           </CollapsiblePanel>
         </div>
 
-        {/* STATIONARY SAVE CONFIGURATION BAR */}
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 flex items-center justify-center mt-8 shadow-xl">
+        {/* STICKY SAVE CONFIGURATION BAR — always visible */}
+        <div className="sticky bottom-0 bg-white/90 backdrop-blur-md rounded-[2rem] p-4 sm:p-6 border border-slate-200/60 flex items-center justify-center mt-8 shadow-2xl border-t-4 border-t-red-500 z-20">
           <button
             onClick={handleSaveSettings}
             disabled={isSaving}
-            className="w-full bg-red-600 hover:bg-red-700 text-white px-10 py-6 rounded-2xl font-black text-xs uppercase tracking-[0.25em] flex items-center justify-center gap-3 active:scale-95 transition-all border-b-4 border-red-800 disabled:opacity-50 shadow-xl shadow-red-200"
+            className="w-full bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.25em] flex items-center justify-center gap-3 active:scale-95 transition-all border-b-4 border-red-800 disabled:opacity-50 shadow-xl shadow-red-200"
           >
             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             {isSaving ? 'SAVING CHANGES…' : 'SAVE CONFIGURATION'}

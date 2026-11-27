@@ -2,9 +2,18 @@
 /**
  * Single Equipment Unit — Detail Page
  */
-get_header();
+$post_id = get_the_ID();
+$show_on_website = get_post_meta( $post_id, 'show_on_website', true );
+if ( $show_on_website === '0' && ! current_user_can( 'edit_others_posts' ) ) {
+    global $wp_query;
+    $wp_query->set_404();
+    status_header( 404 );
+    nocache_headers();
+    include get_query_template( '404' );
+    exit;
+}
 
-$post_id         = get_the_ID();
+get_header();
 $year            = get_field( 'year',         $post_id );
 $make            = get_field( 'make',         $post_id );
 $model           = get_field( 'model',        $post_id );
@@ -42,10 +51,23 @@ $stock_status    = get_field( 'stock_status', $post_id );
 $has_attachments = get_field( 'has_attachments', $post_id );
 $attachment_details = get_field( 'attachment_details', $post_id );
 $drive           = get_field( 'drive', $post_id );
-$images          = varner_get_card_images( $post_id );
+$images          = function_exists( 'varner_get_card_images' ) ? varner_get_card_images( $post_id, 'large' ) : array();
+$lightbox_images = function_exists( 'varner_get_card_full_images' ) ? varner_get_card_full_images( $post_id ) : $images;
+if ( empty( $images ) ) {
+    $images = array( get_template_directory_uri() . '/assets/VarnerEquipment_red.png' );
+    $lightbox_images = $images;
+}
 
 $formatted_price = $call_for_price ? 'Call For Price' : (is_numeric( $price ) ? number_format( $price ) : (string) $price);
-$title_text      = trim( "$year $make $model" ) ?: get_the_title();
+$location_parts  = explode( ' ', varner_get_theme_setting( 'contact_address_line2', 'Delta, CO' ) );
+$location_short  = isset( $location_parts[0] ) ? rtrim( $location_parts[0], ',' ) . ' ' . ( $location_parts[1] ?? '' ) : 'Delta, CO';
+$title_text      = trim( "$year $make $model" . ( $category ? " — $category" : '' ) . ( $location_short ? " at Varner Equipment, $location_short" : '' ) ) ?: get_the_title();
+
+$base_alt = trim( implode( ' ', array_filter( array( $condition, $year, $make, $model, $category ) ) ) );
+if ( empty( $base_alt ) ) {
+    $base_alt = $title_text;
+}
+$base_alt .= ' for sale at Varner Equipment in ' . $location_short;
 
 // Monthly payment — 10% APR, 60 months
 $monthly_payment = '';
@@ -63,13 +85,15 @@ $finance_url    = add_query_arg( array(
 ), home_url( '/finance' ) );
 ?>
 
+<main id="main-content">
 <section class="pt-32 pb-24 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
 
 
         <!-- Back link -->
-        <a href="javascript:history.back()"
-           class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-red-600 transition-colors mb-10">
+        <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>"
+           onclick="if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) { event.preventDefault(); window.history.back(); }"
+           class="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-red-600 transition-colors mb-10">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Search Results
         </a>
@@ -80,12 +104,27 @@ $finance_url    = add_query_arg( array(
             <!-- LEFT: Image Gallery -->
             <div class="w-full lg:w-[520px] shrink-0">
 
-                <!-- Main image carousel -->
-                <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] border border-slate-200 shadow-lg mb-3 cursor-zoom-in" id="vne-detail-carousel">
-                    <?php foreach ( $images as $i => $img_url ) : ?>
+                <!-- Main image carousel (16:11 matching inventory cards) -->
+                <div class="relative bg-slate-100 rounded-2xl overflow-hidden aspect-[16/11] border border-slate-200 shadow-lg mb-3 cursor-zoom-in" id="vne-detail-carousel">
+                    <!-- Circling Spinner Loader -->
+                    <div class="vne-img-spinner absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                        <svg class="animate-spin h-8 w-8 text-red-600/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
+                    <?php foreach ( $images as $i => $img_url ) : 
+                        $alt_desc = $base_alt;
+                        if ( count( $images ) > 1 ) {
+                            $alt_desc .= ' - Photo ' . ( $i + 1 );
+                        }
+                    ?>
                     <img src="<?php echo esc_url( $img_url ); ?>"
-                         alt="<?php echo esc_attr( $title_text ); ?>"
+                         alt="<?php echo esc_attr( $alt_desc ); ?>"
                          loading="<?php echo $i === 0 ? 'eager' : 'lazy'; ?>"
+                         decoding="async"
+                         <?php if ( $i === 0 ) echo 'fetchpriority="high"'; ?>
                          class="vne-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                          style="opacity:<?php echo $i === 0 ? '1' : '0'; ?>">
                     <?php endforeach; ?>
@@ -107,19 +146,21 @@ $finance_url    = add_query_arg( array(
                 </div>
 
                 <!-- Photos count -->
-                <p class="text-center text-[11px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                <p class="text-center text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3">
                     Photos (<?php echo count( $images ); ?>)
                 </p>
 
                 <!-- Thumbnail strip -->
                 <?php if ( count( $images ) > 1 ) : ?>
                 <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;">
-                    <?php foreach ( $images as $i => $img_url ) : ?>
-                    <button class="vne-thumb shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200"
+                    <?php foreach ( $images as $i => $img_url ) : 
+                        $alt_desc = $base_alt . ' - Thumbnail Photo ' . ( $i + 1 );
+                    ?>
+                    <button class="vne-thumb shrink-0 w-20 aspect-[16/11] rounded-xl overflow-hidden border-2 transition-all duration-200"
                             style="border-color:<?php echo $i === 0 ? 'rgb(220,38,38)' : 'rgb(226,232,240)'; ?>"
                             data-index="<?php echo $i; ?>"
                             aria-label="Photo <?php echo $i + 1; ?>">
-                        <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy"
+                        <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $alt_desc ); ?>" loading="lazy" decoding="async"
                              class="w-full h-full object-cover">
                     </button>
                     <?php endforeach; ?>
@@ -128,18 +169,34 @@ $finance_url    = add_query_arg( array(
             </div>
 
             <!-- RIGHT: Details panel -->
-            <div class="flex-1 min-w-0 space-y-6">
+            <div class="w-full lg:flex-1 min-w-0 space-y-6">
 
                 <!-- Brand + Title + Category -->
                 <div>
                     <?php if ( $make ) : ?>
-                    <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
+                    <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
                     <?php endif; ?>
-                    <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight">
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight break-words">
                         <?php echo esc_html( $title_text ); ?>
                     </h1>
                     <?php if ( $category ) : ?>
                     <p class="text-red-600 text-[11px] font-black uppercase tracking-widest mt-1"><?php echo esc_html( $category ); ?></p>
+                    <?php endif; ?>
+                    <?php
+                    $detail_subcat    = get_field('subcategory', $post_id);
+                    $detail_subsubcat = get_field('sub_subcategory', $post_id);
+                    // Normalize subcategory (may be serialized array from migration)
+                    if ( is_string( $detail_subcat ) ) {
+                        $maybe = @unserialize( $detail_subcat );
+                        if ( is_array( $maybe ) ) $detail_subcat = implode( ', ', array_filter( $maybe ) );
+                    } elseif ( is_array( $detail_subcat ) ) {
+                        $detail_subcat = implode( ', ', array_filter( $detail_subcat ) );
+                    }
+                    if ( $detail_subcat ) : ?>
+                    <p class="text-slate-700 text-[9px] font-bold uppercase tracking-widest mt-0.5"><?php echo esc_html( $detail_subcat ); ?></p>
+                    <?php endif; ?>
+                    <?php if ( $detail_subsubcat ) : ?>
+                    <p class="text-slate-600 text-[9px] font-bold uppercase tracking-widest mt-0.5"><?php echo esc_html( $detail_subsubcat ); ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -147,7 +204,7 @@ $finance_url    = add_query_arg( array(
                 <div class="border-t border-slate-200 pt-5">
                     <div class="flex items-baseline gap-2">
                         <?php if ( strpos($formatted_price, 'Call') === false ) : ?>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">USD</span>
+                        <span class="text-xs font-black uppercase tracking-widest text-slate-500">USD</span>
                         <span class="text-4xl font-black text-red-600 tracking-tight">$<?php echo esc_html( $formatted_price ); ?></span>
                         <?php else : ?>
                         <span class="text-4xl font-black text-red-600 tracking-tight"><?php echo esc_html( $formatted_price ); ?></span>
@@ -155,17 +212,17 @@ $finance_url    = add_query_arg( array(
                     </div>
                     <?php if ( $monthly_payment && strpos($formatted_price, 'Call') === false ) : ?>
                     <div class="flex items-center gap-2 mt-2 text-[12px] text-slate-500 font-bold flex-wrap">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 shrink-0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                         <a href="<?php echo esc_url( $finance_url ); ?>" class="hover:text-red-600 transition-colors font-black">Financial Calculator</a>
-                        <span class="text-slate-200">|</span>
+                        <span class="text-slate-500">|</span>
                         <span>Payments as low as <strong class="text-slate-700">USD $<?php echo number_format( $monthly_payment, 2 ); ?>*</strong></span>
                     </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- E-mail Us -->
-                <a href="mailto:jacob@varnerequipment.com?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
-                   class="flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[11px] hover:bg-red-600 transition-all shadow-md w-full">
+                <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>?subject=<?php echo rawurlencode( 'Inquiry: ' . $title_text ); ?>&body=<?php echo rawurlencode( 'I am interested in Stock #' . $stock_number . '. Please contact me.' ); ?>"
+                   class="flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-md w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     E-mail Us
                 </a>
@@ -174,10 +231,10 @@ $finance_url    = add_query_arg( array(
                 <div class="flex items-start gap-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 shrink-0 mt-0.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     <div class="text-sm">
-                        <span class="font-black text-slate-900 text-[11px] uppercase tracking-widest">Machine Location: </span>
+                        <span class="font-black text-slate-900 text-xs uppercase tracking-widest">Machine Location: </span>
                         <span class="text-slate-600 font-bold">1375 Highway 50, Delta, Colorado 81416</span>
-                        <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener"
-                           class="inline-flex ml-1 text-slate-400 hover:text-red-600 transition-colors align-middle">
+                        <a href="https://maps.app.goo.gl/bM7LKVmX8K2T7LpK9" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex ml-1 text-slate-500 hover:text-red-600 transition-colors align-middle p-2 -m-2" aria-label="Get directions">
                             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         </a>
                     </div>
@@ -185,22 +242,22 @@ $finance_url    = add_query_arg( array(
 
                 <!-- Seller Information -->
                 <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Seller Information</h3>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Seller Information</h3>
                     <div class="flex flex-col sm:flex-row gap-4 justify-between">
                         <div>
                             <p class="font-black text-slate-900 text-sm">Varner Equipment</p>
-                            <p class="text-[11px] text-slate-500 font-bold mt-0.5">Delta, Colorado 81416</p>
+                            <p class="text-xs text-slate-500 font-bold mt-0.5">Delta, Colorado 81416</p>
                         </div>
                         <div class="flex flex-col gap-2.5">
                             <a href="tel:9708740612"
-                               class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
+                               class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.72a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                 (970) 874-0612
                             </a>
-                            <a href="mailto:jacob@varnerequipment.com"
-                               class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
+                            <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>"
+                               class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors break-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                                jacob@varnerequipment.com
+                                <?php $__se2 = varner_get_theme_setting('sales_email'); echo esc_html( !empty($__se2) ? $__se2 : 'jacob@varnerequipment.com' ); ?>
                             </a>
                         </div>
                     </div>
@@ -209,7 +266,7 @@ $finance_url    = add_query_arg( array(
                 <!-- Financing CTA -->
                 <div class="flex flex-col gap-3">
                     <a href="<?php echo esc_url( $finance_url ); ?>"
-                       class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-red-600 transition-all shadow-md">
+                       class="flex items-center justify-center gap-2 bg-slate-800 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-red-600 transition-all shadow-md">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         *Apply for Financing
                     </a>
@@ -224,6 +281,7 @@ $finance_url    = add_query_arg( array(
             <div class="w-16 h-1.5 bg-red-600 mb-6 rounded-full"></div>
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <table class="w-full">
+                    <caption class="sr-only">Equipment Specifications</caption>
                     <tbody class="divide-y divide-slate-100">
                         <?php
                         $specs = array(
@@ -246,10 +304,10 @@ $finance_url    = add_query_arg( array(
                             if ( ! $value ) continue;
                         ?>
                         <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-8 py-4 w-44 text-[11px] font-black uppercase tracking-widest text-slate-400 align-top bg-slate-50/60 border-r border-slate-100"><?php echo esc_html( $label ); ?></td>
+                            <th scope="row" class="px-8 py-4 w-44 text-xs font-black uppercase tracking-widest text-slate-500 align-top bg-slate-50/60 border-r border-slate-100 text-left"><?php echo esc_html( $label ); ?></th>
                             <td class="px-8 py-4 text-sm font-bold text-slate-700">
                                 <?php if ( $type === 'html' ) : ?>
-                                <div class="prose prose-sm max-w-none"><?php echo wp_kses_post( $value ); ?></div>
+                                <div class="prose prose-sm prose-tight max-w-none"><?php echo wp_kses_post( make_clickable( $value ) ); ?></div>
                                 <?php else : ?>
                                 <?php echo nl2br( esc_html( $value ) ); ?>
                                 <?php endif; ?>
@@ -302,12 +360,14 @@ $finance_url    = add_query_arg( array(
         
         <?php if ( count( $images ) > 1 ) : ?>
         <div class="flex gap-2.5 overflow-x-auto max-w-full pb-2 px-4 justify-center" style="scrollbar-width: none;">
-            <?php foreach ( $images as $idx => $img_url ) : ?>
+            <?php foreach ( $images as $idx => $img_url ) : 
+                $alt_desc = $base_alt . ' - Lightbox Photo ' . ( $idx + 1 );
+            ?>
             <button class="lightbox-thumb shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all duration-200 opacity-60 hover:opacity-100"
                     style="border-color: transparent;"
                     data-index="<?php echo $idx; ?>"
                     aria-label="Lightbox Photo <?php echo $idx + 1; ?>">
-                <img src="<?php echo esc_url( $img_url ); ?>" alt="" loading="lazy" class="w-full h-full object-cover">
+                <img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $alt_desc ); ?>" loading="lazy" class="w-full h-full object-cover">
             </button>
             <?php endforeach; ?>
         </div>
@@ -360,8 +420,8 @@ $finance_url    = add_query_arg( array(
         var lightboxNext = document.getElementById('lightbox-next');
         var lightboxThumbs = lightbox.querySelectorAll('.lightbox-thumb');
         
-        var imagesArray = <?php echo json_encode( $images ); ?>;
-        var titleText = <?php echo json_encode( $title_text ); ?>;
+        var imagesArray = <?php echo wp_json_encode( $lightbox_images, JSON_HEX_TAG | JSON_HEX_AMP ); ?>;
+        var titleText = <?php echo wp_json_encode( $title_text, JSON_HEX_TAG | JSON_HEX_AMP ); ?>;
         
         function openLightbox(index) {
             document.body.style.overflow = 'hidden'; // Prevent page scroll
@@ -471,5 +531,6 @@ $finance_url    = add_query_arg( array(
     }
 })();
 </script>
+</main>
 
 <?php get_footer(); ?>

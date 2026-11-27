@@ -1,11 +1,11 @@
 export const DEFAULT_EMPTY_UNIT = {
   id: null,
   title: '', year: '', make: '', model: '', stockNumber: '', condition: 'New',
-  price: '', callForPrice: false, vin: '', stockStatus: 'Draft', 
+  price: '', callForPrice: false, vin: '', stockStatus: 'In Stock', 
   category: '', subcategory: '', sub_subcategory: '',
-  color: '', length: '', meter: '', meterType: 'Hours', intakeDate: '', description: '',
-  featured: false, showOnWebsite: true, facebookSync: true, images: [], image_ids: [], attachments: [],
-  sellerInfo: '<p>Call or stop by to see it in person</p><p>Varner Equipment</p><p>1375 Hwy 50</p><p>Delta, CO 81416</p><p>(970) 874-0612</p>',
+  color: '', length: '', meter: '', meterType: 'Hours', intakeDate: '',   description: '<p>Call us at 970-874-0612 or come by and see it for yourself!</p><p>Varner Equipment<br />1375 Hwy 50<br />Delta, CO 81416<br />970-874-0612</p><p><a href=\"https://www.varnerequipment.com\">www.varnerequipment.com</a><br />Check out our parts website at <a href=\"https://www.varnerparts.com\">VarnerParts.com</a></p>',
+  featured: false, showOnWebsite: true, facebookSync: false, images: [], image_ids: [], attachments: [],
+  sellerInfo: '',
   hasAttachments: false, attachmentDetails: '', drive: '',
 };
 
@@ -46,22 +46,19 @@ export const CATEGORY_TREE = {
   "Chemical Applicators": {
     "Sprayers": ["3 pt/Mounted"]
   },
-  "Manure Handling": {},
-  "Manure Spreaders": {
-    "Dry": []
-  },
   "Grain Handling / Storage Equipment": {
     "Grain Augers": []
   },
   "Ag Trailers": {
     "Other": []
   },
-  "Outdoor Power": {
+  "Snow Equipment": {
     "Lawn Mowers": ["Riding"],
     "Snow Blowers": []
   },
-  "Other Equipment": {
-    "Blades/Box Scrapers": []
+  "Implements": {
+    "Blades/Box Scrapers": [],
+    "Manure Spreaders": ["Dry"]
   },
   "Turf Equipment": {
     "Mowers": ["Fairway"]

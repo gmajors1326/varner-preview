@@ -6,7 +6,7 @@ get_header();
     <section class="pt-32 pb-24 bg-slate-50 min-h-[60vh]">
         <div class="max-w-7xl mx-auto px-4">
             <div class="mb-12">
-                <div class="text-red-600 font-black text-[10px] uppercase tracking-[0.4em] mb-4">Varner Equipment</div>
+                <div class="text-red-600 font-black text-xs uppercase tracking-[0.4em] mb-4">Varner Equipment</div>
                 <h1 class="text-5xl font-black text-slate-900 tracking-tighter uppercase mb-6"><?php echo esc_html( get_the_title() ?: 'About Us' ); ?></h1>
                 <div class="w-24 h-2 bg-red-600 mb-10"></div>
             </div>
@@ -14,9 +14,9 @@ get_header();
             <div class="flex flex-col md:flex-row gap-16 items-start">
                 <div class="w-full md:w-1/2 prose prose-lg prose-slate max-w-none font-bold text-slate-600 leading-relaxed space-y-6">
 
-                    <p>Varner Equipment is a family-run dealership in Delta, Colorado, focused on keeping farmers, ranchers, and property owners productive. We pair proven brands like Big Tex, TYM, Mahindra, Krone, MacDon, and Triton with local know-how, so you get the right tractor, trailer, or implement for your land and budget. Our team listens first, recommends what truly fits, and stands behind every sale with responsive support.</p>
-                    <p>We stock new and pre-owned equipment—from compact and utility tractors to hay tools, flatbed and dump trailers, and work-ready attachments. Every unit is inspected, clearly priced, and ready to work, whether you need horsepower for acreage, hauling capacity for business, or a dependable setup for the season. If you don’t see it on the lot, we’ll help source it.</p>
-                    <p>Service is the heart of Varner Equipment. Our technicians handle maintenance, repairs, and parts requests quickly to keep downtime low and your operation profitable. Call, visit the yard, or browse online—when you’re ready to work, we’re here to help.</p>
+                    <p>Varner Equipment is a family-run dealership located in Delta, Colorado, proudly serving Delta, Montrose, Olathe, Cedaredge, Grand Junction, and the entire Western Slope with heavy-duty tractors, trailers, OEM parts, and local service. We pair proven brands like Big Tex, TYM, Mahindra, Deutz-Fahr, Krone, Macdon, and Triton with local know-how so you get the right machine for your land, business, and budget. Our team listens first, recommends what truly fits, and stands behind every sale with responsive support.</p>
+                    <p>As your premier tractor dealer western Colorado & trailer dealer western Colorado source, we stock new and pre-owned equipment—from compact and utility tractors to hay tools, flatbed and dump trailers, and work-ready attachments. Every unit is inspected, clearly priced, and ready to work, whether you need horsepower for acreage, hauling capacity for business, or a dependable setup for the season. If you don’t see it on the lot, we’ll help source it.</p>
+                    <p>Service is the heart of Varner Equipment. Our factory-trained technicians handle maintenance, repairs, and tractor parts near Delta CO quickly to keep downtime low and your ranch or farm operation profitable. Call (970) 874-0612, visit the yard in Delta, or browse online—when you’re ready to work, we’re here to help.</p>
                 </div>
                 
                 <div class="w-full md:w-1/2 space-y-8">
