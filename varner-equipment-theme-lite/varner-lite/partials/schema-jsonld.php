@@ -76,35 +76,16 @@ function varner_localbusiness_schema() {
 		'telephone'      => $phone_tel,
 		'email'          => $email,
 		'priceRange'     => '$$$',
-		'description'    => 'Varner Equipment Delta CO — Premier Mahindra dealer Colorado & TYM tractors Colorado source, stocking Big Tex trailers Delta Colorado, Deutz-Fahr tractors Colorado, Krone equipment dealer Colorado, and Western trailers Delta CO.',
-		'keywords'       => 'utility trailers for sale western colorado, Mahindra tractors Delta CO, Mahindra dealer Colorado, Big Tex trailers Delta Colorado, Big Tex dealer western Colorado, Deutz-Fahr tractors Colorado, Krone equipment dealer Colorado, Western trailers Delta CO, Varner Equipment Delta CO, TYM tractors Colorado, tractor dealer Delta CO, tractor dealer western Colorado, used tractors Delta Colorado, trailer dealer Montrose CO, farm equipment dealer Delta County, agricultural equipment Delta Colorado, hay equipment dealer Colorado, utility trailers for sale Delta CO, dump trailers Montrose CO, equipment financing Delta CO, tractor parts near Delta CO, tractor service Delta Colorado, Varner Equipment inventory, Varner Equipment tractors for sale, Varner Equipment trailers for sale, Varner Equipment Delta Colorado reviews',
+		'description'    => 'Family-owned equipment and trailer dealership in Delta, Colorado serving the Western Slope with Mahindra, TYM, and Deutz-Fahr tractors, Big Tex and Triton trailers, Krone and MacDon hay tools, OEM parts, and local service.',
 		'knowsAbout'     => array(
-			'utility trailers for sale western colorado',
-			'Mahindra tractors Delta CO',
-			'Mahindra dealer Colorado',
-			'Big Tex trailers Delta Colorado',
-			'Big Tex dealer western Colorado',
-			'Deutz-Fahr tractors Colorado',
-			'Krone equipment dealer Colorado',
-			'Western trailers Delta CO',
-			'Varner Equipment Delta CO',
-			'TYM tractors Colorado',
-			'tractor dealer Delta CO',
-			'tractor dealer western Colorado',
-			'used tractors Delta Colorado',
-			'trailer dealer Montrose CO',
-			'farm equipment dealer Delta County',
-			'agricultural equipment Delta Colorado',
-			'hay equipment dealer Colorado',
-			'utility trailers for sale Delta CO',
-			'dump trailers Montrose CO',
-			'equipment financing Delta CO',
-			'tractor parts near Delta CO',
-			'tractor service Delta Colorado',
-			'Varner Equipment inventory',
-			'Varner Equipment tractors for sale',
-			'Varner Equipment trailers for sale',
-			'Varner Equipment Delta Colorado reviews',
+			'Tractors',
+			'Trailers',
+			'Dump Trailers',
+			'Utility Trailers',
+			'Hay Equipment',
+			'Tractor Attachments',
+			'Equipment Parts and Service',
+			'Equipment Financing',
 		),
 		'address'        => array(
 			'@type'           => 'PostalAddress',
@@ -194,6 +175,8 @@ function varner_listing_schema() {
 	$hours          = get_field( 'hours',        $id );
 	$hp             = get_field( 'horsepower',   $id );
 	$vin            = get_field( 'vin',          $id );
+	$length         = get_field( 'length',       $id );
+	$category       = get_field( 'category',     $id );
 
 	// Images: reuse the existing helper that handles gallery + thumbnail + fallback.
 	$images = function_exists( 'varner_get_card_images' )
@@ -219,39 +202,14 @@ function varner_listing_schema() {
 	if ( ! empty( $images ) ) { $product['image']       = $images; }
 	if ( $make )              { $product['brand']       = array( '@type' => 'Brand', 'name' => $make ); }
 	if ( $model )             { $product['model']       = (string) $model; }
+	if ( $category )          { $product['category']    = (string) $category; }
 
 	$add_props = array();
-	if ( ! empty( $hours ) ) { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Hours', 'value' => (string) $hours ); }
-	if ( ! empty( $hp ) )    { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Horsepower', 'value' => (string) $hp ); }
-	if ( ! empty( $vin ) )   { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'VIN', 'value' => (string) $vin ); }
+	if ( ! empty( $length ) ) { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Length', 'value' => (string) $length ); }
+	if ( ! empty( $hours ) )  { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Hours', 'value' => (string) $hours ); }
+	if ( ! empty( $hp ) )     { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'Horsepower', 'value' => (string) $hp ); }
+	if ( ! empty( $vin ) )    { $add_props[] = array( '@type' => 'PropertyValue', 'name' => 'VIN', 'value' => (string) $vin ); }
 	if ( ! empty( $add_props ) ) { $product['additionalProperty'] = $add_props; }
-
-	// Aggregate Rating & Review for Google Product Snippets compliance
-	$product['aggregateRating'] = array(
-		'@type'       => 'AggregateRating',
-		'ratingValue' => '4.9',
-		'reviewCount' => '87',
-		'bestRating'  => '5',
-		'worstRating' => '1',
-	);
-
-	$product['review'] = array(
-		array(
-			'@type'         => 'Review',
-			'reviewRating'  => array(
-				'@type'       => 'Rating',
-				'ratingValue' => '5',
-				'bestRating'  => '5',
-				'worstRating' => '1',
-			),
-			'author'        => array(
-				'@type' => 'Person',
-				'name'  => 'Verified Customer',
-			),
-			'reviewBody'    => 'Excellent heavy equipment quality, honest pricing, and outstanding service from Varner Equipment in Delta, CO.',
-			'datePublished' => '2026-01-15',
-		),
-	);
 
 	// Only build an Offer when there's a real price (no fake $0 "call for price").
 	if ( $price > 0 && ! $call_for_price ) {
@@ -334,13 +292,49 @@ function varner_inventory_itemlist_schema() {
 		return;
 	}
 
-	$args = array(
-		'post_type'      => 'equipment',
-		'posts_per_page' => 24,
-		'post_status'    => 'publish',
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-	);
+	$base_meta = array();
+	$segment_keyword = '';
+	$list_name = get_the_title() ?: 'Varner Equipment Inventory';
+	$seg_slug  = get_query_var( 'inventory_segment' );
+	$b_slug    = get_query_var( 'brand_name' ) ? sanitize_title( get_query_var( 'brand_name' ) ) : '';
+
+	if ( $seg_slug && function_exists( 'varner_get_segment_seo' ) ) {
+		$seo = varner_get_segment_seo( $seg_slug );
+		if ( $seo ) {
+			$list_name = $seo['h1'] ?? $list_name;
+			if ( ! empty( $seo['filter'] ) ) {
+				foreach ( $seo['filter'] as $key => $vals ) {
+					if ( $key === 'subcategory' && function_exists( 'varner_build_subcategory_meta_query' ) ) {
+						$base_meta[] = varner_build_subcategory_meta_query( (array) $vals );
+					} elseif ( $key === 's' ) {
+						$segment_keyword = is_array( $vals ) ? implode( ' ', $vals ) : (string) $vals;
+					} else {
+						$base_meta[] = array( 'key' => $key, 'value' => $vals, 'compare' => 'IN' );
+					}
+				}
+			}
+		}
+	}
+
+	if ( $b_slug && function_exists( 'varner_get_brand' ) ) {
+		$b_obj = varner_get_brand( $b_slug );
+		if ( $b_obj && ! empty( $b_obj['make'] ) ) {
+			$base_meta[] = array( 'key' => 'make', 'value' => array( $b_obj['make'] ), 'compare' => 'IN' );
+			$seg_label   = isset( $seo['label'] ) ? $seo['label'] : $list_name;
+			$list_name   = $b_obj['name'] . ' ' . $seg_label . ' For Sale in Western Colorado';
+		}
+	}
+
+	if ( function_exists( 'varner_build_inventory_query' ) ) {
+		$args = varner_build_inventory_query( $base_meta, 24, $segment_keyword );
+	} else {
+		$args = array(
+			'post_type'      => 'equipment',
+			'posts_per_page' => 24,
+			'post_status'    => 'publish',
+			'meta_query'     => $base_meta,
+		);
+	}
 
 	$query = new WP_Query( $args );
 	if ( ! $query->have_posts() ) {
@@ -374,7 +368,7 @@ function varner_inventory_itemlist_schema() {
 	$item_list = array(
 		'@context'        => 'https://schema.org',
 		'@type'           => 'ItemList',
-		'name'            => get_the_title() ?: 'Varner Equipment Inventory',
+		'name'            => $list_name,
 		'numberOfItems'   => count( $list_items ),
 		'itemListElement' => $list_items,
 	);

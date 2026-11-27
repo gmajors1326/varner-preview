@@ -365,3 +365,25 @@ function varner_handle_employment_submit() {
 add_action( 'admin_post_nopriv_varner_employment_submit', 'varner_handle_employment_submit' );
 add_action( 'admin_post_varner_employment_submit', 'varner_handle_employment_submit' );
 
+/**
+ * Front-end POST dispatcher for public forms on `init` (runs before WP::parse_request
+ * so fields like `name` or `year` never collide with WordPress query vars, and non-admin
+ * visitors never hit /wp-admin/admin-post.php -> /mobile-app/).
+ */
+add_action( 'init', function () {
+    if ( is_admin() || strtoupper( $_SERVER['REQUEST_METHOD'] ?? '' ) !== 'POST' || empty( $_POST['action'] ) ) {
+        return;
+    }
+    $handlers = array(
+        'varner_chatbox_submit'         => 'varner_handle_chatbox_submit',
+        'varner_contact_form_submit'    => 'varner_handle_contact_form_submit',
+        'varner_parts_request_submit'   => 'varner_handle_parts_request_submit',
+        'varner_service_request_submit' => 'varner_handle_service_request_submit',
+        'varner_employment_submit'      => 'varner_handle_employment_submit',
+    );
+    $action = sanitize_key( wp_unslash( $_POST['action'] ) );
+    if ( isset( $handlers[ $action ] ) && function_exists( $handlers[ $action ] ) ) {
+        call_user_func( $handlers[ $action ] );
+    }
+}, 20 );
+

@@ -128,20 +128,23 @@ elseif ( is_singular( 'equipment' ) ) {
 
 // ── Inventory segment pages (e.g. /inventory/tractors) ──────
 elseif ( get_query_var( 'inventory_segment' ) ) {
-    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/inventory/all-units' ) );
+    $crumbs[] = array( 'label' => 'Inventory', 'url' => home_url( '/inventory/all-units/' ) );
     $seg = get_query_var( 'inventory_segment' );
+    $seg_seo = function_exists( 'varner_get_segment_seo' ) ? varner_get_segment_seo( $seg ) : null;
     $seg_labels = array(
-        'new'           => 'New',
-        'used'          => 'Used',
-        'tractors'      => 'Tractors',
-        'trailers'      => 'Trailers',
+        'all-units'        => 'All Inventory',
+        'new'              => 'New',
+        'used'             => 'Used',
+        'tractors'         => 'Tractors',
+        'trailers'         => 'Trailers',
         'utility-trailers' => 'Utility Trailers',
-        'dump-trailers' => 'Dump Trailers',
-        'attachments'   => 'Attachments',
-        'hay-equipment' => 'Hay Equipment',
-        'misc'          => 'Misc.',
+        'dump-trailers'    => 'Dump Trailers',
+        'attachments'      => 'Attachments',
+        'hay-equipment'    => 'Hay Equipment',
+        'misc'             => 'Misc.',
     );
-    $crumbs[] = array( 'label' => $seg_labels[ $seg ] ?? ucfirst( $seg ), 'url' => '' );
+    $crumb_label = $seg_labels[ $seg ] ?? ( $seg_seo['label'] ?? ucwords( str_replace( '-', ' ', $seg ) ) );
+    $crumbs[] = array( 'label' => $crumb_label, 'url' => '' );
 }
 
 // ── All Inventory ─────────────────────────────────────────────

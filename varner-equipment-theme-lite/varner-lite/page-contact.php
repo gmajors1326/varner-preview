@@ -88,7 +88,7 @@ get_header(); ?>
                             </div>
                         <?php endif; ?>
 
-                        <form action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" method="POST" class="space-y-8">
+                        <form action="<?php echo esc_url( get_permalink() ); ?>" method="POST" class="space-y-8">
                             <input type="hidden" name="action" value="varner_contact_form_submit">
                             <?php wp_nonce_field( 'varner_contact_form_submit', 'varner_contact_nonce' ); ?>
 

@@ -77,7 +77,7 @@ get_header();
                     </div>
                     <?php endif; ?>
 
-                    <form action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <form action="<?php echo esc_url( get_permalink() ); ?>" method="POST" enctype="multipart/form-data" class="space-y-4">
                         <?php wp_nonce_field( 'varner_employment_submit', 'varner_employment_nonce' ); ?>
                         <input type="hidden" name="action" value="varner_employment_submit">
 

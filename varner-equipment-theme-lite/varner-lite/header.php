@@ -23,8 +23,8 @@
 
     <?php
     // Dynamic SEO Logic
-    $seo_description = "Varner Equipment Delta CO — Premier source for utility trailers for sale western colorado, Big Tex trailers, Mahindra & TYM tractors across Western Colorado.";
-    $seo_keywords = "utility trailers for sale western colorado, Mahindra tractors Delta CO, Mahindra dealer Colorado, Big Tex trailers Delta Colorado, Big Tex dealer western Colorado, Deutz-Fahr tractors Colorado, Krone equipment dealer Colorado, Western trailers Delta CO, Varner Equipment Delta CO, TYM tractors Colorado, tractor dealer Delta CO, tractor dealer western Colorado, used tractors Delta Colorado, trailer dealer Montrose CO, farm equipment dealer Delta County, agricultural equipment Delta Colorado, hay equipment dealer Colorado, utility trailers for sale Delta CO, dump trailers Montrose CO, equipment financing Delta CO, tractor parts near Delta CO, tractor service Delta Colorado, Varner Equipment inventory, Varner Equipment tractors for sale, Varner Equipment trailers for sale, Varner Equipment Delta Colorado reviews";
+    $seo_description = "Varner Equipment Delta CO — Tractors, trailers, hay equipment, attachments, parts, and service across Western Colorado.";
+    $seo_keywords = "Varner Equipment, Delta CO, tractors, trailers, dump trailers, utility trailers, hay equipment, attachments, Western Colorado";
     $og_title = get_bloginfo('name');
     $og_url = home_url(add_query_arg(null, null));
     $og_image = get_template_directory_uri() . '/assets/VarnerEquipment_red.png';
@@ -48,9 +48,9 @@
         $b_obj = function_exists('varner_get_brand') ? varner_get_brand($b_slug) : null;
         $b_name = $b_obj ? $b_obj['name'] : ucfirst($b_slug);
         $s_seo = function_exists('varner_get_segment_seo') ? varner_get_segment_seo($seg) : null;
-        $s_name = $s_seo ? $s_seo['h1'] : ucfirst($seg);
-        $og_title = "$b_name $s_name for Sale | Varner Equipment Delta CO";
-        $seo_description = "Shop in-stock $b_name $s_name at Varner Equipment in Delta, CO. Serving Western Colorado with high-quality tractors, trailers, and implements.";
+        $s_name = $s_seo ? ( $s_seo['label'] ?? $s_seo['h1'] ) : ucfirst( str_replace( '-', ' ', $seg ) );
+        $og_title = "$b_name $s_name for Sale in Western Colorado | Delta, CO";
+        $seo_description = "Shop in-stock $b_name $s_name for sale in Western Colorado at Varner Equipment in Delta, CO. Serving Montrose, Grand Junction, and the Western Slope.";
         $canonical_url = home_url( "/inventory/$seg/$b_slug/" );
     } elseif ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) {
         $slug = get_query_var('inventory_segment') ?: sanitize_title(get_the_title());
@@ -59,6 +59,12 @@
             $seo_description = $seo['blurb'] ?: ($seo['sub'] . " Browse live inventory at Varner Equipment Delta CO.");
             $seo_keywords = $seo['keywords'] ?? $seo_keywords;
             $og_title = $seo['title'] ?? ($seo['h1'] . " | Varner Equipment Delta CO");
+        }
+        if ( ! empty( $_GET['subcategory'] ) ) {
+            $hdr_subs = array_values( array_filter( array_map( 'sanitize_text_field', (array) $_GET['subcategory'] ) ) );
+            if ( count( $hdr_subs ) === 1 ) {
+                $og_title = $hdr_subs[0] . ' for Sale in Western Colorado | Delta, CO';
+            }
         }
     } elseif ( get_query_var( 'brands_hub' ) ) {
         $og_title        = "Shop by Brand | Tractors, Trailers & Hay Equipment | Varner Equipment";
@@ -98,13 +104,14 @@
         $seo_description = "Contact Varner Equipment at 1375 US-50, Delta, CO. Call 970-874-0612 for sales, parts, service, and financing on farm and ag equipment.";
         $og_title = "Contact Varner Equipment | Delta, CO | 970-874-0612";
     } elseif ( is_front_page() || is_home() || ( $_SERVER['REQUEST_URI'] ?? '' ) === '/' ) {
-        $seo_description = "Family-owned farm and agricultural equipment dealer in Delta, CO. Shop tractors, trailers, and hay equipment across Colorado's Western Slope.";
-        $og_title = "Varner Equipment | Western Colorado's Top Equipment Dealer";
+        $seo_description = "Family-owned equipment and trailer dealer in Delta, CO. Shop tractors, trailers, hay equipment, and attachments across Colorado's Western Slope.";
+        $og_title = "Varner Equipment | Western Colorado's Equipment & Trailer Dealer";
     }
 
-    // Win 4: Detect active search/filter parameters to add noindex and override canonical URL
+    // Detect active search/filter/sort parameters to add noindex while keeping paginated archives indexable
     $has_active_filters = !empty(array_filter(array(
         $_GET['category'] ?? null,
+        $_GET['subcategory'] ?? null,
         $_GET['make'] ?? null,
         $_GET['condition'] ?? null,
         $_GET['year_min'] ?? null,
@@ -113,21 +120,29 @@
         $_GET['price_max'] ?? null,
         $_GET['s'] ?? null,
         $_GET['stock_number'] ?? null,
-        $_GET['vin'] ?? null
+        $_GET['vin'] ?? null,
+        $_GET['sort'] ?? null
     )));
 
-    $canonical_url = home_url( add_query_arg( null, null ) );
-    if ( is_singular() ) {
+    $paged_num   = max( 1, intval( get_query_var( 'paged' ) ?: get_query_var( 'page' ) ) );
+    $page_suffix = ( $paged_num > 1 && ! $has_active_filters ) ? 'page/' . $paged_num . '/' : '';
+
+    if ( is_singular( 'equipment' ) ) {
         $canonical_url = get_permalink();
-    } elseif ( is_page_template('page-equipment-listing.php') ) {
-        $slug = get_query_var('inventory_segment');
-        if ( $slug ) {
-            $canonical_url = home_url( '/inventory/' . $slug );
+    } elseif ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) {
+        $slug   = get_query_var('inventory_segment');
+        $b_slug = get_query_var('brand_name') ? sanitize_title( get_query_var('brand_name') ) : '';
+        if ( $slug && $b_slug ) {
+            $canonical_url = home_url( '/inventory/' . $slug . '/' . $b_slug . '/' . $page_suffix );
+        } elseif ( $slug ) {
+            $canonical_url = home_url( '/inventory/' . $slug . '/' . $page_suffix );
         } else {
-            $canonical_url = get_permalink();
+            $canonical_url = trailingslashit( get_permalink() ) . $page_suffix;
         }
     } elseif ( get_query_var('brand_name') ) {
-        $canonical_url = home_url( '/brands/' . get_query_var('brand_name') );
+        $canonical_url = home_url( '/brands/' . sanitize_title( get_query_var('brand_name') ) . '/' . $page_suffix );
+    } elseif ( is_singular() ) {
+        $canonical_url = trailingslashit( get_permalink() ) . $page_suffix;
     } else {
         $canonical_url = strtok( home_url( add_query_arg( null, null ) ), '?' );
     }
@@ -136,7 +151,7 @@
 
     // Visible <title>: reuse the per-page og:title; upgrade only the generic homepage default
     $seo_title = ( $og_title === get_bloginfo('name') )
-        ? "Varner Equipment | Western Colorado's Top Equipment Dealer"
+        ? "Varner Equipment | Western Colorado's Equipment & Trailer Dealer"
         : $og_title;
     ?>
 
@@ -218,35 +233,6 @@
         varner_listing_schema();
     } ?>
 
-    <!-- ItemList JSON-LD (Category / Inventory Listing Pages) -->
-    <?php if ( get_query_var('inventory_segment') || is_page_template('page-equipment-listing.php') ) :
-        $list_query = new WP_Query( array(
-            'post_type'      => array( 'equipment', 'varner_equipment' ),
-            'post_status'    => 'publish',
-            'posts_per_page' => 10,
-            'fields'         => 'ids',
-        ) );
-        if ( $list_query->have_posts() ) :
-            $items = array();
-            $pos = 1;
-            foreach ( $list_query->posts as $item_id ) {
-                $items[] = array(
-                    '@type'    => 'ListItem',
-                    'position' => $pos++,
-                    'url'      => get_permalink( $item_id ),
-                    'name'     => get_the_title( $item_id ),
-                );
-            }
-            $ld_itemlist = array(
-                '@context'        => 'https://schema.org',
-                '@type'           => 'ItemList',
-                'numberOfItems'   => count( $items ),
-                'itemListElement' => $items,
-            );
-            echo '<script type="application/ld+json">' . wp_json_encode( $ld_itemlist, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
-        endif;
-    endif; ?>
-
 
     <?php wp_head(); ?>
 </head>
@@ -294,16 +280,16 @@
             <div class="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-col lg:flex lg:flex-row lg:justify-between items-center gap-4 w-full relative">
                 
                 <!-- MOBILE ROW 1: LOGO & HAMBURGER -->
-                <div class="flex items-center justify-between w-full lg:w-auto">
-                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="flex items-center justify-start transform hover:rotate-1 transition-transform shrink-0" aria-label="Varner Equipment Homepage">
+                <div class="flex items-center justify-between gap-3 w-full lg:w-auto">
+                    <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="flex items-center justify-start min-w-0 flex-1 lg:flex-initial transform hover:rotate-1 transition-transform" aria-label="Varner Equipment Homepage">
                         <?php 
                         $brand_logo_url = function_exists('varner_get_brand_logo_url') ? varner_get_brand_logo_url('red') : '';
                         ?>
-                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-16 md:h-20 w-auto object-contain" width="254" height="45" fetchpriority="high" loading="eager">
+                        <img src="<?php echo esc_url($brand_logo_url); ?>" alt="Varner Equipment" class="h-11 sm:h-14 md:h-20 w-auto max-w-full object-contain object-left" width="254" height="45" fetchpriority="high" loading="eager">
                     </a>
 
                     <!-- MOBILE MENU TOGGLE -->
-                    <button id="mobile-menu-toggle" class="lg:hidden p-3 bg-slate-100 text-slate-900 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm shrink-0" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
+                    <button id="mobile-menu-toggle" type="button" class="lg:hidden relative z-20 p-3 bg-slate-100 text-slate-900 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm shrink-0" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-menu">
                         <svg id="menu-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -343,13 +329,13 @@
                             </button>
                             <!-- Dropdown Menu -->
                             <div id="desktop-inventory-menu" class="absolute left-0 top-full mt-2 w-56 bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
-                                <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">All Inventory</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">New</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Used</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tractors</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/attachments' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Attachments</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/hay-equipment' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Hay Equipment</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/all-units/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">All Inventory</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/new/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">New</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/used/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Used</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/tractors/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tractors</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/attachments/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Attachments</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/hay-equipment/' ) ); ?>" class="block px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Hay Equipment</a>
                             </div>
                         </div>
 
@@ -361,16 +347,16 @@
                             </button>
                             <div id="desktop-trailers-menu" class="absolute left-0 top-full mt-2 w-64 max-h-[75vh] overflow-y-auto bg-white border-t-2 border-red-600 shadow-[0_10px_40px_rgba(0,0,0,0.1)] opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all duration-300 z-50 transform origin-top group-hover:translate-y-0 group-focus-within:translate-y-0 translate-y-2">
                                 <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">All Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?s=Bumper+Pull' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Bumper Pull</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Cargo+%2F+Enclosed+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Cargo / Enclosed Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Car+Hauler+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Car Hauler Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/bumper-pull-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Bumper Pull</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/cargo-enclosed-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Cargo / Enclosed Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/car-hauler-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Car Hauler Trailers</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Dump Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Flatbed+%2F+Tag+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Flatbed / Tag Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Gooseneck+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Gooseneck Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Livestock+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Livestock Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Pipe+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Pipe Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Snowmobile+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Snowmobile Trailers</a>
-                                <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Tilt+Trailers' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tilt Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/flatbed-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Flatbed / Tag Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/gooseneck-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Gooseneck Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/livestock-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Livestock Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/pipe-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Pipe Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/snowmobile-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Snowmobile Trailers</a>
+                                <a href="<?php echo esc_url( home_url( '/inventory/tilt-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 border-b border-slate-100 transition-colors">Tilt Trailers</a>
                                 <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers/' ) ); ?>" class="block px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors">Utility Trailers</a>
                             </div>
                         </div>
@@ -479,13 +465,13 @@
                             <svg class="w-4 h-4 transition-transform group-active:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div id="mobile-inventory-submenu" class="hidden bg-white/5 py-2">
-                            <a href="<?php echo esc_url( home_url( '/inventory/all-units' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">All Units</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/new' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">New</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/used' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Used</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/tractors' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Tractors</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">All Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Utility Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Dump Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/all-units/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">All Inventory</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/new/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">New</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/used/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Used</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/tractors/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Tractors</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/attachments/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Attachments</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/hay-equipment/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Hay Equipment</a>
                         </div>
                     </div>
 
@@ -496,16 +482,16 @@
                         </button>
                         <div id="mobile-trailers-submenu" class="hidden bg-white/5 py-2">
                             <a href="<?php echo esc_url( home_url( '/inventory/trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">All Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?s=Bumper+Pull' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Bumper Pull</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Cargo+%2F+Enclosed+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Cargo / Enclosed Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Car+Hauler+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Car Hauler Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/bumper-pull-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Bumper Pull</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/cargo-enclosed-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Cargo / Enclosed Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/car-hauler-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Car Hauler Trailers</a>
                             <a href="<?php echo esc_url( home_url( '/inventory/dump-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Dump Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Flatbed+%2F+Tag+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Flatbed / Tag Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Gooseneck+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Gooseneck Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Livestock+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Livestock Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Pipe+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Pipe Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Snowmobile+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Snowmobile Trailers</a>
-                            <a href="<?php echo esc_url( home_url( '/inventory/trailers/?subcategory%5B%5D=Tilt+Trailers' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Tilt Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/flatbed-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Flatbed / Tag Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/gooseneck-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Gooseneck Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/livestock-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Livestock Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/pipe-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Pipe Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/snowmobile-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Snowmobile Trailers</a>
+                            <a href="<?php echo esc_url( home_url( '/inventory/tilt-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Tilt Trailers</a>
                             <a href="<?php echo esc_url( home_url( '/inventory/utility-trailers/' ) ); ?>" class="block px-12 py-3 text-xs font-bold uppercase text-slate-400 hover:text-white">Utility Trailers</a>
                         </div>
                     </div>
@@ -554,7 +540,8 @@
     <?php get_template_part( 'partials/breadcrumb' ); ?>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    (function() {
+        function initHeaderNav() {
         const toggle = document.getElementById('mobile-menu-toggle');
         const menu = document.getElementById('mobile-menu');
         const menuIcon = document.getElementById('menu-icon');
@@ -644,5 +631,7 @@
                 }
             });
         });
-    });
+        }
+        initHeaderNav();
+    })();
     </script>

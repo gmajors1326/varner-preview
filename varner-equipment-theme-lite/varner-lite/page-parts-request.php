@@ -48,7 +48,7 @@ get_header(); ?>
                 </div>
             </div>
 
-            <form action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" method="POST" class="p-8 md:p-12 space-y-12">
+            <form action="<?php echo esc_url( get_permalink() ); ?>" method="POST" class="p-8 md:p-12 space-y-12">
                 <input type="hidden" name="action" value="varner_parts_request_submit">
                 <?php wp_nonce_field( 'varner_parts_request_submit', 'varner_parts_nonce' ); ?>
 

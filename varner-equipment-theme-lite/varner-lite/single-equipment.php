@@ -169,14 +169,14 @@ $finance_url    = add_query_arg( array(
             </div>
 
             <!-- RIGHT: Details panel -->
-            <div class="flex-1 min-w-0 space-y-6">
+            <div class="w-full lg:flex-1 min-w-0 space-y-6">
 
                 <!-- Brand + Title + Category -->
                 <div>
                     <?php if ( $make ) : ?>
                     <div class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1"><?php echo esc_html( strtoupper( $make ) ); ?></div>
                     <?php endif; ?>
-                    <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight">
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight break-words">
                         <?php echo esc_html( $title_text ); ?>
                     </h1>
                     <?php if ( $category ) : ?>
@@ -255,7 +255,7 @@ $finance_url    = add_query_arg( array(
                                 (970) 874-0612
                             </a>
                             <a href="mailto:<?php $__se = varner_get_theme_setting('sales_email'); echo esc_attr( !empty($__se) ? $__se : 'jacob@varnerequipment.com' ); ?>"
-                               class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors">
+                               class="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-red-600 transition-colors break-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                                 <?php $__se2 = varner_get_theme_setting('sales_email'); echo esc_html( !empty($__se2) ? $__se2 : 'jacob@varnerequipment.com' ); ?>
                             </a>

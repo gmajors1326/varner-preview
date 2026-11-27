@@ -335,43 +335,49 @@ function varner_get_filter_data( $segment_categories = array(), $active_categori
 function varner_get_segment_seo($slug) {
     $segments = array(
         'all-units' => array(
-            'title' => 'All Equipment for Sale | Tractors & Trailers | Delta, CO',
-            'h1'    => 'Complete Collection',
-            'sub'   => 'Browse our full inventory of new and used tractors, trailers, and farm attachments.',
-            'blurb' => 'Browse Varner Equipment\'s full inventory of new and used tractors, trailers, hay tools, and attachments for sale in Delta, CO.',
+            'label' => 'Equipment & Trailers',
+            'title' => 'Equipment & Trailers for Sale in Western Colorado | Varner Equipment Delta, CO',
+            'h1'    => 'Equipment & Trailers For Sale in Western Colorado',
+            'sub'   => 'Browse our full inventory of new and used tractors, trailers, hay equipment, and attachments in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Browse Varner Equipment\'s full inventory of new and used tractors, trailers, hay tools, and attachments for sale in Delta, CO, serving all of Western Colorado.',
             'filter' => array()
         ),
         'new'       => array(
-            'title' => 'New Tractors & Trailers for Sale | Varner Equipment, CO',
-            'h1'    => 'New Equipment',
-            'sub'   => 'Explore the latest agricultural machinery, tractors, and trailers from top brands.',
-            'blurb' => 'Shop new Mahindra and TYM tractors, Big Tex and CM trailers, and hay equipment at Varner Equipment in Delta, CO. Financing available.',
+            'label' => 'New Tractors & Trailers',
+            'title' => 'New Tractors & Trailers for Sale in Western Colorado | Varner Equipment, CO',
+            'h1'    => 'New Tractors & Trailers For Sale in Western Colorado',
+            'sub'   => 'Explore new agricultural machinery, tractors, and trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop new Mahindra, TYM, and Deutz-Fahr tractors, Big Tex and Triton trailers, and hay equipment at Varner Equipment in Delta, CO. Financing available across Western Colorado.',
             'filter' => array('condition' => array('New'))
         ),
         'used'      => array(
-            'title' => 'Used Tractors & Trailers for Sale | Delta, CO',
-            'h1'    => 'Proven Performance',
-            'sub'   => 'High-quality, reliable, and pre-owned tractors, trailers, and machinery.',
-            'blurb' => 'Browse quality used and pre-owned tractors, trailers, and farm equipment, inspected and ready to work, at Varner Equipment in Delta, CO.',
+            'label' => 'Used Tractors & Trailers',
+            'title' => 'Used Tractors & Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Used Tractors & Trailers For Sale in Western Colorado',
+            'sub'   => 'Inspected pre-owned tractors, trailers, and farm machinery in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Browse quality used and pre-owned tractors, trailers, and farm equipment, inspected and ready to work across Western Colorado, at Varner Equipment in Delta, CO.',
             'filter' => array('condition' => array('Used'))
         ),
         'tractors'  => array(
-            'title' => 'Tractors for Sale | Mahindra & TYM | Delta, CO',
-            'h1'    => 'Heavy-Duty Tractors',
-            'sub'   => 'Find the perfect tractor for your acreage, farm, ranch, or job site.',
-            'blurb' => 'Shop new and used tractors from Mahindra, TYM, and Deutz Fahr at Varner Equipment in Delta, CO. Compact, utility, and high-horsepower models.',
+            'label' => 'Tractors',
+            'title' => 'Tractors for Sale in Western Colorado | Mahindra & TYM | Delta, CO',
+            'h1'    => 'Tractors For Sale in Western Colorado',
+            'sub'   => 'New & used compact, utility, and ag tractors in Delta, Montrose, and Grand Junction, CO.',
+            'blurb' => 'Shop new and used tractors from Mahindra, TYM, and Deutz-Fahr at Varner Equipment in Delta, CO. Compact, utility, and high-horsepower models serving all of Western Colorado.',
             'filter' => array('category' => array('Compact Tractors', 'Tractors', 'Utility Tractors'))
         ),
         'trailers'  => array(
-            'title' => 'Trailers for Sale | Big Tex & CM | Delta, CO',
-            'h1'    => 'Trailers for Sale',
-            'sub'   => 'Dump trailers, flatbeds, utility trailers, and livestock trailers.',
-            'blurb' => 'Shop new and used trailers for sale at Varner Equipment in Delta, Colorado. Explore utility, dump, flatbed, and equipment trailers for farming, ranching, construction, and everyday hauling throughout Western Colorado.',
-            'keywords' => 'trailer dealer western Colorado, trailers Western Slope, Big Tex trailers Delta Colorado, dump trailers Montrose CO, utility trailers for sale Delta CO, trailer dealer near Grand Junction',
+            'label' => 'Trailers',
+            'title' => 'Trailers for Sale in Western Colorado | Big Tex & Triton | Delta, CO',
+            'h1'    => 'Trailers For Sale in Western Colorado',
+            'sub'   => 'Dump, utility, gooseneck, flatbed, cargo, tilt, and livestock trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop new and used trailers for sale at Varner Equipment in Delta, Colorado. Explore utility, dump, flatbed, gooseneck, and equipment trailers for farming, ranching, construction, and everyday hauling throughout Western Colorado.',
+            'keywords' => 'trailers for sale in western colorado, trailer dealer western Colorado, trailers Western Slope, Big Tex trailers Delta Colorado, dump trailers Montrose CO, utility trailers for sale Delta CO, trailer dealer near Grand Junction',
             'filter' => array('category' => array('Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'))
         ),
         'utility-trailers' => array(
-            'title' => 'Utility Trailers for Sale | Western Colorado | Delta, CO',
+            'label' => 'Utility Trailers',
+            'title' => 'Utility Trailers for Sale in Western Colorado | Delta, CO',
             'h1'    => 'Utility Trailers For Sale in Western Colorado',
             'sub'   => 'New & pre-owned single-axle, tandem-axle, and landscape utility trailers in Delta, Montrose & Western CO.',
             'blurb' => 'Shop new and used utility trailers for sale at Varner Equipment in Delta, Colorado. Find durable, reliable trailers for hauling equipment, landscaping, farming, and everyday projects throughout Western Colorado.',
@@ -382,35 +388,147 @@ function varner_get_segment_seo($slug) {
             )
         ),
         'dump-trailers' => array(
-            'title' => 'Dump Trailers for Sale | Big Tex | Delta & Montrose, CO',
+            'label' => 'Dump Trailers',
+            'title' => 'Dump Trailers for Sale in Western Colorado | Big Tex | Delta, CO',
             'h1'    => 'Dump Trailers For Sale in Western Colorado',
-            'sub'   => 'Heavy-Duty Hydraulic Dump Trailers in Delta, Montrose, and Grand Junction CO.',
-            'blurb' => 'Shop heavy-duty dump trailers from Big Tex at Varner Equipment in Delta, CO. Built for ranch, farm, and construction hauling.',
-            'keywords' => 'dump trailers Montrose CO, dump trailers for sale western colorado, Big Tex dump trailers Colorado, heavy duty dump trailers Delta CO',
+            'sub'   => 'Heavy-Duty Hydraulic & Gooseneck Dump Trailers in Delta, Montrose, and Grand Junction, CO.',
+            'blurb' => 'Shop heavy-duty dump trailers for sale in Western Colorado from Big Tex at Varner Equipment in Delta, CO. Built for ranch, farm, and construction hauling across Delta, Montrose, and Grand Junction.',
+            'keywords' => 'dump trailers for sale western colorado, dump trailers Montrose CO, Big Tex dump trailers Colorado, heavy duty dump trailers Delta CO, dump trailers Grand Junction CO',
             'filter' => array(
                 'category'    => array('Trailers'),
                 'subcategory' => array('Dump Trailers', 'Gooseneck Dump Trailers'),
             )
         ),
+        'bumper-pull-trailers' => array(
+            'label' => 'Bumper Pull Trailers',
+            'title' => 'Bumper Pull Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Bumper Pull Trailers For Sale in Western Colorado',
+            'sub'   => 'New & used bumper pull utility, dump, flatbed, and cargo trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop bumper pull trailers for sale at Varner Equipment in Delta, Colorado. Ready-to-tow utility, dump, car hauler, and enclosed bumper pull trailers serving Western Colorado.',
+            'keywords' => 'bumper pull trailers western colorado, bumper pull trailers Delta CO, bumper pull dump trailer Montrose CO',
+            'filter' => array(
+                'category' => array('Trailers', 'Dump Trailers', 'Flatbed Trailers', 'Utility Trailers'),
+                's'        => 'Bumper Pull',
+            )
+        ),
+        'cargo-enclosed-trailers' => array(
+            'label' => 'Cargo & Enclosed Trailers',
+            'title' => 'Cargo & Enclosed Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Cargo & Enclosed Trailers For Sale in Western Colorado',
+            'sub'   => 'Weatherproof enclosed cargo trailers in Delta, Montrose, and Grand Junction, CO.',
+            'blurb' => 'Shop enclosed cargo trailers for sale at Varner Equipment in Delta, Colorado. Secure, weather-protected hauling for contractors, tools, ATVs, and gear across Western Colorado.',
+            'keywords' => 'enclosed cargo trailers western colorado, cargo trailers for sale Delta CO, enclosed trailers Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Cargo / Enclosed Trailers'),
+            )
+        ),
+        'car-hauler-trailers' => array(
+            'label' => 'Car Hauler Trailers',
+            'title' => 'Car Hauler Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Car Hauler Trailers For Sale in Western Colorado',
+            'sub'   => 'Steel and aluminum car haulers & equipment trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop car hauler trailers for sale at Varner Equipment in Delta, Colorado. Built for hauling cars, trucks, UTVs, and compact equipment across Western Colorado.',
+            'keywords' => 'car hauler trailers western colorado, car trailer for sale Delta CO, car hauler Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Car Hauler Trailers'),
+            )
+        ),
+        'flatbed-trailers' => array(
+            'label' => 'Flatbed & Tag Trailers',
+            'title' => 'Flatbed & Tag Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Flatbed & Tag Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-duty flatbed, deckover, and tag equipment trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop flatbed, deckover, and tag trailers for sale at Varner Equipment in Delta, Colorado. Built for hauling tractors, hay, pallets, and heavy equipment throughout Western Colorado.',
+            'keywords' => 'flatbed trailers for sale western colorado, deckover trailer Delta CO, tag trailers Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Flatbed / Tag Trailers', 'Flatbed Trailers'),
+            )
+        ),
+        'gooseneck-trailers' => array(
+            'label' => 'Gooseneck Trailers',
+            'title' => 'Gooseneck Trailers for Sale in Western Colorado | Big Tex | Delta, CO',
+            'h1'    => 'Gooseneck Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-duty gooseneck flatbed, equipment, and dump trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop heavy-duty gooseneck trailers for sale at Varner Equipment in Delta, Colorado. High-capacity Big Tex gooseneck flatbeds and dump trailers built for Western Colorado ranches and contractors.',
+            'keywords' => 'gooseneck trailers for sale western colorado, Big Tex gooseneck Delta CO, gooseneck flatbed Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Gooseneck Trailers', 'Gooseneck Dump Trailers'),
+            )
+        ),
+        'livestock-trailers' => array(
+            'label' => 'Livestock Trailers',
+            'title' => 'Livestock Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Livestock Trailers For Sale in Western Colorado',
+            'sub'   => 'Bumper pull and gooseneck stock & livestock trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop livestock and stock trailers for sale at Varner Equipment in Delta, Colorado. Durable cattle, horse, and ranch trailers serving Western Colorado.',
+            'keywords' => 'livestock trailers for sale western colorado, stock trailers Delta CO, cattle trailer Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Livestock Trailers', 'Horse Trailers'),
+            )
+        ),
+        'pipe-trailers' => array(
+            'label' => 'Pipe Trailers',
+            'title' => 'Pipe Trailers for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Pipe Trailers For Sale in Western Colorado',
+            'sub'   => 'Heavy-duty pipe-top utility and ranch trailers in Delta, Montrose & Western Colorado.',
+            'blurb' => 'Shop pipe-top utility and pipe trailers for sale at Varner Equipment in Delta, Colorado. Reinforced pipe rails built for ranch, farm, and jobsite hauling across Western Colorado.',
+            'keywords' => 'pipe trailers for sale western colorado, pipe top utility trailer Delta CO, Big Tex pipe trailer Colorado',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Pipe Trailers'),
+            )
+        ),
+        'snowmobile-trailers' => array(
+            'label' => 'Snowmobile Trailers',
+            'title' => 'Snowmobile Trailers for Sale in Western Colorado | Triton | Delta, CO',
+            'h1'    => 'Snowmobile Trailers For Sale in Western Colorado',
+            'sub'   => 'Aluminum open & enclosed snowmobile trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop Triton aluminum and steel snowmobile trailers for sale at Varner Equipment in Delta, Colorado. Built for Grand Mesa and Western Slope winter hauling.',
+            'keywords' => 'snowmobile trailers for sale western colorado, Triton snowmobile trailer Delta CO, sled trailers Grand Junction Montrose',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Snowmobile Trailers'),
+            )
+        ),
+        'tilt-trailers' => array(
+            'label' => 'Tilt Trailers',
+            'title' => 'Tilt Trailers for Sale in Western Colorado | Big Tex | Delta, CO',
+            'h1'    => 'Tilt Trailers For Sale in Western Colorado',
+            'sub'   => 'Gravity-tilt and hydraulic tilt-bed equipment trailers in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop tilt-bed equipment and car hauler trailers for sale at Varner Equipment in Delta, Colorado. Easy ramp-free loading for skid steers, compact tractors, and machinery across Western Colorado.',
+            'keywords' => 'tilt trailers for sale western colorado, Big Tex tilt trailer Delta CO, tilt bed equipment trailer Montrose Grand Junction',
+            'filter' => array(
+                'category'    => array('Trailers'),
+                'subcategory' => array('Tilt Trailers'),
+            )
+        ),
         'attachments' => array(
-            'title' => 'Tractor Attachments & Implements | Varner Equipment, CO',
-            'h1'    => 'Attachments & Implements',
-            'sub'   => 'Loaders, mowers, cutters, and implements to maximize utility.',
-            'blurb' => 'Find loaders, mowers, blades, and work-ready attachments for your tractor at Varner Equipment in Delta, CO. New and used implements in stock.',
+            'label' => 'Tractor Attachments & Implements',
+            'title' => 'Tractor Attachments & Implements for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Tractor Attachments & Implements For Sale in Western Colorado',
+            'sub'   => 'Loaders, mowers, rotary cutters, blades, augers, and implements in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Find loaders, mowers, blades, augers, and work-ready tractor attachments for sale in Western Colorado at Varner Equipment in Delta, CO. New and used implements in stock.',
             'filter' => array('category' => array('Implements', 'Attachments', 'Loaders', 'Mowers'))
         ),
         'hay-equipment' => array(
-            'title' => 'Hay Equipment for Sale | Rakes & Mowers | Delta, CO',
-            'h1'    => 'Hay & Harvest',
-            'sub'   => 'Precision balers, rakes, tedders, and hay tools from Krone and McHale.',
-            'blurb' => 'Shop new and used hay equipment for sale at Varner Equipment in Delta, Colorado. Explore hay mowers, rakes, and harvesting equipment for small farms, ranches, and large agricultural operations throughout Western Colorado.',
+            'label' => 'Hay Equipment',
+            'title' => 'Hay Equipment for Sale in Western Colorado | Rakes, Mowers & Balers | Delta, CO',
+            'h1'    => 'Hay Equipment For Sale in Western Colorado',
+            'sub'   => 'Balers, disc mowers, hay rakes, tedders, and forage tools in Delta, Montrose & Grand Junction, CO.',
+            'blurb' => 'Shop new and used hay equipment for sale at Varner Equipment in Delta, Colorado. Explore hay mowers, rakes, tedders, balers, and harvesting equipment for farms and ranches throughout Western Colorado.',
             'filter' => array('category' => array('Hay Equipment', 'Hay and Forage Equipment', 'Balers', 'Rakes'))
         ),
         'misc'      => array(
-            'title' => 'Miscellaneous Equipment | Varner Equipment, Delta CO',
-            'h1'    => 'Misc. Equipment',
-            'sub'   => 'Explore miscellaneous tools, accessories, and farm equipment.',
-            'blurb' => 'Find unique agricultural tools, power equipment, and utility vehicles. Quality equipment and accessories to support your homestead, ranch, farm, or business.',
+            'label' => 'Farm & Ranch Equipment',
+            'title' => 'Farm & Ranch Equipment for Sale in Western Colorado | Delta, CO',
+            'h1'    => 'Farm & Ranch Equipment For Sale in Western Colorado',
+            'sub'   => 'Explore specialty farm equipment, utility vehicles, and ranch gear in Western Colorado.',
+            'blurb' => 'Find specialty agricultural tools, power equipment, and utility vehicles at Varner Equipment in Delta, CO, serving homesteads, ranches, and businesses across Western Colorado.',
             'filter' => array('category' => array('Misc', 'Other'))
         )
     );
@@ -418,6 +536,7 @@ function varner_get_segment_seo($slug) {
 }
 
 require_once get_template_directory() . '/inc/sitemap.php';
+require_once get_template_directory() . '/inc/llms.php';
 require_once get_template_directory() . '/inc/brands-data.php';
 require_once get_template_directory() . '/inc/indexing-api.php';
 
@@ -434,13 +553,15 @@ add_filter( 'query_vars', function( $vars ) {
 add_action( 'init', function() {
     add_rewrite_rule('^sitemap-inventory\.xml$', 'index.php?varner_sitemap=inventory', 'top');
     add_rewrite_rule('^sitemap_index\.xml$', 'index.php?varner_sitemap=index', 'top');
-    add_rewrite_rule('^llms\.txt$', 'index.php?varner_llms=1', 'top');
+    add_rewrite_rule('^llms\.txt$', 'index.php?varner_llms=summary', 'top');
+    add_rewrite_rule('^llms-full\.txt$', 'index.php?varner_llms=full', 'top');
     add_rewrite_rule('^([a-f0-9]{32})\.txt$', 'index.php?indexnow_key=$matches[1]', 'top');
+    $seg_regex = 'all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|bumper-pull-trailers|cargo-enclosed-trailers|car-hauler-trailers|flatbed-trailers|gooseneck-trailers|livestock-trailers|pipe-trailers|snowmobile-trailers|tilt-trailers|attachments|hay-equipment|misc';
     add_rewrite_rule('^inventory/?$', 'index.php?inventory_segment=all-units', 'top');
-    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&paged=$matches[2]', 'top');
-    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]&paged=$matches[3]', 'top');
-    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
-    add_rewrite_rule('^inventory/(all-units|new|used|tractors|trailers|utility-trailers|dump-trailers|attachments|hay-equipment|misc)/?$', 'index.php?inventory_segment=$matches[1]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&paged=$matches[2]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/([^/]+)/page/([0-9]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]&paged=$matches[3]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/([^/]+)/?$', 'index.php?inventory_segment=$matches[1]&brand_name=$matches[2]', 'top');
+    add_rewrite_rule('^inventory/(' . $seg_regex . ')/?$', 'index.php?inventory_segment=$matches[1]', 'top');
     add_rewrite_rule('^brands/?$', 'index.php?brands_hub=1', 'top');
     add_rewrite_rule('^brands/([^/]+)/page/([0-9]+)/?$', 'index.php?brand_name=$matches[1]&paged=$matches[2]', 'top');
     add_rewrite_rule('^brands/([^/]+)/?$', 'index.php?brand_name=$matches[1]', 'top');
@@ -448,29 +569,18 @@ add_action( 'init', function() {
 
 add_action( 'init', function () {
     $flag = get_option( 'varner_brands_rewrite_v' );
-    if ( $flag !== '6' ) {
+    if ( $flag !== '8' ) {
         flush_rewrite_rules( false );
-        update_option( 'varner_brands_rewrite_v', '6' );
+        update_option( 'varner_brands_rewrite_v', '8' );
     }
 }, 99 );
 
 add_action( 'template_redirect', function() {
-    if ( get_query_var('varner_llms') ) {
-        header('Content-Type: text/plain; charset=utf-8');
-        header('X-Robots-Tag: noindex, follow');
-        $llms_path = get_template_directory() . '/../../public/llms.txt';
-        if ( ! file_exists( $llms_path ) ) {
-            $llms_path = ABSPATH . 'llms.txt';
-        }
-        if ( file_exists( $llms_path ) ) {
-            readfile( $llms_path );
-        } else {
-            echo "# Varner Equipment — AI Agent Manifest\n\n";
-            echo "Dealership: Varner Equipment (Delta, CO)\n";
-            echo "All Inventory: " . home_url( '/inventory/all-units/' ) . "\n";
-            echo "Contact: " . home_url( '/contact/' ) . "\n";
-        }
-        exit;
+    $llms_var = get_query_var( 'varner_llms' );
+    $req_path = trim( (string) parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ), '/' );
+    if ( $llms_var || $req_path === 'llms.txt' || $req_path === 'llms-full.txt' ) {
+        $variant = ( $llms_var === 'full' || $req_path === 'llms-full.txt' ) ? 'full' : 'summary';
+        varner_serve_llms_txt( $variant );
     }
     if ( get_query_var('varner_sitemap') === 'inventory' ) {
         varner_generate_xml_sitemap();
@@ -854,7 +964,7 @@ function varner_build_subcategory_meta_query( array $subcats ): array {
  * Build the WP_Query args array for the inventory pages based on $_GET filters.
  * Accepts $base_meta (array) to pre-populate the meta_query (e.g. stock_status restriction).
  */
-function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1 ) {
+function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -1, $default_keyword = '' ) {
     $meta = array_merge( array( 'relation' => 'AND' ), $base_meta );
 
     $paged = max( 1, intval( get_query_var( 'paged' ) ?: ( get_query_var( 'page' ) ?: ( intval( $_GET['paged'] ?? 0 ) ?: ( intval( $_GET['page'] ?? 0 ) ?: 1 ) ) ) ) );
@@ -924,6 +1034,9 @@ function varner_build_inventory_query( $base_meta = array(), $posts_per_page = -
     );
 
     $keyword = sanitize_text_field( $_GET['s'] ?? '' );
+    if ( $keyword === '' && $default_keyword !== '' ) {
+        $keyword = sanitize_text_field( $default_keyword );
+    }
     if ( $keyword ) { 
         $args['s'] = $keyword; 
         // Allow searching in meta fields via a hook
@@ -1369,27 +1482,50 @@ add_filter( 'wpseo_robots', function( $robots ) {
 }, 100 );
 
 /**
- * Generate 100% Valid robots.txt for Google & Lighthouse SEO Compliance
+ * Generate 100% Valid robots.txt for Google, Bing & AI Search Discoverability
+ * Priority 10000 ensures this supersedes legacy AI-blocking filters in plugins.
  */
 add_filter( 'robots_txt', function ( $output, $public ) {
     $site_url = home_url();
     $robots  = "User-agent: *\n";
     $robots .= "Disallow: /wp-admin/\n";
     $robots .= "Allow: /wp-admin/admin-ajax.php\n\n";
-    $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap.xml' ) . "\n";
+    $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap_index.xml' ) . "\n";
     $robots .= "Sitemap: " . esc_url( $site_url . '/sitemap-inventory.xml' ) . "\n\n";
 
-    $ai_bots = array(
-        'GPTBot', 'ChatGPT-User', 'Google-Extended', 'Anthropic-AI',
-        'ClaudeBot', 'Claude-Web', 'CCBot', 'Omgilibot', 'FacebookBot',
-        'Diffbot', 'Bytespider', 'ImagesiftBot', 'PerplexityBot', 'Cohesive-Bot'
+    // Explicitly allow major AI search & assistant crawlers
+    $allowed_ai_bots = array(
+        'OAI-SearchBot',
+        'ChatGPT-User',
+        'GPTBot',
+        'PerplexityBot',
+        'Claude-SearchBot',
+        'Claude-User',
+        'ClaudeBot',
+        'Anthropic-AI',
+        'Google-Extended',
+        'Applebot-Extended',
     );
-    foreach ( $ai_bots as $bot ) {
+    foreach ( $allowed_ai_bots as $bot ) {
+        $robots .= "User-agent: " . $bot . "\n";
+        $robots .= "Allow: /\n";
+        $robots .= "Disallow: /wp-admin/\n\n";
+    }
+
+    // Block non-search bulk scraper bots
+    $blocked_bots = array(
+        'Bytespider',
+        'CCBot',
+        'Omgilibot',
+        'Diffbot',
+        'ImagesiftBot',
+    );
+    foreach ( $blocked_bots as $bot ) {
         $robots .= "User-agent: " . $bot . "\n";
         $robots .= "Disallow: /\n\n";
     }
     return trim( $robots ) . "\n";
-}, 999, 2 );
+}, 10000, 2 );
 
 /**
  * 🔒 SECURITY HARDENING: Block Public User Enumeration & REST User Endpoints

@@ -31,12 +31,18 @@ if (!$seo) {
 }
 
 if ($brand_obj) {
-    $seo['h1'] = $brand_obj['name'] . ' ' . ($seo['h1'] ?? ucfirst($slug));
-    $seo['sub'] = 'Explore in-stock ' . $brand_obj['name'] . ' ' . strtolower($seo['h1'] ?? '') . ' at Varner Equipment in Delta, CO.';
-    $seo['blurb'] = 'Browse live inventory of ' . $brand_obj['name'] . ' units. Inspected, clear pricing, and backed by local service across Western Colorado.';
+    $seg_label = $seo['label'] ?? ucfirst(str_replace('-', ' ', $slug));
+    $seo['h1'] = $brand_obj['name'] . ' ' . $seg_label . ' For Sale in Western Colorado';
+    $seo['sub'] = 'Explore in-stock ' . $brand_obj['name'] . ' ' . strtolower($seg_label) . ' in Delta, Montrose, and Grand Junction, CO.';
+    $seo['blurb'] = 'Browse live inventory of ' . $brand_obj['name'] . ' ' . strtolower($seg_label) . ' at Varner Equipment in Delta, CO. Inspected, clear pricing, and backed by local service across Western Colorado.';
     $seo['filter']['make'] = array($brand_obj['make']);
     $selected_makes_override = array($brand_obj['make']);
     $locked_makes = array($brand_obj['make']);
+} elseif (!empty($_GET['subcategory'])) {
+    $active_subs = array_values(array_filter(array_map('sanitize_text_field', (array) $_GET['subcategory'])));
+    if (count($active_subs) === 1) {
+        $seo['h1'] = $active_subs[0] . ' For Sale in Western Colorado';
+    }
 }
 
 // 2. Build Query
@@ -44,12 +50,15 @@ $segment_categories = $seo['filter']['category'] ?? array();
 $selected_categories = array_map( 'sanitize_text_field', (array) ( $_GET['category'] ?? array() ) );
 $filter_data = varner_get_filter_data( $segment_categories, $selected_categories );
 $base_meta = array();
+$segment_keyword = '';
 
 // Apply the hard-coded segment filters (e.g. category => Tractors, subcategory => Dump Trailers)
 if (!empty($seo['filter'])) {
     foreach ($seo['filter'] as $key => $vals) {
         if ($key === 'subcategory') {
             $base_meta[] = varner_build_subcategory_meta_query((array) $vals);
+        } elseif ($key === 's') {
+            $segment_keyword = is_array($vals) ? implode(' ', $vals) : (string) $vals;
         } else {
             $base_meta[] = array('key' => $key, 'value' => $vals, 'compare' => 'IN');
         }
@@ -57,7 +66,7 @@ if (!empty($seo['filter'])) {
 }
 
 // Execute single paginated query (used for both hero count and grid)
-$query_args = varner_build_inventory_query($base_meta, 12);
+$query_args = varner_build_inventory_query($base_meta, 12, $segment_keyword);
 $inventory_query = new WP_Query($query_args);
 $total = intval( $inventory_query->found_posts );
 

@@ -145,7 +145,7 @@
                             <p class="text-slate-400 text-xs font-bold">Department: <span id="varner-chat-dept-label" class="text-white">—</span></p>
                         </div>
 
-                        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="space-y-4">
+                        <form method="post" action="<?php echo esc_url( home_url( '/' ) ); ?>" class="space-y-4">
                             <?php wp_nonce_field( 'varner_chatbox_submit', 'varner_chatbox_nonce' ); ?>
                             <input type="hidden" name="action" value="varner_chatbox_submit">
                             <input type="hidden" name="department" id="varner-chat-dept-input" value="">
@@ -192,18 +192,18 @@
                 <a href="<?php echo esc_url( home_url( '/inventory/attachments/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Tractor Attachments Delta CO</a>
                 <span class="text-slate-700">•</span>
                 <a href="<?php echo esc_url( home_url( '/brands/' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">Shop by Brand</a>
-                <span class="text-slate-700">•</span>
-                <a href="<?php echo esc_url( home_url( '/sitemap-inventory.xml' ) ); ?>" class="py-1.5 inline-block hover:text-white transition-colors">XML Sitemap</a>
             </div>
         </div>
 
         <!-- COPYRIGHT BAR -->
         <div class="max-w-7xl mx-auto px-4 mt-8 pt-8 border-t border-white/10 text-center">
             <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-2">&copy; <?php echo date('Y'); ?> Varner Equipment. All Rights Reserved.</p>
-            <div class="text-xs text-slate-400 font-bold uppercase tracking-widest flex justify-center gap-4 py-2">
+            <div class="text-xs text-slate-400 font-bold uppercase tracking-widest flex flex-wrap justify-center gap-4 py-2">
                 <a href="<?php echo esc_url( home_url( '/legal/terms-of-service' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Terms of Service</a>
                 <span>|</span>
                 <a href="<?php echo esc_url( home_url( '/privacy-policy' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">Privacy Policy</a>
+                <span>|</span>
+                <a href="<?php echo esc_url( home_url( '/sitemap-inventory.xml' ) ); ?>" class="py-1 px-2 hover:text-red-500 transition-colors">XML Sitemap</a>
             </div>
         </div>
     </footer>
