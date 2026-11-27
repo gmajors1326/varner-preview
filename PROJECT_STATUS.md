@@ -2,7 +2,7 @@
 
 **Project:** Varner Equipment — custom inventory website, mobile companion (PWA), and Facebook catalog feed (automated) / Marketplace listings (manual)
 **Purpose of this document:** Single reference for project status, version history, key decisions, the deployment process, and outstanding work.
-**Last updated:** July 1, 2026
+**Last updated:** July 30, 2026
 **Maintainer:** Greg
 
 ---
@@ -134,6 +134,21 @@ Meta Live Sync fixes are deployed and verified. Commerce Manager verification ca
 - Implement frontend pagination in the React app for catalogs of 200+ units.
 - Marketplace tab is informational only (shows feed URL, health metrics, sync logs). Catalog updates are fully automated; Marketplace free listings remain human-in-the-loop via the Quick Post tool and are not automatable through Meta's API for equipment dealers.
 - Build a polished public-facing filter UI for the `[varner_showroom]` shortcode.
+
+7. **Post-incident (Jul 30): production is a second install — finish the split resolution.**
+   Production is **not** `varnerequipdev`. It is a second WP Engine install, `varnerequipme1`, on which `varnerequipment.com` is a primary domain. `DEPLOY.md`, `AGENTS-DEPLOY-CHECKLIST.md`, and §2/§6 of this file still target `varnerequipdev` (this file lists Production as TBD) — that doc error is the root cause of the Jul 30 incident: deploys and some editing flows were pointed at the wrong install for months. Execute in order:
+   - **7 dev-only units → Ashley** (the dev-vs-me1 diff minus the 15 migrated Jul 30): keep / delete / already handled elsewhere.
+   - **Plugin sync me1 → `1.23.361`.** Confirmed 2026-07-30: me1 is on **`1.23.360`**, local source is **`1.23.361`** — single-patch jump, no intermediates. Deploy per the runbook (SSH stream → `wp plugin install --force` → deactivate/reactivate → cache flush) against the **me1** host/path.
+   - **Correct the deploy docs** (`DEPLOY.md`, `AGENTS-DEPLOY-CHECKLIST.md`, this file) to name `varnerequipme1` as the production deploy target.
+   **Ordering rationale:** the docs correction goes LAST so the plugin sync in the middle step is the first deploy executed against the corrected target and validates the new procedure before it is written down as canonical.
+   **Deferred indefinitely:** the ~20 units that exist on both installs with divergent `post_modified` timestamps — both databases received live edits during the split period. Reconciliation needs per-unit postmeta review (price, hours, photos), not a mechanical merge. Revisit if Ashley reports specific discrepancies; otherwise me1's version stands canonical.
+   **Known gotchas:**
+   - **PWA merge gate:** before merging `feature/pwa-unify` to main, run `git rm --cached NOTES.md` on the branch as a standalone commit. The uppercase duplicate is tracked only on that branch; merging without removing it causes a case-collision conflict on case-insensitive filesystems.
+   - **WPE-incident deploy gate:** do not push plugin `1.23.361` to me1 while WP Engine is actively degraded (404s / login issues); wait until WPE status is green.
+   **Deferred hardening (post-WPE-incident):**
+   - Rotate `.env` credentials (WP admin, WPE, OpenRouter) and migrate to a secrets manager; add a pre-commit hook that blocks `.env` from being staged even with `-f`.
+   - Resolve `blocks/varner-editor.php` source/shipped duplication via a `build.ps1` copy step (single source of truth) or a canonical-path load.
+   **Branch topology cleanup (post-PWA-merge):** `main` on origin is ~8,900 lines behind the deployed production lineage (missing `varner-analytics.php`, `varner-category-tree.php`, `varner-cookie-manager.php`). The real source-of-truth is `feature/pwa-unify`. After PWA merges, verify `main` reflects deployed reality and archive/delete any stale parallel branches.
 
 ---
 
